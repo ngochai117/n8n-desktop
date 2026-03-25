@@ -28,3 +28,39 @@ FORMAT:
 * Độ dài: Chi tiết tuyệt đối (hướng tới 20,000 - 30,000 ký tự).
 * CONTROL TAGS (BẮT BUỘC): Nếu chưa xong, thêm một dòng chỉ chứa -CONTINUE-. Nếu đã xong hoàn toàn, thêm một dòng chỉ chứa -END-.
 * Khi mình gửi "Continue", hãy trả phần tiếp theo. Không thêm hướng dẫn như "hãy nói Continue" trong output.
+OUTPUT CONTRACT (BẮT BUỘC):
+1. Chỉ trả nội dung theo đúng format block dưới đây, không thêm giải thích ngoài block.
+2. Mỗi mục phải nằm trong 1 block SECTION độc lập.
+3. Dùng ID cố định:
+* mở đầu: intro
+* thân bài: part_01, part_02, part_03, ... (tăng dần 2 chữ số)
+* kết: outro
+4. Không được chèn chuỗi marker vào nội dung văn bản.
+
+FORMAT PHẢI ĐÚNG:
+
+<<<SECTION|intro|Phan mo dau>>>
+...noi dung mo dau...
+<<<END_SECTION>>>
+
+<<<SECTION|part_01|<ten_muc_1>>>
+...noi dung muc 1...
+<<<END_SECTION>>>
+
+<<<SECTION|part_02|<ten_muc_2>>>
+...noi dung muc 2...
+<<<END_SECTION>>>
+
+<<<SECTION|outro|Phan ket>>>
+...noi dung phan ket...
+<<<END_SECTION>>>
+
+DÒNG CUỐI CÙNG BẮT BUỘC CHỈ LÀ MỘT TAG:
+-CONTINUE-
+hoặc
+-END-
+
+QUY TẮC TAG (BẮT BUỘC):
+1. Nếu dùng -CONTINUE- hoặc -END- thì không được có bất kỳ ký tự nào phía sau tag đó.
+2. Không thêm câu nhắc kiểu "hãy nói Continue" hoặc lời bình ngoài format.
+3. Nếu chưa xong, phải kết thúc ở ranh giới SECTION rồi mới in -CONTINUE-.

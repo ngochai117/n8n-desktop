@@ -194,10 +194,12 @@ bash scripts/workflows/sync/sync-workflows-from-n8n.sh --name "Demo Gemini via C
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply --no-log
 ```
 - Script se sanitize truong nhay cam (`cliproxy_base_url`, `cliproxy_client_key`) ve placeholder truoc khi ghi file.
+- `workflow-registry.json` nen luu `template` dang duong dan tuong doi (vi du: `workflows/book-review-gemini.workflow.json`) de tranh vo path khi doi ten folder project.
 - Khi chay `--apply` (mac dinh), script se auto append log vao `CHANGELOG.md` va `README.md > Update Log`.
 
 Import thu cong neu can:
 ```bash
+bash scripts/workflows/import/import-workflow.sh
 bash scripts/workflows/import/import-shared-notification-router-workflow.sh
 bash scripts/workflows/import/import-gemini-demo-workflow.sh
 bash scripts/workflows/import/import-openai-demo-workflow.sh
@@ -228,7 +230,8 @@ bash scripts/workflows/tests/test-book-review-checklist.sh
 - `configs/cliproxy.config.template.yaml`: template config cliproxy
 - `scripts/README.md`: so do phan cap scripts + lenh thong dung
 - `scripts/cliproxy/setup-cliproxy-oauth.sh`: setup A-Z cho cliproxy oauth
-- `scripts/workflows/import/import-gemini-demo-workflow.sh`: import workflow demo vao n8n
+- `scripts/workflows/import/import-workflow.sh`: core importer upsert workflow template vao n8n
+- `scripts/workflows/import/import-gemini-demo-workflow.sh`: wrapper import workflow Gemini demo vao n8n
 - `scripts/workflows/import/import-shared-notification-router-workflow.sh`: import workflow notify router da kenh dung chung
 - `scripts/workflows/import/import-openai-demo-workflow.sh`: import workflow OpenAI demo vao n8n
 - `scripts/workflows/import/import-book-review-workflow.sh`: import workflow review sach chat vao n8n
@@ -279,3 +282,5 @@ bash scripts/workflows/tests/test-book-review-checklist.sh
 - 2026-03-25: Doi ten script import notify sang `import-shared-desktop-notify-workflow.sh` va bo sung nhanh Telegram notify song song trong `Shared Desktop Notify` (auto-skip neu chua cau hinh token/chat). Ly do: dong bo naming va mo rong kenh thong bao.
 - 2026-03-25: Refactor notify chung thanh `Shared Notification Router`, them routing theo `notify_targets` (desktop/telegram/ggchat) va them `Set Notify Targets` tren tung workflow de de tuy chinh kenh nhan. Ly do: de mo rong them kenh moi va tuy bien theo workflow ma khong sua logic notify trung tam.
 - 2026-03-25: Xoa hoan toan notify desktop cu: loai bo alias import scripts cu, cap nhat rules/docs chi con `Shared Notification Router`, va xoa workflow cu tren n8n (`Shared Desktop Notify`). Ly do: tranh nham lan giua flow cu va router da kenh moi.
+- 2026-03-25: Hardening registry workflow template path sang dang tuong doi + cap nhat importer/sync de auto resolve relative/absolute. Ly do: doi ten folder project van chay on dinh, khong vo path trong workflow-registry.
+- 2026-03-25: Tach core importer thanh `scripts/workflows/import/import-workflow.sh`; cac wrapper (`import-gemini/openai/shared/book-review`) deu goi lai core nay. Ly do: dat ten trung lap ro hon va de mo rong them workflow moi.

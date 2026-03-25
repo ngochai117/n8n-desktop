@@ -20,7 +20,7 @@ jq \
   ' "$WORKFLOW_TEMPLATE" > "$TMP_TEMPLATE"
 
 WORKFLOW_REGISTRY_TEMPLATE="$WORKFLOW_TEMPLATE" \
-bash "$ROOT_DIR/scripts/workflows/import/import-gemini-demo-workflow.sh" \
+bash "$ROOT_DIR/scripts/workflows/import/import-workflow.sh" \
   "$N8N_ENV_FILE" \
   "$CLIPROXY_ENV_FILE" \
   "$TMP_TEMPLATE"

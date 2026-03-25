@@ -1,6 +1,6 @@
 # Agent Rules (Project Specific)
 
-Project: `n8n-preview-book`
+Project: `n8n-desktop`
 
 ## 1) Workflow import policy (bat buoc upsert)
 - Khong tao moi workflow neu da ton tai.

@@ -73,6 +73,15 @@ parse_args() {
   done
 }
 
+resolve_template_path() {
+  local template_path="$1"
+  if [[ "$template_path" == /* ]]; then
+    printf '%s\n' "$template_path"
+  else
+    printf '%s\n' "$ROOT_DIR/$template_path"
+  fi
+}
+
 sanitize_and_shape_workflow() {
   jq '
     {
@@ -92,11 +101,11 @@ ensure_changelog_file() {
   if [ -f "$file" ]; then
     return
   fi
-  cat > "$file" <<'EOF'
+  cat > "$file" <<'EOT'
 # Changelog
 
 Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automation scripts).
-EOF
+EOT
 }
 
 append_update_log_to_readme() {
@@ -110,12 +119,12 @@ append_changelog_entry() {
   local ts="$2"
   local summary="$3"
   local details="$4"
-  cat >> "$file" <<EOF
+  cat >> "$file" <<EOT
 
 ## $ts
 - $summary
 - $details
-EOF
+EOT
 }
 
 main() {
@@ -162,10 +171,10 @@ main() {
     [ -n "$entry" ] || continue
     total=$((total + 1))
 
-    local wf_name wf_id wf_template
+    local wf_name wf_id wf_template_raw wf_template
     wf_name="$(echo "$entry" | jq -r '.key')"
     wf_id="$(echo "$entry" | jq -r '.value.id')"
-    wf_template="$(echo "$entry" | jq -r '.value.template')"
+    wf_template_raw="$(echo "$entry" | jq -r '.value.template')"
 
     if [ -z "$wf_id" ] || [ "$wf_id" = "null" ]; then
       log "SKIP $wf_name (missing id in registry)"
@@ -173,11 +182,13 @@ main() {
       continue
     fi
 
-    if [ -z "$wf_template" ] || [ "$wf_template" = "null" ]; then
+    if [ -z "$wf_template_raw" ] || [ "$wf_template_raw" = "null" ]; then
       log "SKIP $wf_name (missing template path in registry)"
       failed=$((failed + 1))
       continue
     fi
+
+    wf_template="$(resolve_template_path "$wf_template_raw")"
 
     local body_file code raw shaped existing_file tmp_new
     body_file="$(mktemp)"
@@ -203,7 +214,7 @@ main() {
     fi
 
     if [ -n "$existing_file" ] && diff -q "$existing_file" "$tmp_new" >/dev/null 2>&1; then
-      log "UNCHANGED $wf_name -> $wf_template"
+      log "UNCHANGED $wf_name -> $wf_template_raw"
       unchanged=$((unchanged + 1))
       rm -f "$tmp_new"
       continue
@@ -217,10 +228,10 @@ main() {
       else
         changed_names="$changed_names, $wf_name"
       fi
-      log "UPDATED $wf_name -> $wf_template"
+      log "UPDATED $wf_name -> $wf_template_raw"
     else
       changed=$((changed + 1))
-      log "CHANGED $wf_name -> $wf_template (preview only, use --apply to write)"
+      log "CHANGED $wf_name -> $wf_template_raw (preview only, use --apply to write)"
       rm -f "$tmp_new"
     fi
   done <<< "$selected"

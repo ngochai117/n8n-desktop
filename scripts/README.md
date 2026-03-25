@@ -13,7 +13,8 @@ Muc tieu: tach script theo domain de de quan ly khi so luong workflow tang.
   - `setup-cliproxy-oauth.sh`: setup OAuth + verify CLIProxy + import demo workflows (optional)
 
 - `scripts/workflows/import/`
-  - `import-gemini-demo-workflow.sh`: import/upsert generic workflow template (core importer)
+  - `import-workflow.sh`: import/upsert generic workflow template (core importer)
+  - `import-gemini-demo-workflow.sh`: wrapper import workflow Gemini demo
   - `import-shared-notification-router-workflow.sh`: wrapper import workflow notify router da kenh dung chung
   - `import-openai-demo-workflow.sh`: wrapper import workflow OpenAI demo
   - `import-book-review-workflow.sh`: wrapper import workflow book review + inject master prompt tu file prompt template
@@ -34,6 +35,7 @@ bash scripts/bootstrap/enable-full-mcp.sh
 
 bash scripts/cliproxy/setup-cliproxy-oauth.sh
 
+bash scripts/workflows/import/import-workflow.sh
 bash scripts/workflows/import/import-gemini-demo-workflow.sh
 bash scripts/workflows/import/import-shared-notification-router-workflow.sh
 bash scripts/workflows/import/import-openai-demo-workflow.sh
