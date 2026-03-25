@@ -69,6 +69,13 @@ set +a
 : "${CLIPROXY_BASE_URL:?CLIPROXY_BASE_URL is required}"
 : "${CLIPROXY_CLIENT_KEY:?CLIPROXY_CLIENT_KEY is required}"
 
+NOTIFY_TARGETS_DEFAULT="${NOTIFY_TARGETS:-telegram}"
+TELEGRAM_BOT_TOKEN_DEFAULT="${TELEGRAM_BOT_TOKEN:-}"
+TELEGRAM_CHAT_ID_DEFAULT="${TELEGRAM_CHAT_ID:-}"
+GG_CHAT_WEBHOOK_DEFAULT="${GG_CHAT_WEBHOOK:-}"
+TELEGRAM_BASE_URL_DEFAULT="${TELEGRAM_BASE_URL:-https://api.telegram.org}"
+TELEGRAM_CREDENTIAL_NAME_DEFAULT="${TELEGRAM_CREDENTIAL_NAME:-Local Telegram Bot}"
+
 if [ "$N8N_WORKFLOW_LIST_LIMIT" -gt 250 ]; then
   echo "N8N_WORKFLOW_LIST_LIMIT must be <= 250 (current: $N8N_WORKFLOW_LIST_LIMIT)" >&2
   exit 1
@@ -129,16 +136,122 @@ find_workflow_id_by_name() {
   '
 }
 
+find_telegram_credential_id_by_name() {
+  local credential_name="$1"
+
+  api_request GET "$N8N_API_URL/api/v1/credentials?limit=$N8N_WORKFLOW_LIST_LIMIT"
+  if [ "$API_LAST_HTTP_CODE" != "200" ]; then
+    echo "Failed to list credentials from n8n (HTTP $API_LAST_HTTP_CODE)." >&2
+    echo "$API_LAST_BODY" | jq . >&2 || echo "$API_LAST_BODY" >&2
+    exit 1
+  fi
+
+  echo "$API_LAST_BODY" | jq -r --arg credentialName "$credential_name" '
+    (
+      (.data // [])
+      | map(select(.type == "telegramApi" and .name == $credentialName))
+      | .[0].id
+    ) // empty
+  '
+}
+
+create_telegram_credential() {
+  local credential_name="$1"
+  local access_token="$2"
+  local base_url="$3"
+  local payload
+
+  payload="$(jq -n \
+    --arg name "$credential_name" \
+    --arg accessToken "$access_token" \
+    --arg baseUrl "$base_url" \
+    '{
+      name: $name,
+      type: "telegramApi",
+      data: {
+        accessToken: $accessToken,
+        baseUrl: $baseUrl
+      }
+    }')"
+
+  api_request POST "$N8N_API_URL/api/v1/credentials" "$payload"
+  if [ "$API_LAST_HTTP_CODE" != "200" ] && [ "$API_LAST_HTTP_CODE" != "201" ]; then
+    echo "Failed to create Telegram credential (HTTP $API_LAST_HTTP_CODE)." >&2
+    echo "$API_LAST_BODY" | jq . >&2 || echo "$API_LAST_BODY" >&2
+    exit 1
+  fi
+
+  echo "$API_LAST_BODY" | jq -r '.id // empty'
+}
+
+ensure_telegram_credential_id() {
+  local has_telegram_nodes="$1"
+  if [ "$has_telegram_nodes" != "true" ]; then
+    printf '%s\n' ""
+    return
+  fi
+
+  if [ -z "$TELEGRAM_BOT_TOKEN_DEFAULT" ]; then
+    echo "Workflow has Telegram nodes but TELEGRAM_BOT_TOKEN is empty in $N8N_ENV_FILE." >&2
+    exit 1
+  fi
+
+  local credential_id
+  credential_id="$(find_telegram_credential_id_by_name "$TELEGRAM_CREDENTIAL_NAME_DEFAULT")"
+  if [ -n "$credential_id" ]; then
+    printf '%s\n' "$credential_id"
+    return
+  fi
+
+  credential_id="$(create_telegram_credential \
+    "$TELEGRAM_CREDENTIAL_NAME_DEFAULT" \
+    "$TELEGRAM_BOT_TOKEN_DEFAULT" \
+    "$TELEGRAM_BASE_URL_DEFAULT")"
+
+  if [ -z "$credential_id" ]; then
+    echo "Created Telegram credential but missing id in response." >&2
+    exit 1
+  fi
+
+  log "Created Telegram credential: $TELEGRAM_CREDENTIAL_NAME_DEFAULT ($credential_id)"
+  printf '%s\n' "$credential_id"
+}
+
+has_telegram_nodes="$(
+  jq -r '[(.nodes // [])[] | select(.type == "n8n-nodes-base.telegram")] | length > 0' "$WORKFLOW_TEMPLATE"
+)"
+
+telegram_credential_id="$(ensure_telegram_credential_id "$has_telegram_nodes")"
+
 payload="$(jq \
   --arg base "$CLIPROXY_BASE_URL" \
   --arg key "$CLIPROXY_CLIENT_KEY" \
   --arg notifyPath "$SHARED_NOTIFICATION_ROUTER_PATH" \
+  --arg notifyTargets "$NOTIFY_TARGETS_DEFAULT" \
+  --arg telegramBotToken "$TELEGRAM_BOT_TOKEN_DEFAULT" \
+  --arg telegramChatId "$TELEGRAM_CHAT_ID_DEFAULT" \
+  --arg ggChatWebhook "$GG_CHAT_WEBHOOK_DEFAULT" \
+  --arg telegramCredentialId "$telegram_credential_id" \
+  --arg telegramCredentialName "$TELEGRAM_CREDENTIAL_NAME_DEFAULT" \
   '
   (.nodes[] | select(.name=="Set Config") | .parameters.assignments.assignments[] | select(.name=="cliproxy_base_url") | .value) = $base
   | (.nodes[] | select(.name=="Set Config") | .parameters.assignments.assignments[] | select(.name=="cliproxy_client_key") | .value) = $key
+  | (.nodes[]? | select(.name=="Set Notify Targets") | .parameters.includeOtherFields) = true
+  | (.nodes[]? | select(.name=="Set Notify Targets") | .parameters.assignments.assignments[]? | select(.name=="notify_targets") | .value) = $notifyTargets
+  | (.nodes[]? | select(.name=="Set Notify Targets") | .parameters.assignments.assignments[]? | select(.name=="telegram_bot_token") | .value) = $telegramBotToken
+  | (.nodes[]? | select(.name=="Set Notify Targets") | .parameters.assignments.assignments[]? | select(.name=="telegram_chat_id") | .value) = $telegramChatId
+  | (.nodes[]? | select(.name=="Set Notify Targets") | .parameters.assignments.assignments[]? | select(.name=="ggchat_webhook_url") | .value) = $ggChatWebhook
   | (.nodes[] | select(.name=="Notify via Shared Workflow") | .parameters.source) = "localFile"
   | (.nodes[] | select(.name=="Notify via Shared Workflow") | .parameters.workflowPath) = $notifyPath
   | (.nodes[] | select(.name=="Notify via Shared Workflow") | .parameters) |= del(.workflowId)
+  | if $telegramCredentialId != "" then
+      (.nodes[]? | select(.type=="n8n-nodes-base.telegram") | .credentials.telegramApi) = {
+        id: $telegramCredentialId,
+        name: $telegramCredentialName
+      }
+    else
+      .
+    end
   | .settings = (
       (.settings // {})
       | {

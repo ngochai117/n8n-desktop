@@ -108,29 +108,30 @@
             {
               "id": "5-1",
               "name": "notify_targets",
-              "value": "telegram",
+              "value": "__NOTIFY_TARGETS__",
               "type": "string"
             },
             {
               "id": "5-2",
               "name": "telegram_chat_id",
-              "value": "",
+              "value": "__TELEGRAM_CHAT_ID__",
               "type": "string"
             },
             {
               "id": "5-3",
               "name": "ggchat_webhook_url",
-              "value": "",
+              "value": "__GG_CHAT_WEBHOOK__",
               "type": "string"
             },
             {
               "id": "5-4",
               "name": "telegram_bot_token",
-              "value": "",
+              "value": "__TELEGRAM_BOT_TOKEN__",
               "type": "string"
             }
           ]
-        }
+        },
+        "includeOtherFields": true
       }
     },
     {
@@ -157,7 +158,7 @@
       ],
       "parameters": {
         "source": "localFile",
-        "workflowPath": "__SHARED_NOTIFICATION_ROUTER_PATH__",
+        "workflowPath": "/Users/hai.nguyen8/work/topmedia/code/n8n-desktop/workflows/shared-notification-router.workflow.json",
         "mode": "once",
         "options": {
           "waitForSubWorkflow": true
@@ -236,6 +237,8 @@
   },
   "settings": {
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "executionOrder": "v1",
+    "binaryMode": "separate"
   }
 }

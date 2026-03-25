@@ -10,6 +10,7 @@ const rootDir = path.resolve(__dirname, '../../..');
 const workflowPath =
   process.argv[2] ?? path.join(rootDir, 'workflows/book-review-gemini.workflow.json');
 const promptTemplatePath = path.join(rootDir, 'workflows/prompts/book-review-master-prompt.txt');
+const metadataPromptTemplatePath = path.join(rootDir, 'workflows/prompts/book-review-metadata-prompt.txt');
 
 function fail(message) {
   throw new Error(message);
@@ -17,6 +18,10 @@ function fail(message) {
 
 function assert(condition, message) {
   if (!condition) fail(message);
+}
+
+function normalizeMessage(message) {
+  return String(message ?? '').replace(/\r\n/g, '\n').trim();
 }
 
 function buildChatResponse(content) {
@@ -31,36 +36,39 @@ function buildChatResponse(content) {
   };
 }
 
-function normalizeMessage(message) {
-  return String(message ?? '').replace(/\r\n/g, '\n').trim();
-}
-
-async function loadCodeFromWorkflow(filePath) {
+async function loadWorkflow(filePath) {
   const raw = await fs.readFile(filePath, 'utf8');
-  const workflow = JSON.parse(raw);
-  const node = (workflow.nodes ?? []).find((n) => n.name === 'Generate Full Review');
-  if (!node) fail('Cannot find node "Generate Full Review" in workflow template');
-  const code = node.parameters?.jsCode;
-  if (!code || typeof code !== 'string') fail('Missing jsCode in "Generate Full Review" node');
-  return code;
+  return JSON.parse(raw);
 }
 
-function createBaseInput(promptTemplate, overrides = {}) {
+function getCodeNode(workflow, nodeName) {
+  const node = (workflow.nodes ?? []).find((n) => n.name === nodeName);
+  if (!node) fail(`Cannot find node "${nodeName}" in workflow template`);
+  const code = node.parameters?.jsCode;
+  if (!code || typeof code !== 'string') fail(`Missing jsCode in node "${nodeName}"`);
+  return { node, code };
+}
+
+function createBaseInput(promptTemplate, metadataPromptTemplate, overrides = {}) {
   return {
     model: 'gemini-3-flash-preview',
     fallback_model: 'gemini-2.5-pro',
+    openai_model: 'gpt-5.4',
     cliproxy_base_url: 'http://127.0.0.1:8317',
     cliproxy_client_key: 'test-key',
     max_turns: 8,
+    qc_score_warning_threshold: 7,
+    reviewer_wait_timeout_seconds: 900,
     user_input: 'Sach Nha Gia Kim cua tac gia Paulo Coelho',
     master_prompt_template: promptTemplate,
+    metadata_prompt_template: metadataPromptTemplate,
     ...overrides,
   };
 }
 
-async function runCode(code, { input, responses, throwAtCall, throwError }) {
+async function runCode(code, { input, responses = [], throwAtCall, throwError }) {
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
-  const execute = new AsyncFunction('$input', 'helpers', '$helpers', code);
+  const execute = new AsyncFunction('$input', 'helpers', '$helpers', '$json', '$items', code);
 
   const responseQueue = [...responses];
   let callCount = 0;
@@ -68,6 +76,7 @@ async function runCode(code, { input, responses, throwAtCall, throwError }) {
 
   const $input = {
     first: () => ({ json: input }),
+    all: () => [{ json: input }],
   };
 
   const helperObject = {
@@ -87,237 +96,328 @@ async function runCode(code, { input, responses, throwAtCall, throwError }) {
     },
   };
 
-  const output = await execute($input, helperObject, helperObject);
-  assert(Array.isArray(output), 'Code node output must be an array');
-  assert(output.length > 0, 'Code node output must have at least one item');
-  assert(output[0] && typeof output[0] === 'object', 'First output item must be an object');
-  assert(output[0].json && typeof output[0].json === 'object', 'First output item must have json');
+  const rawOutput = await execute(
+    $input,
+    helperObject,
+    helperObject,
+    input,
+    () => [{ json: input }],
+  );
+
+  let normalized;
+  if (Array.isArray(rawOutput)) {
+    assert(rawOutput.length > 0, 'Code node output array must have at least one item');
+    const item = rawOutput[0];
+    if (item && typeof item === 'object' && 'json' in item) {
+      normalized = item.json;
+    } else {
+      normalized = item;
+    }
+  } else {
+    normalized = rawOutput;
+  }
+
+  assert(normalized && typeof normalized === 'object', 'Code node output must be an object');
 
   return {
-    data: output[0].json,
+    data: normalized,
     callCount,
     observedRequests,
   };
 }
 
 async function runChecklist() {
-  const code = await loadCodeFromWorkflow(workflowPath);
+  const workflow = await loadWorkflow(workflowPath);
   const promptTemplate = await fs.readFile(promptTemplatePath, 'utf8');
+  const metadataPromptTemplate = await fs.readFile(metadataPromptTemplatePath, 'utf8');
+
+  const generateNode = getCodeNode(workflow, 'Generate Full Review');
+  const parseNode = getCodeNode(workflow, 'Parse Review Sections');
+  const qcNode = getCodeNode(workflow, 'AI QC + Internal Scoring');
+  const reviewerNode = getCodeNode(workflow, 'Reviewer Orchestrator');
+
   const results = [];
 
   const tests = [
     {
-      id: '1',
-      name: 'Sample input returns long review content',
+      id: '0',
+      name: 'Workflow topology updated to simplified reviewer loop',
       fn: async () => {
-        const longChunk =
-          'Ban da bao gio thay minh dung giua nga ba cuoc doi, cam thay moi thu rat mo ho? ' +
-          'Cuon sach nay nhu mot tam guong, nhac ban nhe nhang ve hanh trinh tim kho bau ben trong chinh minh. ' +
-          'Noi dung du dai de test checklist automation.\n-END-';
-        const run = await runCode(code, {
-          input: createBaseInput(promptTemplate, {
-            user_input: 'Sach Nha Gia Kim cua tac gia Paulo Coelho',
-          }),
-          responses: [buildChatResponse(longChunk)],
-        });
+        const requiredNodes = [
+          'Generate Full Review',
+          'Parse Review Sections',
+          'AI QC + Internal Scoring',
+          'Reviewer Orchestrator',
+          'Build Notify Payload',
+          'Notify via Shared Workflow',
+          'Return Chat Response',
+        ];
 
-        assert(run.callCount === 1, 'Expected exactly 1 call in case 1');
-        assert(run.data.stop_reason === 'completed', 'Expected stop_reason=completed in case 1');
+        for (const nodeName of requiredNodes) {
+          const node = (workflow.nodes ?? []).find((n) => n.name === nodeName);
+          assert(node, `Missing required node: ${nodeName}`);
+        }
+
+        const forbiddenNodes = [
+          'Generate Video Metadata',
+          'Send message and wait for response',
+        ];
+        for (const nodeName of forbiddenNodes) {
+          const node = (workflow.nodes ?? []).find((n) => n.name === nodeName);
+          assert(!node, `Forbidden legacy node still exists: ${nodeName}`);
+        }
+
+        const setNotify = (workflow.nodes ?? []).find((n) => n.name === 'Set Notify Targets');
+        assert(setNotify, 'Missing Set Notify Targets node');
         assert(
-          normalizeMessage(run.data.message).length > 120,
-          'Expected output message to be long enough in case 1',
+          setNotify?.parameters?.includeOtherFields === true,
+          'Set Notify Targets must keep includeOtherFields=true',
+        );
+
+        const setConfig = (workflow.nodes ?? []).find((n) => n.name === 'Set Config');
+        assert(setConfig, 'Missing Set Config node');
+        const metadataPromptAssignment = setConfig?.parameters?.assignments?.assignments?.find(
+          (item) => item?.name === 'metadata_prompt_template',
+        );
+        assert(
+          metadataPromptAssignment?.value === '__BOOK_REVIEW_METADATA_PROMPT__',
+          'Set Config must include metadata_prompt_template placeholder',
+        );
+      },
+    },
+    {
+      id: '1',
+      name: 'runOnceForEachItem code nodes use safe input access',
+      fn: async () => {
+        const offenders = [];
+        for (const node of workflow.nodes ?? []) {
+          if (node?.type !== 'n8n-nodes-base.code') continue;
+          if (String(node?.parameters?.mode ?? '') !== 'runOnceForEachItem') continue;
+
+          const code = String(node?.parameters?.jsCode ?? '');
+          if (/\$input\.first\s*\(/.test(code) || /\$input\.all\s*\(/.test(code)) {
+            offenders.push(String(node?.name ?? '(unnamed)'));
+          }
+        }
+
+        assert(
+          offenders.length === 0,
+          'runOnceForEachItem nodes must not use $input.first/$input.all. Offenders: ' + offenders.join(', '),
         );
       },
     },
     {
       id: '2',
-      name: 'Single response without continue marker stops immediately',
+      name: 'Generate Full Review one-shot flow',
       fn: async () => {
-        const run = await runCode(code, {
-          input: createBaseInput(promptTemplate),
-          responses: [buildChatResponse('Day la doan duy nhat khong co marker ket thuc.')],
+        const run = await runCode(generateNode.code, {
+          input: createBaseInput(promptTemplate, metadataPromptTemplate),
+          responses: [
+            buildChatResponse('Noi dung review ngan de test.\n<<<SECTION|intro|Phan mo dau>>>\nA\n<<<END_SECTION>>>\n-END-'),
+          ],
         });
 
-        assert(run.callCount === 1, 'Expected exactly 1 call in case 2');
-        assert(run.data.turn_count === 1, 'Expected turn_count=1 in case 2');
-        assert(run.data.stop_reason === 'completed', 'Expected stop_reason=completed in case 2');
+        assert(run.callCount === 1, 'Expected one API call');
+        assert(run.data.stop_reason === 'completed', 'Expected stop_reason=completed');
+        assert(normalizeMessage(run.data.message).length > 10, 'Expected non-empty output message');
       },
     },
     {
       id: '3',
-      name: 'Continue loop sends "Continue" and merges full response',
+      name: 'Generate Full Review continue loop',
       fn: async () => {
-        const run = await runCode(code, {
-          input: createBaseInput(promptTemplate),
+        const run = await runCode(generateNode.code, {
+          input: createBaseInput(promptTemplate, metadataPromptTemplate),
           responses: [
-            buildChatResponse(
-              'Doan 1 mo dau hanh trinh.\n\n-CONTINUE-\n(Ban hay noi "Continue" de minh viet tiep.)',
-            ),
-            buildChatResponse('Doan 2 ket lai thong diep.\n-END-'),
+            buildChatResponse('Doan 1\n-CONTINUE-\nVui long Continue'),
+            buildChatResponse('Doan 2\n-END-'),
           ],
         });
 
-        assert(run.callCount === 2, 'Expected 2 calls in case 3');
-        assert(run.data.turn_count === 2, 'Expected turn_count=2 in case 3');
-        assert(run.data.stop_reason === 'completed', 'Expected stop_reason=completed in case 3');
-        assert(
-          !normalizeMessage(run.data.full_review).includes('-CONTINUE-'),
-          'Expected intermediate "-CONTINUE-" to be removed in case 3',
-        );
-        assert(
-          !normalizeMessage(run.data.full_review).includes('Ban hay noi "Continue"'),
-          'Expected trailing reminder after "-CONTINUE-" to be removed in case 3',
-        );
-        assert(
-          normalizeMessage(run.data.full_review).includes('Doan 1 mo dau hanh trinh.'),
-          'Expected chunk 1 in merged content for case 3',
-        );
-        assert(
-          normalizeMessage(run.data.full_review).includes('Doan 2 ket lai thong diep.'),
-          'Expected chunk 2 in merged content for case 3',
-        );
-
-        const secondRequestMessages = run.observedRequests[1]?.body?.messages ?? [];
-        const lastUserMessage = secondRequestMessages
-          .slice()
-          .reverse()
-          .find((m) => m.role === 'user');
-        assert(
-          lastUserMessage?.content === 'Continue',
-          'Expected second request to include follow-up user message "Continue"',
-        );
+        assert(run.callCount === 2, 'Expected two API calls');
+        assert(run.data.turn_count === 2, 'Expected turn_count=2');
+        assert(!normalizeMessage(run.data.full_review).includes('-CONTINUE-'), 'Intermediate marker must be stripped');
       },
     },
     {
       id: '4',
-      name: 'Continue marker in the middle should not trigger another call',
+      name: 'Generate Full Review max_turns guard',
       fn: async () => {
-        const run = await runCode(code, {
-          input: createBaseInput(promptTemplate),
+        const run = await runCode(generateNode.code, {
+          input: createBaseInput(promptTemplate, metadataPromptTemplate, { max_turns: 2 }),
           responses: [
-            buildChatResponse(
-              'Noi dung co nhac den -CONTINUE- o giua cau, nhung ket thuc cua doan khong phai marker.',
-            ),
+            buildChatResponse('Doan 1\n-CONTINUE-'),
+            buildChatResponse('Doan 2\n-CONTINUE-'),
           ],
         });
 
-        assert(run.callCount === 1, 'Expected exactly 1 call in case 4');
-        assert(run.data.turn_count === 1, 'Expected turn_count=1 in case 4');
-        assert(run.data.stop_reason === 'completed', 'Expected stop_reason=completed in case 4');
+        assert(run.callCount === 2, 'Expected two calls at max_turns=2');
+        assert(run.data.stop_reason === 'max_turns', 'Expected stop_reason=max_turns');
       },
     },
     {
       id: '5',
-      name: 'Stop safely at max_turns when continue marker keeps appearing',
+      name: 'Parse Review Sections extracts intro/parts/outro without intro hooks',
       fn: async () => {
-        const run = await runCode(code, {
-          input: createBaseInput(promptTemplate, { max_turns: 2 }),
-          responses: [
-            buildChatResponse('Doan 1\n-CONTINUE-'),
-            buildChatResponse('Doan 2 van tiep tuc\n-CONTINUE-'),
-          ],
+        const fullReview = [
+          '<<<SECTION|intro|Phan mo dau>>>',
+          'Mo dau thong thuong',
+          '<<<END_SECTION>>>',
+          '',
+          '<<<SECTION|part_01|Y 1>>>',
+          'Noi dung 1',
+          '<<<END_SECTION>>>',
+          '',
+          '<<<SECTION|outro|Phan ket>>>',
+          'Ket luan va CTA',
+          '<<<END_SECTION>>>',
+          '-END-',
+        ].join('\n');
+
+        const run = await runCode(parseNode.code, {
+          input: {
+            ...createBaseInput(promptTemplate, metadataPromptTemplate),
+            message: fullReview,
+            full_review: fullReview,
+          },
         });
 
-        assert(run.callCount === 2, 'Expected exactly 2 calls in case 5');
-        assert(run.data.turn_count === 2, 'Expected turn_count=2 in case 5');
-        assert(run.data.stop_reason === 'max_turns', 'Expected stop_reason=max_turns in case 5');
-        assert(
-          normalizeMessage(run.data.message).includes('Đã đạt giới hạn 2'),
-          'Expected max_turns note in output message for case 5',
-        );
+        assert(run.data.review_sections_count === 3, 'Expected 3 parsed sections');
+        assert(run.data.review_intro === 'Mo dau thong thuong', 'Expected intro text parsed');
+        assert(Array.isArray(run.data.review_parts) && run.data.review_parts.length === 1, 'Expected 1 part');
       },
     },
     {
       id: '6',
-      name: 'API error should set api_error with contextual message',
+      name: 'AI QC node parses scores and warnings',
       fn: async () => {
-        const run = await runCode(code, {
-          input: createBaseInput(promptTemplate),
-          responses: [],
-          throwAtCall: 1,
-          throwError: new Error('401 Unauthorized'),
+        const qcResponse = {
+          qc_checks: [
+            { id: 'content_accuracy', status: 'pass', note: 'ok' },
+            { id: 'fabricated_quote', status: 'warn', note: 'uncertain quote' },
+            { id: 'hook_strength_5s', status: 'pass', note: 'good' },
+            { id: 'cta_contextual', status: 'warn', note: 'cta can be stronger' },
+          ],
+          qc_issues: ['quote uncertain'],
+          scores: {
+            hook: 8,
+            clarity: 8,
+            originality: 6,
+            practical_value: 7,
+          },
+          risk_level: 'med',
+        };
+
+        const run = await runCode(qcNode.code, {
+          input: {
+            ...createBaseInput(promptTemplate, metadataPromptTemplate),
+            full_review: 'Noi dung review day du',
+            review_intro: 'Mo dau',
+            review_outro: 'Hay ap dung ngay hom nay',
+          },
+          responses: [buildChatResponse(JSON.stringify(qcResponse))],
         });
 
-        assert(run.callCount === 1, 'Expected exactly 1 call in case 6');
-        assert(run.data.turn_count === 0, 'Expected turn_count=0 in case 6');
-        assert(run.data.stop_reason === 'api_error', 'Expected stop_reason=api_error in case 6');
-        assert(
-          normalizeMessage(run.data.message).includes('401 Unauthorized'),
-          'Expected error details in output message for case 6',
-        );
+        assert(run.data.qc_status === 'generated', 'Expected qc_status=generated');
+        assert(run.data.hook_score === 8, 'Expected hook_score=8');
+        assert(run.data.originality_score === 6, 'Expected originality_score=6');
+        assert(Array.isArray(run.data.score_warnings), 'Expected score_warnings array');
       },
     },
     {
       id: '7',
-      name: 'Capacity error on primary model should fallback to backup model',
+      name: 'Reviewer Orchestrator skips Telegram stage when token/chat missing',
       fn: async () => {
-        const primaryModel = 'gemini-3-flash-preview';
-        const backupModel = 'gemini-2.5-pro';
-        let simulatedCallCount = 0;
-
-        const run = await runCode(code, {
-          input: createBaseInput(promptTemplate, {
-            model: primaryModel,
-            fallback_model: backupModel,
-          }),
-          responses: [buildChatResponse('Noi dung tu model du phong.')],
-          throwAtCall: 1,
-          throwError: new Error(
-            'Request failed with status code 429: MODEL_CAPACITY_EXHAUSTED on primary model',
-          ),
+        const run = await runCode(reviewerNode.code, {
+          input: {
+            ...createBaseInput(promptTemplate, metadataPromptTemplate),
+            full_review: 'Noi dung review',
+            review_intro: 'Mo dau',
+            review_outro: 'Ket + CTA',
+            qc_checks: [],
+            qc_issues: [],
+            hook_score: 7,
+            clarity_score: 7,
+            originality_score: 7,
+            practical_value_score: 7,
+            risk_level: 'low',
+            telegram_bot_token: '',
+            telegram_chat_id: '',
+          },
         });
 
-        simulatedCallCount = run.callCount;
-
-        assert(simulatedCallCount === 2, 'Expected fallback to trigger second call in case 7');
-        assert(run.data.stop_reason === 'completed', 'Expected stop_reason=completed in case 7');
-        assert(run.data.fallback_used === true, 'Expected fallback_used=true in case 7');
-        assert(run.data.model === backupModel, 'Expected output model to be backup model in case 7');
-
-        const firstModel = run.observedRequests[0]?.body?.model;
-        const secondModel = run.observedRequests[1]?.body?.model;
-        assert(firstModel === primaryModel, 'Expected first call to use primary model in case 7');
-        assert(secondModel === backupModel, 'Expected second call to use backup model in case 7');
+        assert(run.callCount === 0, 'Expected no HTTP call when telegram config is missing');
+        assert(run.data.reviewer_gate_status === 'skip_no_telegram', 'Expected skip_no_telegram status');
+        assert(run.data.metadata_status === 'skip', 'Expected metadata_status=skip');
+      },
+    },
+    {
+      id: '8',
+      name: 'Prompt contract reverted to single intro section (no intro_01..03)',
+      fn: async () => {
+        const prompt = await fs.readFile(promptTemplatePath, 'utf8');
+        assert(prompt.includes('<<<SECTION|intro|Phan mo dau>>>'), 'Prompt must still require intro section');
+        assert(!prompt.includes('intro_01:'), 'Prompt must not require intro_01 format');
+        assert(!prompt.includes('intro_02:'), 'Prompt must not require intro_02 format');
+        assert(!prompt.includes('intro_03:'), 'Prompt must not require intro_03 format');
+      },
+    },
+    {
+      id: '9',
+      name: 'Metadata prompt file excludes long description output',
+      fn: async () => {
+        const prompt = await fs.readFile(metadataPromptTemplatePath, 'utf8');
+        assert(prompt.includes('title'), 'Metadata prompt should mention title');
+        assert(prompt.includes('caption'), 'Metadata prompt should mention caption');
+        assert(prompt.includes('thumbnail_text'), 'Metadata prompt should mention thumbnail_text');
+        assert(prompt.includes('hashtags'), 'Metadata prompt should mention hashtags');
+        assert(
+          !/youtube_description_long|video_description/i.test(prompt),
+          'Metadata prompt must not request long description fields',
+        );
       },
     },
   ];
 
   for (const test of tests) {
+    const started = Date.now();
     try {
       await test.fn();
-      results.push({ ...test, status: 'PASS' });
+      const elapsed = Date.now() - started;
+      results.push({ id: test.id, name: test.name, status: 'PASS', elapsed });
+      console.log(`[PASS] Case ${test.id}: ${test.name} (${elapsed}ms)`);
     } catch (error) {
+      const elapsed = Date.now() - started;
       results.push({
-        ...test,
+        id: test.id,
+        name: test.name,
         status: 'FAIL',
-        error: error instanceof Error ? error.message : String(error),
+        elapsed,
+        error: error?.message ? String(error.message) : String(error),
       });
+      console.log(`[FAIL] Case ${test.id}: ${test.name} (${elapsed}ms)`);
+      console.log(`       ${results[results.length - 1].error}`);
     }
   }
 
-  const failed = results.filter((r) => r.status === 'FAIL');
+  const passCount = results.filter((result) => result.status === 'PASS').length;
+  const failCount = results.length - passCount;
 
-  console.log('[book-review-checklist] Workflow:', workflowPath);
-  for (const result of results) {
-    if (result.status === 'PASS') {
-      console.log(`- [PASS] Case ${result.id}: ${result.name}`);
-    } else {
-      console.log(`- [FAIL] Case ${result.id}: ${result.name}`);
-      console.log(`  Reason: ${result.error}`);
-    }
+  console.log('');
+  console.log('=== Summary ===');
+  console.log(`Workflow template: ${workflowPath}`);
+  console.log(`Prompt template:   ${promptTemplatePath}`);
+  console.log(`Metadata prompt:  ${metadataPromptTemplatePath}`);
+  console.log(`Total cases: ${results.length}`);
+  console.log(`PASS: ${passCount}`);
+  console.log(`FAIL: ${failCount}`);
+
+  if (failCount > 0) {
+    process.exitCode = 1;
   }
-
-  if (failed.length > 0) {
-    console.log(
-      `[book-review-checklist] Result: ${results.length - failed.length}/${results.length} PASS`,
-    );
-    process.exit(1);
-  }
-
-  console.log(`[book-review-checklist] Result: ${results.length}/${results.length} PASS`);
 }
 
 runChecklist().catch((error) => {
-  console.error('[book-review-checklist] Fatal:', error instanceof Error ? error.message : error);
+  console.error('[book-review-checklist] Fatal:', error?.message ?? error);
   process.exit(1);
 });

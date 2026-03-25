@@ -27,3 +27,11 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 - Removed deprecated import aliases `import-shared-desktop-notify-workflow.sh` and `import-shared-notify-workflow.sh`.
 - Updated rules/docs to reference only `Shared Notification Router` and canonical import script.
 - Deleted legacy workflow `Shared Desktop Notify` from n8n (`z3jShmBEcC7nQ246`).
+
+## 2026-03-25T17:18:23Z
+- Workflow sync (UI -> JSON) updated 1 workflow(s).
+- Changed: Book Review Gemini via CLIProxyAPI. Run mode=apply, total=1, unchanged=0, failed=0.
+
+## 2026-03-25T18:43:49Z
+- Workflow sync (UI -> JSON) completed with no file changes.
+- Run mode=apply, total=1, changed=0, unchanged=1, failed=0.

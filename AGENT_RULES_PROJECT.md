@@ -48,3 +48,9 @@ Project: `n8n-desktop`
 - Moi workflow trong project phai goi workflow notify dung chung o cuoi pipeline.
 - Workflow notify dung chung mac dinh: `Shared Notification Router`.
 - Notification phai bao gom status `success/failed` va noi dung dong tu workflow chinh (khong hard-code thong diep co dinh).
+
+## 8) n8n Code-node mode safety (bat buoc)
+- Neu node Code dung `mode=runOnceForEachItem`, uu tien doc input item hien tai bang `$json`.
+- Khong dung `$input.first()` hoac `$input.all()` trong `runOnceForEachItem` (de tranh runtime error: `Can't use .first() here`).
+- Chi dung `$input.first()`/`$input.all()` khi node o `mode=runOnceForAllItems`.
+- Truoc khi ket luan da fix workflow, chay checklist automation de bat loi mode-access regression.
