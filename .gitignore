@@ -1,0 +1,14 @@
+.DS_Store
+.idea/
+.vscode/
+*.log
+*.swp
+*.swo
+*.tmp
+
+# Local-only secrets and machine-specific config
+.mcp.json
+env.*.local
+
+# Bootstrap/download artifacts
+.vendor/

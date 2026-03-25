@@ -1,0 +1,13 @@
+host: "__HOST__"
+port: __PORT__
+remote-management:
+  allow-remote: true
+  secret-key: "__MANAGEMENT_KEY__"
+auth-dir: "__AUTH_DIR__"
+api-keys:
+  - "__CLIENT_KEY__"
+debug: false
+request-retry: 3
+quota-exceeded:
+  switch-project: true
+  switch-preview-model: true

@@ -1,0 +1,228 @@
+{
+  "name": "Book Review Gemini via CLIProxyAPI",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -560,
+        0
+      ],
+      "parameters": {
+        "public": false,
+        "mode": "hostedChat",
+        "options": {
+          "responseMode": "lastNode",
+          "inputPlaceholder": "Nhập tên sách và tác giả..."
+        }
+      }
+    },
+    {
+      "id": "2",
+      "name": "Set Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -300,
+        0
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2-1",
+              "name": "model",
+              "value": "gemini-3-flash-preview",
+              "type": "string"
+            },
+            {
+              "id": "2-2",
+              "name": "cliproxy_base_url",
+              "value": "__CLIPROXY_BASE_URL__",
+              "type": "string"
+            },
+            {
+              "id": "2-3",
+              "name": "cliproxy_client_key",
+              "value": "__CLIPROXY_CLIENT_KEY__",
+              "type": "string"
+            },
+            {
+              "id": "2-4",
+              "name": "max_turns",
+              "value": 8,
+              "type": "number"
+            },
+            {
+              "id": "2-5",
+              "name": "user_input",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "2-6",
+              "name": "fallback_model",
+              "value": "gemini-2.5-pro",
+              "type": "string"
+            },
+            {
+              "id": "2-7",
+              "name": "master_prompt_template",
+              "value": "__BOOK_REVIEW_MASTER_PROMPT__",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "3",
+      "name": "Generate Full Review",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -20,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const input = $input.first()?.json ?? {};\n\nconst primaryModel = String(input.model ?? 'gemini-3-flash-preview').trim();\nconst fallbackModel = String(input.fallback_model ?? 'gemini-2.5-pro').trim();\nconst model = primaryModel || 'gemini-3-flash-preview';\nconst cliproxyBaseUrl = String(input.cliproxy_base_url ?? '').replace(/\\/$/, '');\nconst cliproxyClientKey = String(input.cliproxy_client_key ?? '');\nconst userInput = String(input.user_input ?? '').trim();\nconst masterPromptTemplate = String(input.master_prompt_template ?? '').trim();\nconst maxTurnsRaw = Number(input.max_turns ?? 8);\nconst maxTurns = Number.isFinite(maxTurnsRaw) && maxTurnsRaw > 0\n  ? Math.floor(maxTurnsRaw)\n  : 8;\nconst requestHelper =\n  helpers?.httpRequest ??\n  (typeof $helpers !== 'undefined' ? $helpers?.httpRequest : undefined);\n\nfunction detectControlTag(value) {\n  const text = String(value ?? '').replace(/\\r\\n/g, '\\n');\n  const lines = text.split('\\n');\n\n  let cursor = 0;\n  let foundTag = null;\n\n  for (const line of lines) {\n    const markerMatch = line.match(/^\\s*-\\s*(CONTINUE|END)\\s*-\\s*$/i);\n    if (markerMatch) {\n      const markerOffset = line.search(/-/);\n      const markerStart = cursor + (markerOffset >= 0 ? markerOffset : 0);\n      const markerEnd = cursor + line.length;\n      foundTag = {\n        type: markerMatch[1].toLowerCase(),\n        start: markerStart,\n        end: markerEnd,\n      };\n    }\n\n    cursor += line.length + 1;\n  }\n\n  return foundTag;\n}\n\nfunction stripControlTag(value, controlTag, options = {}) {\n  const text = String(value ?? '').replace(/\\r\\n/g, '\\n').trimEnd();\n  if (!controlTag) {\n    return text;\n  }\n\n  if (controlTag.type === 'end' && options.keepEndTag === true) {\n    return text.slice(0, controlTag.end).trimEnd();\n  }\n\n  return text.slice(0, controlTag.start).trimEnd();\n}\n\nfunction shouldFallbackForCapacity(errorMessage) {\n  const text = String(errorMessage ?? '');\n  return /429|RESOURCE_EXHAUSTED|MODEL_CAPACITY_EXHAUSTED|No capacity available|cooling down/i.test(text);\n}\n\nfunction buildMasterPrompt(template, bookInput) {\n  return String(template ?? '').replaceAll('{{USER_INPUT}}', String(bookInput ?? ''));\n}\n\nif (!userInput) {\n  return [{\n    json: {\n      message: 'Vui lòng nhập tên sách và tác giả trong chat. Ví dụ: Sách Nhà Giả Kim của tác giả Paulo Coelho.',\n      full_review: '',\n      turn_count: 0,\n      stop_reason: 'completed',\n      model,\n      user_input: userInput,\n    },\n  }];\n}\n\nif (!cliproxyBaseUrl || !cliproxyClientKey) {\n  return [{\n    json: {\n      message: 'Thiếu cấu hình CLIProxy (base URL hoặc client key).',\n      full_review: '',\n      turn_count: 0,\n      stop_reason: 'api_error',\n      model,\n      user_input: userInput,\n    },\n  }];\n}\n\nif (!masterPromptTemplate) {\n  return [{\n    json: {\n      message: 'Thiếu master prompt template (field `master_prompt_template`).',\n      full_review: '',\n      turn_count: 0,\n      stop_reason: 'api_error',\n      model,\n      user_input: userInput,\n    },\n  }];\n}\n\nif (typeof requestHelper !== 'function') {\n  return [{\n    json: {\n      message: 'Thiếu helper HTTP trong Code node runtime (cần `helpers.httpRequest`).',\n      full_review: '',\n      turn_count: 0,\n      stop_reason: 'api_error',\n      model,\n      user_input: userInput,\n    },\n  }];\n}\n\nconst masterPrompt = buildMasterPrompt(masterPromptTemplate, userInput);\nconst messages = [{ role: 'user', content: masterPrompt }];\nconst chunks = [];\n\nlet stopReason = 'completed';\nlet apiError = '';\nlet turnCount = 0;\nlet activeModel = model;\nlet fallbackUsed = false;\n\nfor (let turn = 1; turn <= maxTurns; turn += 1) {\n  try {\n    const candidateModels =\n      activeModel === primaryModel &&\n      fallbackModel &&\n      fallbackModel !== primaryModel\n        ? [primaryModel, fallbackModel]\n        : [activeModel];\n\n    let response;\n    let lastError;\n    for (let idx = 0; idx < candidateModels.length; idx += 1) {\n      const candidateModel = candidateModels[idx];\n      try {\n        response = await requestHelper({\n          method: 'POST',\n          url: `${cliproxyBaseUrl}/v1/chat/completions`,\n          headers: {\n            Authorization: `Bearer ${cliproxyClientKey}`,\n          },\n          body: {\n            model: candidateModel,\n            messages,\n            stream: false,\n          },\n          json: true,\n          timeout: 240000,\n        });\n        if (candidateModel !== activeModel) {\n          fallbackUsed = true;\n        }\n        activeModel = candidateModel;\n        break;\n      } catch (error) {\n        lastError = error;\n        const errorText = error?.message ? String(error.message) : String(error);\n        const canTryFallback =\n          candidateModel === primaryModel &&\n          fallbackModel &&\n          fallbackModel !== primaryModel &&\n          shouldFallbackForCapacity(errorText);\n        if (canTryFallback) {\n          continue;\n        }\n        throw error;\n      }\n    }\n\n    if (!response) {\n      throw (lastError ?? new Error('Không nhận được response từ model.'));\n    }\n\n    turnCount = turn;\n\n    const chunk = String(response?.choices?.[0]?.message?.content ?? '').trim();\n    if (!chunk) {\n      break;\n    }\n\n    const controlTag = detectControlTag(chunk);\n    chunks.push({\n      content: chunk,\n      controlTag,\n    });\n    messages.push({ role: 'assistant', content: chunk });\n\n    if (controlTag?.type === 'continue') {\n      if (turn >= maxTurns) {\n        stopReason = 'max_turns';\n        break;\n      }\n\n      messages.push({ role: 'user', content: 'Continue' });\n      continue;\n    }\n\n    if (controlTag?.type === 'end') {\n      break;\n    }\n\n    break;\n  } catch (error) {\n    stopReason = 'api_error';\n    apiError = error?.message ? String(error.message) : String(error);\n    break;\n  }\n}\n\nconst mergedChunks = chunks\n  .map((chunk, index) => {\n    const isLast = index === chunks.length - 1;\n    const keepEndTag = isLast && chunk.controlTag?.type === 'end';\n    return stripControlTag(chunk.content, chunk.controlTag, { keepEndTag });\n  })\n  .filter((chunk) => chunk !== '');\n\nconst fullReview = mergedChunks.join('\\n\\n').trim();\nlet message = fullReview;\n\nif (stopReason === 'max_turns') {\n  const note = `[Lưu ý: Đã đạt giới hạn ${maxTurns} lượt gọi \"Continue\".]`;\n  message = fullReview ? `${fullReview}\\n\\n${note}` : note;\n} else if (stopReason === 'api_error') {\n  const note = apiError\n    ? `[Lỗi gọi Gemini (${activeModel}): ${apiError}]`\n    : '[Lỗi gọi Gemini: Không rõ nguyên nhân.]';\n  message = fullReview ? `${fullReview}\\n\\n${note}` : note;\n}\n\nif (!message) {\n  message = 'Không nhận được nội dung từ Gemini.';\n}\n\nreturn [{\n  json: {\n    message,\n    full_review: fullReview,\n    turn_count: turnCount,\n    stop_reason: stopReason,\n    model: activeModel,\n    fallback_model: fallbackModel || null,\n    fallback_used: fallbackUsed,\n    user_input: userInput,\n  },\n}];\n"
+      }
+    },
+    {
+      "id": "4",
+      "name": "Set Notify Targets",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4-1",
+              "name": "notify_targets",
+              "value": "telegram",
+              "type": "string"
+            },
+            {
+              "id": "4-2",
+              "name": "telegram_chat_id",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "4-3",
+              "name": "ggchat_webhook_url",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "4-4",
+              "name": "telegram_bot_token",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "5",
+      "name": "Build Notify Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const stopReason = String($json.stop_reason ?? 'unknown');\nconst status = stopReason === 'completed' ? 'success' : 'failed';\nconst turnCount = Number($json.turn_count ?? 0);\nconst userInput = String($json.user_input ?? '').trim();\nconst summary = status === 'success'\n  ? `Book review completed in ${turnCount} turn(s).`\n  : `Book review ended with stop_reason=${stopReason}.`;\n\nconst detailsParts = [\n  $json.model ? `model=${$json.model}` : null,\n  `turn_count=${turnCount}`,\n  `stop_reason=${stopReason}`,\n  userInput ? `user_input=${userInput.slice(0, 120)}` : null\n].filter(Boolean);\n\nif ($json.fallback_used === true && $json.fallback_model) {\n  detailsParts.push(`fallback_used=${$json.fallback_model}`);\n}\n\nconst message = String($json.message ?? '').trim();\nif (message) {\n  detailsParts.push(`message=${message.slice(0, 220)}`);\n}\n\nreturn [{\n  json: {\n    status,\n    source_workflow: 'Book Review Gemini via CLIProxyAPI',\n    summary,\n    details: detailsParts.join(' | '),\n    notify_targets: String($json.notify_targets ?? 'telegram'),\n    telegram_bot_token: String($json.telegram_bot_token ?? '').trim(),\n    telegram_chat_id: String($json.telegram_chat_id ?? '').trim(),\n    ggchat_webhook_url: String($json.ggchat_webhook_url ?? '').trim(),\n    timestamp: new Date().toISOString()\n  }\n}];"
+      }
+    },
+    {
+      "id": "6",
+      "name": "Notify via Shared Workflow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [
+        780,
+        0
+      ],
+      "parameters": {
+        "source": "localFile",
+        "workflowPath": "__SHARED_NOTIFICATION_ROUTER_PATH__",
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Set Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Config": {
+      "main": [
+        [
+          {
+            "node": "Generate Full Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Full Review": {
+      "main": [
+        [
+          {
+            "node": "Set Notify Targets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Notify Targets": {
+      "main": [
+        [
+          {
+            "node": "Build Notify Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Notify Payload": {
+      "main": [
+        [
+          {
+            "node": "Notify via Shared Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
+}
