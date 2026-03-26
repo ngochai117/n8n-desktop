@@ -11,6 +11,14 @@ Muc tieu cua project: chay n8n local, dung MCP + skills de build workflow, va ti
 - Dung `env.n8n.local.example` va `env.cliproxy.local.example` lam mau de tao env local tren tung may.
 - `workflow-registry.json`, scripts, workflows, docs va file `.example` la thanh phan cua repo va nen duoc version control.
 
+## Sub-agent playbook
+- Khi task la `feature work`, uu tien 1 main agent giu critical path va toi da 3 sub-agent song song:
+  - 1 `explorer` de map impact + rules bat buoc.
+  - 1 `worker` cho shell/import/sync/bootstrap neu co automation change.
+  - 1 `worker` cho checklist/test harness hoac verification path.
+- Khong chia 2 worker cung sua 1 workflow JSON lon neu ownership chua duoc khoa ro; main agent nen giu phan workflow integration neu do la tam diem cua task.
+- Playbook day du, prompt mau va checklist spawn nam trong `RULES_AND_SKILLS.md` (Skill H).
+
 ## Quick Start
 1. Bootstrap n8n + n8n-mcp + n8n-skills:
 ```bash
@@ -183,6 +191,7 @@ Book review chat pipeline:
 - `When chat message received` (`Chat Trigger`)
 - `Set Config` (model/fallback_model/base url/client key/max turns/user input va cac prompt template: master/metadata/qc/review-edit)
 - `Code` node goi Gemini theo vong lap, auto gui `"Continue"` khi gap control tag `-CONTINUE-` (line marker)
+- `Parse Review Sections` noi thang sang `Set Notify Targets`; bo node pass-through `AI QC + Internal Scoring` de giam do phuc tap topology.
 - Chunk cuoi duoc dong bo theo control tag `-END-`; chunk trung gian se cat bo phan tu marker tro ve sau
 - Neu gap `429` capacity o model chinh, node tu dong fallback sang model du phong
 - Tra output cuoi cung qua field `message` (response mode `lastNode`)
@@ -252,7 +261,7 @@ bash scripts/workflows/tests/run-book-review-e2e.sh env.n8n.local env.cliproxy.l
 - `AGENTS.md`: entrypoint chuan cho AI agents
 - `AGENT_RULES_GLOBAL.md`: rules dung chung (global)
 - `AGENT_RULES_PROJECT.md`: rules rieng cua project
-- `RULES_AND_SKILLS.md`: operational playbooks/skills
+- `RULES_AND_SKILLS.md`: operational playbooks/skills (gom ca sub-agent delegation playbook cho feature work)
 - `CHANGELOG.md`: changelog chi tiet (tu dong append khi sync workflow --apply)
 - `.mcp.json`: config MCP project-level
 - `env.n8n.local.example`: mau env n8n

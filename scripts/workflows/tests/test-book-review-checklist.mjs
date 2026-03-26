@@ -151,7 +151,6 @@ async function runChecklist() {
 
   const generateNode = getCodeNode(workflow, 'Generate Full Review');
   const parseNode = getCodeNode(workflow, 'Parse Review Sections');
-  const qcNode = getCodeNode(workflow, 'AI QC + Internal Scoring');
   const reviewerNode = getCodeNode(workflow, 'Reviewer Orchestrator');
 
   const results = [];
@@ -164,7 +163,6 @@ async function runChecklist() {
         const requiredNodes = [
           'Generate Full Review',
           'Parse Review Sections',
-          'AI QC + Internal Scoring',
           'Reviewer Orchestrator',
           'Build Notify Payload',
           'Notify via Shared Workflow',
@@ -179,6 +177,7 @@ async function runChecklist() {
         const forbiddenNodes = [
           'Generate Video Metadata',
           'Send message and wait for response',
+          'AI QC + Internal Scoring',
         ];
         for (const nodeName of forbiddenNodes) {
           const node = (workflow.nodes ?? []).find((n) => n.name === nodeName);
@@ -228,6 +227,13 @@ async function runChecklist() {
         assert(
           reviewerTargets.includes('Return Chat Response'),
           'Reviewer Orchestrator must connect directly to Return Chat Response',
+        );
+
+        const parseTargets =
+          workflow?.connections?.['Parse Review Sections']?.main?.[0]?.map((edge) => edge?.node) ?? [];
+        assert(
+          parseTargets.includes('Set Notify Targets'),
+          'Parse Review Sections must connect directly to Set Notify Targets',
         );
       },
     },
@@ -335,22 +341,6 @@ async function runChecklist() {
     },
     {
       id: '6',
-      name: 'AI QC node is pass-through (QC centralized in Reviewer Orchestrator)',
-      fn: async () => {
-        const run = await runCode(qcNode.code, {
-          input: {
-            ...createBaseInput(promptTemplate, metadataPromptTemplate),
-            full_review: 'Noi dung review day du va da parse',
-            marker: 'keep-this',
-          },
-        });
-
-        assert(run.callCount === 0, 'AI QC pass-through must not call HTTP directly');
-        assert(run.data.marker === 'keep-this', 'AI QC pass-through must keep input fields');
-      },
-    },
-    {
-      id: '7',
       name: 'Reviewer Orchestrator skips Telegram stage when token/chat missing',
       fn: async () => {
         const qcResponse = {
@@ -390,7 +380,7 @@ async function runChecklist() {
       },
     },
     {
-      id: '8',
+      id: '7',
       name: 'Prompt contract reverted to single intro section (no intro_01..03)',
       fn: async () => {
         const prompt = await fs.readFile(promptTemplatePath, 'utf8');
@@ -401,7 +391,7 @@ async function runChecklist() {
       },
     },
     {
-      id: '9',
+      id: '8',
       name: 'Metadata prompt file excludes long description output',
       fn: async () => {
         const prompt = await fs.readFile(metadataPromptTemplatePath, 'utf8');

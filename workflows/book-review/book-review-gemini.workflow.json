@@ -142,20 +142,6 @@
       }
     },
     {
-      "id": "8",
-      "name": "AI QC + Internal Scoring",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        440,
-        0
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\n// QC logic is centralized in Reviewer Orchestrator.runQc to avoid drift.\nreturn {\n  ...input,\n};\n"
-      }
-    },
-    {
       "id": "4",
       "name": "Set Notify Targets",
       "type": "n8n-nodes-base.set",
@@ -293,17 +279,6 @@
       ]
     },
     "Parse Review Sections": {
-      "main": [
-        [
-          {
-            "node": "AI QC + Internal Scoring",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "AI QC + Internal Scoring": {
       "main": [
         [
           {

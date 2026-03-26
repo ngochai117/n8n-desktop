@@ -95,7 +95,6 @@ required_nodes=(
   "Set Config"
   "Generate Full Review"
   "Parse Review Sections"
-  "AI QC + Internal Scoring"
   "Reviewer Orchestrator"
   "Return Chat Response"
 )

@@ -62,3 +62,13 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 ## 2026-03-25T18:43:49Z
 - Workflow sync (UI -> JSON) completed with no file changes.
 - Run mode=apply, total=1, changed=0, unchanged=1, failed=0.
+
+## 2026-03-26T00:00:00Z
+- Added a sub-agent delegation playbook for feature work in `RULES_AND_SKILLS.md` (Skill H).
+- Documented the recommended split of `explorer` / `worker` (script) / `worker` (test) and when not to parallelize around shared workflow JSON.
+- Updated `README.md` to point agents to the new playbook so delegation strategy is visible from the main runbook.
+
+## 2026-03-26
+- Simplified `book-review-gemini` topology by removing pass-through node `AI QC + Internal Scoring`; `Parse Review Sections` now connects directly to `Set Notify Targets`.
+- Updated automation checks to match new topology (`test-book-review-checklist.mjs`, `run-book-review-e2e.sh`) and enforced direct connection assertion.
+- Updated workflow documentation to reflect the 9-node flow.

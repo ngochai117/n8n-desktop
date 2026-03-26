@@ -14,12 +14,11 @@
 2. `Set Config`
 3. `Generate Full Review`
 4. `Parse Review Sections`
-5. `AI QC + Internal Scoring`
-6. `Set Notify Targets`
-7. `Reviewer Orchestrator`
-8. `Build Notify Payload`
-9. `Notify via Shared Workflow`
-10. `Return Chat Response`
+5. `Set Notify Targets`
+6. `Reviewer Orchestrator`
+7. `Build Notify Payload`
+8. `Notify via Shared Workflow`
+9. `Return Chat Response`
 
 ## Reviewer Orchestrator
 - Gui preview review + diem QC len Telegram.
