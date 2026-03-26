@@ -47,7 +47,7 @@ bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply
 ```
 - Mac dinh preview-only.
 - Dung `--apply` de ghi de template theo state UI moi nhat.
-- `--apply` mac dinh se auto log vao `CHANGELOG.md` va `README` Update Log.
+- `--apply` mac dinh se auto log vao `CHANGELOG.md`.
 
 ### Skill F: Storage audit + git cleanup an toan
 Thong ke nhanh dung luong:

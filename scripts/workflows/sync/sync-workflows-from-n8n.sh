@@ -5,7 +5,6 @@ ROOT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
 N8N_ENV_FILE="${N8N_ENV_FILE:-$ROOT_DIR/env.n8n.local}"
 WORKFLOW_REGISTRY_FILE="${WORKFLOW_REGISTRY_FILE:-$ROOT_DIR/workflow-registry.json}"
 CHANGELOG_FILE="${CHANGELOG_FILE:-$ROOT_DIR/CHANGELOG.md}"
-README_FILE="${README_FILE:-$ROOT_DIR/README.md}"
 
 APPLY="false"
 ONLY_NAME=""
@@ -32,7 +31,7 @@ Options:
   --apply               Write changes to workflow JSON files.
   --name <workflow>     Sync only one workflow by name (registry key).
   --id <workflow-id>    Sync only one workflow by n8n ID.
-  --no-log              Do not append entries to CHANGELOG.md/README.md.
+  --no-log              Do not append entries to CHANGELOG.md.
   -h, --help            Show this help.
 
 Default mode is preview only (no file writes).
@@ -119,12 +118,6 @@ ensure_changelog_file() {
 
 Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automation scripts).
 EOT
-}
-
-append_update_log_to_readme() {
-  local file="$1"
-  local line="$2"
-  printf '%s\n' "$line" >> "$file"
 }
 
 append_changelog_entry() {
@@ -252,8 +245,7 @@ main() {
   log "Summary total=$total changed=$changed unchanged=$unchanged failed=$failed mode=$( [ "$APPLY" = "true" ] && echo apply || echo preview )"
 
   if [ "$APPLY" = "true" ] && [ "$WRITE_LOG" = "true" ]; then
-    local ts_date ts_iso summary details readme_line
-    ts_date="$(date +%Y-%m-%d)"
+    local ts_iso summary details
     ts_iso="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
     if [ -z "$changed_names" ]; then
@@ -267,12 +259,7 @@ main() {
     ensure_changelog_file "$CHANGELOG_FILE"
     append_changelog_entry "$CHANGELOG_FILE" "$ts_iso" "$summary" "$details"
 
-    if [ -f "$README_FILE" ]; then
-      readme_line="- $ts_date: Sync workflow templates tu n8n UI ve JSON (apply, changed=$changed, unchanged=$unchanged, failed=$failed). Chi tiet: \`CHANGELOG.md\`."
-      append_update_log_to_readme "$README_FILE" "$readme_line"
-    fi
-
-    log "Logged run to $CHANGELOG_FILE and README Update Log."
+    log "Logged run to $CHANGELOG_FILE."
   fi
 
   if [ "$failed" -gt 0 ]; then
