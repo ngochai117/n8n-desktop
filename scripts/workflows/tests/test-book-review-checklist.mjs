@@ -405,6 +405,88 @@ async function runChecklist() {
         );
       },
     },
+    {
+      id: '9',
+      name: 'Reviewer Orchestrator parses new QC schema (hook/clarity/originality/practical/risk/feedback)',
+      fn: async () => {
+        const qcResponse = {
+          hook: 8.5,
+          clarity: 7.5,
+          originality: 8,
+          practical: 7,
+          risk: 'low',
+          feedback:
+            'Mở bài đã chạm đúng nỗi đau nhưng phần bridge cần tăng độ cụ thể bằng 1-2 tình huống đời sống rõ nét hơn để người nghe áp dụng ngay.',
+        };
+
+        const run = await runCode(reviewerNode.code, {
+          input: {
+            ...createBaseInput(promptTemplate, metadataPromptTemplate),
+            full_review: 'Noi dung review',
+            review_intro: 'Mo dau',
+            review_outro: 'Ket + CTA',
+            telegram_bot_token: '',
+            telegram_chat_id: '',
+          },
+          responses: [buildChatResponse(JSON.stringify(qcResponse))],
+        });
+
+        assert(run.data.qc_status === 'generated', 'Expected qc_status=generated for new QC schema');
+        assert(run.data.hook_score === 8.5, 'Expected hook_score from top-level hook field');
+        assert(run.data.practical_value_score === 7, 'Expected practical_value_score from top-level practical field');
+        assert(run.data.risk_level === 'low', 'Expected risk_level normalized from risk field');
+        assert(
+          normalizeMessage(run.data.feedback).length > 0,
+          'Expected reviewer feedback extracted from new QC schema',
+        );
+      },
+    },
+    {
+      id: '10',
+      name: 'Revise review prompt includes injected master prompt with input-limit clipping',
+      fn: async () => {
+        const code = reviewerNode.code;
+        assert(
+          code.includes('buildMasterPrompt(masterPromptTemplate, userInput)'),
+          'Reviewer Orchestrator should inject user_input into master prompt for revise flow',
+        );
+        assert(
+          code.includes('master_prompt_injected'),
+          'Revise payload should include master_prompt_injected context',
+        );
+        assert(
+          code.includes('clipContextText('),
+          'Reviewer Orchestrator should include clipping helper to reduce input-limit risk',
+        );
+        assert(
+          code.includes('master_prompt_truncated') && code.includes('current_review_truncated'),
+          'Revise payload should expose truncation flags for master prompt/review',
+        );
+      },
+    },
+    {
+      id: '11',
+      name: 'Revise review flow sends full payload first, then retries with clipping on context-limit errors',
+      fn: async () => {
+        const code = reviewerNode.code;
+        assert(
+          code.includes('function shouldRetryWithTrimmedContext(errorMessage)'),
+          'Reviewer Orchestrator should detect context-limit style errors',
+        );
+        assert(
+          code.includes('return await callRevise(fullPrompt);'),
+          'Revise flow should attempt full payload first',
+        );
+        assert(
+          code.includes('if (!shouldRetryWithTrimmedContext(errorText))'),
+          'Revise flow should only fallback to clipping when context-limit errors are detected',
+        );
+        assert(
+          code.includes('const clippedPrompt = buildRevisePrompt('),
+          'Revise flow should build clipped payload for retry path',
+        );
+      },
+    },
   ];
 
   for (const test of tests) {

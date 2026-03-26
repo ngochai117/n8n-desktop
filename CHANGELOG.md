@@ -72,3 +72,11 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 - Simplified `book-review-gemini` topology by removing pass-through node `AI QC + Internal Scoring`; `Parse Review Sections` now connects directly to `Set Notify Targets`.
 - Updated automation checks to match new topology (`test-book-review-checklist.mjs`, `run-book-review-e2e.sh`) and enforced direct connection assertion.
 - Updated workflow documentation to reflect the 9-node flow.
+
+## 2026-03-26T11:00:24Z
+- Workflow sync (UI -> JSON) completed with no file changes.
+- Run mode=apply, total=4, changed=0, unchanged=4, failed=0.
+
+## 2026-03-26T11:01:14Z
+- Workflow sync (UI -> JSON) updated 1 workflow(s).
+- Changed: Book Review Gemini via CLIProxyAPI. Run mode=apply, total=4, unchanged=3, failed=0.

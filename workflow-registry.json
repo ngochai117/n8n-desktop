@@ -3,7 +3,7 @@
     "Demo Gemini via CLIProxyAPI": {
       "id": "eKVjShNKmbjf4T8a",
       "template": "workflows/demo/gemini-cliproxy-demo.workflow.json",
-      "lastSyncedAt": "2026-03-26T02:54:08Z"
+      "lastSyncedAt": "2026-03-26T11:02:24Z"
     },
     "Demo OpenAI via CLIProxyAPI": {
       "id": "x62qzfGcBeqrfueM",
@@ -13,7 +13,7 @@
     "Book Review Gemini via CLIProxyAPI": {
       "id": "zjmoz6mGCLL89Asx",
       "template": "workflows/book-review/book-review-gemini.workflow.json",
-      "lastSyncedAt": "2026-03-26T09:12:14Z"
+      "lastSyncedAt": "2026-03-26T11:12:06Z"
     },
     "Shared Notification Router": {
       "id": "2oIMm0rwQPf8j4oC",
