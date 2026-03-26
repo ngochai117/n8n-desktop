@@ -38,7 +38,7 @@ bash scripts/workflows/import/import-openai-demo-workflow.sh
 bash scripts/workflows/import/import-book-review-workflow.sh
 ```
 - Da la upsert theo rules o tren (khong tao trung vo toi va).
-- Cac workflow demo se tu dong bind `Notify via Shared Workflow` theo `source=localFile` den template `workflows/shared-notification-router.workflow.json`.
+- Cac workflow demo se tu dong bind `Notify via Shared Workflow` theo `source=localFile` den template `workflows/shared/shared-notification-router.workflow.json`.
 
 ### Skill E: Sync workflow tu n8n UI ve JSON
 ```bash

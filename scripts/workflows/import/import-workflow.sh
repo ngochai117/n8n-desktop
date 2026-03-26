@@ -4,11 +4,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
 N8N_ENV_FILE_INPUT="${1:-env.n8n.local}"
 CLIPROXY_ENV_FILE_INPUT="${2:-env.cliproxy.local}"
-WORKFLOW_TEMPLATE_INPUT="${3:-workflows/gemini-cliproxy-demo.workflow.json}"
+WORKFLOW_TEMPLATE_INPUT="${3:-workflows/demo/gemini-cliproxy-demo.workflow.json}"
 REGISTRY_TEMPLATE_INPUT="${WORKFLOW_REGISTRY_TEMPLATE:-$WORKFLOW_TEMPLATE_INPUT}"
 WORKFLOW_REGISTRY_FILE="${WORKFLOW_REGISTRY_FILE:-$ROOT_DIR/workflow-registry.json}"
 N8N_WORKFLOW_LIST_LIMIT="${N8N_WORKFLOW_LIST_LIMIT:-250}"
-SHARED_NOTIFICATION_ROUTER_PATH="${SHARED_NOTIFICATION_ROUTER_PATH:-$ROOT_DIR/workflows/shared-notification-router.workflow.json}"
+SHARED_NOTIFICATION_ROUTER_PATH="${SHARED_NOTIFICATION_ROUTER_PATH:-$ROOT_DIR/workflows/shared/shared-notification-router.workflow.json}"
 
 resolve_path() {
   local path_input="$1"

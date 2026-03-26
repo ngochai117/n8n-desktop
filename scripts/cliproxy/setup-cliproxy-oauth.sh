@@ -318,14 +318,14 @@ main() {
   verify_proxy "$CLIPROXY_BASE_URL" "$CLIPROXY_CLIENT_KEY"
 
   if [ "$SKIP_WORKFLOW_IMPORT" = "false" ] && [ -f "$ROOT_DIR/env.n8n.local" ]; then
-    if [ -f "$ROOT_DIR/workflows/gemini-cliproxy-demo.workflow.json" ]; then
+    if [ -f "$ROOT_DIR/workflows/demo/gemini-cliproxy-demo.workflow.json" ]; then
       log "Importing Gemini demo workflow into n8n"
-      bash "$ROOT_DIR/scripts/workflows/import/import-gemini-demo-workflow.sh" "$ROOT_DIR/env.n8n.local" "$ENV_FILE" "$ROOT_DIR/workflows/gemini-cliproxy-demo.workflow.json"
+      bash "$ROOT_DIR/scripts/workflows/import/import-gemini-demo-workflow.sh" "$ROOT_DIR/env.n8n.local" "$ENV_FILE" "$ROOT_DIR/workflows/demo/gemini-cliproxy-demo.workflow.json"
     fi
 
-    if [ -f "$ROOT_DIR/workflows/openai-cliproxy-demo.workflow.json" ]; then
+    if [ -f "$ROOT_DIR/workflows/demo/openai-cliproxy-demo.workflow.json" ]; then
       log "Importing OpenAI demo workflow into n8n"
-      bash "$ROOT_DIR/scripts/workflows/import/import-openai-demo-workflow.sh" "$ROOT_DIR/env.n8n.local" "$ENV_FILE" "$ROOT_DIR/workflows/openai-cliproxy-demo.workflow.json"
+      bash "$ROOT_DIR/scripts/workflows/import/import-openai-demo-workflow.sh" "$ROOT_DIR/env.n8n.local" "$ENV_FILE" "$ROOT_DIR/workflows/demo/openai-cliproxy-demo.workflow.json"
     fi
   else
     log "Skipped workflow import"

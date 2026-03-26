@@ -147,10 +147,27 @@ curl -sS -H "Authorization: Bearer $CLIPROXY_CLIENT_KEY" "$CLIPROXY_BASE_URL/v1/
 
 ## Workflow demo Gemini + OpenAI + Book Review Chat
 Template workflows:
-- `workflows/shared-notification-router.workflow.json`
-- `workflows/gemini-cliproxy-demo.workflow.json`
-- `workflows/openai-cliproxy-demo.workflow.json`
-- `workflows/book-review-gemini.workflow.json`
+- `workflows/shared/shared-notification-router.workflow.json`
+- `workflows/demo/gemini-cliproxy-demo.workflow.json`
+- `workflows/demo/openai-cliproxy-demo.workflow.json`
+- `workflows/book-review/book-review-gemini.workflow.json`
+
+Workflow folder structure:
+```text
+workflows/
+  book-review/
+    prompts/
+      book-review-master-prompt.txt
+      book-review-metadata-prompt.txt
+      book-review-qc-prompt.txt
+      book-review-review-edit-prompt.txt
+    book-review-gemini.workflow.json
+  demo/
+    gemini-cliproxy-demo.workflow.json
+    openai-cliproxy-demo.workflow.json
+  shared/
+    shared-notification-router.workflow.json
+```
 
 Pipeline:
 - `Manual Trigger`
@@ -164,13 +181,15 @@ Pipeline:
 
 Book review chat pipeline:
 - `When chat message received` (`Chat Trigger`)
-- `Set Config` (model/fallback_model/base url/client key/max turns/user input/master prompt template)
+- `Set Config` (model/fallback_model/base url/client key/max turns/user input va cac prompt template: master/metadata/qc/review-edit)
 - `Code` node goi Gemini theo vong lap, auto gui `"Continue"` khi gap control tag `-CONTINUE-` (line marker)
 - Chunk cuoi duoc dong bo theo control tag `-END-`; chunk trung gian se cat bo phan tu marker tro ve sau
 - Neu gap `429` capacity o model chinh, node tu dong fallback sang model du phong
 - Tra output cuoi cung qua field `message` (response mode `lastNode`)
-- Master prompt duoc tach rieng tai: `workflows/prompts/book-review-master-prompt.txt` (placeholder `{{USER_INPUT}}`)
-- Metadata prompt duoc tach rieng tai: `workflows/prompts/book-review-metadata-prompt.txt`
+- Master prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-master-prompt.txt` (placeholder `{{USER_INPUT}}`)
+- Metadata prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-metadata-prompt.txt`
+- QC prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-qc-prompt.txt`
+- Review-edit prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-review-edit-prompt.txt`
 - Cuoi workflow co `Set Notify Targets` + build payload + goi `Shared Notification Router` cho ca success/failed
 
 Quy tac import/update:
@@ -194,8 +213,8 @@ bash scripts/workflows/sync/sync-workflows-from-n8n.sh --name "Demo Gemini via C
 # Apply nhung khong ghi changelog/readme
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply --no-log
 ```
-- Script se sanitize truong nhay cam (`cliproxy_base_url`, `cliproxy_client_key`) ve placeholder truoc khi ghi file.
-- `workflow-registry.json` nen luu `template` dang duong dan tuong doi (vi du: `workflows/book-review-gemini.workflow.json`) de tranh vo path khi doi ten folder project.
+- Script se sanitize truong nhay cam (`cliproxy_base_url`, `cliproxy_client_key`) va `Notify via Shared Workflow.workflowPath` ve placeholder truoc khi ghi file.
+- `workflow-registry.json` nen luu `template` dang duong dan tuong doi (vi du: `workflows/book-review/book-review-gemini.workflow.json`) de tranh vo path khi doi ten folder project.
 - Khi chay `--apply` (mac dinh), script se auto append log vao `CHANGELOG.md` va `README.md > Update Log`.
 
 Import thu cong neu can:
@@ -207,9 +226,11 @@ bash scripts/workflows/import/import-openai-demo-workflow.sh
 bash scripts/workflows/import/import-book-review-workflow.sh
 # or custom prompt files:
 bash scripts/workflows/import/import-book-review-workflow.sh \
-  env.n8n.local env.cliproxy.local workflows/book-review-gemini.workflow.json \
-  workflows/prompts/book-review-master-prompt.txt \
-  workflows/prompts/book-review-metadata-prompt.txt
+  env.n8n.local env.cliproxy.local workflows/book-review/book-review-gemini.workflow.json \
+  workflows/book-review/prompts/book-review-master-prompt.txt \
+  workflows/book-review/prompts/book-review-metadata-prompt.txt \
+  workflows/book-review/prompts/book-review-qc-prompt.txt \
+  workflows/book-review/prompts/book-review-review-edit-prompt.txt
 ```
 
 Automation checklist test (book review workflow):
@@ -249,12 +270,14 @@ bash scripts/workflows/tests/run-book-review-e2e.sh env.n8n.local env.cliproxy.l
 - `scripts/workflows/tests/test-book-review-checklist.sh`: chay full automation checklist cho workflow review sach
 - `scripts/workflows/tests/test-book-review-checklist.mjs`: test runner chi tiet cho checklist automation
 - `scripts/workflows/tests/run-book-review-e2e.sh`: e2e runner book review (patch test webhook -> run -> auto restore)
-- `workflows/gemini-cliproxy-demo.workflow.json`: workflow demo template
-- `workflows/openai-cliproxy-demo.workflow.json`: workflow OpenAI demo template
-- `workflows/book-review-gemini.workflow.json`: workflow review sach qua chat + auto "Continue"
-- `workflows/shared-notification-router.workflow.json`: workflow notify router da kenh (telegram/ggchat)
-- `workflows/prompts/book-review-master-prompt.txt`: master prompt nguon de edit de dang
-- `workflows/prompts/book-review-metadata-prompt.txt`: metadata prompt nguon de edit title/caption/thumbnail/hashtags
+- `workflows/demo/gemini-cliproxy-demo.workflow.json`: workflow demo template
+- `workflows/demo/openai-cliproxy-demo.workflow.json`: workflow OpenAI demo template
+- `workflows/book-review/book-review-gemini.workflow.json`: workflow review sach qua chat + auto "Continue"
+- `workflows/shared/shared-notification-router.workflow.json`: workflow notify router da kenh (telegram/ggchat)
+- `workflows/book-review/prompts/book-review-master-prompt.txt`: master prompt nguon de edit de dang
+- `workflows/book-review/prompts/book-review-metadata-prompt.txt`: metadata prompt nguon de edit title/caption/thumbnail/hashtags
+- `workflows/book-review/prompts/book-review-qc-prompt.txt`: prompt QC danh gia noi dung/diem/rui ro
+- `workflows/book-review/prompts/book-review-review-edit-prompt.txt`: prompt revise ban review theo instruction reviewer
 
 ## Troubleshooting nhanh
 - `cliproxyapi` chua len service:
@@ -289,7 +312,7 @@ bash scripts/workflows/tests/run-book-review-e2e.sh env.n8n.local env.cliproxy.l
 - 2026-03-25: Chuyen default Gemini sang `gemini-3-flash-preview` va them fallback `gemini-2.5-pro` cho workflow review sach khi gap capacity `429`. Ly do: giam loi `MODEL_CAPACITY_EXHAUSTED` tren model pro preview.
 - 2026-03-25: Import script sanitize `settings` truoc khi upsert workflow (giu `callerPolicy`/`availableInMCP`) de tranh loi `request/body/settings must NOT have additional properties` sau khi sync tu UI. Ly do: tang do on dinh cho vong lap UI -> JSON -> import.
 - 2026-03-25: Tai cau truc thu muc `scripts/` theo domain (`bootstrap`, `cliproxy`, `workflows/{import,sync,tests}`) va cap nhat toan bo references. Ly do: giam roi, de mo rong khi so workflow/script tang.
-- 2026-03-25: Tach master prompt workflow book review ra file rieng (`workflows/prompts/book-review-master-prompt.txt`) va inject vao workflow luc import. Ly do: de edit prompt ma khong phai sua `jsCode` dai trong JSON.
+- 2026-03-25: Tach master prompt workflow book review ra file rieng (`workflows/book-review/prompts/book-review-master-prompt.txt`) va inject vao workflow luc import. Ly do: de edit prompt ma khong phai sua `jsCode` dai trong JSON.
 - 2026-03-25: Them workflow notify dung chung `Shared Desktop Notify`, noi 3 workflow demo vao notify success/failed voi noi dung dong, va cap nhat importer de auto bind `workflowPath` cho node `Notify via Shared Workflow` (source `localFile`). Ly do: nhan noti tren may nhat quan ma khong can hard-code moi workflow.
 - 2026-03-25: Doi ten script import notify sang `import-shared-desktop-notify-workflow.sh` va bo sung nhanh Telegram notify song song trong `Shared Desktop Notify` (auto-skip neu chua cau hinh token/chat). Ly do: dong bo naming va mo rong kenh thong bao.
 - 2026-03-25: Refactor notify chung thanh `Shared Notification Router`, them routing theo `notify_targets` (desktop/telegram/ggchat) va them `Set Notify Targets` tren tung workflow de de tuy chinh kenh nhan. Ly do: de mo rong them kenh moi va tuy bien theo workflow ma khong sua logic notify trung tam.
@@ -298,3 +321,4 @@ bash scripts/workflows/tests/run-book-review-e2e.sh env.n8n.local env.cliproxy.l
 - 2026-03-25: Tach core importer thanh `scripts/workflows/import/import-workflow.sh`; cac wrapper (`import-gemini/openai/shared/book-review`) deu goi lai core nay. Ly do: dat ten trung lap ro hon va de mo rong them workflow moi.
 - 2026-03-26: Sync workflow templates tu n8n UI ve JSON (apply, changed=1, unchanged=0, failed=0). Chi tiet: `CHANGELOG.md`.
 - 2026-03-26: Sync workflow templates tu n8n UI ve JSON (apply, changed=0, unchanged=1, failed=0). Chi tiet: `CHANGELOG.md`.
+- 2026-03-26: Fix workflow book-review: tra chat response truc tiep tu `Reviewer Orchestrator`, gom QC ve 1 nguon logic trong orchestrator (node AI QC giu pass-through), va sanitize `workflowPath` ve placeholder trong templates/sync script. Ly do: tranh mat metadata o response, tranh drift QC, va bo absolute path theo may local.

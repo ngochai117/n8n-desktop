@@ -17,7 +17,7 @@ Muc tieu: tach script theo domain de de quan ly khi so luong workflow tang.
   - `import-gemini-demo-workflow.sh`: wrapper import workflow Gemini demo
   - `import-shared-notification-router-workflow.sh`: wrapper import workflow notify router da kenh dung chung
   - `import-openai-demo-workflow.sh`: wrapper import workflow OpenAI demo
-  - `import-book-review-workflow.sh`: wrapper import workflow book review + inject master prompt va metadata prompt tu file template
+  - `import-book-review-workflow.sh`: wrapper import workflow book review + inject toan bo prompt template (master/metadata/qc/review-edit)
 
 - `scripts/workflows/sync/`
   - `sync-workflows-from-n8n.sh`: sync workflow state tu n8n UI ve file JSON template
@@ -43,9 +43,11 @@ bash scripts/workflows/import/import-openai-demo-workflow.sh
 bash scripts/workflows/import/import-book-review-workflow.sh
 # optional custom prompt template for book-review:
 bash scripts/workflows/import/import-book-review-workflow.sh \
-  env.n8n.local env.cliproxy.local workflows/book-review-gemini.workflow.json \
-  workflows/prompts/book-review-master-prompt.txt \
-  workflows/prompts/book-review-metadata-prompt.txt
+  env.n8n.local env.cliproxy.local workflows/book-review/book-review-gemini.workflow.json \
+  workflows/book-review/prompts/book-review-master-prompt.txt \
+  workflows/book-review/prompts/book-review-metadata-prompt.txt \
+  workflows/book-review/prompts/book-review-qc-prompt.txt \
+  workflows/book-review/prompts/book-review-review-edit-prompt.txt
 
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply

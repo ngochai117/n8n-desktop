@@ -9,6 +9,7 @@ Project: `n8n-desktop`
 - Neu ID trong registry da archived/khong ton tai: bo qua ID do.
 - Neu chua co ID hop le: tim theo `name` (chi lay workflow non-archived), tim thay thi update, khong thay moi tao moi.
 - Neu workflow vua duoc sua tren UI, uu tien sync nguoc ve JSON truoc khi AI sua tiep: `bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply`.
+- Moi lan agent sua bat ky file workflow JSON nao (trong `workflows/*.workflow.json`), bat buoc chay lai script import workflow tuong ung de cap nhat state tren n8n truoc khi ket luan da xong.
 
 ## 2) Model policy
 - Uu tien model moi nhat/manh nhat khi cap nhat demo.
@@ -54,3 +55,9 @@ Project: `n8n-desktop`
 - Khong dung `$input.first()` hoac `$input.all()` trong `runOnceForEachItem` (de tranh runtime error: `Can't use .first() here`).
 - Chi dung `$input.first()`/`$input.all()` khi node o `mode=runOnceForAllItems`.
 - Truoc khi ket luan da fix workflow, chay checklist automation de bat loi mode-access regression.
+
+## 9) AI prompt externalization policy (bat buoc)
+- Moi prompt AI moi (system/template prompt) phai duoc tach thanh file `.txt` rieng trong thu muc prompt theo workflow: `workflows/<workflow>/prompts/`.
+- Khong hard-code prompt dai truc tiep trong workflow JSON neu prompt do co the quan ly qua file.
+- Prompt file phai duoc inject vao workflow qua `Set Config` + script import wrapper tuong ung.
+- Khi sync workflow tu UI ve JSON, script sanitizer phai tra ve placeholder cho cac field prompt template de tranh drift/noise.

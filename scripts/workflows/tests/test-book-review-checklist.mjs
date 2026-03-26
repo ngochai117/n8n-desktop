@@ -8,9 +8,23 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '../../..');
 const workflowPath =
-  process.argv[2] ?? path.join(rootDir, 'workflows/book-review-gemini.workflow.json');
-const promptTemplatePath = path.join(rootDir, 'workflows/prompts/book-review-master-prompt.txt');
-const metadataPromptTemplatePath = path.join(rootDir, 'workflows/prompts/book-review-metadata-prompt.txt');
+  process.argv[2] ?? path.join(rootDir, 'workflows/book-review/book-review-gemini.workflow.json');
+const promptTemplatePath = path.join(
+  rootDir,
+  'workflows/book-review/prompts/book-review-master-prompt.txt',
+);
+const metadataPromptTemplatePath = path.join(
+  rootDir,
+  'workflows/book-review/prompts/book-review-metadata-prompt.txt',
+);
+const qcPromptTemplatePath = path.join(
+  rootDir,
+  'workflows/book-review/prompts/book-review-qc-prompt.txt',
+);
+const reviewEditPromptTemplatePath = path.join(
+  rootDir,
+  'workflows/book-review/prompts/book-review-review-edit-prompt.txt',
+);
 
 function fail(message) {
   throw new Error(message);
@@ -62,6 +76,8 @@ function createBaseInput(promptTemplate, metadataPromptTemplate, overrides = {})
     user_input: 'Sach Nha Gia Kim cua tac gia Paulo Coelho',
     master_prompt_template: promptTemplate,
     metadata_prompt_template: metadataPromptTemplate,
+    qc_prompt_template: 'You are a strict Vietnamese book-review QC editor.',
+    review_revision_prompt_template: 'You are a senior Vietnamese script editor.',
     ...overrides,
   };
 }
@@ -130,6 +146,8 @@ async function runChecklist() {
   const workflow = await loadWorkflow(workflowPath);
   const promptTemplate = await fs.readFile(promptTemplatePath, 'utf8');
   const metadataPromptTemplate = await fs.readFile(metadataPromptTemplatePath, 'utf8');
+  await fs.readFile(qcPromptTemplatePath, 'utf8');
+  await fs.readFile(reviewEditPromptTemplatePath, 'utf8');
 
   const generateNode = getCodeNode(workflow, 'Generate Full Review');
   const parseNode = getCodeNode(workflow, 'Parse Review Sections');
@@ -179,9 +197,37 @@ async function runChecklist() {
         const metadataPromptAssignment = setConfig?.parameters?.assignments?.assignments?.find(
           (item) => item?.name === 'metadata_prompt_template',
         );
+        const qcPromptAssignment = setConfig?.parameters?.assignments?.assignments?.find(
+          (item) => item?.name === 'qc_prompt_template',
+        );
+        const reviewEditPromptAssignment = setConfig?.parameters?.assignments?.assignments?.find(
+          (item) => item?.name === 'review_revision_prompt_template',
+        );
         assert(
           metadataPromptAssignment?.value === '__BOOK_REVIEW_METADATA_PROMPT__',
           'Set Config must include metadata_prompt_template placeholder',
+        );
+        assert(
+          qcPromptAssignment?.value === '__BOOK_REVIEW_QC_PROMPT__',
+          'Set Config must include qc_prompt_template placeholder',
+        );
+        assert(
+          reviewEditPromptAssignment?.value === '__BOOK_REVIEW_REVIEW_EDIT_PROMPT__',
+          'Set Config must include review_revision_prompt_template placeholder',
+        );
+
+        const notifyNode = (workflow.nodes ?? []).find((n) => n.name === 'Notify via Shared Workflow');
+        assert(notifyNode, 'Missing Notify via Shared Workflow node');
+        assert(
+          notifyNode?.parameters?.workflowPath === '__SHARED_NOTIFICATION_WORKFLOW_PATH__',
+          'Notify via Shared Workflow must keep placeholder workflowPath in template',
+        );
+
+        const reviewerTargets =
+          workflow?.connections?.['Reviewer Orchestrator']?.main?.[0]?.map((edge) => edge?.node) ?? [];
+        assert(
+          reviewerTargets.includes('Return Chat Response'),
+          'Reviewer Orchestrator must connect directly to Return Chat Response',
         );
       },
     },
@@ -289,7 +335,23 @@ async function runChecklist() {
     },
     {
       id: '6',
-      name: 'AI QC node parses scores and warnings',
+      name: 'AI QC node is pass-through (QC centralized in Reviewer Orchestrator)',
+      fn: async () => {
+        const run = await runCode(qcNode.code, {
+          input: {
+            ...createBaseInput(promptTemplate, metadataPromptTemplate),
+            full_review: 'Noi dung review day du va da parse',
+            marker: 'keep-this',
+          },
+        });
+
+        assert(run.callCount === 0, 'AI QC pass-through must not call HTTP directly');
+        assert(run.data.marker === 'keep-this', 'AI QC pass-through must keep input fields');
+      },
+    },
+    {
+      id: '7',
+      name: 'Reviewer Orchestrator skips Telegram stage when token/chat missing',
       fn: async () => {
         const qcResponse = {
           qc_checks: [
@@ -308,45 +370,21 @@ async function runChecklist() {
           risk_level: 'med',
         };
 
-        const run = await runCode(qcNode.code, {
-          input: {
-            ...createBaseInput(promptTemplate, metadataPromptTemplate),
-            full_review: 'Noi dung review day du',
-            review_intro: 'Mo dau',
-            review_outro: 'Hay ap dung ngay hom nay',
-          },
-          responses: [buildChatResponse(JSON.stringify(qcResponse))],
-        });
-
-        assert(run.data.qc_status === 'generated', 'Expected qc_status=generated');
-        assert(run.data.hook_score === 8, 'Expected hook_score=8');
-        assert(run.data.originality_score === 6, 'Expected originality_score=6');
-        assert(Array.isArray(run.data.score_warnings), 'Expected score_warnings array');
-      },
-    },
-    {
-      id: '7',
-      name: 'Reviewer Orchestrator skips Telegram stage when token/chat missing',
-      fn: async () => {
         const run = await runCode(reviewerNode.code, {
           input: {
             ...createBaseInput(promptTemplate, metadataPromptTemplate),
             full_review: 'Noi dung review',
             review_intro: 'Mo dau',
             review_outro: 'Ket + CTA',
-            qc_checks: [],
-            qc_issues: [],
-            hook_score: 7,
-            clarity_score: 7,
-            originality_score: 7,
-            practical_value_score: 7,
-            risk_level: 'low',
             telegram_bot_token: '',
             telegram_chat_id: '',
           },
+          responses: [buildChatResponse(JSON.stringify(qcResponse))],
         });
 
-        assert(run.callCount === 0, 'Expected no HTTP call when telegram config is missing');
+        assert(run.callCount === 1, 'Expected 1 HTTP call for QC before Telegram gate');
+        assert(run.data.qc_status === 'generated', 'Expected qc_status=generated');
+        assert(run.data.hook_score === 8, 'Expected hook_score from Reviewer Orchestrator QC');
         assert(run.data.reviewer_gate_status === 'skip_no_telegram', 'Expected skip_no_telegram status');
         assert(run.data.metadata_status === 'skip', 'Expected metadata_status=skip');
       },

@@ -2,23 +2,23 @@
   "workflows": {
     "Demo Gemini via CLIProxyAPI": {
       "id": "eKVjShNKmbjf4T8a",
-      "template": "workflows/gemini-cliproxy-demo.workflow.json",
-      "lastSyncedAt": "2026-03-25T14:45:40Z"
+      "template": "workflows/demo/gemini-cliproxy-demo.workflow.json",
+      "lastSyncedAt": "2026-03-26T02:54:08Z"
     },
     "Demo OpenAI via CLIProxyAPI": {
       "id": "x62qzfGcBeqrfueM",
-      "template": "workflows/openai-cliproxy-demo.workflow.json",
-      "lastSyncedAt": "2026-03-25T14:45:40Z"
+      "template": "workflows/demo/openai-cliproxy-demo.workflow.json",
+      "lastSyncedAt": "2026-03-26T02:54:09Z"
     },
     "Book Review Gemini via CLIProxyAPI": {
       "id": "zjmoz6mGCLL89Asx",
-      "template": "workflows/book-review-gemini.workflow.json",
-      "lastSyncedAt": "2026-03-25T18:43:32Z"
+      "template": "workflows/book-review/book-review-gemini.workflow.json",
+      "lastSyncedAt": "2026-03-26T02:57:19Z"
     },
     "Shared Notification Router": {
       "id": "2oIMm0rwQPf8j4oC",
-      "template": "workflows/shared-notification-router.workflow.json",
-      "lastSyncedAt": "2026-03-25T07:29:50Z"
+      "template": "workflows/shared/shared-notification-router.workflow.json",
+      "lastSyncedAt": "2026-03-26T02:03:05Z"
     }
   }
 }
