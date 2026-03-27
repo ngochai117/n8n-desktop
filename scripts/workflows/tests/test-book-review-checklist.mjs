@@ -100,7 +100,7 @@ function createBaseInput(promptTemplate, metadataPromptTemplate, overrides = {})
   };
 }
 
-async function runCode(code, { input, responses = [], throwAtCall, throwError }) {
+async function runCode(code, { input, responses = [], throwAtCall, throwError, allowEmpty = false }) {
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
   const execute = new AsyncFunction('$input', 'helpers', '$helpers', '$json', '$items', code);
 
@@ -138,6 +138,13 @@ async function runCode(code, { input, responses = [], throwAtCall, throwError })
 
   let normalized;
   if (Array.isArray(rawOutput)) {
+    if (rawOutput.length === 0 && allowEmpty) {
+      return {
+        data: null,
+        raw: rawOutput,
+        callCount,
+      };
+    }
     assert(rawOutput.length > 0, 'Code node output array must have at least one item');
     const item = rawOutput[0];
     if (item && typeof item === 'object' && 'json' in item) {
@@ -153,6 +160,7 @@ async function runCode(code, { input, responses = [], throwAtCall, throwError })
 
   return {
     data: normalized,
+    raw: rawOutput,
     callCount,
   };
 }
@@ -167,8 +175,8 @@ async function runChecklist() {
   const prepareNode = getCodeNode(workflow, 'Prepare Session + Init Event');
   const returnNode = getCodeNode(workflow, 'Return Chat Response');
   const routerParseNode = getCodeNode(workflow, 'Parse Telegram Event');
+  const telegramStartNode = getCodeNode(workflow, 'Parse Telegram Start Command');
   const workerNode = getCodeNode(workflow, 'Handle Reviewer Event');
-  const startMessageNode = getCodeNode(workflow, 'Code in JavaScript');
 
   const results = [];
 
@@ -178,21 +186,18 @@ async function runChecklist() {
       name: 'Unified workflow topology keeps async ACK + internal event flow',
       fn: async () => {
         const requiredNodes = [
-          'When chat message received',
-          'Code in JavaScript',
           'Set Config (Main)',
           'Generate Full Review',
           'Parse Review Sections',
           'Send Informations',
           'Set Notify Targets (Main)',
           'Prepare Session + Init Event',
-          'Build Notify Payload (Main)',
           'Notify via Shared Workflow (Main)',
           'Return Chat Response',
           'Telegram Trigger',
           'Set Config (Telegram)',
           'Parse Telegram Event',
-          'Build Notify Payload (Router)',
+          'Parse Telegram Start Command',
           'Set Config (Worker)',
           'Handle Reviewer Event',
           'Build Notify Payload (Worker)',
@@ -213,15 +218,28 @@ async function runChecklist() {
 
         const prepareBranches = getTargets(workflow, 'Prepare Session + Init Event');
         assert(
-          prepareBranches.includes('Set Config (Worker)') &&
-            prepareBranches.includes('Build Notify Payload (Main)'),
-          'Prepare Session + Init Event must fan-out to worker + notify payload builder',
+          prepareBranches.length === 1 && prepareBranches[0] === 'Set Config (Worker)',
+          'Prepare Session + Init Event must dispatch directly to worker set-config',
         );
 
         const routerBranches = getTargets(workflow, 'Parse Telegram Event');
         assert(
-          routerBranches.includes('Set Config (Worker)') && routerBranches.includes('Build Notify Payload (Router)'),
-          'Parse Telegram Event must fan-out directly to worker + router notify payload builder',
+          routerBranches.length === 1 && routerBranches[0] === 'Set Config (Worker)',
+          'Parse Telegram Event must dispatch directly to worker set-config',
+        );
+
+        const telegramBranches = getTargets(workflow, 'Set Config (Telegram)');
+        assert(
+          telegramBranches.includes('Parse Telegram Event') &&
+            telegramBranches.includes('Parse Telegram Start Command'),
+          'Set Config (Telegram) must fan-out to reviewer router and telegram start parser',
+        );
+
+        const telegramStartBranches = getTargets(workflow, 'Parse Telegram Start Command');
+        assert(
+          telegramStartBranches.includes('Set Config (Main)') &&
+            telegramStartBranches.includes('Code in JavaScript'),
+          'Parse Telegram Start Command must fan-out to main flow and start notification builder',
         );
         assert(
           !(workflow.nodes ?? []).some((node) => node.name === 'Merge'),
@@ -241,10 +259,10 @@ async function runChecklist() {
           'Set Notify Targets (Main) must be placed right before shared notify',
         );
 
-        const triggerBranches = getTargets(workflow, 'When chat message received');
+        const chatTriggerBranches = getTargets(workflow, 'When chat message received');
         assert(
-          triggerBranches.includes('Set Config (Main)') && triggerBranches.includes('Code in JavaScript'),
-          'Chat trigger must branch to main flow and start-message parser',
+          chatTriggerBranches.length === 0,
+          'Chat trigger must be disconnected after migrating start trigger to Telegram',
         );
 
         assert(
@@ -269,11 +287,6 @@ async function runChecklist() {
         assert(
           returnNode.code.includes("Prepare Session + Init Event"),
           'Return Chat Response must read ack payload from Prepare Session + Init Event',
-        );
-        assert(
-          startMessageNode.code.includes('Bắt đầu review:') &&
-            startMessageNode.code.includes('send_informations'),
-          'Code in JavaScript must build start review message and emit send_informations payload',
         );
       },
     },
@@ -419,6 +432,111 @@ async function runChecklist() {
       },
     },
     {
+      id: '5b',
+      name: 'Router accepts free-text change instruction while awaiting reviewer input',
+      fn: async () => {
+        const freeTextInstruction =
+          'Hook rat cham va giong ke qua hinh anh. Hay gom y thanh 3-4 tuyen cam xuc lien mach.';
+
+        const run = await runCode(routerParseNode.code, {
+          input: {
+            ...createBaseInput(promptTemplate, metadataPromptTemplate),
+            message: {
+              text: freeTextInstruction,
+              chat: { id: '6920403077' },
+              from: { id: '6920403077' },
+            },
+          },
+          responses: [
+            {
+              data: [
+                {
+                  id: 'table_test_01',
+                  name: 'book_review_sessions',
+                },
+              ],
+            },
+            {
+              data: [
+                {
+                  session_token: 'mn8m0e71rc23xyfo',
+                  stage: 'review_pending',
+                  awaiting_instruction: '1',
+                },
+              ],
+            },
+          ],
+        });
+
+        assert(run.callCount === 2, 'Router free-text change path should use 2 API calls');
+        assert(run.data.event_type === 'review_change', 'Free-text instruction must map to review_change event');
+        assert(run.data.session_token === 'mn8m0e71rc23xyfo', 'Router must bind latest awaiting session token');
+        assert(run.data.instruction === freeTextInstruction, 'Router must pass full free-text instruction');
+      },
+    },
+    {
+      id: '5x',
+      name: 'Telegram start parser accepts book-review command and maps to main input',
+      fn: async () => {
+        const run = await runCode(telegramStartNode.code, {
+          input: {
+            ...createBaseInput(promptTemplate, metadataPromptTemplate),
+            message: {
+              text: 'book-review Sách Nhà Giả Kim của tác giả Paulo Coelho',
+              chat: { id: '6920403077' },
+              from: { id: '6920403077' },
+            },
+          },
+        });
+
+        assert(
+          run.data.chatInput === 'Sách Nhà Giả Kim của tác giả Paulo Coelho',
+          'Telegram start parser must map command payload to chatInput',
+        );
+        assert(
+          run.data.user_input === 'Sách Nhà Giả Kim của tác giả Paulo Coelho',
+          'Telegram start parser must map command payload to user_input',
+        );
+        assert(
+          run.data.start_command === 'book-review',
+          'Telegram start parser must mark start_command=book-review',
+        );
+      },
+    },
+    {
+      id: '5c',
+      name: 'Router ignores doi-instruction when no awaiting session is active',
+      fn: async () => {
+        const run = await runCode(routerParseNode.code, {
+          input: {
+            ...createBaseInput(promptTemplate, metadataPromptTemplate),
+            message: {
+              text: 'doi noi dung',
+              chat: { id: '6920403077' },
+              from: { id: '6920403077' },
+            },
+          },
+          responses: [
+            {
+              data: [
+                {
+                  id: 'table_test_01',
+                  name: 'book_review_sessions',
+                },
+              ],
+            },
+            {
+              data: [],
+            },
+          ],
+          allowEmpty: true,
+        });
+
+        assert(run.callCount === 2, 'Router should only check table + awaiting session for doi-instruction');
+        assert(Array.isArray(run.raw) && run.raw.length === 0, 'Router must not dispatch event when not awaiting');
+      },
+    },
+    {
       id: '6',
       name: 'Worker event contract includes all required event types and no Telegram polling loop',
       fn: async () => {
@@ -487,7 +605,7 @@ async function runChecklist() {
     },
     {
       id: '7',
-      name: 'Revise flow keeps full master-prompt payload with context-limit fallback',
+      name: 'Revise flow keeps full master-prompt payload without clipping fallback',
       fn: async () => {
         assert(
           workerNode.code.includes('buildMasterPrompt(masterPromptTemplate, userInputText)'),
@@ -498,8 +616,14 @@ async function runChecklist() {
           'Revise payload must include master_prompt_injected context',
         );
         assert(
-          workerNode.code.includes('clipContextText(') && workerNode.code.includes('shouldRetryWithTrimmedContext('),
-          'Revise flow must fallback to clipped context when input limit errors appear',
+          !workerNode.code.includes('clipContextText(') && !workerNode.code.includes('shouldRetryWithTrimmedContext('),
+          'Revise flow must not clip context fallback anymore',
+        );
+        assert(
+          workerNode.code.includes('buildChangeAckMessage') &&
+            workerNode.code.includes("await sendTelegramMessage(buildChangeAckMessage('review', instructionText));") &&
+            workerNode.code.includes("await sendTelegramMessage(buildChangeAckMessage('metadata', instructionText));"),
+          'Worker must acknowledge received change instructions before regenerate',
         );
       },
     },
@@ -526,10 +650,14 @@ async function runChecklist() {
           notifyMain.parameters?.includeOtherFields === true,
           'Set Notify Targets (Main) must keep includeOtherFields=true',
         );
+        const notifyTargetValue = String(
+          getSetAssignmentValue(workflow, 'Set Notify Targets (Main)', 'notify_targets') ?? '',
+        );
         assert(
-          String(getSetAssignmentValue(workflow, 'Set Notify Targets (Main)', 'notify_targets') ?? '').includes('$json.notify_targets') &&
-            String(getSetAssignmentValue(workflow, 'Set Notify Targets (Main)', 'notify_targets') ?? '').includes('__NOTIFY_TARGETS__'),
-          'Set Notify Targets (Main) must preserve payload notify_targets with __NOTIFY_TARGETS__ fallback',
+          notifyTargetValue === '__NOTIFY_TARGETS__' ||
+            (notifyTargetValue.includes('$json.notify_targets') &&
+              notifyTargetValue.includes('__NOTIFY_TARGETS__')),
+          'Set Notify Targets (Main) notify_targets must keep placeholder or dynamic payload expression',
         );
 
         const sendInfoNode = getNode(workflow, 'Send Informations');
@@ -550,19 +678,20 @@ async function runChecklist() {
         );
 
         assert(
-          getTargets(workflow, 'Build Notify Payload (Main)').includes('Send Informations') &&
-            getTargets(workflow, 'Build Notify Payload (Router)').includes('Send Informations') &&
-            getTargets(workflow, 'Build Notify Payload (Worker)').includes('Send Informations') &&
-            getTargets(workflow, 'Code in JavaScript').includes('Send Informations'),
-          'All notify payload builders and start parser must hand off via Send Informations',
+          getTargets(workflow, 'Build Notify Payload (Worker)').includes('Send Informations'),
+          'Worker notify payload builder must hand off via Send Informations',
         );
 
         assert(
-          startMessageNode.code.includes('Bắt đầu review:') &&
-            getCodeNode(workflow, 'Build Notify Payload (Main)').code.includes('send_informations') &&
-            getCodeNode(workflow, 'Build Notify Payload (Router)').code.includes('send_informations') &&
-            getCodeNode(workflow, 'Build Notify Payload (Worker)').code.includes('send_informations'),
-          'Start parser and notify payload builders must emit send_informations contract',
+          getTargets(workflow, 'Parse Telegram Start Command').includes('Code in JavaScript') &&
+            getCodeNode(workflow, 'Code in JavaScript').code.includes('Bắt đầu review:') &&
+            getCodeNode(workflow, 'Code in JavaScript').code.includes('send_informations'),
+          'Telegram start command must trigger start notification payload',
+        );
+
+        assert(
+          getCodeNode(workflow, 'Build Notify Payload (Worker)').code.includes('send_informations'),
+          'Worker notify payload builder must emit send_informations contract',
         );
       },
     },
