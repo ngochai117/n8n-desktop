@@ -30,6 +30,12 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 - 2026-03-26: Fix workflow book-review: tra chat response truc tiep tu `Reviewer Orchestrator`, gom QC ve 1 nguon logic trong orchestrator (node AI QC giu pass-through), va sanitize `workflowPath` ve placeholder trong templates/sync script. Ly do: tranh mat metadata o response, tranh drift QC, va bo absolute path theo may local.
 
 ## 2026-03-27
+- Giam notify spam tren luong reviewer Telegram:
+  - `Build Notify Payload (Router)` doi status dispatch sang `info` va ep `notify_targets='none'` de khong gui thong bao trung lap.
+  - `Build Notify Payload (Worker)` chi gui notify ra ngoai khi `failed` hoac `success` cuoi (`metadata_continue`), bo qua cac su kien `info` trung gian.
+- Lam sach noi dung review khi gui preview/final va khi dua vao QC:
+  - Them helper `normalizeReviewForDisplay()` trong `Handle Reviewer Event` de bo marker `<<<SECTION|...>>>` / `<<<END_SECTION>>>`.
+  - Ap dung helper cho `sendReviewPreview`, `sendFinalMessage`, va `runQc.review_excerpt` de tranh feedback ve SECTION khong lien mach.
 - Rut gon lai bo script run theo feedback "de doc de chay":
   - `run-n8n.sh`: quay ve dang toi gian (load env + `n8n start`).
   - `run-n8n-docker.sh`: quay ve lenh docker n8n toi gian.
