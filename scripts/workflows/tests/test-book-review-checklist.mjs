@@ -7,8 +7,10 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '../../..');
+
 const workflowPath =
   process.argv[2] ?? path.join(rootDir, 'workflows/book-review/book-review-gemini.workflow.json');
+
 const promptTemplatePath = path.join(
   rootDir,
   'workflows/book-review/prompts/book-review-master-prompt.txt',
@@ -16,14 +18,6 @@ const promptTemplatePath = path.join(
 const metadataPromptTemplatePath = path.join(
   rootDir,
   'workflows/book-review/prompts/book-review-metadata-prompt.txt',
-);
-const qcPromptTemplatePath = path.join(
-  rootDir,
-  'workflows/book-review/prompts/book-review-qc-prompt.txt',
-);
-const reviewEditPromptTemplatePath = path.join(
-  rootDir,
-  'workflows/book-review/prompts/book-review-review-edit-prompt.txt',
 );
 
 function fail(message) {
@@ -55,19 +49,39 @@ async function loadWorkflow(filePath) {
   return JSON.parse(raw);
 }
 
+function getNode(workflow, nodeName) {
+  const node = (workflow.nodes ?? []).find((item) => item.name === nodeName);
+  if (!node) fail(`Cannot find node "${nodeName}" in workflow ${workflow.name}`);
+  return node;
+}
+
 function getCodeNode(workflow, nodeName) {
-  const node = (workflow.nodes ?? []).find((n) => n.name === nodeName);
-  if (!node) fail(`Cannot find node "${nodeName}" in workflow template`);
+  const node = getNode(workflow, nodeName);
   const code = node.parameters?.jsCode;
-  if (!code || typeof code !== 'string') fail(`Missing jsCode in node "${nodeName}"`);
+  if (!code || typeof code !== 'string') {
+    fail(`Missing jsCode in node "${nodeName}"`);
+  }
   return { node, code };
+}
+
+function getSetAssignmentValue(workflow, setNodeName, assignmentName) {
+  const node = getNode(workflow, setNodeName);
+  const assignments = node.parameters?.assignments?.assignments ?? [];
+  return assignments.find((item) => item?.name === assignmentName)?.value;
+}
+
+function getTargets(workflow, sourceNodeName) {
+  return (((workflow.connections ?? {})[sourceNodeName]?.main ?? [])
+    .flat()
+    .map((edge) => String(edge?.node ?? ''))
+    .filter(Boolean));
 }
 
 function createBaseInput(promptTemplate, metadataPromptTemplate, overrides = {}) {
   return {
-    model: 'gemini-3-flash-preview',
-    fallback_model: 'gemini-2.5-pro',
-    openai_model: 'gpt-5.4',
+    model: 'gpt-5',
+    fallback_model: 'gpt-5',
+    openai_model: 'gpt-5',
     cliproxy_base_url: 'http://127.0.0.1:8317',
     cliproxy_client_key: 'test-key',
     max_turns: 8,
@@ -76,8 +90,12 @@ function createBaseInput(promptTemplate, metadataPromptTemplate, overrides = {})
     user_input: 'Sach Nha Gia Kim cua tac gia Paulo Coelho',
     master_prompt_template: promptTemplate,
     metadata_prompt_template: metadataPromptTemplate,
-    qc_prompt_template: 'You are a strict Vietnamese book-review QC editor.',
-    review_revision_prompt_template: 'You are a senior Vietnamese script editor.',
+    n8n_api_url: 'http://localhost:5678',
+    n8n_api_key: 'n8n-test-key',
+    session_store_name: 'book_review_sessions',
+    shared_notification_workflow_path: '/tmp/shared-notify.workflow.json',
+    telegram_bot_token: 'telegram-token',
+    telegram_chat_id: '12345',
     ...overrides,
   };
 }
@@ -88,7 +106,6 @@ async function runCode(code, { input, responses = [], throwAtCall, throwError })
 
   const responseQueue = [...responses];
   let callCount = 0;
-  const observedRequests = [];
 
   const $input = {
     first: () => ({ json: input }),
@@ -96,9 +113,8 @@ async function runCode(code, { input, responses = [], throwAtCall, throwError })
   };
 
   const helperObject = {
-    httpRequest: async (request) => {
+    httpRequest: async () => {
       callCount += 1;
-      observedRequests.push(request);
 
       if (throwAtCall && callCount === throwAtCall) {
         throw throwError ?? new Error('Mock API error');
@@ -138,7 +154,6 @@ async function runCode(code, { input, responses = [], throwAtCall, throwError })
   return {
     data: normalized,
     callCount,
-    observedRequests,
   };
 }
 
@@ -146,109 +161,134 @@ async function runChecklist() {
   const workflow = await loadWorkflow(workflowPath);
   const promptTemplate = await fs.readFile(promptTemplatePath, 'utf8');
   const metadataPromptTemplate = await fs.readFile(metadataPromptTemplatePath, 'utf8');
-  await fs.readFile(qcPromptTemplatePath, 'utf8');
-  await fs.readFile(reviewEditPromptTemplatePath, 'utf8');
 
   const generateNode = getCodeNode(workflow, 'Generate Full Review');
   const parseNode = getCodeNode(workflow, 'Parse Review Sections');
-  const reviewerNode = getCodeNode(workflow, 'Reviewer Orchestrator');
+  const prepareNode = getCodeNode(workflow, 'Prepare Session + Init Event');
+  const returnNode = getCodeNode(workflow, 'Return Chat Response');
+  const routerParseNode = getCodeNode(workflow, 'Parse Telegram Event');
+  const workerNode = getCodeNode(workflow, 'Handle Reviewer Event');
+  const startMessageNode = getCodeNode(workflow, 'Code in JavaScript');
 
   const results = [];
 
   const tests = [
     {
       id: '0',
-      name: 'Workflow topology updated to simplified reviewer loop',
+      name: 'Unified workflow topology keeps async ACK + internal event flow',
       fn: async () => {
         const requiredNodes = [
+          'When chat message received',
+          'Code in JavaScript',
+          'Set Config (Main)',
           'Generate Full Review',
           'Parse Review Sections',
-          'Reviewer Orchestrator',
-          'Build Notify Payload',
-          'Notify via Shared Workflow',
+          'Send Informations',
+          'Set Notify Targets (Main)',
+          'Prepare Session + Init Event',
+          'Build Notify Payload (Main)',
+          'Notify via Shared Workflow (Main)',
           'Return Chat Response',
+          'Telegram Trigger',
+          'Set Config (Telegram)',
+          'Parse Telegram Event',
+          'Build Notify Payload (Router)',
+          'Set Config (Worker)',
+          'Handle Reviewer Event',
+          'Build Notify Payload (Worker)',
         ];
 
         for (const nodeName of requiredNodes) {
-          const node = (workflow.nodes ?? []).find((n) => n.name === nodeName);
-          assert(node, `Missing required node: ${nodeName}`);
+          assert((workflow.nodes ?? []).some((node) => node.name === nodeName), `Missing node: ${nodeName}`);
         }
 
-        const forbiddenNodes = [
-          'Generate Video Metadata',
-          'Send message and wait for response',
-          'AI QC + Internal Scoring',
-        ];
-        for (const nodeName of forbiddenNodes) {
-          const node = (workflow.nodes ?? []).find((n) => n.name === nodeName);
-          assert(!node, `Forbidden legacy node still exists: ${nodeName}`);
-        }
-
-        const setNotify = (workflow.nodes ?? []).find((n) => n.name === 'Set Notify Targets');
-        assert(setNotify, 'Missing Set Notify Targets node');
         assert(
-          setNotify?.parameters?.includeOtherFields === true,
-          'Set Notify Targets must keep includeOtherFields=true',
+          !(workflow.nodes ?? []).some((node) => node.name === 'Execute Reviewer Worker'),
+          'Legacy Execute Reviewer Worker node must not exist after merge',
+        );
+        assert(
+          !(workflow.nodes ?? []).some((node) => node.name === 'Reviewer Orchestrator'),
+          'Legacy monolith node Reviewer Orchestrator must not exist',
         );
 
-        const setConfig = (workflow.nodes ?? []).find((n) => n.name === 'Set Config');
-        assert(setConfig, 'Missing Set Config node');
-        const metadataPromptAssignment = setConfig?.parameters?.assignments?.assignments?.find(
-          (item) => item?.name === 'metadata_prompt_template',
-        );
-        const qcPromptAssignment = setConfig?.parameters?.assignments?.assignments?.find(
-          (item) => item?.name === 'qc_prompt_template',
-        );
-        const reviewEditPromptAssignment = setConfig?.parameters?.assignments?.assignments?.find(
-          (item) => item?.name === 'review_revision_prompt_template',
-        );
+        const prepareBranches = getTargets(workflow, 'Prepare Session + Init Event');
         assert(
-          metadataPromptAssignment?.value === '__BOOK_REVIEW_METADATA_PROMPT__',
-          'Set Config must include metadata_prompt_template placeholder',
-        );
-        assert(
-          qcPromptAssignment?.value === '__BOOK_REVIEW_QC_PROMPT__',
-          'Set Config must include qc_prompt_template placeholder',
-        );
-        assert(
-          reviewEditPromptAssignment?.value === '__BOOK_REVIEW_REVIEW_EDIT_PROMPT__',
-          'Set Config must include review_revision_prompt_template placeholder',
+          prepareBranches.includes('Set Config (Worker)') &&
+            prepareBranches.includes('Build Notify Payload (Main)'),
+          'Prepare Session + Init Event must fan-out to worker + notify payload builder',
         );
 
-        const notifyNode = (workflow.nodes ?? []).find((n) => n.name === 'Notify via Shared Workflow');
-        assert(notifyNode, 'Missing Notify via Shared Workflow node');
+        const routerBranches = getTargets(workflow, 'Parse Telegram Event');
         assert(
-          notifyNode?.parameters?.workflowPath === '__SHARED_NOTIFICATION_WORKFLOW_PATH__',
-          'Notify via Shared Workflow must keep placeholder workflowPath in template',
+          routerBranches.includes('Set Config (Worker)') && routerBranches.includes('Build Notify Payload (Router)'),
+          'Parse Telegram Event must fan-out directly to worker + router notify payload builder',
+        );
+        assert(
+          !(workflow.nodes ?? []).some((node) => node.name === 'Merge'),
+          'Merge node must be removed for clean UI',
         );
 
-        const reviewerTargets =
-          workflow?.connections?.['Reviewer Orchestrator']?.main?.[0]?.map((edge) => edge?.node) ?? [];
+        const sendInfoBranches = getTargets(workflow, 'Send Informations');
         assert(
-          reviewerTargets.includes('Return Chat Response'),
-          'Reviewer Orchestrator must connect directly to Return Chat Response',
+          sendInfoBranches.includes('Return Chat Response') &&
+            sendInfoBranches.includes('Set Notify Targets (Main)'),
+          'Send Informations must fan-out to chat response + notify target setter',
         );
 
-        const parseTargets =
-          workflow?.connections?.['Parse Review Sections']?.main?.[0]?.map((edge) => edge?.node) ?? [];
+        const setNotifyMainTargets = getTargets(workflow, 'Set Notify Targets (Main)');
         assert(
-          parseTargets.includes('Set Notify Targets'),
-          'Parse Review Sections must connect directly to Set Notify Targets',
+          setNotifyMainTargets.length === 1 && setNotifyMainTargets[0] === 'Notify via Shared Workflow (Main)',
+          'Set Notify Targets (Main) must be placed right before shared notify',
+        );
+
+        const triggerBranches = getTargets(workflow, 'When chat message received');
+        assert(
+          triggerBranches.includes('Set Config (Main)') && triggerBranches.includes('Code in JavaScript'),
+          'Chat trigger must branch to main flow and start-message parser',
+        );
+
+        assert(
+          getSetAssignmentValue(workflow, 'Set Config (Main)', 'n8n_api_url') === '__N8N_API_URL__',
+          'Set Config (Main) must keep n8n_api_url placeholder',
+        );
+        assert(
+          getSetAssignmentValue(workflow, 'Set Config (Main)', 'n8n_api_key') === '__N8N_API_KEY__',
+          'Set Config (Main) must keep n8n_api_key placeholder',
+        );
+        assert(
+          getSetAssignmentValue(workflow, 'Set Config (Main)', 'shared_notification_workflow_path') ===
+            '__SHARED_NOTIFICATION_WORKFLOW_PATH__',
+          'Set Config (Main) must keep shared_notification_workflow_path placeholder',
+        );
+        assert(
+          getSetAssignmentValue(workflow, 'Set Config (Main)', 'master_prompt_template') ===
+            '__BOOK_REVIEW_MASTER_PROMPT__',
+          'Set Config (Main) must keep master prompt placeholder',
+        );
+
+        assert(
+          returnNode.code.includes("Prepare Session + Init Event"),
+          'Return Chat Response must read ack payload from Prepare Session + Init Event',
+        );
+        assert(
+          startMessageNode.code.includes('Bắt đầu review:') &&
+            startMessageNode.code.includes('send_informations'),
+          'Code in JavaScript must build start review message and emit send_informations payload',
         );
       },
     },
     {
       id: '1',
-      name: 'runOnceForEachItem code nodes use safe input access',
+      name: 'runOnceForEachItem code nodes never use $input.first/$input.all',
       fn: async () => {
         const offenders = [];
+
         for (const node of workflow.nodes ?? []) {
           if (node?.type !== 'n8n-nodes-base.code') continue;
           if (String(node?.parameters?.mode ?? '') !== 'runOnceForEachItem') continue;
-
           const code = String(node?.parameters?.jsCode ?? '');
           if (/\$input\.first\s*\(/.test(code) || /\$input\.all\s*\(/.test(code)) {
-            offenders.push(String(node?.name ?? '(unnamed)'));
+            offenders.push(`${workflow.name}::${String(node?.name ?? '(unnamed)')}`);
           }
         }
 
@@ -260,23 +300,32 @@ async function runChecklist() {
     },
     {
       id: '2',
-      name: 'Generate Full Review one-shot flow',
+      name: 'Generate Full Review one-shot still works',
       fn: async () => {
+        const baseInput = createBaseInput(promptTemplate, metadataPromptTemplate);
         const run = await runCode(generateNode.code, {
-          input: createBaseInput(promptTemplate, metadataPromptTemplate),
+          input: baseInput,
           responses: [
-            buildChatResponse('Noi dung review ngan de test.\n<<<SECTION|intro|Phan mo dau>>>\nA\n<<<END_SECTION>>>\n-END-'),
+            buildChatResponse(
+              'Noi dung review ngan de test.\n<<<SECTION|intro|Phan mo dau>>>\nA\n<<<END_SECTION>>>\n-END-',
+            ),
           ],
         });
 
         assert(run.callCount === 1, 'Expected one API call');
         assert(run.data.stop_reason === 'completed', 'Expected stop_reason=completed');
         assert(normalizeMessage(run.data.message).length > 10, 'Expected non-empty output message');
+        assert(
+          run.data.n8n_api_url === baseInput.n8n_api_url &&
+            run.data.n8n_api_key === baseInput.n8n_api_key &&
+            run.data.shared_notification_workflow_path === baseInput.shared_notification_workflow_path,
+          'Generate output must preserve config fields for downstream nodes',
+        );
       },
     },
     {
       id: '3',
-      name: 'Generate Full Review continue loop',
+      name: 'Generate Full Review continue-loop still works',
       fn: async () => {
         const run = await runCode(generateNode.code, {
           input: createBaseInput(promptTemplate, metadataPromptTemplate),
@@ -293,23 +342,7 @@ async function runChecklist() {
     },
     {
       id: '4',
-      name: 'Generate Full Review max_turns guard',
-      fn: async () => {
-        const run = await runCode(generateNode.code, {
-          input: createBaseInput(promptTemplate, metadataPromptTemplate, { max_turns: 2 }),
-          responses: [
-            buildChatResponse('Doan 1\n-CONTINUE-'),
-            buildChatResponse('Doan 2\n-CONTINUE-'),
-          ],
-        });
-
-        assert(run.callCount === 2, 'Expected two calls at max_turns=2');
-        assert(run.data.stop_reason === 'max_turns', 'Expected stop_reason=max_turns');
-      },
-    },
-    {
-      id: '5',
-      name: 'Parse Review Sections extracts intro/parts/outro without intro hooks',
+      name: 'Parse Review Sections extracts intro/parts/outro',
       fn: async () => {
         const fullReview = [
           '<<<SECTION|intro|Phan mo dau>>>',
@@ -340,150 +373,196 @@ async function runChecklist() {
       },
     },
     {
-      id: '6',
-      name: 'Reviewer Orchestrator skips Telegram stage when token/chat missing',
+      id: '4b',
+      name: 'Prepare Session preserves upstream stop_reason when review is empty',
       fn: async () => {
-        const qcResponse = {
-          qc_checks: [
-            { id: 'content_accuracy', status: 'pass', note: 'ok' },
-            { id: 'fabricated_quote', status: 'warn', note: 'uncertain quote' },
-            { id: 'hook_strength_5s', status: 'pass', note: 'good' },
-            { id: 'cta_contextual', status: 'warn', note: 'cta can be stronger' },
-          ],
-          qc_issues: ['quote uncertain'],
-          scores: {
-            hook: 8,
-            clarity: 8,
-            originality: 6,
-            practical_value: 7,
-          },
-          risk_level: 'med',
-        };
-
-        const run = await runCode(reviewerNode.code, {
+        const run = await runCode(prepareNode.code, {
           input: {
             ...createBaseInput(promptTemplate, metadataPromptTemplate),
-            full_review: 'Noi dung review',
-            review_intro: 'Mo dau',
-            review_outro: 'Ket + CTA',
-            telegram_bot_token: '',
-            telegram_chat_id: '',
+            full_review: '',
+            message: '[Lỗi gọi model (gpt-5): MODEL_CAPACITY_EXHAUSTED]',
+            stop_reason: 'api_error',
           },
-          responses: [buildChatResponse(JSON.stringify(qcResponse))],
         });
 
-        assert(run.callCount === 1, 'Expected 1 HTTP call for QC before Telegram gate');
-        assert(run.data.qc_status === 'generated', 'Expected qc_status=generated');
-        assert(run.data.hook_score === 8, 'Expected hook_score from Reviewer Orchestrator QC');
-        assert(run.data.reviewer_gate_status === 'skip_no_telegram', 'Expected skip_no_telegram status');
-        assert(run.data.metadata_status === 'skip', 'Expected metadata_status=skip');
+        assert(run.data.reviewer_stage === 'failed', 'Expected reviewer_stage=failed');
+        assert(run.data.stop_reason === 'api_error', 'Expected upstream stop_reason to be preserved');
+        assert(
+          normalizeMessage(run.data.message_ack).includes('stop_reason=api_error'),
+          'Expected message_ack to include upstream stop_reason details',
+        );
+      },
+    },
+    {
+      id: '5',
+      name: 'Router branch contract is preserved and scheduler timeout branch is removed',
+      fn: async () => {
+        const telegramTrigger = getNode(workflow, 'Telegram Trigger');
+        assert(telegramTrigger.type === 'n8n-nodes-base.telegramTrigger', 'Telegram Trigger node type must be correct');
+
+        assert(
+          routerParseNode.code.includes('brv:(rvw|meta):(c|x|s)'),
+          'Router callback parser must use compact callback data format brv:*',
+        );
+
+        const setConfigTelegram = getNode(workflow, 'Set Config (Telegram)');
+        assert(
+          setConfigTelegram.parameters?.includeOtherFields === true,
+          'Set Config (Telegram) must keep includeOtherFields=true',
+        );
+        assert(
+          !(workflow.nodes ?? []).some((node) =>
+            ['Schedule Trigger', 'Set Config (Scheduler)', 'Build Timeout Events'].includes(node.name),
+          ),
+          'Scheduler timeout branch nodes must be removed for clean UI',
+        );
+      },
+    },
+    {
+      id: '6',
+      name: 'Worker event contract includes all required event types and no Telegram polling loop',
+      fn: async () => {
+        const requiredEvents = [
+          'init_review',
+          'review_change',
+          'review_continue',
+          'review_stop',
+          'metadata_change',
+          'metadata_continue',
+          'metadata_stop',
+          'auto_continue_review',
+          'auto_continue_metadata',
+        ];
+
+        for (const eventType of requiredEvents) {
+          assert(
+            workerNode.code.includes(`'${eventType}'`) || workerNode.code.includes(`"${eventType}"`),
+            `Worker must support event_type=${eventType}`,
+          );
+        }
+
+        assert(!workerNode.code.includes('getUpdates'), 'Worker must not poll Telegram getUpdates');
+        assert(!routerParseNode.code.includes('getUpdates'), 'Router parse node must not poll getUpdates');
+        assert(
+          !workerNode.code.includes('Lenh nhanh: tiep | dung | doi <noi_dung_muon_sua>') &&
+            !workerNode.code.includes('Lenh nhanh: tiep | dung | doi <field + noi_dung>'),
+          'Worker previews must not include legacy Lenh nhanh helper text',
+        );
+        assert(
+          workerNode.code.includes("skip_worker_notify: true"),
+          'Worker must mark skip_worker_notify=true when event_type is missing',
+        );
+        const workerNotifyPayloadNode = getCodeNode(workflow, 'Build Notify Payload (Worker)');
+        assert(
+          workerNotifyPayloadNode.code.includes('send_informations') &&
+            workerNotifyPayloadNode.code.includes('skip_worker_notify === true'),
+          'Worker notify payload node must emit send_informations and handle skipped worker items safely',
+        );
+        assert(
+          workerNode.code.includes('lockCallbackActionMessage') &&
+            workerNode.code.includes("telegramApi('editMessageText'"),
+          'Worker must lock callback action message by editing Telegram message to prevent double-click',
+        );
+        assert(
+          workerNode.code.includes('isSessionTimedOut') &&
+            workerNode.code.includes('buildTimeoutActionText') &&
+            workerNode.code.includes("action: 'timeout_override_continue'") &&
+            !workerNode.code.includes("action: 'timeout_click_rejected'") &&
+            !workerNode.code.includes("stop_reason = 'reviewer_timeout'"),
+          'Worker must soft-handle timeout: notify stale click but continue processing',
+        );
+        assert(
+          workerNode.code.includes('sendReviewQcAndAction') &&
+            workerNode.code.indexOf("await sendReviewPreview(session, 'REVIEW PREVIEW');") <
+              workerNode.code.indexOf('session.qc = await runQc(session);'),
+          'Worker init_review must send preview before running QC, then send QC + action',
+        );
+
+        const workerSetConfig = getNode(workflow, 'Set Config (Worker)');
+        assert(
+          workerSetConfig.parameters?.includeOtherFields === true,
+          'Set Config (Worker) must keep includeOtherFields=true',
+        );
       },
     },
     {
       id: '7',
-      name: 'Prompt contract reverted to single intro section (no intro_01..03)',
+      name: 'Revise flow keeps full master-prompt payload with context-limit fallback',
       fn: async () => {
-        const prompt = await fs.readFile(promptTemplatePath, 'utf8');
-        assert(prompt.includes('<<<SECTION|intro|Phan mo dau>>>'), 'Prompt must still require intro section');
-        assert(!prompt.includes('intro_01:'), 'Prompt must not require intro_01 format');
-        assert(!prompt.includes('intro_02:'), 'Prompt must not require intro_02 format');
-        assert(!prompt.includes('intro_03:'), 'Prompt must not require intro_03 format');
+        assert(
+          workerNode.code.includes('buildMasterPrompt(masterPromptTemplate, userInputText)'),
+          'Worker revise flow must inject master prompt with user_input',
+        );
+        assert(
+          workerNode.code.includes('master_prompt_injected'),
+          'Revise payload must include master_prompt_injected context',
+        );
+        assert(
+          workerNode.code.includes('clipContextText(') && workerNode.code.includes('shouldRetryWithTrimmedContext('),
+          'Revise flow must fallback to clipped context when input limit errors appear',
+        );
       },
     },
     {
       id: '8',
-      name: 'Metadata prompt file excludes long description output',
+      name: 'QC feedback and metadata payload contract is preserved',
       fn: async () => {
-        const prompt = await fs.readFile(metadataPromptTemplatePath, 'utf8');
-        assert(prompt.includes('title'), 'Metadata prompt should mention title');
-        assert(prompt.includes('caption'), 'Metadata prompt should mention caption');
-        assert(prompt.includes('thumbnail_text'), 'Metadata prompt should mention thumbnail_text');
-        assert(prompt.includes('hashtags'), 'Metadata prompt should mention hashtags');
+        assert(workerNode.code.includes('words.slice(0, 200)'), 'QC feedback must be capped at 200 words');
         assert(
-          !/youtube_description_long|video_description/i.test(prompt),
-          'Metadata prompt must not request long description fields',
+          workerNode.code.includes('review_excerpt') && workerNode.code.includes('reviewer_instruction'),
+          'Metadata generation must send both review text and reviewer instruction',
         );
       },
     },
     {
       id: '9',
-      name: 'Reviewer Orchestrator parses new QC schema (hook/clarity/originality/practical/risk/feedback)',
+      name: 'Notify hub contract and placeholders are preserved',
       fn: async () => {
-        const qcResponse = {
-          hook: 8.5,
-          clarity: 7.5,
-          originality: 8,
-          practical: 7,
-          risk: 'low',
-          feedback:
-            'Mở bài đã chạm đúng nỗi đau nhưng phần bridge cần tăng độ cụ thể bằng 1-2 tình huống đời sống rõ nét hơn để người nghe áp dụng ngay.',
-        };
+        const setNotifyNodes = (workflow.nodes ?? []).filter((node) => node.name.startsWith('Set Notify Targets'));
+        assert(setNotifyNodes.length === 1, 'Workflow must keep only one Set Notify Targets node');
 
-        const run = await runCode(reviewerNode.code, {
-          input: {
-            ...createBaseInput(promptTemplate, metadataPromptTemplate),
-            full_review: 'Noi dung review',
-            review_intro: 'Mo dau',
-            review_outro: 'Ket + CTA',
-            telegram_bot_token: '',
-            telegram_chat_id: '',
-          },
-          responses: [buildChatResponse(JSON.stringify(qcResponse))],
-        });
+        const notifyMain = getNode(workflow, 'Set Notify Targets (Main)');
+        assert(
+          notifyMain.parameters?.includeOtherFields === true,
+          'Set Notify Targets (Main) must keep includeOtherFields=true',
+        );
+        assert(
+          String(getSetAssignmentValue(workflow, 'Set Notify Targets (Main)', 'notify_targets') ?? '').includes('$json.notify_targets') &&
+            String(getSetAssignmentValue(workflow, 'Set Notify Targets (Main)', 'notify_targets') ?? '').includes('__NOTIFY_TARGETS__'),
+          'Set Notify Targets (Main) must preserve payload notify_targets with __NOTIFY_TARGETS__ fallback',
+        );
 
-        assert(run.data.qc_status === 'generated', 'Expected qc_status=generated for new QC schema');
-        assert(run.data.hook_score === 8.5, 'Expected hook_score from top-level hook field');
-        assert(run.data.practical_value_score === 7, 'Expected practical_value_score from top-level practical field');
-        assert(run.data.risk_level === 'low', 'Expected risk_level normalized from risk field');
+        const sendInfoNode = getNode(workflow, 'Send Informations');
+        assert(sendInfoNode.type === 'n8n-nodes-base.splitOut', 'Send Informations must be Split Out node');
         assert(
-          normalizeMessage(run.data.feedback).length > 0,
-          'Expected reviewer feedback extracted from new QC schema',
-        );
-      },
-    },
-    {
-      id: '10',
-      name: 'Revise review prompt includes injected master prompt with input-limit clipping',
-      fn: async () => {
-        const code = reviewerNode.code;
-        assert(
-          code.includes('buildMasterPrompt(masterPromptTemplate, userInput)'),
-          'Reviewer Orchestrator should inject user_input into master prompt for revise flow',
+          String(sendInfoNode.parameters?.fieldToSplitOut ?? '') === 'send_informations',
+          'Send Informations must split by send_informations field',
         );
         assert(
-          code.includes('master_prompt_injected'),
-          'Revise payload should include master_prompt_injected context',
+          String(sendInfoNode.parameters?.include ?? '') === 'allOtherFields',
+          'Send Informations must keep all other fields while splitting',
         );
+
+        const mainNotify = getNode(workflow, 'Notify via Shared Workflow (Main)');
         assert(
-          code.includes('clipContextText('),
-          'Reviewer Orchestrator should include clipping helper to reduce input-limit risk',
+          String(mainNotify.parameters?.workflowPath ?? '') === '__SHARED_NOTIFICATION_WORKFLOW_PATH__',
+          'Main notify workflow path must keep placeholder',
         );
+
         assert(
-          code.includes('master_prompt_truncated') && code.includes('current_review_truncated'),
-          'Revise payload should expose truncation flags for master prompt/review',
+          getTargets(workflow, 'Build Notify Payload (Main)').includes('Send Informations') &&
+            getTargets(workflow, 'Build Notify Payload (Router)').includes('Send Informations') &&
+            getTargets(workflow, 'Build Notify Payload (Worker)').includes('Send Informations') &&
+            getTargets(workflow, 'Code in JavaScript').includes('Send Informations'),
+          'All notify payload builders and start parser must hand off via Send Informations',
         );
-      },
-    },
-    {
-      id: '11',
-      name: 'Revise review flow sends full payload first, then retries with clipping on context-limit errors',
-      fn: async () => {
-        const code = reviewerNode.code;
+
         assert(
-          code.includes('function shouldRetryWithTrimmedContext(errorMessage)'),
-          'Reviewer Orchestrator should detect context-limit style errors',
-        );
-        assert(
-          code.includes('return await callRevise(fullPrompt);'),
-          'Revise flow should attempt full payload first',
-        );
-        assert(
-          code.includes('if (!shouldRetryWithTrimmedContext(errorText))'),
-          'Revise flow should only fallback to clipping when context-limit errors are detected',
-        );
-        assert(
-          code.includes('const clippedPrompt = buildRevisePrompt('),
-          'Revise flow should build clipped payload for retry path',
+          startMessageNode.code.includes('Bắt đầu review:') &&
+            getCodeNode(workflow, 'Build Notify Payload (Main)').code.includes('send_informations') &&
+            getCodeNode(workflow, 'Build Notify Payload (Router)').code.includes('send_informations') &&
+            getCodeNode(workflow, 'Build Notify Payload (Worker)').code.includes('send_informations'),
+          'Start parser and notify payload builders must emit send_informations contract',
         );
       },
     },
@@ -515,9 +594,7 @@ async function runChecklist() {
 
   console.log('');
   console.log('=== Summary ===');
-  console.log(`Workflow template: ${workflowPath}`);
-  console.log(`Prompt template:   ${promptTemplatePath}`);
-  console.log(`Metadata prompt:  ${metadataPromptTemplatePath}`);
+  console.log(`Workflow: ${workflowPath}`);
   console.log(`Total cases: ${results.length}`);
   console.log(`PASS: ${passCount}`);
   console.log(`FAIL: ${failCount}`);

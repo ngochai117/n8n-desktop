@@ -61,3 +61,8 @@ Project: `n8n-desktop`
 - Khong hard-code prompt dai truc tiep trong workflow JSON neu prompt do co the quan ly qua file.
 - Prompt file phai duoc inject vao workflow qua `Set Config` + script import wrapper tuong ung.
 - Khi sync workflow tu UI ve JSON, script sanitizer phai tra ve placeholder cho cac field prompt template de tranh drift/noise.
+
+## 10) Workflow UI cleanliness + routing data policy (bat buoc)
+- Thiet ke node phai clean, uu tien gom nhom node logic va tai su dung nhom node thay vi tach le tung node khong can thiet.
+- Cac node dieu huong UI nhu `Split Out`, `Merge`, `Switch`, `If` khi dong vai tro router chung phai giu du lieu day du (`include all other fields`) de tranh rot data.
+- Neu dung pattern notify hub (vi du `Send Informations`), payload parse phai di theo thu tu: `parse notify data -> split hub -> set notify targets -> fan-out notify`.

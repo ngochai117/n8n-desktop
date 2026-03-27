@@ -29,6 +29,40 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 - 2026-03-26: Sync workflow templates tu n8n UI ve JSON (apply, changed=0, unchanged=1, failed=0). Chi tiet: `CHANGELOG.md`.
 - 2026-03-26: Fix workflow book-review: tra chat response truc tiep tu `Reviewer Orchestrator`, gom QC ve 1 nguon logic trong orchestrator (node AI QC giu pass-through), va sanitize `workflowPath` ve placeholder trong templates/sync script. Ly do: tranh mat metadata o response, tranh drift QC, va bo absolute path theo may local.
 
+## 2026-03-27
+- Rut gon lai bo script run theo feedback "de doc de chay":
+  - `run-n8n.sh`: quay ve dang toi gian (load env + `n8n start`).
+  - `run-n8n-docker.sh`: quay ve lenh docker n8n toi gian.
+  - `run-cloudflared-tunnel.sh`: quay ve lenh cloudflared docker toi gian (nhan token argument hoac env).
+- Refactor bo script run theo huong de dung hon:
+  - `scripts/run/run-n8n.sh`: chi giu mode n8n local.
+  - `scripts/run/run-n8n-docker.sh`: tach rieng cho luong n8n Docker.
+  - `scripts/run/run-cloudflared-tunnel.sh`: tach rieng cho Cloudflared tunnel qua Docker.
+- Don gian hoa README Quick Start theo 3 script tach biet (n8n local / n8n docker / tunnel), giam options da mode trong 1 script.
+- Them script `scripts/run/run-n8n.sh` de start n8n gon hon: mac dinh run local, co auto-bootstrap khi thieu dependency, va co `--bootstrap` de force bootstrap moi lan chay.
+- Bo sung docker mode trong script run (`--docker`, `--detach`, `--docker-image`, `--docker-name`, `--port`) de chay n8n bang 1 lenh.
+- Hardening docker runner trong `run-n8n.sh`: check Docker daemon truoc khi chay, chmod data dir bind-mount de giam loi permission, va auto in `docker logs` neu container crash som.
+- Them cloudflared flags trong `run-n8n.sh` (`--cloudflared`, `--cloudflared-token`, `--cloudflared-image`, `--cloudflared-name`) de bat tunnel sidecar cung lenh run n8n; support env fallback `CLOUDFLARED_TUNNEL_TOKEN`.
+- Cap nhat `README.md` Quick Start sang flow 1-lenh (`run-n8n.sh`) va bo sung bang options cho script moi.
+- Chuan hoa `env.n8n.local`: bo bien token tunnel cu, giu cau hinh public URL thong qua `WEBHOOK_URL` + `N8N_EDITOR_BASE_URL`.
+- Cap nhat `env.n8n.local.example` bo sung 2 bien `WEBHOOK_URL` va `N8N_EDITOR_BASE_URL`.
+- Cap nhat `README.md` giai thich ro vai tro rieng cua `WEBHOOK_URL` (webhook public, uu tien HTTPS) va `N8N_EDITOR_BASE_URL` (URL mo editor), tranh nham hai bien bat buoc phai giong het.
+- Gom luong book-review ve 1 workflow hop nhat (`book-review-gemini.workflow.json`) de de theo doi trong n8n UI, thay vi chia thanh file router/worker rieng.
+- Cap nhat dong bo importer/checklist/e2e/registry/docs theo kien truc 1 workflow; wrapper `import-book-review-workflow.sh` gio chi import 1 template + prompt files.
+- Don dep legacy import/sync fields lien quan `reviewer_worker_workflow_path` va `Execute Reviewer Worker` sau khi da gom workflow.
+- Xoa 2 workflow cu tren n8n: `Book Review Reviewer Router` va `Book Review Reviewer Worker`.
+- Fix luong worker/main notify: worker bo qua item thieu `event_type` (khong bao failed gia), va `Prepare Session + Init Event` giu nguyen `stop_reason` upstream (vi du `api_error`) thay vi ghi de `review_empty`.
+- Fix runtime error `Handle Reviewer Event: A 'json' property isn't an object [item 0]` bang cach doi guard thieu `event_type` sang output object hop le (`skip_worker_notify=true`) va chan notify node worker khi item skip/invalid.
+- Refactor notify hub theo topology UI moi: them `Send Informations` (`Split Out`) + `Merge`, gom moi payload thong bao vao contract `send_informations`, va giu full data qua node dieu huong.
+- Chuan hoa luong notify: `parse notify data -> Send Informations -> Set Notify Targets (Main) -> Notify via Shared Workflow (Main)`; bo phu thuoc vao `Set Notify Targets (Router/Worker)` rieng.
+- Thay code placeholder `Code in JavaScript` bang parser thong diep bat dau `Bắt đầu review: {{user_input}}`.
+- Chuyen cac node `Build Notify Payload (Main/Router/Worker)` sang `runOnceForEachItem`, emit payload chuan + `send_informations`.
+- Cap nhat `Return Chat Response` de pick deterministic chat payload theo `chat_priority` tu output cua `Send Informations` (uu tien start message, fallback ACK).
+- Hardening webhook response: dam bao nhanh worker-skip van tao 1 payload notify an toan (khong de `Split Out` ra 0 item) va noi `Notify via Shared Workflow (Main)` ve `Return Chat Response` de tranh loi `No item to return was found`.
+- Cap nhat checklist automation (`test-book-review-checklist.mjs`) theo topology/contract moi; ket qua PASS 11/11.
+- Chay import lai workflow book-review sau khi sua JSON va verify E2E (`run-book-review-e2e.sh`) dat `webhook_http_code=200`.
+- Cap nhat rules project: bo sung policy clean UI grouping + routing nodes phai giu full data.
+
 ## 2026-03-25T03:13:45Z
 - Workflow sync (UI -> JSON) completed with no file changes.
 - Run mode=apply, total=3, changed=0, unchanged=3, failed=0.
@@ -80,3 +114,16 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 ## 2026-03-26T11:01:14Z
 - Workflow sync (UI -> JSON) updated 1 workflow(s).
 - Changed: Book Review Gemini via CLIProxyAPI. Run mode=apply, total=4, unchanged=3, failed=0.
+
+## 2026-03-26T13:17:20Z
+- Re-architected book-review reviewer flow from monolithic orchestrator to event-driven 3-workflow topology:
+  - `Book Review Gemini via CLIProxyAPI` (main ACK async + session dispatch)
+  - `Book Review Reviewer Router` (Telegram callback/message + scheduler timeout routing)
+  - `Book Review Reviewer Worker` (review/metadata event handling + finalize)
+- Added session persistence via n8n Data Table API (`book_review_sessions`) keyed by `session_token` with JSON-string payload + required fields.
+- Updated import/sync automation:
+  - `import-book-review-workflow.sh` now imports all 3 book-review workflows in one command.
+  - `import-workflow.sh` now injects/sanitizes `n8n_api_url`, `n8n_api_key`, `reviewer_worker_workflow_path`, and supports Telegram Trigger credential binding.
+  - `sync-workflows-from-n8n.sh` sanitizer now restores new placeholders for worker path + n8n API fields.
+- Replaced checklist assertions to validate event-driven contracts (async ACK, router callback format, worker event types, anti-polling) while keeping generate/parse regressions.
+- Updated `README.md` to document the new async contract and 3-workflow architecture.

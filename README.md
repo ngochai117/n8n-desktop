@@ -20,34 +20,57 @@ Muc tieu cua project: chay n8n local, dung MCP + skills de build workflow, va ti
 - Playbook day du, prompt mau va checklist spawn nam trong `RULES_AND_SKILLS.md` (Skill H).
 
 ## Quick Start
-1. Bootstrap n8n + n8n-mcp + n8n-skills:
+1. Chay n8n local:
 ```bash
-bash scripts/bootstrap/bootstrap-local.sh
+bash scripts/run/run-n8n.sh
 ```
-2. Bat n8n local:
+2. Chay n8n bang Docker (tach rieng):
 ```bash
-n8n
+bash scripts/run/run-n8n-docker.sh
 ```
-Neu muon bat Telegram notify trong workflow notify dung chung, chay n8n voi env da source:
+3. Chay Cloudflared tunnel (qua Docker):
 ```bash
-set -a
-source env.cliproxy.local
-set +a
-n8n
+bash scripts/run/run-cloudflared-tunnel.sh <your-token>
 ```
-3. Mo UI:
+4. Mo UI:
 ```text
 http://localhost:5678
 ```
-4. Verify local stack:
+5. Verify local stack:
 ```bash
 bash scripts/bootstrap/verify-local.sh
 ```
 
+### Script n8n local
+- Script nay giu dung flow gon: load env -> chay `n8n start`.
+- Co the truyen tham so n8n truc tiep:
+```bash
+bash scripts/run/run-n8n.sh --tunnel
+```
+
+### Script n8n docker
+- Script nay chi chay 1 lenh docker n8n local (khong gom flow build/deploy).
+- Dung truc tiep:
+```bash
+bash scripts/run/run-n8n-docker.sh
+```
+
+### Script cloudflared
+- Dung dung command cloudflared qua docker nhu ban dang dung:
+```bash
+bash scripts/run/run-cloudflared-tunnel.sh <token>
+```
+- Neu da dat `CLOUDFLARED_TUNNEL_TOKEN` trong `env.n8n.local` thi khong can truyen token tren command line.
+
 ## n8n API setup (cho MCP)
 1. Tao API key trong n8n UI:
 `Settings -> n8n API -> Create an API key`
-2. Dien vao `env.n8n.local`.
+2. Dien vao `env.n8n.local`:
+   - `N8N_API_URL`
+   - `N8N_API_KEY`
+   - `WEBHOOK_URL` (public HTTPS URL, vi du `https://n8n.shadow-lord.online`)
+   - `N8N_EDITOR_BASE_URL` (URL mo UI editor; co the trung domain voi `WEBHOOK_URL`, va co the dung `http` neu ban truy cap local qua Cloudflare edge)
+   - `CLOUDFLARED_TUNNEL_TOKEN` (optional; dung cho script `run-cloudflared-tunnel.sh`)
 3. Bat full MCP mode:
 ```bash
 bash scripts/bootstrap/enable-full-mcp.sh
@@ -188,18 +211,25 @@ Pipeline:
 - `Shared Notification Router` route notify theo `notify_targets`, ho tro Telegram + Google Chat
 
 Book review chat pipeline:
-- `When chat message received` (`Chat Trigger`)
-- `Set Config` (model/fallback_model/base url/client key/max turns/user input va cac prompt template: master/metadata/qc/review-edit)
-- `Code` node goi Gemini theo vong lap, auto gui `"Continue"` khi gap control tag `-CONTINUE-` (line marker)
-- `Parse Review Sections` noi thang sang `Set Notify Targets`; bo node pass-through `AI QC + Internal Scoring` de giam do phuc tap topology.
-- Chunk cuoi duoc dong bo theo control tag `-END-`; chunk trung gian se cat bo phan tu marker tro ve sau
-- Neu gap `429` capacity o model chinh, node tu dong fallback sang model du phong
-- Tra output cuoi cung qua field `message` (response mode `lastNode`)
+- Kien truc da duoc gom lai 1 workflow event-driven de de theo doi trong n8n UI:
+  - `book-review-gemini.workflow.json` gom ca 3 nhanh:
+    - Main chat: generate full review + parse + persist session + tra ACK async ngay.
+    - Router: nhan Telegram callback/message + scheduler timeout 1 phut, chuan hoa command thanh event.
+    - Worker: xu ly event review/metadata/finalize, cap nhat session state, gui preview/final qua Telegram.
+- Main chat trigger tra `message_ack + session_token + reviewer_stage=review_pending` (khong block cho den khi reviewer xong).
+- Callback data router su dung format ngan <=64 bytes: `brv:rvw:c:<token>`, `brv:rvw:x:<token>`, `brv:meta:c:<token>`, ...
+- Policy no-reply theo deadline: scheduler path tu dong dispatch `auto_continue_review` hoac `auto_continue_metadata`.
+- Notify hub cho workflow review sach da chuan hoa theo pattern:
+  - Parse thong diep bat dau: `Bắt đầu review: {{user_input}}`.
+  - Moi payload thong bao (main/router/worker/start-message) deu dua vao mang `send_informations`.
+  - `Send Informations` (`Split Out`) se split theo `send_informations` va giu full data (`include=allOtherFields`).
+  - `Set Notify Targets (Main)` duoc dat ngay truoc `Notify via Shared Workflow (Main)` va la diem set target notify duy nhat.
+- Luong revise review trong worker giu full context (`master prompt da inject user_input + review text + reviewer instruction`) va co fallback clipping khi gap loi input/context limit.
 - Master prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-master-prompt.txt` (placeholder `{{USER_INPUT}}`)
 - Metadata prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-metadata-prompt.txt`
 - QC prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-qc-prompt.txt`
 - Review-edit prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-review-edit-prompt.txt`
-- Cuoi workflow co `Set Notify Targets` + build payload + goi `Shared Notification Router` cho ca success/failed
+- Workflow hop nhat ket thuc moi nhanh bang notify hub: `build payload -> Send Informations -> Set Notify Targets (Main) -> Shared Notification Router`, dong thoi tra chat response tu hub cung du lieu.
 
 Quy tac import/update:
 - Script import da la **UPSERT**:
@@ -222,7 +252,7 @@ bash scripts/workflows/sync/sync-workflows-from-n8n.sh --name "Demo Gemini via C
 # Apply nhung khong ghi changelog
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply --no-log
 ```
-- Script se sanitize truong nhay cam (`cliproxy_base_url`, `cliproxy_client_key`) va `Notify via Shared Workflow.workflowPath` ve placeholder truoc khi ghi file.
+- Script se sanitize truong nhay cam (`cliproxy_base_url`, `cliproxy_client_key`, `n8n_api_url`, `n8n_api_key`) va workflow path placeholders (`Notify via Shared Workflow`) truoc khi ghi file.
 - `workflow-registry.json` nen luu `template` dang duong dan tuong doi (vi du: `workflows/book-review/book-review-gemini.workflow.json`) de tranh vo path khi doi ten folder project.
 - Khi chay `--apply` (mac dinh), script se auto append log vao `CHANGELOG.md`.
 
@@ -235,7 +265,8 @@ bash scripts/workflows/import/import-openai-demo-workflow.sh
 bash scripts/workflows/import/import-book-review-workflow.sh
 # or custom prompt files:
 bash scripts/workflows/import/import-book-review-workflow.sh \
-  env.n8n.local env.cliproxy.local workflows/book-review/book-review-gemini.workflow.json \
+  env.n8n.local env.cliproxy.local \
+  workflows/book-review/book-review-gemini.workflow.json \
   workflows/book-review/prompts/book-review-master-prompt.txt \
   workflows/book-review/prompts/book-review-metadata-prompt.txt \
   workflows/book-review/prompts/book-review-qc-prompt.txt \
@@ -246,7 +277,7 @@ Automation checklist test (book review workflow):
 ```bash
 bash scripts/workflows/tests/test-book-review-checklist.sh
 ```
-- Chay full checklist automation: one-shot, multi-turn "Continue", marker inline khong trigger, max-turns, API error, fallback model.
+- Chay checklist topology + contract event-driven trong workflow hop nhat, bao gom async ACK, router callback/scheduler, worker event contract, va regression generate/parse.
 
 E2E nhanh cho book review (khong can tu tim webhook path):
 ```bash
@@ -274,14 +305,14 @@ bash scripts/workflows/tests/run-book-review-e2e.sh env.n8n.local env.cliproxy.l
 - `scripts/workflows/import/import-gemini-demo-workflow.sh`: wrapper import workflow Gemini demo vao n8n
 - `scripts/workflows/import/import-shared-notification-router-workflow.sh`: import workflow notify router da kenh dung chung
 - `scripts/workflows/import/import-openai-demo-workflow.sh`: import workflow OpenAI demo vao n8n
-- `scripts/workflows/import/import-book-review-workflow.sh`: import workflow review sach chat vao n8n
+- `scripts/workflows/import/import-book-review-workflow.sh`: import workflow book review hop nhat vao n8n
 - `scripts/workflows/sync/sync-workflows-from-n8n.sh`: sync workflow state tu n8n UI ve JSON templates (preview/apply)
 - `scripts/workflows/tests/test-book-review-checklist.sh`: chay full automation checklist cho workflow review sach
 - `scripts/workflows/tests/test-book-review-checklist.mjs`: test runner chi tiet cho checklist automation
 - `scripts/workflows/tests/run-book-review-e2e.sh`: e2e runner book review (patch test webhook -> run -> auto restore)
 - `workflows/demo/gemini-cliproxy-demo.workflow.json`: workflow demo template
 - `workflows/demo/openai-cliproxy-demo.workflow.json`: workflow OpenAI demo template
-- `workflows/book-review/book-review-gemini.workflow.json`: workflow review sach qua chat + auto "Continue"
+- `workflows/book-review/book-review-gemini.workflow.json`: workflow review sach hop nhat (main + router + worker trong cung 1 file)
 - `workflows/shared/shared-notification-router.workflow.json`: workflow notify router da kenh (telegram/ggchat)
 - `workflows/book-review/prompts/book-review-master-prompt.txt`: master prompt nguon de edit de dang
 - `workflows/book-review/prompts/book-review-metadata-prompt.txt`: metadata prompt nguon de edit title/caption/thumbnail/hashtags

@@ -68,6 +68,8 @@ set +a
 : "${N8N_API_KEY:?N8N_API_KEY is required}"
 : "${CLIPROXY_BASE_URL:?CLIPROXY_BASE_URL is required}"
 : "${CLIPROXY_CLIENT_KEY:?CLIPROXY_CLIENT_KEY is required}"
+N8N_API_URL_DEFAULT="${N8N_API_URL:-}"
+N8N_API_KEY_DEFAULT="${N8N_API_KEY:-}"
 
 NOTIFY_TARGETS_DEFAULT="${NOTIFY_TARGETS:-telegram}"
 TELEGRAM_BOT_TOKEN_DEFAULT="${TELEGRAM_BOT_TOKEN:-}"
@@ -218,7 +220,7 @@ ensure_telegram_credential_id() {
 }
 
 has_telegram_nodes="$(
-  jq -r '[(.nodes // [])[] | select(.type == "n8n-nodes-base.telegram")] | length > 0' "$WORKFLOW_TEMPLATE"
+  jq -r '[(.nodes // [])[] | select(.type == "n8n-nodes-base.telegram" or .type == "n8n-nodes-base.telegramTrigger")] | length > 0' "$WORKFLOW_TEMPLATE"
 )"
 
 telegram_credential_id="$(ensure_telegram_credential_id "$has_telegram_nodes")"
@@ -226,26 +228,36 @@ telegram_credential_id="$(ensure_telegram_credential_id "$has_telegram_nodes")"
 payload="$(jq \
   --arg base "$CLIPROXY_BASE_URL" \
   --arg key "$CLIPROXY_CLIENT_KEY" \
+  --arg n8nApiUrl "$N8N_API_URL_DEFAULT" \
+  --arg n8nApiKey "$N8N_API_KEY_DEFAULT" \
   --arg notifyPath "$SHARED_NOTIFICATION_ROUTER_PATH" \
   --arg notifyTargets "$NOTIFY_TARGETS_DEFAULT" \
+  --arg notifyTargetsExpr "={{ \$json.notify_targets || \"$NOTIFY_TARGETS_DEFAULT\" }}" \
   --arg telegramBotToken "$TELEGRAM_BOT_TOKEN_DEFAULT" \
   --arg telegramChatId "$TELEGRAM_CHAT_ID_DEFAULT" \
   --arg ggChatWebhook "$GG_CHAT_WEBHOOK_DEFAULT" \
   --arg telegramCredentialId "$telegram_credential_id" \
   --arg telegramCredentialName "$TELEGRAM_CREDENTIAL_NAME_DEFAULT" \
   '
-  (.nodes[] | select(.name=="Set Config") | .parameters.assignments.assignments[] | select(.name=="cliproxy_base_url") | .value) = $base
-  | (.nodes[] | select(.name=="Set Config") | .parameters.assignments.assignments[] | select(.name=="cliproxy_client_key") | .value) = $key
-  | (.nodes[]? | select(.name=="Set Notify Targets") | .parameters.includeOtherFields) = true
-  | (.nodes[]? | select(.name=="Set Notify Targets") | .parameters.assignments.assignments[]? | select(.name=="notify_targets") | .value) = $notifyTargets
-  | (.nodes[]? | select(.name=="Set Notify Targets") | .parameters.assignments.assignments[]? | select(.name=="telegram_bot_token") | .value) = $telegramBotToken
-  | (.nodes[]? | select(.name=="Set Notify Targets") | .parameters.assignments.assignments[]? | select(.name=="telegram_chat_id") | .value) = $telegramChatId
-  | (.nodes[]? | select(.name=="Set Notify Targets") | .parameters.assignments.assignments[]? | select(.name=="ggchat_webhook_url") | .value) = $ggChatWebhook
-  | (.nodes[] | select(.name=="Notify via Shared Workflow") | .parameters.source) = "localFile"
-  | (.nodes[] | select(.name=="Notify via Shared Workflow") | .parameters.workflowPath) = $notifyPath
-  | (.nodes[] | select(.name=="Notify via Shared Workflow") | .parameters) |= del(.workflowId)
+  (.nodes[] | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[] | select(.name=="cliproxy_base_url") | .value) = $base
+  | (.nodes[] | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[] | select(.name=="cliproxy_client_key") | .value) = $key
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="n8n_api_url") | .value) = $n8nApiUrl
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="n8n_api_key") | .value) = $n8nApiKey
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="notify_targets") | .value) = $notifyTargets
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="telegram_bot_token") | .value) = $telegramBotToken
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="telegram_chat_id") | .value) = $telegramChatId
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="ggchat_webhook_url") | .value) = $ggChatWebhook
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="shared_notification_workflow_path") | .value) = $notifyPath
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.includeOtherFields) = true
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name=="notify_targets") | .value) = $notifyTargetsExpr
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name=="telegram_bot_token") | .value) = $telegramBotToken
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name=="telegram_chat_id") | .value) = $telegramChatId
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name=="ggchat_webhook_url") | .value) = $ggChatWebhook
+  | (.nodes[]? | select((.name | tostring) | startswith("Notify via Shared Workflow")) | .parameters.source) = "localFile"
+  | (.nodes[]? | select((.name | tostring) | startswith("Notify via Shared Workflow")) | .parameters.workflowPath) = $notifyPath
+  | (.nodes[]? | select((.name | tostring) | startswith("Notify via Shared Workflow")) | .parameters) |= del(.workflowId)
   | if $telegramCredentialId != "" then
-      (.nodes[]? | select(.type=="n8n-nodes-base.telegram") | .credentials.telegramApi) = {
+      (.nodes[]? | select(.type=="n8n-nodes-base.telegram" or .type=="n8n-nodes-base.telegramTrigger") | .credentials.telegramApi) = {
         id: $telegramCredentialId,
         name: $telegramCredentialName
       }

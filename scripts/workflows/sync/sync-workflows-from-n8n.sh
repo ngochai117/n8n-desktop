@@ -89,19 +89,22 @@ sanitize_and_shape_workflow() {
       connections: .connections,
       settings: (.settings // {})
     }
-    | (.nodes[]? | select(.name == "Set Config") | .parameters.assignments.assignments[]? | select(.name == "cliproxy_base_url") | .value) = "__CLIPROXY_BASE_URL__"
-    | (.nodes[]? | select(.name == "Set Config") | .parameters.assignments.assignments[]? | select(.name == "cliproxy_client_key") | .value) = "__CLIPROXY_CLIENT_KEY__"
-    | (.nodes[]? | select(.name == "Set Config") | .parameters.assignments.assignments[]? | select(.name == "master_prompt_template") | .value) = "__BOOK_REVIEW_MASTER_PROMPT__"
-    | (.nodes[]? | select(.name == "Set Config") | .parameters.assignments.assignments[]? | select(.name == "metadata_prompt_template") | .value) = "__BOOK_REVIEW_METADATA_PROMPT__"
-    | (.nodes[]? | select(.name == "Set Config") | .parameters.assignments.assignments[]? | select(.name == "qc_prompt_template") | .value) = "__BOOK_REVIEW_QC_PROMPT__"
-    | (.nodes[]? | select(.name == "Set Config") | .parameters.assignments.assignments[]? | select(.name == "review_revision_prompt_template") | .value) = "__BOOK_REVIEW_REVIEW_EDIT_PROMPT__"
-    | (.nodes[]? | select(.name == "Set Notify Targets") | .parameters.includeOtherFields) = true
-    | (.nodes[]? | select(.name == "Set Notify Targets") | .parameters.assignments.assignments[]? | select(.name == "notify_targets") | .value) = "__NOTIFY_TARGETS__"
-    | (.nodes[]? | select(.name == "Set Notify Targets") | .parameters.assignments.assignments[]? | select(.name == "telegram_bot_token") | .value) = "__TELEGRAM_BOT_TOKEN__"
-    | (.nodes[]? | select(.name == "Set Notify Targets") | .parameters.assignments.assignments[]? | select(.name == "telegram_chat_id") | .value) = "__TELEGRAM_CHAT_ID__"
-    | (.nodes[]? | select(.name == "Set Notify Targets") | .parameters.assignments.assignments[]? | select(.name == "ggchat_webhook_url") | .value) = "__GG_CHAT_WEBHOOK__"
-    | (.nodes[]? | select(.name == "Notify via Shared Workflow") | .parameters.workflowPath) = "__SHARED_NOTIFICATION_WORKFLOW_PATH__"
-    | (.nodes[]? | select(.type == "n8n-nodes-base.telegram") | .credentials.telegramApi) = {
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "cliproxy_base_url") | .value) = "__CLIPROXY_BASE_URL__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "cliproxy_client_key") | .value) = "__CLIPROXY_CLIENT_KEY__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "n8n_api_url") | .value) = "__N8N_API_URL__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "n8n_api_key") | .value) = "__N8N_API_KEY__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "shared_notification_workflow_path") | .value) = "__SHARED_NOTIFICATION_WORKFLOW_PATH__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "master_prompt_template") | .value) = "__BOOK_REVIEW_MASTER_PROMPT__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "metadata_prompt_template") | .value) = "__BOOK_REVIEW_METADATA_PROMPT__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "qc_prompt_template") | .value) = "__BOOK_REVIEW_QC_PROMPT__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "review_revision_prompt_template") | .value) = "__BOOK_REVIEW_REVIEW_EDIT_PROMPT__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.includeOtherFields) = true
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name == "notify_targets") | .value) = "__NOTIFY_TARGETS__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name == "telegram_bot_token") | .value) = "__TELEGRAM_BOT_TOKEN__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name == "telegram_chat_id") | .value) = "__TELEGRAM_CHAT_ID__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name == "ggchat_webhook_url") | .value) = "__GG_CHAT_WEBHOOK__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Notify via Shared Workflow")) | .parameters.workflowPath) = "__SHARED_NOTIFICATION_WORKFLOW_PATH__"
+    | (.nodes[]? | select(.type == "n8n-nodes-base.telegram" or .type == "n8n-nodes-base.telegramTrigger") | .credentials.telegramApi) = {
         id: "__TELEGRAM_CREDENTIAL_ID__",
         name: "__TELEGRAM_CREDENTIAL_NAME__"
       }

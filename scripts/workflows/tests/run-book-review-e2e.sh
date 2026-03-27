@@ -82,7 +82,7 @@ WORKFLOW_NAME="$(jq -r '.name' "$WORKFLOW_TEMPLATE")"
 WORKFLOW_ID="$(jq -r --arg name "$WORKFLOW_NAME" '.workflows[$name].id // empty' "$ROOT_DIR/workflow-registry.json")"
 [ -n "$WORKFLOW_ID" ] || fatal "Cannot find workflow id for '$WORKFLOW_NAME' in workflow-registry.json"
 
-USER_INPUT_EXPR="$(jq -r '.nodes[] | select(.name=="Set Config") | .parameters.assignments.assignments[] | select(.name=="user_input") | .value' "$WORKFLOW_TEMPLATE")"
+USER_INPUT_EXPR="$(jq -r '.nodes[] | select(.name=="Set Config (Main)") | .parameters.assignments.assignments[] | select(.name=="user_input") | .value' "$WORKFLOW_TEMPLATE")"
 USER_INPUT_FIELD='chatInput'
 if [[ "$USER_INPUT_EXPR" =~ \$json\.([a-zA-Z0-9_]+) ]]; then
   USER_INPUT_FIELD="${BASH_REMATCH[1]}"
@@ -92,10 +92,10 @@ CHAT_TRIGGER_NODE='When chat message received'
 
 required_nodes=(
   "When chat message received"
-  "Set Config"
+  "Set Config (Main)"
   "Generate Full Review"
   "Parse Review Sections"
-  "Reviewer Orchestrator"
+  "Prepare Session + Init Event"
   "Return Chat Response"
 )
 
@@ -128,7 +128,7 @@ jq \
     if .name == $triggerName then
       (.parameters.public = true) |
       (.webhookId = $webhookId)
-    elif .name == "Set Config" then
+    elif .name == "Set Config (Main)" then
       (.parameters.assignments.assignments |= map(
         if .name == "reviewer_wait_timeout_seconds" then .value = $timeout
         else . end
@@ -189,14 +189,12 @@ log "- execution_id: ${EXEC_ID:-N/A}"
 
 printf '\nResponse preview:\n'
 jq -r '{
+  message_ack,
   message,
+  session_token,
+  reviewer_stage,
   stop_reason,
-  reviewer_decision,
-  risk_level,
-  video_title,
-  video_caption,
-  video_thumbnail_text,
-  video_hashtags
+  persist_error
 }' "$RESP_BODY"
 
 if [ -n "$EXEC_ID" ]; then
@@ -205,8 +203,7 @@ if [ -n "$EXEC_ID" ]; then
     status,
     startedAt,
     stoppedAt,
-    ran_nodes: ((.data.resultData.runData // {}) | keys),
-    reviewer_commands: (.data.resultData.runData["Reviewer Orchestrator"][0].data.main[0][0].json.reviewer_commands // [])
+    ran_nodes: ((.data.resultData.runData // {}) | keys)
   }' "$EXECUTION_JSON"
 fi
 
