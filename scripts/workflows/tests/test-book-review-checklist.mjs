@@ -259,10 +259,9 @@ async function runChecklist() {
           'Set Notify Targets (Main) must be placed right before shared notify',
         );
 
-        const chatTriggerBranches = getTargets(workflow, 'When chat message received');
         assert(
-          chatTriggerBranches.length === 0,
-          'Chat trigger must be disconnected after migrating start trigger to Telegram',
+          !(workflow.nodes ?? []).some((node) => node.name === 'When chat message received'),
+          'Legacy chat trigger must be removed after migrating start trigger to Telegram',
         );
 
         assert(
@@ -629,12 +628,29 @@ async function runChecklist() {
     },
     {
       id: '8',
-      name: 'QC feedback and metadata payload contract is preserved',
+      name: 'QC feedback, metadata payload, and long-text file delivery contract are preserved',
       fn: async () => {
         assert(workerNode.code.includes('words.slice(0, 200)'), 'QC feedback must be capped at 200 words');
         assert(
           workerNode.code.includes('review_excerpt') && workerNode.code.includes('reviewer_instruction'),
           'Metadata generation must send both review text and reviewer instruction',
+        );
+        assert(
+          workerNode.code.includes('telegramReviewFileThresholdChars') &&
+            workerNode.code.includes('sendTelegramTextFile') &&
+            workerNode.code.includes("'/webhook/' + telegramFileBridgePath"),
+          'Worker must route long review text to Telegram file bridge webhook',
+        );
+        assert(
+          (workflow.nodes ?? []).some((node) => node.name === 'Telegram File Bridge Webhook') &&
+            (workflow.nodes ?? []).some((node) => node.name === 'Convert Telegram Bridge Text To File') &&
+            (workflow.nodes ?? []).some((node) => node.name === 'Send Telegram File Bridge Document'),
+          'Workflow must include Telegram file bridge nodes (Webhook -> ConvertToFile -> Telegram sendDocument)',
+        );
+        assert(
+          workerNode.code.includes("fileLabel: 'preview'") &&
+            workerNode.code.includes("fileLabel: 'final'"),
+          'Worker must tag preview/final review file payloads',
         );
       },
     },

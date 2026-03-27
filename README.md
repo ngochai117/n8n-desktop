@@ -12,12 +12,20 @@ Muc tieu cua project: chay n8n local, dung MCP + skills de build workflow, va ti
 - `workflow-registry.json`, scripts, workflows, docs va file `.example` la thanh phan cua repo va nen duoc version control.
 
 ## Sub-agent playbook
-- Khi task la `feature work`, uu tien 1 main agent giu critical path va toi da 3 sub-agent song song:
-  - 1 `explorer` de map impact + rules bat buoc.
-  - 1 `worker` cho shell/import/sync/bootstrap neu co automation change.
-  - 1 `worker` cho checklist/test harness hoac verification path.
-- Khong chia 2 worker cung sua 1 workflow JSON lon neu ownership chua duoc khoa ro; main agent nen giu phan workflow integration neu do la tam diem cua task.
-- Playbook day du, prompt mau va checklist spawn nam trong `RULES_AND_SKILLS.md` (Skill H).
+- Roster chuan:
+  - `Conductor` (main owner)
+  - `Planner` (PM)
+  - `FlowBuilder` (workflow)
+  - `Builder` (code/script/docs)
+  - `Runner` (ops/e2e)
+  - `Gatekeeper` (QC)
+- So do phoi hop nhanh:
+```text
+Conductor -> Planner -> (FlowBuilder + Builder) -> Runner -> Gatekeeper -> Conductor -> User
+                                              (fail) <--------------------/
+```
+- Governance chi tiet + gate `G0..G4`: `AGENT_RULES_GLOBAL.md` (muc 6).
+- Skill pack thuc thi: `RULES_AND_SKILLS.md` (Skill H).
 
 ## Quick Start
 1. Chay n8n local:
@@ -213,18 +221,18 @@ Pipeline:
 Book review chat pipeline:
 - Kien truc da duoc gom lai 1 workflow event-driven de de theo doi trong n8n UI:
   - `book-review-gemini.workflow.json` gom ca 3 nhanh:
-    - Main chat: generate full review + parse + persist session + tra ACK async ngay.
-    - Router: nhan Telegram callback/message + scheduler timeout 1 phut, chuan hoa command thanh event.
+    - Main generate: generate full review + parse + persist session + tra ACK async ngay.
+    - Router: nhan Telegram callback/message, chuan hoa command thanh event.
     - Worker: xu ly event review/metadata/finalize, cap nhat session state, gui preview/final qua Telegram.
-- Main chat trigger tra `message_ack + session_token + reviewer_stage=review_pending` (khong block cho den khi reviewer xong).
+- Main generate branch tra `message_ack + session_token + reviewer_stage=review_pending` (duoc kick-off tu Telegram command `book-review ...`).
 - Callback data router su dung format ngan <=64 bytes: `brv:rvw:c:<token>`, `brv:rvw:x:<token>`, `brv:meta:c:<token>`, ...
-- Policy no-reply theo deadline: scheduler path tu dong dispatch `auto_continue_review` hoac `auto_continue_metadata`.
+- Khong con nhanh scheduler timeout; router xu ly truc tiep callback/message event.
 - Notify hub cho workflow review sach da chuan hoa theo pattern:
   - Parse thong diep bat dau: `Bắt đầu review: {{user_input}}`.
   - Moi payload thong bao (main/router/worker/start-message) deu dua vao mang `send_informations`.
   - `Send Informations` (`Split Out`) se split theo `send_informations` va giu full data (`include=allOtherFields`).
   - `Set Notify Targets (Main)` duoc dat ngay truoc `Notify via Shared Workflow (Main)` va la diem set target notify duy nhat.
-- Luong revise review trong worker giu full context (`master prompt da inject user_input + review text + reviewer instruction`) va co fallback clipping khi gap loi input/context limit.
+- Luong revise review trong worker giu full context (`master prompt da inject user_input + review text + reviewer instruction`) va khong fallback clipping.
 - Master prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-master-prompt.txt` (placeholder `{{USER_INPUT}}`)
 - Metadata prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-metadata-prompt.txt`
 - QC prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-qc-prompt.txt`
@@ -285,14 +293,14 @@ bash scripts/workflows/tests/run-book-review-e2e.sh
 # custom message:
 bash scripts/workflows/tests/run-book-review-e2e.sh env.n8n.local env.cliproxy.local "Sách Đắc Nhân Tâm của Dale Carnegie"
 ```
-- Script se tu patch workflow sang webhook test (`book-review-e2e-codex/chat`), goi 1 message, in execution summary, sau do restore workflow ve template goc.
+- Script se tu patch `Telegram Trigger` sang webhook test (`book-review-e2e-codex/webhook`), simulate Telegram update (co secret header), in execution summary, sau do restore workflow ve template goc.
 
 ## Cac file quan trong
 - `plan.md`: kien truc va roadmap
 - `AGENTS.md`: entrypoint chuan cho AI agents
 - `AGENT_RULES_GLOBAL.md`: rules dung chung (global)
 - `AGENT_RULES_PROJECT.md`: rules rieng cua project
-- `RULES_AND_SKILLS.md`: operational playbooks/skills (gom ca sub-agent delegation playbook cho feature work)
+- `RULES_AND_SKILLS.md`: operational playbooks/skills (governance sub-agent nam tai `AGENT_RULES_GLOBAL.md`)
 - `CHANGELOG.md`: changelog chi tiet (tu dong append khi sync workflow --apply)
 - `.mcp.json`: config MCP project-level
 - `env.n8n.local.example`: mau env n8n
@@ -309,7 +317,7 @@ bash scripts/workflows/tests/run-book-review-e2e.sh env.n8n.local env.cliproxy.l
 - `scripts/workflows/sync/sync-workflows-from-n8n.sh`: sync workflow state tu n8n UI ve JSON templates (preview/apply)
 - `scripts/workflows/tests/test-book-review-checklist.sh`: chay full automation checklist cho workflow review sach
 - `scripts/workflows/tests/test-book-review-checklist.mjs`: test runner chi tiet cho checklist automation
-- `scripts/workflows/tests/run-book-review-e2e.sh`: e2e runner book review (patch test webhook -> run -> auto restore)
+- `scripts/workflows/tests/run-book-review-e2e.sh`: e2e runner book review (patch Telegram webhook test -> simulate update -> auto restore)
 - `workflows/demo/gemini-cliproxy-demo.workflow.json`: workflow demo template
 - `workflows/demo/openai-cliproxy-demo.workflow.json`: workflow OpenAI demo template
 - `workflows/book-review/book-review-gemini.workflow.json`: workflow review sach hop nhat (main + router + worker trong cung 1 file)

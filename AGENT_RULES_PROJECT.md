@@ -66,3 +66,7 @@ Project: `n8n-desktop`
 - Thiet ke node phai clean, uu tien gom nhom node logic va tai su dung nhom node thay vi tach le tung node khong can thiet.
 - Cac node dieu huong UI nhu `Split Out`, `Merge`, `Switch`, `If` khi dong vai tro router chung phai giu du lieu day du (`include all other fields`) de tranh rot data.
 - Neu dung pattern notify hub (vi du `Send Informations`), payload parse phai di theo thu tu: `parse notify data -> split hub -> set notify targets -> fan-out notify`.
+
+## 11) Sub-agent operating policy reference (bat buoc)
+- Ap dung theo `AGENT_RULES_GLOBAL.md` muc 6 (Sub-agent orchestration framework).
+- Project nay khong override rieng cho roster `Conductor/Planner/FlowBuilder/Builder/Runner/Gatekeeper`.

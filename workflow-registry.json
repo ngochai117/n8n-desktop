@@ -13,7 +13,7 @@
     "Book Review Gemini via CLIProxyAPI": {
       "id": "zjmoz6mGCLL89Asx",
       "template": "workflows/book-review/book-review-gemini.workflow.json",
-      "lastSyncedAt": "2026-03-27T11:18:35Z"
+      "lastSyncedAt": "2026-03-27T13:45:37Z"
     },
     "Shared Notification Router": {
       "id": "2oIMm0rwQPf8j4oC",

@@ -88,10 +88,12 @@ if [[ "$USER_INPUT_EXPR" =~ \$json\.([a-zA-Z0-9_]+) ]]; then
   USER_INPUT_FIELD="${BASH_REMATCH[1]}"
 fi
 
-CHAT_TRIGGER_NODE='When chat message received'
+TELEGRAM_TRIGGER_NODE='Telegram Trigger'
+TELEGRAM_TRIGGER_NODE_ID="$(jq -r --arg n "$TELEGRAM_TRIGGER_NODE" '.nodes[] | select(.name==$n) | .id // empty' "$WORKFLOW_TEMPLATE")"
+[ -n "$TELEGRAM_TRIGGER_NODE_ID" ] || fatal "Missing node id for $TELEGRAM_TRIGGER_NODE"
 
 required_nodes=(
-  "When chat message received"
+  "Telegram Trigger"
   "Set Config (Main)"
   "Generate Full Review"
   "Parse Review Sections"
@@ -122,11 +124,10 @@ fi
 jq \
   --argjson timeout "$TIMEOUT_SECONDS" \
   --arg webhookId 'book-review-e2e-codex' \
-  --arg triggerName "$CHAT_TRIGGER_NODE" \
+  --arg triggerName "$TELEGRAM_TRIGGER_NODE" \
   '
   .nodes |= map(
     if .name == $triggerName then
-      (.parameters.public = true) |
       (.webhookId = $webhookId)
     elif .name == "Set Config (Main)" then
       (.parameters.assignments.assignments |= map(
@@ -151,16 +152,39 @@ bash "$ROOT_DIR/scripts/workflows/import/import-book-review-workflow.sh" \
 NEEDS_RESTORE=1
 
 START_TS="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+EPOCH_NOW="$(date +%s)"
+TELEGRAM_CHAT_ID_VALUE="${TELEGRAM_CHAT_ID:-6920403077}"
+SECRET_TOKEN="${WORKFLOW_ID}_${TELEGRAM_TRIGGER_NODE_ID}"
 PAYLOAD="$(jq -nc \
-  --arg sid "e2e-$(date +%s)" \
-  --arg input "$MESSAGE_INPUT" \
-  --arg inputField "$USER_INPUT_FIELD" \
-  '{action:"sendMessage",sessionId:$sid} + {($inputField):$input}')"
+  --arg input "book-review $MESSAGE_INPUT" \
+  --arg chatId "$TELEGRAM_CHAT_ID_VALUE" \
+  --arg epoch "$EPOCH_NOW" \
+  '
+  {
+    update_id: (900000 + (($epoch | tonumber) % 100000)),
+    message: {
+      message_id: (2000 + (($epoch | tonumber) % 100000)),
+      date: ($epoch | tonumber),
+      chat: {
+        id: ($chatId | tonumber? // $chatId),
+        type: "private"
+      },
+      from: {
+        id: ($chatId | tonumber? // $chatId),
+        is_bot: false,
+        first_name: "E2E",
+        username: "e2e_local"
+      },
+      text: $input
+    }
+  }
+  ')"
 
-log 'Executing webhook chat test...'
+log 'Executing Telegram webhook simulation test...'
 HTTP_CODE="$(curl -sS -o "$RESP_BODY" -D "$RESP_HEADERS" -w '%{http_code}' \
-  -X POST "$N8N_API_URL/webhook/book-review-e2e-codex/chat" \
+  -X POST "$N8N_API_URL/webhook/book-review-e2e-codex/webhook" \
   -H 'Content-Type: application/json' \
+  -H "x-telegram-bot-api-secret-token: $SECRET_TOKEN" \
   --data-raw "$PAYLOAD")"
 
 EXEC_JSON="$(curl -sS -H "X-N8N-API-KEY: $N8N_API_KEY" "$N8N_API_URL/api/v1/executions?limit=30")"
@@ -188,14 +212,12 @@ log "- workflow_id: $WORKFLOW_ID"
 log "- execution_id: ${EXEC_ID:-N/A}"
 
 printf '\nResponse preview:\n'
-jq -r '{
-  message_ack,
-  message,
-  session_token,
-  reviewer_stage,
-  stop_reason,
-  persist_error
-}' "$RESP_BODY"
+if jq -e . "$RESP_BODY" >/dev/null 2>&1; then
+  jq -r '.' "$RESP_BODY"
+else
+  cat "$RESP_BODY"
+  printf '\n'
+fi
 
 if [ -n "$EXEC_ID" ]; then
   printf '\nExecution summary:\n'

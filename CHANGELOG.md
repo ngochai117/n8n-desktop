@@ -30,6 +30,16 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 - 2026-03-26: Fix workflow book-review: tra chat response truc tiep tu `Reviewer Orchestrator`, gom QC ve 1 nguon logic trong orchestrator (node AI QC giu pass-through), va sanitize `workflowPath` ve placeholder trong templates/sync script. Ly do: tranh mat metadata o response, tranh drift QC, va bo absolute path theo may local.
 
 ## 2026-03-27
+- Don dep trigger + artifact debug:
+  - Xoa node du `When chat message received` khoi `book-review-gemini.workflow.json`; workflow start 100% tu `Telegram Trigger` + command `book-review ...`.
+  - Xoa 4 workflow debug tren n8n UI: `Codex Telegram File Debug`, `Codex Telegram File Bridge Test`, `Codex Telegram File Bridge Test 2`, `Codex Telegram Node SendDocument Test`.
+  - Xoa file debug khong con dung trong repo: `workflows/shared/telegram-send-text-file.workflow.json`, `scripts/workflows/import/import-telegram-file-bridge-workflow.sh`.
+  - Cap nhat checklist + e2e runner theo flow moi (e2e simulate Telegram webhook thay vi chat trigger webhook cu).
+- Chuan hoa bo sub-agent theo huong "best-practice framework":
+  - `AGENT_RULES_GLOBAL.md`: nang cap muc 6 thanh framework day du (roster doi ten, orchestration diagram, handoff contract, QC gates G0..G4, done criteria).
+  - `AGENT_RULES_PROJECT.md`: cap nhat tham chieu roster moi (`Conductor/Planner/FlowBuilder/Builder/Runner/Gatekeeper`).
+  - `RULES_AND_SKILLS.md` (Skill H): bo sung skill pack thuc thi (`PM-Planning`, `Workflow-Edit-n8n`, `Code-Edit`, `Ops-E2E`, `QC-Gate`).
+  - `README.md`: them so do phoi hop nhanh + roster de onboarding de hon.
 - Giam notify spam tren luong reviewer Telegram:
   - `Build Notify Payload (Router)` doi status dispatch sang `info` va ep `notify_targets='none'` de khong gui thong bao trung lap.
   - `Build Notify Payload (Worker)` chi gui notify ra ngoai khi `failed` hoac `success` cuoi (`metadata_continue`), bo qua cac su kien `info` trung gian.
