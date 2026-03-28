@@ -247,3 +247,7 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
   - `Finalize Session Assets Package (Worker)` va `Persist Media Debug (Worker)` gio nhan du `media_pipeline_status` + full session asset links.
 - Xac nhan runtime sau khi bat `Google Sheets API`:
   - `run-book-review-full-e2e.sh` pass (HTTP 200 cho start/review/metadata, `session_sheet_create_status_code=200`, co `session_sheet_url`).
+- Fix bug media folder + ten file TTS theo feedback runtime:
+  - `book-review.workflow.json`: doi clash handling cua `Merge Session Folder Context (Worker)`, `Merge Voice Folder Context (Worker)`, `Merge Image Folder Context (Worker)` sang `preferInput2` de giu dung folder id vua tao (khong bi ghi de boi session folder id).
+  - `tts.workflow.json`: `Normalize TTS Response` them helper `chooseVoiceFileName()` de bo ten generic nhu `stream`, ep filename theo `chunk_key` (`tts-<chunk_key>.wav|mp3`) khi provider tra ve ten chung.
+  - Verify runtime (execution `1465`): `voice_folder_id` tach rieng voi `session_folder_id` va co URL folder `voice` dung.

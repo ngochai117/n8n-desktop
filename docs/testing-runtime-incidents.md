@@ -49,6 +49,11 @@ bash scripts/workflows/import/import-book-review-workflow.sh
 4. Trieu chung: TTS fail `connect ECONNREFUSED 127.0.0.1:8001`
 - Nguyen nhan: TTS service chua chay/sai base URL.
 - Xu ly: start TTS service, dat `TTS_API_BASE_URL` dung host/port (uu tien `127.0.0.1`).
+- Check nhanh:
+```bash
+curl -sS -m 3 http://127.0.0.1:8001/ || true
+lsof -nP -iTCP:8001 -sTCP:LISTEN || true
+```
 
 5. Trieu chung: map execution sai/khong tim thay update vua gui
 - Nguyen nhan: lookup execution bang filter thoi gian mong manh hoac co noise tu webhook khac.

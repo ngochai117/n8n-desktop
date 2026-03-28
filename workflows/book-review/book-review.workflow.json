@@ -1291,7 +1291,7 @@
           "includeUnpaired": true,
           "clashHandling": {
             "values": {
-              "resolveClash": "preferInput1",
+              "resolveClash": "preferInput2",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
@@ -1352,7 +1352,7 @@
           "includeUnpaired": true,
           "clashHandling": {
             "values": {
-              "resolveClash": "preferInput1",
+              "resolveClash": "preferInput2",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
@@ -1413,7 +1413,7 @@
           "includeUnpaired": true,
           "clashHandling": {
             "values": {
-              "resolveClash": "preferInput1",
+              "resolveClash": "preferInput2",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
