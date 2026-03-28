@@ -67,6 +67,26 @@ Project: `n8n-desktop`
 - Cac node dieu huong UI nhu `Split Out`, `Merge`, `Switch`, `If` khi dong vai tro router chung phai giu du lieu day du (`include all other fields`) de tranh rot data.
 - Neu dung pattern notify hub (vi du `Send Informations`), payload parse phai di theo thu tu: `parse notify data -> split hub -> set notify targets -> fan-out notify`.
 
-## 11) Sub-agent operating policy reference (bat buoc)
+## 11) Node-first workflow design policy (bat buoc)
+- Uu tien dung cac node component built-in cua n8n de xu ly mapping, routing, merge/split, va transform data.
+- Chi dung Code node cho logic khong the bieu dien tot bang component nodes (ve do ro rang, do on dinh, hoac maintainability).
+- Khong dung Code node cho cac tac vu da co node built-in tuong duong.
+
+## 12) Sub-agent operating policy reference (bat buoc)
 - Ap dung theo `AGENT_RULES_GLOBAL.md` muc 6 (Sub-agent orchestration framework).
 - Project nay khong override rieng cho roster `Conductor/Planner/FlowBuilder/Builder/Runner/Gatekeeper`.
+
+## 13) n8n visual-flow readability policy (bat buoc)
+- Uu tien workflow theo nguyen tac `moi node = 1 trach nhiem ro rang`.
+- Voi tac vu async/polling (image/TTS/job queue...), bat buoc theo mau:
+  1) `Create Job` (HTTP Request)
+  2) `Wait` (Wait node rieng)
+  3) `Get Status` (HTTP Request rieng)
+  4) `If Completed?` (If node)
+  5) nhanh `false` quay lai `Wait` (loop)
+  6) nhanh `true` -> `Get Result`/`Finalize`
+- Khong duoc `sleep` bang Code node khi da co Wait node.
+- Bat buoc co gioi han polling (`max attempts` hoac timeout) de tranh loop vo han.
+- Voi xu ly theo tung item/chunk, uu tien `Loop Over Items`/`Split Out` + `Merge`/`Aggregate` de gom ket qua.
+- Code node chi duoc dung cho normalize/parse nho khi node built-in khong bieu dien duoc ro rang.
+- Neu logic dai, phai tach thanh nhieu node nho theo tung buoc, khong gom monolithic script kho theo doi.

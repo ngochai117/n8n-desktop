@@ -89,6 +89,13 @@ bash scripts/workflows/tests/test-book-review-checklist.sh
     - Dung khi: sau moi buoc implementation va truoc khi ket luan.
     - Output: checklist gate `G0..G4` + verdict `PASS/FAIL` + required rework neu fail.
 
+### Skill I: n8n node-first polling pattern (bat buoc)
+- Khi workflow co async job (image/TTS/provider queue), phai dung mau ro rang:
+  - `Create Job` -> `Wait` -> `Get Status` -> `If Completed?` -> loop lai `Wait` neu chua xong -> `Get Result`.
+- Moi node 1 nhiem vu; tranh monolithic Code node.
+- Dung `Loop Over Items`/`Split Out` de xu ly theo chunk, roi `Merge`/`Aggregate` de gom ket qua.
+- Code node chi de normalize/parse nho khi node built-in khong du ro rang.
+
 ## Files tham chieu nhanh
 - `AGENTS.md`
 - `AGENT_RULES_GLOBAL.md`

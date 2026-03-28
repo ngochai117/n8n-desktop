@@ -30,6 +30,37 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 - 2026-03-26: Fix workflow book-review: tra chat response truc tiep tu `Reviewer Orchestrator`, gom QC ve 1 nguon logic trong orchestrator (node AI QC giu pass-through), va sanitize `workflowPath` ve placeholder trong templates/sync script. Ly do: tranh mat metadata o response, tranh drift QC, va bo absolute path theo may local.
 
 ## 2026-03-27
+- Them ghi chu moi truong agent trong `README.md`: neu shell khong co `node`/`npm` thi uu tien patch bang `jq` + `apply_patch`, va check `command -v node` truoc khi chay checklist `.mjs`.
+- Chuan hoa ghi chu moi truong agent: truong hop `nvm` khien shell agent khong thay `node`, can verify/chay checklist qua shell interactive `zsh -lic` truoc khi ket luan thieu Node.
+- Refactor media branch book-review sang topology node-based: `Process Media Assets (chunk+gate) -> Generate Image Assets + Generate TTS Assets (parallel) -> Merge Media Results -> Finalize Media Assets -> Build Notify Payload`.
+- Book-review workflow them media branch truoc notify success:
+  - Them chuoi node media worker: `Process Media Assets (Worker)` -> `Generate Image Assets (Worker)` + `Generate TTS Assets (Worker)` -> `Merge Media Results (Worker)` -> `Finalize Media Assets (Worker)` -> `Build Notify Payload (Worker)`.
+  - Chi chay media branch cho final-success event (`metadata_continue`, `auto_continue_metadata`).
+  - Tach review thanh chunk 3 cau, chay song song nhanh image + TTS, merge deterministic theo `chunk_key`.
+  - Them output moi: `media_chunks`, `media_assets`, `media_debug_full`, `media_pipeline_status`, `media_stats`.
+  - `Build Notify Payload (Worker)` bo sung summary media (`media_status`, `media_assets` count) trong `details`.
+- Them config media trong `Set Config (Main/Worker)`: `image_*`, `tts_*` (bao gom `image_parallelism`, `tts_parallelism`).
+- Cap nhat tooling:
+  - `scripts/workflows/import/import-workflow.sh` bo sung inject env media (`IMAGE_API_BASE_URL`, `IMAGE_API_KEY`, `TTS_API_BASE_URL`, `TTS_VOICE_ID`).
+  - `scripts/workflows/sync/sync-workflows-from-n8n.sh` sanitize `image_api_key` ve rong khi sync --apply.
+- Cap nhat checklist automation `scripts/workflows/tests/test-book-review-checklist.mjs` voi case moi cho media topology + media behavior contract.
+- Them script kiem tra chat luong media data theo execution (`scripts/workflows/tests/check-book-review-media-output.sh`): in media summary, check schema contract, thong ke error reasons, ho tro strict gate.
+- Hardening TTS localhost connectivity:
+  - Chuyen default `tts_api_base_url` sang `http://127.0.0.1:8001` (Set Config + import default) de tranh resolve IPv6 `::1`.
+  - Bo sung normalize trong node `Generate TTS Assets (Worker)`: neu URL la `localhost` thi map sang `127.0.0.1` truoc khi goi `/stream`.
+- Tang kha nang debug tren n8n UI:
+  - Them node `Media Debug Snapshot (Worker)` giua `Finalize Media Assets (Worker)` va `Build Notify Payload (Worker)`.
+  - Node nay emit `media_debug_snapshot`, `media_debug_preview`, `media_debug_failed_preview` de xem nhanh tren execution UI.
+- Mo rong debug media theo huong UI-first + DB fallback:
+  - `Media Debug Snapshot (Worker)` bo sung `media_debug_ui_card` de doc nhanh tren execution UI.
+  - Them node `Persist Media Debug (Worker)` sau snapshot, soft-fail va mac dinh `disabled`; khi bat `media_debug_store_enabled=true` se upsert vao Data Table `book_review_media_debug` (co the doi ten qua `media_debug_store_name`).
+  - Them config moi trong `Set Config (Main/Worker)`: `media_debug_store_enabled`, `media_debug_store_name`, `media_debug_store_include_full`, `media_debug_store_max_chars`.
+  - `Build Notify Payload (Worker)` bo sung detail field `media_store` + `media_store_error` de theo doi trang thai persist debug.
+  - Script `check-book-review-media-output.sh` ho tro:
+    - in URL execution UI neu co `N8N_EDITOR_BASE_URL`,
+    - doc summary uu tien tu `Persist Media Debug (Worker)`/`Media Debug Snapshot (Worker)`,
+    - loc execution final-success qua `BOOK_REVIEW_MEDIA_FINAL_ONLY=true` va bo qua execution media-legacy (khong co `Media Debug Snapshot`).
+  - Script `run-book-review-e2e.sh` in them `execution_ui_url` de mo execution ngay sau khi test.
 - Don dep trigger + artifact debug:
   - Xoa node du `When chat message received` khoi `book-review-gemini.workflow.json`; workflow start 100% tu `Telegram Trigger` + command `book-review ...`.
   - Xoa 4 workflow debug tren n8n UI: `Codex Telegram File Debug`, `Codex Telegram File Bridge Test`, `Codex Telegram File Bridge Test 2`, `Codex Telegram Node SendDocument Test`.
@@ -78,6 +109,30 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 - Cap nhat checklist automation (`test-book-review-checklist.mjs`) theo topology/contract moi; ket qua PASS 11/11.
 - Chay import lai workflow book-review sau khi sua JSON va verify E2E (`run-book-review-e2e.sh`) dat `webhook_http_code=200`.
 - Cap nhat rules project: bo sung policy clean UI grouping + routing nodes phai giu full data.
+
+## 2026-03-28
+- Bo sung config/env cho Google Drive de chuan bi tach media workflow:
+  - Them 2 field moi trong `Set Config (Main/Worker)`: `gdrive_root_folder_id`, `gdrive_credential_name`.
+  - `import-workflow.sh` doc env `GDRIVE_ROOT_FOLDER_ID`, `GDRIVE_CREDENTIAL_NAME` va inject vao workflow khi import.
+  - `sync-workflows-from-n8n.sh` sanitize 2 field tren ve placeholder (`__GDRIVE_ROOT_FOLDER_ID__`, `__GDRIVE_CREDENTIAL_NAME__`) de tranh leak config local.
+  - Cap nhat `env.cliproxy.local.example`, `README.md`, va checklist automation de cover contract config moi.
+- Refactor media debug branch theo huong DB-first + checkpoint:
+  - Bo node `Media Debug Snapshot (Worker)` khoi topology.
+  - `Process Media Assets (Worker)` now fan-out them 1 nhanh vao `Persist Media Debug (Worker)` de ghi checkpoint som (`media_debug_phase=prepared`/`skipped_prepared`) truoc khi chay image + TTS.
+  - `Finalize Media Assets (Worker)` tiep tuc ghi checkpoint cuoi (`media_debug_phase=finalized`) va bo sung `media_finished_at`, `media_elapsed_seconds`.
+  - Them node `Route Final Persist To Notify (Worker)` de chi cho checkpoint `finalized` di tiep sang `Build Notify Payload (Worker)`, tranh notify duplicate.
+  - Fix runtime error route node: doi mode sang `runOnceForAllItems` + filter item theo `media_debug_phase` (khong con loi `A 'json' property isn't an object`).
+- Tang default runtime cho media dai:
+  - `image_timeout_ms` + `tts_timeout_ms` default `900000` (clamp max `7200000`).
+  - `image_parallelism` + `tts_parallelism` default `2` (clamp `1..5`).
+- Mo rong persist payload de debug tot hon:
+  - `Persist Media Debug (Worker)` ghi them phase/time metrics vao `debug_payload_json` va `debug_key`.
+  - Hardening JSON debug payload: mac dinh chi luu `media_debug_full_count` (khong dump full array), chi mo rong full data khi `media_debug_store_include_full=true`, va truncate theo dinh dang JSON hop le de script check co the parse on dinh.
+- Cap nhat tooling test/debug:
+  - `check-book-review-media-output.sh` uu tien doc checkpoint `finalized` (neu co), in them `persist_runs_count` + `persist_phases`.
+  - `check-book-review-debug-table.sh` fix query `sortBy` (URL-encode) va in them `media_debug_phase`, `media_started_at`, `media_finished_at`, `media_elapsed_seconds`.
+  - `run-book-review-e2e.sh` bo sung `payload_update_id` trace va stricter mapping execution theo `update_id` (`BOOK_REVIEW_E2E_STRICT_UPDATE_ID=true` mac dinh) de tranh bat nham execution cu.
+- Checklist automation cap nhat theo topology moi (`Persist -> Route Final Persist -> Build Notify`) va pass `17/17`.
 
 ## 2026-03-25T03:13:45Z
 - Workflow sync (UI -> JSON) completed with no file changes.
@@ -143,3 +198,52 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
   - `sync-workflows-from-n8n.sh` sanitizer now restores new placeholders for worker path + n8n API fields.
 - Replaced checklist assertions to validate event-driven contracts (async ACK, router callback format, worker event types, anti-polling) while keeping generate/parse regressions.
 - Updated `README.md` to document the new async contract and 3-workflow architecture.
+
+## 2026-03-28T05:54:10Z
+- Refactor workflow naming + split architecture theo chuan moi:
+  - `Book Review` (`workflows/book-review/book-review.workflow.json`)
+  - `Text To Images` (`workflows/book-review/text-to-images.workflow.json`)
+  - `TTS` (`workflows/book-review/tts.workflow.json`)
+- Main workflow (`Book Review`) giu full review/QC/router/worker, nhung doi media branch sang goi subworkflow qua `Execute Workflow` (database source):
+  - `Generate Image Assets (Worker)` goi `__TEXT_TO_IMAGES_WORKFLOW_ID__`
+  - `Generate TTS Assets (Worker)` goi `__TTS_WORKFLOW_ID__`
+- Them contract placeholders moi trong `Set Config (Main/Worker)`:
+  - `text_to_images_workflow_id`
+  - `tts_workflow_id`
+- Tao 2 workflow media reusable (`Text To Images`, `TTS`) ho tro:
+  - Input mode: `form_upload | drive_url` (full URL)
+  - Output mode: `inline | drive_export`
+  - Node-first routing: `Form Trigger`, `Execute Workflow Trigger`, `Switch`, `Google Drive`, `Merge`, `Convert To File`, `HTTP Request`
+- Cap nhat tooling/import/sync:
+  - `scripts/workflows/import/import-book-review-workflow.sh` import theo thu tu `text-to-images -> tts -> book-review` va chi inject prompt cho `book-review`.
+  - `scripts/workflows/import/import-workflow.sh` resolve + inject workflow IDs cho 2 subworkflow media.
+  - `scripts/workflows/sync/sync-workflows-from-n8n.sh` sanitize them placeholder `__TEXT_TO_IMAGES_WORKFLOW_ID__` va `__TTS_WORKFLOW_ID__`.
+- Cap nhat test/runtime scripts:
+  - `test-book-review-checklist.mjs` viet lai theo topology 3-workflow + contract media modes.
+  - `test-book-review-checklist.sh`, `run-book-review-e2e.sh`, `check-book-review-media-output.sh` doi template/name moi.
+- Cap nhat docs:
+  - `README.md`, `docs/book-review-workflow.md`, `scripts/README.md` theo naming + topology moi.
+- Chay import upsert thanh cong tren n8n:
+  - `Text To Images`: `tcF2wcybrmgzFNew`
+  - `TTS`: `2F1jBI12C6NtslBN`
+  - `Book Review`: `4g3N5urBBIuo9HcJ`
+- `workflow-registry.json` cap nhat 3 entries moi, loai bo entry cu `Book Review Gemini via CLIProxyAPI`.
+- Hotfix import runtime cho media subworkflow:
+  - `import-workflow.sh` auto resolve ID theo name (`Text To Images`, `TTS`) khi template can, va fail fast neu chua resolve duoc (tranh import xong nhung runtime goi placeholder).
+  - `README.md` cap nhat lai mo ta sanitize theo placeholder ID (`text_to_images_workflow_id`, `tts_workflow_id`).
+- Hardening full E2E runner `run-book-review-full-e2e.sh`:
+  - Fix map execution theo `update_id` de tranh miss execution cung giay (loi so sanh chuoi `startedAt` co milliseconds).
+  - Bo sung fail message ro rang cho session sheet: neu `Create Session Sheet (Worker)` tra loi `>=400`, script in chi tiet loi Google API thay vi bao chung chung `Session asset links are incomplete`.
+- Fix media finalize + session asset link trong `book-review.workflow.json`:
+  - `Prepare Image/TTS Workflow Input (Worker)` khong con tra `[]` trong `runOnceForEachItem` (tranh runtime error `A 'json' property isn't an object`).
+  - `Finalize Media Assets (Worker)` bo sung fallback merge theo `media_image_items/media_tts_items` khi `media_chunks` khong day du, va normalize status `skipped_not_requested`.
+  - Doi clash policy cua cac merge node file/sheet context sang `preferInput2` de lay dung ID tu node save/create (khong ghi de bang folder id).
+- Cap nhat docs (`README.md`, `scripts/README.md`) cho full E2E script moi + prerequisite bat `Google Sheets API` (`sheets.googleapis.com`) de pass kiem tra `session_sheet_url`.
+- Tach troubleshooting khoi README de giam noise:
+  - Tao file `docs/testing-runtime-incidents.md` luu nguyen nhan run cham, preflight checklist truoc full E2E, va incident log runtime khong lien quan business logic.
+  - Muc `## Troubleshooting nhanh` trong `README.md` duoc rut gon thanh 1 link tro den file docs tren.
+- Fix context mat sau khi ghi Google Sheet rows trong `book-review`:
+  - Them node `Merge Session Sheet Write Context (Worker)` de combine output cua `Write Session Sheet Rows (Worker)` voi context session truoc do.
+  - `Finalize Session Assets Package (Worker)` va `Persist Media Debug (Worker)` gio nhan du `media_pipeline_status` + full session asset links.
+- Xac nhan runtime sau khi bat `Google Sheets API`:
+  - `run-book-review-full-e2e.sh` pass (HTTP 200 cho start/review/metadata, `session_sheet_create_status_code=200`, co `session_sheet_url`).

@@ -22,7 +22,7 @@ Muc tieu: tach script theo domain de de quan ly khi so luong workflow tang.
   - `import-gemini-demo-workflow.sh`: wrapper import workflow Gemini demo
   - `import-shared-notification-router-workflow.sh`: wrapper import workflow notify router da kenh dung chung
   - `import-openai-demo-workflow.sh`: wrapper import workflow OpenAI demo
-  - `import-book-review-workflow.sh`: wrapper import 1 workflow book-review hop nhat + inject prompt templates
+  - `import-book-review-workflow.sh`: wrapper import 3 workflow (`text-to-images` -> `tts` -> `book-review`) + inject prompt templates cho `book-review`
 
 - `scripts/workflows/sync/`
   - `sync-workflows-from-n8n.sh`: sync workflow state tu n8n UI ve file JSON template
@@ -31,6 +31,7 @@ Muc tieu: tach script theo domain de de quan ly khi so luong workflow tang.
   - `test-book-review-checklist.sh`: runner checklist automation
   - `test-book-review-checklist.mjs`: implementation test chi tiet
   - `run-book-review-e2e.sh`: e2e runner cho book-review (tu patch webhook test -> goi chat -> restore workflow goc)
+  - `run-book-review-full-e2e.sh`: full e2e runner 3-step reviewer flow + verify session assets (Drive + Sheet)
 
 ## Lenh hay dung
 
@@ -53,7 +54,9 @@ bash scripts/workflows/import/import-book-review-workflow.sh
 # optional custom prompt template for book-review:
 bash scripts/workflows/import/import-book-review-workflow.sh \
   env.n8n.local env.cliproxy.local \
-  workflows/book-review/book-review-gemini.workflow.json \
+  workflows/book-review/text-to-images.workflow.json \
+  workflows/book-review/tts.workflow.json \
+  workflows/book-review/book-review.workflow.json \
   workflows/book-review/prompts/book-review-master-prompt.txt \
   workflows/book-review/prompts/book-review-metadata-prompt.txt \
   workflows/book-review/prompts/book-review-qc-prompt.txt \
@@ -64,4 +67,5 @@ bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply
 
 bash scripts/workflows/tests/test-book-review-checklist.sh
 bash scripts/workflows/tests/run-book-review-e2e.sh
+bash scripts/workflows/tests/run-book-review-full-e2e.sh
 ```

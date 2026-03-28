@@ -1,5 +1,5 @@
 {
-  "name": "Book Review Gemini via CLIProxyAPI",
+  "name": "Book Review",
   "nodes": [
     {
       "parameters": {
@@ -88,6 +88,150 @@
               "name": "shared_notification_workflow_path",
               "value": "__SHARED_NOTIFICATION_WORKFLOW_PATH__",
               "type": "string"
+            },
+            {
+              "id": "media-gdrive_root_folder_id-main",
+              "name": "gdrive_root_folder_id",
+              "value": "__GDRIVE_ROOT_FOLDER_ID__",
+              "type": "string"
+            },
+            {
+              "id": "media-gdrive_credential_name-main",
+              "name": "gdrive_credential_name",
+              "value": "__GDRIVE_CREDENTIAL_NAME__",
+              "type": "string"
+            },
+            {
+              "id": "media-image_api_base_url",
+              "name": "image_api_base_url",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "media-image_api_key",
+              "name": "image_api_key",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "media-image_model",
+              "name": "image_model",
+              "value": "nano-banana-pro",
+              "type": "string"
+            },
+            {
+              "id": "media-image_prompt_fixed",
+              "name": "image_prompt_fixed",
+              "value": "Tạo ảnh mô tả đoạn văn, phong cách hiện thực",
+              "type": "string"
+            },
+            {
+              "id": "media-image_aspect_ratio",
+              "name": "image_aspect_ratio",
+              "value": "16:9",
+              "type": "string"
+            },
+            {
+              "id": "media-image_timeout_ms",
+              "name": "image_timeout_ms",
+              "value": 900000,
+              "type": "number"
+            },
+            {
+              "id": "media-image_parallelism",
+              "name": "image_parallelism",
+              "value": 2,
+              "type": "number"
+            },
+            {
+              "id": "media-tts_api_base_url",
+              "name": "tts_api_base_url",
+              "value": "http://127.0.0.1:8001",
+              "type": "string"
+            },
+            {
+              "id": "media-tts_voice_id",
+              "name": "tts_voice_id",
+              "value": "ngochuyen",
+              "type": "string"
+            },
+            {
+              "id": "media-tts_temperature",
+              "name": "tts_temperature",
+              "value": 0.8,
+              "type": "number"
+            },
+            {
+              "id": "media-tts_top_k",
+              "name": "tts_top_k",
+              "value": 50,
+              "type": "number"
+            },
+            {
+              "id": "media-tts_max_chars",
+              "name": "tts_max_chars",
+              "value": 256,
+              "type": "number"
+            },
+            {
+              "id": "media-tts_silence_p",
+              "name": "tts_silence_p",
+              "value": 0.05,
+              "type": "number"
+            },
+            {
+              "id": "media-tts_crossfade_p",
+              "name": "tts_crossfade_p",
+              "value": 0.03,
+              "type": "number"
+            },
+            {
+              "id": "media-tts_timeout_ms",
+              "name": "tts_timeout_ms",
+              "value": 900000,
+              "type": "number"
+            },
+            {
+              "id": "media-tts_parallelism",
+              "name": "tts_parallelism",
+              "value": 2,
+              "type": "number"
+            },
+            {
+              "id": "media-debug-store-enabled",
+              "name": "media_debug_store_enabled",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "media-debug-store-name",
+              "name": "media_debug_store_name",
+              "value": "book_review_media_debug",
+              "type": "string"
+            },
+            {
+              "id": "media-debug-store-include-full",
+              "name": "media_debug_store_include_full",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "media-debug-store-max-chars",
+              "name": "media_debug_store_max_chars",
+              "value": 20000,
+              "type": "number"
+            },
+            {
+              "id": "media-text_to_images_workflow_id-main",
+              "name": "text_to_images_workflow_id",
+              "value": "__TEXT_TO_IMAGES_WORKFLOW_ID__",
+              "type": "string"
+            },
+            {
+              "id": "media-tts_workflow_id-main",
+              "name": "tts_workflow_id",
+              "value": "__TTS_WORKFLOW_ID__",
+              "type": "string"
             }
           ]
         },
@@ -167,8 +311,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1904,
-        -800
+        3360,
+        -760
       ]
     },
     {
@@ -198,8 +342,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.1,
       "position": [
-        2128,
-        -800
+        3584,
+        -760
       ],
       "alwaysOutputData": true,
       "continueOnFail": true
@@ -213,8 +357,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2352,
-        -728
+        3808,
+        -632
       ]
     },
     {
@@ -369,19 +513,163 @@
             {
               "id": "2-13",
               "name": "telegram_bot_token",
-              "value": "8747567789:AAH9dvCaNiaM5Q5X24PZBzfcIxQZoKId3EA",
+              "value": "__TELEGRAM_BOT_TOKEN__",
               "type": "string"
             },
             {
               "id": "2-14",
               "name": "telegram_chat_id",
-              "value": "6920403077",
+              "value": "__TELEGRAM_CHAT_ID__",
               "type": "string"
             },
             {
               "id": "2-15",
               "name": "shared_notification_workflow_path",
               "value": "__SHARED_NOTIFICATION_WORKFLOW_PATH__",
+              "type": "string"
+            },
+            {
+              "id": "media-gdrive_root_folder_id-worker",
+              "name": "gdrive_root_folder_id",
+              "value": "={{ $json.gdrive_root_folder_id || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "media-gdrive_credential_name-worker",
+              "name": "gdrive_credential_name",
+              "value": "={{ $json.gdrive_credential_name || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "media-image_api_base_url",
+              "name": "image_api_base_url",
+              "value": "={{ $json.image_api_base_url || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "media-image_api_key",
+              "name": "image_api_key",
+              "value": "={{ $json.image_api_key || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "media-image_model",
+              "name": "image_model",
+              "value": "={{ $json.image_model || \"nano-banana-pro\" }}",
+              "type": "string"
+            },
+            {
+              "id": "media-image_prompt_fixed",
+              "name": "image_prompt_fixed",
+              "value": "={{ $json.image_prompt_fixed || \"Tạo ảnh mô tả đoạn văn, phong cách hiện thực\" }}",
+              "type": "string"
+            },
+            {
+              "id": "media-image_aspect_ratio",
+              "name": "image_aspect_ratio",
+              "value": "={{ $json.image_aspect_ratio || \"16:9\" }}",
+              "type": "string"
+            },
+            {
+              "id": "media-image_timeout_ms",
+              "name": "image_timeout_ms",
+              "value": "={{ $json.image_timeout_ms || 900000 }}",
+              "type": "number"
+            },
+            {
+              "id": "media-image_parallelism",
+              "name": "image_parallelism",
+              "value": "={{ $json.image_parallelism || 2 }}",
+              "type": "number"
+            },
+            {
+              "id": "media-tts_api_base_url",
+              "name": "tts_api_base_url",
+              "value": "={{ $json.tts_api_base_url || \"http://127.0.0.1:8001\" }}",
+              "type": "string"
+            },
+            {
+              "id": "media-tts_voice_id",
+              "name": "tts_voice_id",
+              "value": "={{ $json.tts_voice_id || \"ngochuyen\" }}",
+              "type": "string"
+            },
+            {
+              "id": "media-tts_temperature",
+              "name": "tts_temperature",
+              "value": "={{ $json.tts_temperature || 0.8 }}",
+              "type": "number"
+            },
+            {
+              "id": "media-tts_top_k",
+              "name": "tts_top_k",
+              "value": "={{ $json.tts_top_k || 50 }}",
+              "type": "number"
+            },
+            {
+              "id": "media-tts_max_chars",
+              "name": "tts_max_chars",
+              "value": "={{ $json.tts_max_chars || 256 }}",
+              "type": "number"
+            },
+            {
+              "id": "media-tts_silence_p",
+              "name": "tts_silence_p",
+              "value": "={{ $json.tts_silence_p || 0.05 }}",
+              "type": "number"
+            },
+            {
+              "id": "media-tts_crossfade_p",
+              "name": "tts_crossfade_p",
+              "value": "={{ $json.tts_crossfade_p || 0.03 }}",
+              "type": "number"
+            },
+            {
+              "id": "media-tts_timeout_ms",
+              "name": "tts_timeout_ms",
+              "value": "={{ $json.tts_timeout_ms || 900000 }}",
+              "type": "number"
+            },
+            {
+              "id": "media-tts_parallelism",
+              "name": "tts_parallelism",
+              "value": "={{ $json.tts_parallelism || 2 }}",
+              "type": "number"
+            },
+            {
+              "id": "media-debug-store-enabled",
+              "name": "media_debug_store_enabled",
+              "value": "={{ $json.media_debug_store_enabled !== undefined ? $json.media_debug_store_enabled : true }}",
+              "type": "boolean"
+            },
+            {
+              "id": "media-debug-store-name",
+              "name": "media_debug_store_name",
+              "value": "={{ $json.media_debug_store_name || \"book_review_media_debug\" }}",
+              "type": "string"
+            },
+            {
+              "id": "media-debug-store-include-full",
+              "name": "media_debug_store_include_full",
+              "value": "={{ $json.media_debug_store_include_full || false }}",
+              "type": "boolean"
+            },
+            {
+              "id": "media-debug-store-max-chars",
+              "name": "media_debug_store_max_chars",
+              "value": "={{ $json.media_debug_store_max_chars || 20000 }}",
+              "type": "number"
+            },
+            {
+              "id": "media-text_to_images_workflow_id-worker",
+              "name": "text_to_images_workflow_id",
+              "value": "={{ $json.text_to_images_workflow_id || \"__TEXT_TO_IMAGES_WORKFLOW_ID__\" }}",
+              "type": "string"
+            },
+            {
+              "id": "media-tts_workflow_id-worker",
+              "name": "tts_workflow_id",
+              "value": "={{ $json.tts_workflow_id || \"__TTS_WORKFLOW_ID__\" }}",
               "type": "string"
             }
           ]
@@ -408,28 +696,28 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1232,
+        1344,
         -632
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nconst hasEventType = String(input.event_type ?? '').trim().length > 0;\n\nif (input.skip_worker_notify === true || !hasEventType) {\n  const skippedPayload = {\n    status: 'info',\n    source_workflow: 'Book Review Gemini via CLIProxyAPI',\n    summary: 'Worker skipped notify payload (no event_type or skip_worker_notify=true)',\n    details: [\n      'skip_worker_notify=' + String(input.skip_worker_notify === true),\n      'event_type=' + String(input.event_type ?? ''),\n    ].join(' | '),\n    message: '',\n    message_ack: '',\n    session_token: String(input.session_token ?? '').trim(),\n    reviewer_stage: String(input.reviewer_stage ?? '').trim(),\n    stop_reason: String(input.stop_reason ?? '').trim(),\n    notify_targets: 'none',\n    telegram_bot_token: String(input.telegram_bot_token ?? '').trim(),\n    telegram_chat_id: String(input.telegram_chat_id ?? '').trim(),\n    ggchat_webhook_url: String(input.ggchat_webhook_url ?? '').trim(),\n    shared_notification_workflow_path: String(input.shared_notification_workflow_path ?? '').trim(),\n    chat_priority: 5,\n    skip_chat_response: true,\n    timestamp: new Date().toISOString(),\n  };\n\n  return {\n    ...input,\n    ...skippedPayload,\n    send_informations: [skippedPayload],\n  };\n}\n\nconst rawStatus = String(input.status ?? 'failed').trim() === 'success' ? 'success' : 'failed';\nconst eventType = String(input.event_type ?? '').trim();\nconst token = String(input.session_token ?? '').trim();\nconst stage = String(input.reviewer_stage ?? '').trim();\nconst stopReason = String(input.stop_reason ?? '').trim();\n\nconst isFailure = rawStatus === 'failed';\nconst isFinalSuccess = eventType === 'metadata_continue' || eventType === 'auto_continue_metadata';\n\nconst status = isFailure ? 'failed' : (isFinalSuccess ? 'success' : 'info');\n\nconst summary = eventType === 'init_review'\n  ? 'Review preview đã gửi, đang chờ reviewer action.'\n  : [\n      'Worker processed',\n      eventType ? 'event=' + eventType : 'event=unknown',\n      token ? 'session=' + token : '',\n      stage ? 'stage=' + stage : '',\n    ].filter(Boolean).join(' ');\n\nconst details = [\n  stopReason ? 'stop_reason=' + stopReason : null,\n  input.worker_error ? 'worker_error=' + String(input.worker_error).slice(0, 220) : null,\n  input.save_error ? 'save_error=' + String(input.save_error).slice(0, 220) : null,\n  input.notify_message ? 'notify=' + String(input.notify_message).slice(0, 400) : null,\n].filter(Boolean).join(' | ') || 'worker-event-processed';\n\n// Chi notify khi fail hoac da hoan tat (success cuoi), tranh spam INFO giua luong.\nconst shouldNotifyExternally = status === 'failed' || status === 'success';\nconst notifyTargets = eventType === 'init_review' || !shouldNotifyExternally\n  ? 'none'\n  : String(input.notify_targets ?? 'telegram');\n\nconst payload = {\n  status,\n  source_workflow: 'Book Review Gemini via CLIProxyAPI',\n  summary,\n  details,\n  message: '',\n  message_ack: '',\n  session_token: token,\n  reviewer_stage: stage,\n  stop_reason: stopReason,\n  notify_targets: notifyTargets,\n  telegram_bot_token: String(input.telegram_bot_token ?? '').trim(),\n  telegram_chat_id: String(input.telegram_chat_id ?? '').trim(),\n  ggchat_webhook_url: String(input.ggchat_webhook_url ?? '').trim(),\n  shared_notification_workflow_path: String(input.shared_notification_workflow_path ?? '').trim(),\n  chat_priority: 20,\n  skip_chat_response: true,\n  timestamp: new Date().toISOString(),\n};\n\nreturn {\n  ...input,\n  ...payload,\n  send_informations: [payload],\n};\n"
+        "jsCode": "const input = $json ?? {};\n\nconst hasEventType = String(input.event_type ?? '').trim().length > 0;\n\nif (input.skip_worker_notify === true || !hasEventType) {\n  const skippedPayload = {\n    status: 'info',\n    source_workflow: 'Book Review',\n    summary: 'Worker skipped notify payload (no event_type or skip_worker_notify=true)',\n    details: [\n      'skip_worker_notify=' + String(input.skip_worker_notify === true),\n      'event_type=' + String(input.event_type ?? ''),\n    ].join(' | '),\n    message: '',\n    message_ack: '',\n    session_token: String(input.session_token ?? '').trim(),\n    reviewer_stage: String(input.reviewer_stage ?? '').trim(),\n    stop_reason: String(input.stop_reason ?? '').trim(),\n    notify_targets: 'none',\n    telegram_bot_token: String(input.telegram_bot_token ?? '').trim(),\n    telegram_chat_id: String(input.telegram_chat_id ?? '').trim(),\n    ggchat_webhook_url: String(input.ggchat_webhook_url ?? '').trim(),\n    shared_notification_workflow_path: String(input.shared_notification_workflow_path ?? '').trim(),\n    chat_priority: 5,\n    skip_chat_response: true,\n    should_notify_externally: false,\n    timestamp: new Date().toISOString(),\n  };\n\n  return {\n    ...input,\n    ...skippedPayload,\n    send_informations: [skippedPayload],\n  };\n}\n\nconst rawStatus = String(input.status ?? 'failed').trim() === 'success' ? 'success' : 'failed';\nconst eventType = String(input.event_type ?? '').trim();\nconst token = String(input.session_token ?? '').trim();\nconst stage = String(input.reviewer_stage ?? '').trim();\nconst stopReason = String(input.stop_reason ?? '').trim();\n\nconst isFailure = rawStatus === 'failed';\nconst isFinalSuccess = eventType === 'metadata_continue' || eventType === 'auto_continue_metadata';\n\nconst status = isFailure ? 'failed' : (isFinalSuccess ? 'success' : 'info');\nconst shouldNotifyExternally = status === 'failed' || status === 'success';\n\nconst summary = eventType === 'init_review'\n  ? 'Review preview đã gửi, đang chờ reviewer action.'\n  : [\n      'Worker processed',\n      eventType ? 'event=' + eventType : 'event=unknown',\n      token ? 'session=' + token : '',\n      stage ? 'stage=' + stage : '',\n    ].filter(Boolean).join(' ');\n\nconst details = [\n  stopReason ? 'stop_reason=' + stopReason : null,\n  input.worker_error ? 'worker_error=' + String(input.worker_error).slice(0, 220) : null,\n  input.save_error ? 'save_error=' + String(input.save_error).slice(0, 220) : null,\n  input.notify_message ? 'notify=' + String(input.notify_message).slice(0, 400) : null,\n  input.media_pipeline_status ? 'media_status=' + String(input.media_pipeline_status).slice(0, 120) : null,\n  input.media_debug_store_status ? 'media_store=' + String(input.media_debug_store_status).slice(0, 120) : null,\n  input.media_debug_store_error ? 'media_store_error=' + String(input.media_debug_store_error).slice(0, 220) : null,\n  input.session_assets_package_status ? 'session_assets=' + String(input.session_assets_package_status).slice(0, 120) : null,\n  input.session_folder_url ? 'session_folder=' + String(input.session_folder_url).slice(0, 220) : null,\n  input.session_sheet_url ? 'session_sheet=' + String(input.session_sheet_url).slice(0, 220) : null,\n  Array.isArray(input.media_assets) ? 'media_assets=' + String(input.media_assets.length) : null,\n].filter(Boolean).join(' | ') || 'worker-event-processed';\n\nconst notifyTargets = eventType === 'init_review' || !shouldNotifyExternally\n  ? 'none'\n  : String(input.notify_targets ?? 'telegram');\n\nconst payload = {\n  status,\n  source_workflow: 'Book Review',\n  summary,\n  details,\n  message: '',\n  message_ack: '',\n  session_token: token,\n  reviewer_stage: stage,\n  stop_reason: stopReason,\n  notify_targets: notifyTargets,\n  telegram_bot_token: String(input.telegram_bot_token ?? '').trim(),\n  telegram_chat_id: String(input.telegram_chat_id ?? '').trim(),\n  ggchat_webhook_url: String(input.ggchat_webhook_url ?? '').trim(),\n  shared_notification_workflow_path: String(input.shared_notification_workflow_path ?? '').trim(),\n  chat_priority: 20,\n  skip_chat_response: true,\n  should_notify_externally: shouldNotifyExternally,\n  timestamp: new Date().toISOString(),\n};\n\nreturn {\n  ...input,\n  ...payload,\n  send_informations: [payload],\n};"
       },
       "id": "22",
       "name": "Build Notify Payload (Worker)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1456,
+        2912,
         -632
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nconst userInput = String(input.user_input ?? input.chatInput ?? '').trim();\nconst message = userInput\n  ? 'Bắt đầu review: ' + userInput\n  : 'Bắt đầu review.';\n\nconst payload = {\n  status: 'info',\n  source_workflow: 'Book Review Gemini via CLIProxyAPI',\n  summary: message,\n  details: '',\n  message,\n  message_ack: message,\n  session_token: '',\n  reviewer_stage: 'starting',\n  stop_reason: '',\n  notify_targets: String(input.notify_targets ?? 'telegram'),\n  telegram_bot_token: String(input.telegram_bot_token ?? '').trim(),\n  telegram_chat_id: String(input.telegram_chat_id ?? '').trim(),\n  ggchat_webhook_url: String(input.ggchat_webhook_url ?? '').trim(),\n  shared_notification_workflow_path: String(input.shared_notification_workflow_path ?? '').trim(),\n  chat_priority: 100,\n  skip_chat_response: false,\n  timestamp: new Date().toISOString(),\n};\n\nreturn {\n  ...input,\n  ...payload,\n  send_informations: [payload],\n};\n"
+        "jsCode": "const input = $json ?? {};\n\nconst userInput = String(input.user_input ?? input.chatInput ?? '').trim();\nconst message = userInput\n  ? 'Bắt đầu review: ' + userInput\n  : 'Bắt đầu review.';\n\nconst payload = {\n  status: 'info',\n  source_workflow: 'Book Review',\n  summary: message,\n  details: '',\n  message,\n  message_ack: message,\n  session_token: '',\n  reviewer_stage: 'starting',\n  stop_reason: '',\n  notify_targets: String(input.notify_targets ?? 'telegram'),\n  telegram_bot_token: String(input.telegram_bot_token ?? '').trim(),\n  telegram_chat_id: String(input.telegram_chat_id ?? '').trim(),\n  ggchat_webhook_url: String(input.ggchat_webhook_url ?? '').trim(),\n  shared_notification_workflow_path: String(input.shared_notification_workflow_path ?? '').trim(),\n  chat_priority: 100,\n  skip_chat_response: false,\n  timestamp: new Date().toISOString(),\n};\n\nreturn {\n  ...input,\n  ...payload,\n  send_informations: [payload],\n};\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -449,8 +737,8 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        1680,
-        -728
+        3136,
+        -760
       ],
       "id": "bab2d476-8232-4d28-9372-3044823b517b",
       "name": "Send Informations"
@@ -541,6 +829,1124 @@
         "telegramApi": {
           "id": "__TELEGRAM_CREDENTIAL_ID__",
           "name": "__TELEGRAM_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction parseReviewSections(reviewText) {\n  const content = normalizeText(reviewText);\n  if (!content) return [];\n\n  const sectionRegex = /<<<SECTION\\|([^|\\n>]+)\\|([^\\n>]+)>>>([\\s\\S]*?)<<<END_SECTION>>>/g;\n  const sections = [];\n  let match;\n\n  while ((match = sectionRegex.exec(content)) !== null) {\n    const partName = safeText(match[1]).toLowerCase() || 'part_unknown';\n    const sectionText = normalizeText(match[3]);\n    if (!sectionText) continue;\n    sections.push({\n      partName,\n      text: sectionText,\n    });\n  }\n\n  if (sections.length > 0) {\n    return sections;\n  }\n\n  return [{\n    partName: 'full_review',\n    text: content,\n  }];\n}\n\nfunction splitSentences(text) {\n  const normalized = normalizeText(text)\n    .replace(/\\n+/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim();\n\n  if (!normalized) {\n    return [];\n  }\n\n  const matches = normalized.match(/[^.!?…]+[.!?…]+|[^.!?…]+$/g) ?? [];\n  const sentences = matches\n    .map((item) => item.trim())\n    .filter(Boolean);\n\n  return sentences.length > 0 ? sentences : [normalized];\n}\n\nfunction buildChunks(sections, maxSentencesPerChunk = 3) {\n  const chunks = [];\n\n  for (const section of sections) {\n    const partName = safeText(section.partName, 'part_unknown');\n    const sentences = splitSentences(section.text);\n\n    if (sentences.length === 0) {\n      continue;\n    }\n\n    let localIndex = 0;\n    for (let cursor = 0; cursor < sentences.length; cursor += maxSentencesPerChunk) {\n      localIndex += 1;\n      const block = sentences.slice(cursor, cursor + maxSentencesPerChunk);\n      const text = block.join(' ').trim();\n      if (!text) continue;\n\n      const chunkKey = partName + ':' + localIndex;\n      chunks.push({\n        chunk_key: chunkKey,\n        partName,\n        index: localIndex,\n        text,\n        sentence_count: block.length,\n      });\n    }\n  }\n\n  return chunks;\n}\n\nconst sections = parseReviewSections(input.full_review ?? '');\nconst chunks = buildChunks(sections, 3);\nconst shouldRun = chunks.length > 0;\nconst hasImageProvider = safeText(input.image_api_base_url) !== '';\nconst hasTtsProvider = safeText(input.tts_api_base_url, 'http://127.0.0.1:8001') !== '';\nconst runImage = shouldRun && hasImageProvider;\nconst runTts = shouldRun && hasTtsProvider;\nconst runAnyMedia = runImage || runTts;\nconst mediaOutputMode = safeText(input.media_output_mode, 'drive_export');\nconst mediaOutputFolderId = safeText(input.media_output_folder_id, safeText(input.gdrive_root_folder_id, safeText(input.gdrive_root_folder_id_default)));\n\nreturn {\n  ...input,\n  media_should_run: runAnyMedia,\n  media_run_image: runImage,\n  media_run_tts: runTts,\n  media_chunks: chunks,\n  output_mode: mediaOutputMode,\n  drive_output_folder_id: mediaOutputFolderId,\n  media_assets: runAnyMedia ? [] : (Array.isArray(input.media_assets) ? input.media_assets : []),\n  media_debug_full: runAnyMedia ? [] : (Array.isArray(input.media_debug_full) ? input.media_debug_full : []),\n  media_pipeline_status: runAnyMedia ? 'processing' : (shouldRun ? 'skipped_no_media_provider' : 'skipped_empty_content'),\n  media_debug_phase: runAnyMedia ? 'prepared' : 'skipped_prepared',\n  media_started_at: runAnyMedia ? new Date().toISOString() : (input.media_started_at ?? null),\n};"
+      },
+      "id": "30",
+      "name": "Process Media Assets (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        -760
+      ]
+    },
+    {
+      "id": "31",
+      "name": "Generate Image Assets (Worker)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [
+        1792,
+        -856
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "={{ $json.text_to_images_workflow_id || \"__TEXT_TO_IMAGES_WORKFLOW_ID__\" }}"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "32",
+      "name": "Generate TTS Assets (Worker)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [
+        1792,
+        -664
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "={{ $json.tts_workflow_id || \"__TTS_WORKFLOW_ID__\" }}"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "33",
+      "name": "Merge Media Results (Worker)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2016,
+        -760
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput1",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "34",
+      "name": "Finalize Media Assets (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        -632
+      ],
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeDuration(value) {\n  const number = Number(value);\n  if (!Number.isFinite(number) || number < 0) return 0;\n  return Math.round(number * 1000) / 1000;\n}\n\nfunction clampInt(value, fallback, min, max) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction computeElapsedSeconds(startedAt, finishedAtIso) {\n  const started = new Date(startedAt ?? '');\n  const finished = new Date(finishedAtIso ?? '');\n  if (Number.isNaN(started.getTime()) || Number.isNaN(finished.getTime())) {\n    return 0;\n  }\n\n  const elapsed = (finished.getTime() - started.getTime()) / 1000;\n  if (!Number.isFinite(elapsed) || elapsed < 0) {\n    return 0;\n  }\n\n  return Math.round(elapsed * 1000) / 1000;\n}\n\nfunction buildChunkFromItem(item, fallbackIndex) {\n  const partName = safeText(item?.partName, 'part_unknown');\n  const index = clampInt(item?.index, fallbackIndex, 1, 1000000);\n  const text = safeText(item?.text);\n  const sentenceCount = clampInt(item?.sentence_count, 0, 0, 3);\n  const chunkKey = safeText(item?.chunk_key, partName + ':' + index);\n\n  return {\n    partName,\n    index,\n    text,\n    chunk_key: chunkKey,\n    sentence_count: sentenceCount,\n  };\n}\n\nconst imageItems = Array.isArray(input.media_image_items) ? input.media_image_items : [];\nconst ttsItems = Array.isArray(input.media_tts_items) ? input.media_tts_items : [];\nconst chunksFromInput = Array.isArray(input.media_chunks) ? input.media_chunks : [];\n\nconst shouldRun = input.media_should_run === true || imageItems.length > 0 || ttsItems.length > 0;\nif (!shouldRun) {\n  const finishedAt = new Date().toISOString();\n  return {\n    ...input,\n    media_assets: [],\n    media_debug_full: [],\n    media_pipeline_status: safeText(input.media_pipeline_status, 'skipped_non_final_success'),\n    media_debug_phase: 'finalized',\n    media_finished_at: finishedAt,\n    media_elapsed_seconds: computeElapsedSeconds(input.media_started_at, finishedAt),\n    media_stats: {\n      chunk_count: chunksFromInput.length,\n      image_generated_count: 0,\n      tts_generated_count: 0,\n      failed_count: 0,\n      skipped_count: chunksFromInput.length,\n    },\n  };\n}\n\nconst fallbackChunkMap = new Map();\nlet fallbackIndex = 0;\nfor (const item of [...imageItems, ...ttsItems]) {\n  fallbackIndex += 1;\n  const chunk = buildChunkFromItem(item, fallbackIndex);\n  if (!chunk.chunk_key) continue;\n  if (!fallbackChunkMap.has(chunk.chunk_key)) {\n    fallbackChunkMap.set(chunk.chunk_key, chunk);\n  }\n}\n\nconst chunks = chunksFromInput.length > 0\n  ? chunksFromInput\n  : Array.from(fallbackChunkMap.values());\n\nconst imageByChunkKey = new Map(imageItems.map((item) => [String(item?.chunk_key ?? ''), item]));\nconst ttsByChunkKey = new Map(ttsItems.map((item) => [String(item?.chunk_key ?? ''), item]));\nconst runImage = input.media_run_image === true;\nconst runTts = input.media_run_tts === true;\n\nconst merged = chunks.map((chunk, idx) => {\n  const fallbackChunk = buildChunkFromItem(chunk, idx + 1);\n  const chunkKey = fallbackChunk.chunk_key;\n  const image = imageByChunkKey.get(chunkKey) ?? {};\n  const tts = ttsByChunkKey.get(chunkKey) ?? {};\n\n  const reasons = [image.error_reason, tts.error_reason]\n    .map((reason) => safeText(reason))\n    .filter(Boolean);\n\n  return {\n    partName: fallbackChunk.partName,\n    index: fallbackChunk.index,\n    text: fallbackChunk.text,\n    chunk_key: chunkKey,\n    sentence_count: fallbackChunk.sentence_count,\n    image: safeText(image.image),\n    video: safeText(image.video),\n    voice: safeText(tts.voice),\n    duration: normalizeDuration(tts.duration),\n    image_status: safeText(image.image_status, runImage ? 'unknown' : 'skipped_not_requested'),\n    tts_status: safeText(tts.tts_status, runTts ? 'unknown' : 'skipped_not_requested'),\n    voice_mime_type: safeText(tts.voice_mime_type),\n    voice_bytes: clampInt(tts.voice_bytes, 0, 0, 100000000),\n    voice_drive_file_id: safeText(tts.voice_drive_file_id),\n    voice_drive_url: safeText(tts.voice_drive_url),\n    error_reason: reasons.length > 0 ? reasons.join(' | ') : null,\n  };\n});\n\nconst failedCount = merged.filter((item) => item.image_status === 'failed' || item.tts_status === 'failed').length;\nconst skippedCount = merged.filter((item) =>\n  String(item.image_status).startsWith('skipped') ||\n  String(item.tts_status).startsWith('skipped')\n).length;\n\nconst pipelineStatus =\n  failedCount > 0\n    ? 'completed_with_partial_failures'\n    : skippedCount > 0\n      ? 'completed_with_skips'\n      : 'completed';\n\nconst finishedAt = new Date().toISOString();\n\nreturn {\n  ...input,\n  media_should_run: true,\n  media_chunks: chunks,\n  media_assets: merged,\n  media_debug_full: merged,\n  media_pipeline_status: pipelineStatus,\n  media_debug_phase: 'finalized',\n  media_finished_at: finishedAt,\n  media_elapsed_seconds: computeElapsedSeconds(input.media_started_at, finishedAt),\n  media_stats: {\n    chunk_count: chunks.length,\n    image_generated_count: merged.filter((item) => item.image_status === 'generated').length,\n    tts_generated_count: merged.filter((item) => item.tts_status === 'generated').length,\n    failed_count: failedCount,\n    skipped_count: skippedCount,\n  },\n};"
+      }
+    },
+    {
+      "id": "36",
+      "name": "Persist Media Debug (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        -632
+      ],
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction safeBoolean(value, fallback = false) {\n  if (typeof value === 'boolean') return value;\n  if (typeof value === 'number') return value !== 0;\n  const text = safeText(value).toLowerCase();\n  if (!text) return fallback;\n  if (['1', 'true', 'yes', 'y', 'on'].includes(text)) return true;\n  if (['0', 'false', 'no', 'n', 'off'].includes(text)) return false;\n  return fallback;\n}\n\nfunction asInt(value, fallback = 0) {\n  const number = Number(value);\n  return Number.isFinite(number) ? Math.max(0, Math.floor(number)) : fallback;\n}\n\nfunction asNumber(value, fallback = 0) {\n  const number = Number(value);\n  return Number.isFinite(number) ? number : fallback;\n}\n\nfunction toJsonString(value, maxChars = 20000) {\n  let text;\n  try {\n    text = JSON.stringify(value ?? null);\n  } catch (_) {\n    text = JSON.stringify({ error: 'json_stringify_failed' });\n  }\n\n  if (typeof text !== 'string') {\n    return '{}';\n  }\n\n  if (!Number.isFinite(maxChars) || maxChars < 1024) {\n    return text;\n  }\n\n  if (text.length <= maxChars) {\n    return text;\n  }\n\n  return JSON.stringify({\n    _truncated: true,\n    _original_length: text.length,\n    _preview: text.slice(0, Math.max(1000, maxChars - 128)),\n  });\n}\n\nconst requestHelper =\n  helpers?.httpRequest ??\n  (typeof $helpers !== 'undefined' ? $helpers?.httpRequest : undefined);\n\nconst enabled = safeBoolean(input.media_debug_store_enabled, true);\nif (!enabled) {\n  return {\n    ...input,\n    media_debug_store_status: 'disabled',\n    media_debug_store_error: null,\n  };\n}\n\nconst n8nApiUrl = safeText(input.n8n_api_url).replace(/\\/$/, '');\nconst n8nApiKey = safeText(input.n8n_api_key);\n\nif (!n8nApiUrl || !n8nApiKey || typeof requestHelper !== 'function') {\n  return {\n    ...input,\n    media_debug_store_status: 'skipped_missing_n8n_api_config',\n    media_debug_store_error: 'missing_n8n_api_url_or_key_or_helper',\n  };\n}\n\nconst tableName = safeText(input.media_debug_store_name, 'book_review_media_debug');\nconst includeFull = safeBoolean(input.media_debug_store_include_full, false);\nconst maxCharsRaw = Number(input.media_debug_store_max_chars ?? 20000);\nconst maxChars = Number.isFinite(maxCharsRaw)\n  ? Math.min(200000, Math.max(2000, Math.floor(maxCharsRaw)))\n  : 20000;\n\nconst REQUIRED_COLUMNS = [\n  { name: 'debug_key', type: 'string' },\n  { name: 'session_token', type: 'string' },\n  { name: 'event_type', type: 'string' },\n  { name: 'reviewer_stage', type: 'string' },\n  { name: 'media_pipeline_status', type: 'string' },\n  { name: 'media_assets_count', type: 'number' },\n  { name: 'failed_count', type: 'number' },\n  { name: 'skipped_count', type: 'number' },\n  { name: 'image_generated_count', type: 'number' },\n  { name: 'tts_generated_count', type: 'number' },\n  { name: 'top_errors_json', type: 'string' },\n  { name: 'debug_payload_json', type: 'string' },\n  { name: 'updated_at', type: 'string' },\n];\n\nasync function apiRequest(method, path, options = {}) {\n  return await requestHelper({\n    method,\n    url: n8nApiUrl + path,\n    headers: {\n      'X-N8N-API-KEY': n8nApiKey,\n    },\n    qs: options.qs,\n    body: options.body,\n    json: true,\n    timeout: 60000,\n  });\n}\n\nasync function ensureDataTable() {\n  const list = await apiRequest('GET', '/api/v1/data-tables', {\n    qs: {\n      limit: 200,\n    },\n  });\n\n  const tables = Array.isArray(list?.data) ? list.data : [];\n  const existing = tables.find((table) => safeText(table?.name) === tableName);\n  if (existing?.id) {\n    return String(existing.id);\n  }\n\n  const created = await apiRequest('POST', '/api/v1/data-tables', {\n    body: {\n      name: tableName,\n      columns: REQUIRED_COLUMNS,\n    },\n  });\n\n  const id = safeText(created?.id);\n  if (!id) {\n    throw new Error('failed_to_create_media_debug_table');\n  }\n\n  return id;\n}\n\ntry {\n  const assets = Array.isArray(input.media_assets) ? input.media_assets : [];\n  const chunks = Array.isArray(input.media_chunks) ? input.media_chunks : [];\n  const stats = input.media_stats ?? {};\n  const failedAssets = assets.filter((item) => item?.image_status === 'failed' || item?.tts_status === 'failed');\n  const skippedAssets = assets.filter((item) =>\n    String(item?.image_status ?? '').startsWith('skipped') ||\n    String(item?.tts_status ?? '').startsWith('skipped')\n  );\n\n  const errorCountMap = new Map();\n  for (const item of failedAssets) {\n    const reason = safeText(item?.error_reason, 'unknown_error');\n    errorCountMap.set(reason, (errorCountMap.get(reason) ?? 0) + 1);\n  }\n\n  const topErrors = [...errorCountMap.entries()]\n    .map(([error_reason, count]) => ({ error_reason, count }))\n    .sort((a, b) => b.count - a.count)\n    .slice(0, 10);\n\n  const updatedAt = new Date().toISOString();\n  const debugPhase = safeText(input.media_debug_phase, 'unknown');\n\n  const summary = {\n    status: safeText(input.status, 'unknown'),\n    source: safeText(input.source),\n    event_type: safeText(input.event_type),\n    session_token: safeText(input.session_token),\n    reviewer_stage: safeText(input.reviewer_stage),\n    stop_reason: safeText(input.stop_reason),\n    media_pipeline_status: safeText(input.media_pipeline_status, 'missing'),\n    media_debug_phase: debugPhase,\n    media_started_at: safeText(input.media_started_at),\n    media_finished_at: safeText(input.media_finished_at),\n    media_elapsed_seconds: asNumber(input.media_elapsed_seconds, 0),\n    media_should_run: input.media_should_run === true,\n    chunk_count: asInt(stats.chunk_count, chunks.length),\n    media_assets_count: assets.length,\n    image_generated_count: asInt(stats.image_generated_count, assets.filter((item) => item?.image_status === 'generated').length),\n    tts_generated_count: asInt(stats.tts_generated_count, assets.filter((item) => item?.tts_status === 'generated').length),\n    failed_count: asInt(stats.failed_count, failedAssets.length),\n    skipped_count: asInt(stats.skipped_count, skippedAssets.length),\n  };\n\n  const debugPayload = {\n    summary,\n    notify_message: safeText(input.notify_message).slice(0, 1200),\n    worker_error: safeText(input.worker_error).slice(0, 1200),\n    save_error: safeText(input.save_error).slice(0, 1200),\n    metadata_error: safeText(input.metadata_error).slice(0, 1200),\n    top_errors: topErrors,\n    media_chunks_preview: chunks.slice(0, 10),\n    media_assets_preview: assets.slice(0, 10),\n    media_debug_full_count: Array.isArray(input.media_debug_full) ? input.media_debug_full.length : 0,\n    video_title: safeText(input.video_title),\n    video_caption: safeText(input.video_caption),\n    video_hashtags: Array.isArray(input.video_hashtags) ? input.video_hashtags : [],\n  };\n\n  if (includeFull) {\n    debugPayload.media_assets = assets;\n    debugPayload.media_debug_full = Array.isArray(input.media_debug_full) ? input.media_debug_full : [];\n  }\n\n  const debugKey = [\n    safeText(input.session_token, 'no_session'),\n    safeText(input.event_type, 'no_event'),\n    safeText(input.reviewer_stage, 'no_stage'),\n    safeText(input.media_pipeline_status, 'no_media_status'),\n    debugPhase || 'no_phase',\n    updatedAt,\n  ].join(':');\n\n  const rowData = {\n    debug_key: debugKey,\n    session_token: summary.session_token,\n    event_type: summary.event_type,\n    reviewer_stage: summary.reviewer_stage,\n    media_pipeline_status: summary.media_pipeline_status,\n    media_assets_count: summary.media_assets_count,\n    failed_count: summary.failed_count,\n    skipped_count: summary.skipped_count,\n    image_generated_count: summary.image_generated_count,\n    tts_generated_count: summary.tts_generated_count,\n    top_errors_json: toJsonString(topErrors, maxChars),\n    debug_payload_json: toJsonString(debugPayload, maxChars),\n    updated_at: updatedAt,\n  };\n\n  const tableId = await ensureDataTable();\n\n  await apiRequest('POST', '/api/v1/data-tables/' + tableId + '/rows/upsert', {\n    body: {\n      filter: {\n        type: 'and',\n        filters: [\n          {\n            columnName: 'debug_key',\n            condition: 'eq',\n            value: rowData.debug_key,\n          },\n        ],\n      },\n      data: rowData,\n      returnData: false,\n    },\n  });\n\n  return {\n    ...input,\n    media_debug_store_status: 'persisted',\n    media_debug_store_error: null,\n    media_debug_store_table_id: tableId,\n    media_debug_store_table_name: tableName,\n    media_debug_store_key: debugKey,\n    media_debug_phase: debugPhase,\n  };\n} catch (error) {\n  const message = safeText(error?.message, String(error)).slice(0, 400);\n  return {\n    ...input,\n    media_debug_store_status: 'failed',\n    media_debug_store_error: message || 'unknown_error',\n  };\n}"
+      }
+    },
+    {
+      "id": "35",
+      "name": "Route Final Persist To Notify (Worker)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2688,
+        -632
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ (() => { const phase = String($json.media_debug_phase || \"\").trim().toLowerCase(); return phase === \"\" || phase === \"finalized\"; })() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "br-if-final-success-worker",
+      "name": "If Final Success Event (Worker)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1224,
+        -632
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ (() => { const status = String($json.status || \"\").trim().toLowerCase(); const eventType = String($json.event_type || \"\").trim(); return status === \"success\" && (eventType === \"metadata_continue\" || eventType === \"auto_continue_metadata\"); })() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "br-set-media-skip-worker",
+      "name": "Prepare Media Skip Result (Worker)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1456,
+        -472
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "media-skip-run",
+              "name": "media_should_run",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "media-skip-chunks",
+              "name": "media_chunks",
+              "value": "=[]",
+              "type": "array"
+            },
+            {
+              "id": "media-skip-assets",
+              "name": "media_assets",
+              "value": "={{ Array.isArray($json.media_assets) ? $json.media_assets : [] }}",
+              "type": "array"
+            },
+            {
+              "id": "media-skip-debugfull",
+              "name": "media_debug_full",
+              "value": "={{ Array.isArray($json.media_debug_full) ? $json.media_debug_full : [] }}",
+              "type": "array"
+            },
+            {
+              "id": "media-skip-status",
+              "name": "media_pipeline_status",
+              "value": "skipped_non_final_success",
+              "type": "string"
+            },
+            {
+              "id": "media-skip-phase",
+              "name": "media_debug_phase",
+              "value": "skipped_prepared",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "br-if-run-media-worker",
+      "name": "If Run Media (Worker)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        -760
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.media_should_run === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "br-if-supported-event-worker",
+      "name": "If Supported Reviewer Event (Worker)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1168,
+        -632
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ [\"init_review\",\"review_change\",\"review_continue\",\"review_stop\",\"metadata_change\",\"metadata_continue\",\"metadata_stop\",\"auto_continue_review\",\"auto_continue_metadata\"].includes(String($json.event_type || \"\").trim()) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "br-set-unsupported-event-worker",
+      "name": "Prepare Unsupported Event Result (Worker)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1392,
+        -344
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "unsupported-status",
+              "name": "status",
+              "value": "failed",
+              "type": "string"
+            },
+            {
+              "id": "unsupported-notify",
+              "name": "notify_message",
+              "value": "={{ \"Unsupported reviewer event_type: \" + String($json.event_type || \"\") }}",
+              "type": "string"
+            },
+            {
+              "id": "unsupported-stop",
+              "name": "stop_reason",
+              "value": "unsupported_event_type",
+              "type": "string"
+            },
+            {
+              "id": "unsupported-skip",
+              "name": "skip_worker_notify",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "unsupported-debug-phase",
+              "name": "media_debug_phase",
+              "value": "finalized",
+              "type": "string"
+            },
+            {
+              "id": "unsupported-media-status",
+              "name": "media_pipeline_status",
+              "value": "skipped_non_final_success",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "br-if-should-notify-external-worker",
+      "name": "If Should Notify Externally (Worker)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3136,
+        -632
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.should_notify_externally === true && String($json.notify_targets || \"none\").trim().toLowerCase() !== \"none\" }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "317b9270-cb8f-4c37-b0ff-1649776fb365",
+      "name": "Prepare Session Drive Context (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        -952
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst sessionToken = safeText(input.session_token, 'session');\nconst safeToken = sessionToken\n  .replace(/[^a-zA-Z0-9_-]+/g, '-')\n  .replace(/^-+|-+$/g, '') || 'session';\n\nconst rootFolderId = safeText(\n  input.gdrive_root_folder_id,\n  safeText(input.gdrive_root_folder_id_default),\n);\n\nconst sessionFolderName = 'book-review-' + safeToken;\n\nreturn {\n  ...input,\n  session_drive_root_folder_id: rootFolderId,\n  session_drive_should_create: Boolean(rootFolderId),\n  session_drive_folder_name: sessionFolderName,\n  session_voice_folder_name: 'voice',\n  session_image_folder_name: 'image',\n  session_folder_id: safeText(input.session_folder_id),\n  session_voice_folder_id: safeText(input.session_voice_folder_id),\n  session_image_folder_id: safeText(input.session_image_folder_id),\n};"
+      }
+    },
+    {
+      "id": "aad06e30-a7d8-4d57-851d-2c0332544fb3",
+      "name": "If Session Drive Enabled (Worker)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1792,
+        -952
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.session_drive_should_create === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "0d586dd0-f5ba-42c2-b191-50eb8f064f8d",
+      "name": "Google Drive Create Session Folder (Worker)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2016,
+        -1064
+      ],
+      "parameters": {
+        "resource": "folder",
+        "operation": "create",
+        "authentication": "oAuth2",
+        "name": "={{ $json.session_drive_folder_name || (\"book-review-\" + ($json.session_token || \"session\")) }}",
+        "folderId": "={{ $json.session_drive_root_folder_id }}"
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "id": "3a4aeb64-b157-4414-ab85-584002cce0be",
+      "name": "Merge Session Folder Context (Worker)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2240,
+        -952
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput1",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "708a6982-7ba9-45cc-a76e-c15e96b34ecb",
+      "name": "Prepare Session Folder Id (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        -952
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst folderId = safeText(input.id, safeText(input.folderId, safeText(input.session_folder_id)));\nconst folderUrl = folderId\n  ? 'https://drive.google.com/drive/folders/' + folderId\n  : safeText(input.session_folder_url);\n\nreturn {\n  ...input,\n  session_folder_id: folderId,\n  session_folder_url: folderUrl,\n};"
+      }
+    },
+    {
+      "id": "12ba9707-87d9-447e-8f92-e283f28befc4",
+      "name": "Google Drive Create Voice Folder (Worker)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2688,
+        -1064
+      ],
+      "parameters": {
+        "resource": "folder",
+        "operation": "create",
+        "authentication": "oAuth2",
+        "name": "={{ $json.session_voice_folder_name || \"voice\" }}",
+        "folderId": "={{ $json.session_folder_id }}"
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "id": "eb80e2f0-774e-42d3-9b8c-272c39ecafb9",
+      "name": "Merge Voice Folder Context (Worker)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2912,
+        -952
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput1",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "a83e56d4-ee82-4259-8810-39106be399d9",
+      "name": "Prepare Voice Folder Id (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3136,
+        -952
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst folderId = safeText(input.id, safeText(input.folderId, safeText(input.session_voice_folder_id)));\nconst folderUrl = folderId\n  ? 'https://drive.google.com/drive/folders/' + folderId\n  : safeText(input.session_voice_folder_url);\n\nreturn {\n  ...input,\n  session_voice_folder_id: folderId,\n  session_voice_folder_url: folderUrl,\n};"
+      }
+    },
+    {
+      "id": "024f1b1a-106c-4b0b-98a4-9e33e2e7f1d1",
+      "name": "Google Drive Create Image Folder (Worker)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3360,
+        -1064
+      ],
+      "parameters": {
+        "resource": "folder",
+        "operation": "create",
+        "authentication": "oAuth2",
+        "name": "={{ $json.session_image_folder_name || \"image\" }}",
+        "folderId": "={{ $json.session_folder_id }}"
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "id": "ca3c3fea-1c37-4262-a1c4-d85afe4f792c",
+      "name": "Merge Image Folder Context (Worker)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3584,
+        -952
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput1",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "aae2eacc-a3ce-4463-a633-a2952cd57f6d",
+      "name": "Prepare Image Folder Id (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3808,
+        -952
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst folderId = safeText(input.id, safeText(input.folderId, safeText(input.session_image_folder_id)));\nconst folderUrl = folderId\n  ? 'https://drive.google.com/drive/folders/' + folderId\n  : safeText(input.session_image_folder_url);\n\nreturn {\n  ...input,\n  session_image_folder_id: folderId,\n  session_image_folder_url: folderUrl,\n};"
+      }
+    },
+    {
+      "id": "773c4057-6d58-414a-ac05-51318c51705d",
+      "name": "Finalize Media Routing (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4032,
+        -952
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst defaultOutputFolder = safeText(\n  input.drive_output_folder_id,\n  safeText(input.session_drive_root_folder_id),\n);\n\nconst imageFolderId = safeText(input.session_image_folder_id, defaultOutputFolder);\nconst ttsFolderId = safeText(input.session_voice_folder_id, defaultOutputFolder);\n\nreturn {\n  ...input,\n  output_mode: 'drive_export',\n  image_drive_output_folder_id: imageFolderId,\n  tts_drive_output_folder_id: ttsFolderId,\n};"
+      }
+    },
+    {
+      "id": "796d3d2d-1f14-4c4e-9602-0d678170bc61",
+      "name": "Prepare Image Workflow Input (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        -920
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst driveOutputFolderId = safeText(input.image_drive_output_folder_id, safeText(input.drive_output_folder_id));\n\nif (input.media_run_image !== true) {\n  return {\n    ...input,\n    output_mode: 'inline',\n    drive_output_folder_id: driveOutputFolderId,\n    media_should_run: false,\n    media_chunks: [],\n    chunk_manifest: [],\n  };\n}\n\nreturn {\n  ...input,\n  output_mode: 'drive_export',\n  drive_output_folder_id: driveOutputFolderId,\n  media_should_run: true,\n  chunk_manifest: Array.isArray(input.media_chunks) ? input.media_chunks : [],\n};"
+      }
+    },
+    {
+      "id": "991f5e08-7c1a-4c8f-a1d9-ccf50617b683",
+      "name": "Prepare TTS Workflow Input (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        -600
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst driveOutputFolderId = safeText(input.tts_drive_output_folder_id, safeText(input.drive_output_folder_id));\n\nif (input.media_run_tts !== true) {\n  return {\n    ...input,\n    output_mode: 'inline',\n    drive_output_folder_id: driveOutputFolderId,\n    media_should_run: false,\n    media_chunks: [],\n    chunk_manifest: [],\n  };\n}\n\nreturn {\n  ...input,\n  output_mode: 'drive_export',\n  drive_output_folder_id: driveOutputFolderId,\n  media_should_run: true,\n  chunk_manifest: Array.isArray(input.media_chunks) ? input.media_chunks : [],\n};"
+      }
+    },
+    {
+      "id": "1a33c4c0-d8c9-482d-a935-1096a6474967",
+      "name": "Prepare Session Assets Package (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        -440
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asNumber(value, fallback = 0) {\n  const number = Number(value);\n  return Number.isFinite(number) ? number : fallback;\n}\n\nconst sessionToken = safeText(input.session_token, 'session');\nconst safeToken = sessionToken\n  .replace(/[^a-zA-Z0-9_-]+/g, '-')\n  .replace(/^-+|-+$/g, '') || 'session';\n\nconst sessionFolderId = safeText(input.session_folder_id);\nconst metadata = input.metadata && typeof input.metadata === 'object' ? input.metadata : {};\nconst assets = Array.isArray(input.media_assets) ? input.media_assets : [];\n\nconst rows = [[\n  'order',\n  'chunk_key',\n  'part_name',\n  'index',\n  'text',\n  'image_url',\n  'voice_url',\n  'duration',\n  'image_status',\n  'tts_status',\n  'error_reason',\n  'voice_drive_file_id',\n]];\n\nfor (let i = 0; i < assets.length; i += 1) {\n  const asset = assets[i] ?? {};\n  rows.push([\n    String(i + 1),\n    safeText(asset.chunk_key),\n    safeText(asset.partName),\n    String(Math.floor(asNumber(asset.index, i + 1))),\n    safeText(asset.text),\n    safeText(asset.image),\n    safeText(asset.voice),\n    String(asNumber(asset.duration, 0)),\n    safeText(asset.image_status),\n    safeText(asset.tts_status),\n    safeText(asset.error_reason),\n    safeText(asset.voice_drive_file_id),\n  ]);\n}\n\nconst manifest = {\n  session_token: sessionToken,\n  reviewer_stage: safeText(input.reviewer_stage),\n  stop_reason: safeText(input.stop_reason),\n  media_pipeline_status: safeText(input.media_pipeline_status),\n  media_stats: input.media_stats ?? {},\n  video_title: safeText(input.video_title),\n  video_caption: safeText(input.video_caption),\n  video_hashtags: Array.isArray(input.video_hashtags) ? input.video_hashtags : [],\n  metadata,\n  media_assets: assets,\n};\n\nreturn {\n  ...input,\n  session_assets_should_persist: Boolean(sessionFolderId),\n  session_review_text: safeText(input.full_review || input.message),\n  session_metadata_json: JSON.stringify(metadata, null, 2),\n  session_manifest_json: JSON.stringify(manifest, null, 2),\n  session_review_file_name: 'review-content.txt',\n  session_metadata_file_name: 'metadata.json',\n  session_manifest_file_name: 'session-manifest.json',\n  session_sheet_name: 'book-review-assets-' + safeToken,\n  session_sheet_rows: rows,\n};"
+      }
+    },
+    {
+      "id": "77637896-ac67-4a9a-bf8a-dcfaf2946f5a",
+      "name": "If Persist Session Assets (Worker)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2688,
+        -440
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.session_assets_should_persist === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "5fa8a7ef-1529-435b-80b1-b8ee4c52a338",
+      "name": "Google Drive Save Review File (Worker)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2912,
+        -584
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "createFromText",
+        "authentication": "oAuth2",
+        "content": "={{ $json.session_review_text || \"\" }}",
+        "name": "={{ $json.session_review_file_name || \"review-content.txt\" }}",
+        "folderId": "={{ $json.session_folder_id || \"\" }}"
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "id": "cda40d5a-8a18-4213-accb-23468f5dbbdf",
+      "name": "Merge Review File Context (Worker)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3136,
+        -440
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput2",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "b228b8b7-fa52-4731-a9c8-966db7998a2e",
+      "name": "Prepare Review File Link (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3360,
+        -440
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst fileId = safeText(input.id, safeText(input.fileId, safeText(input.session_review_file_id)));\nconst fileUrl = fileId\n  ? 'https://drive.google.com/file/d/' + fileId + '/view'\n  : safeText(input.session_review_file_url);\n\nreturn {\n  ...input,\n  session_review_file_id: fileId,\n  session_review_file_url: fileUrl,\n};"
+      }
+    },
+    {
+      "id": "02716447-5276-4c46-aa30-e8c21b016e10",
+      "name": "Google Drive Save Metadata File (Worker)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3584,
+        -584
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "createFromText",
+        "authentication": "oAuth2",
+        "content": "={{ $json.session_metadata_json || \"{}\" }}",
+        "name": "={{ $json.session_metadata_file_name || \"metadata.json\" }}",
+        "folderId": "={{ $json.session_folder_id || \"\" }}"
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "id": "e12551ec-f026-4f09-8e6f-6e41faf0caad",
+      "name": "Merge Metadata File Context (Worker)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3808,
+        -440
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput2",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "8e23e0fd-fc2c-47a3-9b3d-e952d775374b",
+      "name": "Prepare Metadata File Link (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4032,
+        -440
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst fileId = safeText(input.id, safeText(input.fileId, safeText(input.session_metadata_file_id)));\nconst fileUrl = fileId\n  ? 'https://drive.google.com/file/d/' + fileId + '/view'\n  : safeText(input.session_metadata_file_url);\n\nreturn {\n  ...input,\n  session_metadata_file_id: fileId,\n  session_metadata_file_url: fileUrl,\n};"
+      }
+    },
+    {
+      "id": "483d162d-73ad-4cc2-ae1b-5115676cb5e2",
+      "name": "Google Drive Save Manifest File (Worker)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        4256,
+        -584
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "createFromText",
+        "authentication": "oAuth2",
+        "content": "={{ $json.session_manifest_json || \"{}\" }}",
+        "name": "={{ $json.session_manifest_file_name || \"session-manifest.json\" }}",
+        "folderId": "={{ $json.session_folder_id || \"\" }}"
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "id": "174c24fc-e1ba-4a7a-9c18-b0862c68b48d",
+      "name": "Merge Manifest File Context (Worker)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4480,
+        -440
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput2",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "074f580f-5657-465b-9a3b-0e2dff0a66ee",
+      "name": "Prepare Manifest File Link (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4704,
+        -440
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst fileId = safeText(input.id, safeText(input.fileId, safeText(input.session_manifest_file_id)));\nconst fileUrl = fileId\n  ? 'https://drive.google.com/file/d/' + fileId + '/view'\n  : safeText(input.session_manifest_file_url);\n\nreturn {\n  ...input,\n  session_manifest_file_id: fileId,\n  session_manifest_file_url: fileUrl,\n};"
+      }
+    },
+    {
+      "id": "90ad1d2b-9b3b-4836-837f-45cd8dac2904",
+      "name": "Create Session Sheet (Worker)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        4928,
+        -584
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://sheets.googleapis.com/v4/spreadsheets",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { properties: { title: $json.session_sheet_name || \"book-review-assets\" }, sheets: [{ properties: { title: \"assets\" } }] } }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "id": "d55166c9-2dd1-4e58-a63d-712dffbe9bfd",
+      "name": "Merge Session Sheet Context (Worker)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        5152,
+        -440
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput2",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "dab191c7-644e-425a-95e6-90b307eea160",
+      "name": "Prepare Session Sheet Meta (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5376,
+        -440
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst body = input.body && typeof input.body === 'object' ? input.body : {};\nconst sheetId = safeText(body.spreadsheetId, safeText(input.spreadsheetId));\nconst sheetUrl = safeText(\n  body.spreadsheetUrl,\n  sheetId ? 'https://docs.google.com/spreadsheets/d/' + sheetId : '',\n);\n\nreturn {\n  ...input,\n  session_sheet_id: sheetId,\n  session_sheet_url: sheetUrl,\n  session_sheet_create_status_code: Number(input.statusCode ?? 0),\n};"
+      }
+    },
+    {
+      "id": "7c9ec045-afb5-42a0-8a9c-cb78b7822c50",
+      "name": "If Session Sheet Created (Worker)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        5600,
+        -440
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !!$json.session_sheet_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "7dc5ceff-26bf-4c14-a798-1387922a13a0",
+      "name": "Google Drive Move Session Sheet (Worker)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        5824,
+        -584
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "move",
+        "authentication": "oAuth2",
+        "fileId": "={{ $json.session_sheet_id }}",
+        "folderId": "={{ $json.session_folder_id }}"
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "id": "12cd51b5-b056-43b6-8e28-df9b9e287c75",
+      "name": "Merge Session Sheet Move Context (Worker)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        6048,
+        -440
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput1",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "185d13fd-58bf-410f-bc93-627c7d1aa197",
+      "name": "Write Session Sheet Rows (Worker)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        6272,
+        -440
+      ],
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ \"https://sheets.googleapis.com/v4/spreadsheets/\" + encodeURIComponent($json.session_sheet_id || \"\") + \"/values/assets!A1?valueInputOption=RAW\" }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { values: Array.isArray($json.session_sheet_rows) ? $json.session_sheet_rows : [] } }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "id": "73b2e757-ee87-407b-9e97-4ed6b0c9df7d",
+      "name": "Finalize Session Assets Package (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6496,
+        -440
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst sheetUpdateStatusCode = Number(input.statusCode ?? input.session_sheet_update_status_code ?? 0);\nconst sheetWriteOk = Number.isFinite(sheetUpdateStatusCode)\n  ? (sheetUpdateStatusCode >= 200 && sheetUpdateStatusCode < 300)\n  : false;\n\nconst sessionPackageSummary = {\n  session_folder_id: safeText(input.session_folder_id),\n  session_folder_url: safeText(input.session_folder_url),\n  voice_folder_id: safeText(input.session_voice_folder_id),\n  voice_folder_url: safeText(input.session_voice_folder_url),\n  image_folder_id: safeText(input.session_image_folder_id),\n  image_folder_url: safeText(input.session_image_folder_url),\n  review_file_id: safeText(input.session_review_file_id),\n  review_file_url: safeText(input.session_review_file_url),\n  metadata_file_id: safeText(input.session_metadata_file_id),\n  metadata_file_url: safeText(input.session_metadata_file_url),\n  manifest_file_id: safeText(input.session_manifest_file_id),\n  manifest_file_url: safeText(input.session_manifest_file_url),\n  sheet_id: safeText(input.session_sheet_id),\n  sheet_url: safeText(input.session_sheet_url),\n  sheet_write_status: sheetWriteOk ? 'success' : 'failed_or_skipped',\n};\n\nreturn {\n  ...input,\n  session_assets_package_status: sheetWriteOk ? 'persisted' : 'partial',\n  session_assets_package_summary: sessionPackageSummary,\n  session_sheet_update_status_code: sheetUpdateStatusCode,\n};"
+      }
+    },
+    {
+      "id": "84",
+      "name": "Merge Session Sheet Write Context (Worker)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3140,
+        -820
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput2",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
         }
       }
     }
@@ -643,7 +2049,7 @@
       "main": [
         [
           {
-            "node": "Handle Reviewer Event",
+            "node": "If Supported Reviewer Event (Worker)",
             "type": "main",
             "index": 0
           }
@@ -654,7 +2060,7 @@
       "main": [
         [
           {
-            "node": "Build Notify Payload (Worker)",
+            "node": "If Final Success Event (Worker)",
             "type": "main",
             "index": 0
           }
@@ -703,12 +2109,7 @@
       "main": [
         [
           {
-            "node": "Return Chat Response",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Set Notify Targets (Main)",
+            "node": "If Should Notify Externally (Worker)",
             "type": "main",
             "index": 0
           }
@@ -758,6 +2159,629 @@
         [
           {
             "node": "Send Telegram File Bridge Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Media Assets (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Session Drive Context (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Image Assets (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Merge Media Results (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate TTS Assets (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Merge Media Results (Worker)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Media Results (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Finalize Media Assets (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Media Assets (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Session Assets Package (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Media Debug (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Route Final Persist To Notify (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Final Persist To Notify (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Build Notify Payload (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Chat Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Supported Reviewer Event (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Handle Reviewer Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Unsupported Event Result (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Unsupported Event Result (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Persist Media Debug (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Final Success Event (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Process Media Assets (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Media Skip Result (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Run Media (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Image Workflow Input (Worker)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare TTS Workflow Input (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize Media Assets (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Media Skip Result (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Finalize Media Assets (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Should Notify Externally (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Set Notify Targets (Main)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Chat Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Session Drive Context (Worker)": {
+      "main": [
+        [
+          {
+            "node": "If Session Drive Enabled (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Session Drive Enabled (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Google Drive Create Session Folder (Worker)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Session Folder Context (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize Media Routing (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Create Session Folder (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Merge Session Folder Context (Worker)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Session Folder Context (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Session Folder Id (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Session Folder Id (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Google Drive Create Voice Folder (Worker)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Voice Folder Context (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Create Voice Folder (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Merge Voice Folder Context (Worker)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Voice Folder Context (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Voice Folder Id (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Voice Folder Id (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Google Drive Create Image Folder (Worker)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Image Folder Context (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Create Image Folder (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Merge Image Folder Context (Worker)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Image Folder Context (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Image Folder Id (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Image Folder Id (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Finalize Media Routing (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Media Routing (Worker)": {
+      "main": [
+        [
+          {
+            "node": "If Run Media (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Image Workflow Input (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Generate Image Assets (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare TTS Workflow Input (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Generate TTS Assets (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Session Assets Package (Worker)": {
+      "main": [
+        [
+          {
+            "node": "If Persist Session Assets (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Persist Session Assets (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Google Drive Save Review File (Worker)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Review File Context (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Persist Media Debug (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Save Review File (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Merge Review File Context (Worker)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Review File Context (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Review File Link (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Review File Link (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Google Drive Save Metadata File (Worker)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Metadata File Context (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Save Metadata File (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Merge Metadata File Context (Worker)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Metadata File Context (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Metadata File Link (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Metadata File Link (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Google Drive Save Manifest File (Worker)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Manifest File Context (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Save Manifest File (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Merge Manifest File Context (Worker)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Manifest File Context (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Manifest File Link (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Manifest File Link (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Create Session Sheet (Worker)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Session Sheet Context (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Session Sheet (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Merge Session Sheet Context (Worker)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Session Sheet Context (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Session Sheet Meta (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Session Sheet Meta (Worker)": {
+      "main": [
+        [
+          {
+            "node": "If Session Sheet Created (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Session Sheet Created (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Google Drive Move Session Sheet (Worker)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Session Sheet Move Context (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize Session Assets Package (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Move Session Sheet (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Merge Session Sheet Move Context (Worker)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Session Sheet Move Context (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Write Session Sheet Rows (Worker)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Session Sheet Write Context (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Session Sheet Rows (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Merge Session Sheet Write Context (Worker)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Finalize Session Assets Package (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Persist Media Debug (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Session Sheet Write Context (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Finalize Session Assets Package (Worker)",
             "type": "main",
             "index": 0
           }

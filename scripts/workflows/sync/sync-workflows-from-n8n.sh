@@ -93,6 +93,14 @@ sanitize_and_shape_workflow() {
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "cliproxy_client_key") | .value) = "__CLIPROXY_CLIENT_KEY__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "n8n_api_url") | .value) = "__N8N_API_URL__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "n8n_api_key") | .value) = "__N8N_API_KEY__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "telegram_bot_token") | .value) = "__TELEGRAM_BOT_TOKEN__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "telegram_chat_id") | .value) = "__TELEGRAM_CHAT_ID__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "ggchat_webhook_url") | .value) = "__GG_CHAT_WEBHOOK__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "image_api_key") | .value) = ""
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "gdrive_root_folder_id") | .value) = "__GDRIVE_ROOT_FOLDER_ID__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "gdrive_credential_name") | .value) = "__GDRIVE_CREDENTIAL_NAME__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "text_to_images_workflow_id") | .value) = "__TEXT_TO_IMAGES_WORKFLOW_ID__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "tts_workflow_id") | .value) = "__TTS_WORKFLOW_ID__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "shared_notification_workflow_path") | .value) = "__SHARED_NOTIFICATION_WORKFLOW_PATH__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "master_prompt_template") | .value) = "__BOOK_REVIEW_MASTER_PROMPT__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "metadata_prompt_template") | .value) = "__BOOK_REVIEW_METADATA_PROMPT__"
@@ -104,6 +112,28 @@ sanitize_and_shape_workflow() {
     | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name == "telegram_chat_id") | .value) = "__TELEGRAM_CHAT_ID__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name == "ggchat_webhook_url") | .value) = "__GG_CHAT_WEBHOOK__"
     | (.nodes[]? | select((.name | tostring) | startswith("Notify via Shared Workflow")) | .parameters.workflowPath) = "__SHARED_NOTIFICATION_WORKFLOW_PATH__"
+    | (.nodes[]? | select(.name == "Generate Image Assets (Worker)") | .parameters.source) = "database"
+    | (.nodes[]? | select(.name == "Generate Image Assets (Worker)") | .parameters.workflowId) = {
+        "__rl": true,
+        "mode": "id",
+        "value": "={{ $json.text_to_images_workflow_id || \"__TEXT_TO_IMAGES_WORKFLOW_ID__\" }}"
+      }
+    | (.nodes[]? | select(.name == "Generate Image Assets (Worker)") | .parameters) |= del(.workflowPath)
+    | (.nodes[]? | select(.name == "Generate TTS Assets (Worker)") | .parameters.source) = "database"
+    | (.nodes[]? | select(.name == "Generate TTS Assets (Worker)") | .parameters.workflowId) = {
+        "__rl": true,
+        "mode": "id",
+        "value": "={{ $json.tts_workflow_id || \"__TTS_WORKFLOW_ID__\" }}"
+      }
+    | (.nodes[]? | select(.name == "Generate TTS Assets (Worker)") | .parameters) |= del(.workflowPath)
+    | (.nodes[]? | select(.credentials.googleApi != null) | .credentials.googleApi) = {
+        id: "__GDRIVE_CREDENTIAL_ID__",
+        name: "__GDRIVE_CREDENTIAL_NAME__"
+      }
+    | (.nodes[]? | select(.credentials.googleDriveOAuth2Api != null) | .credentials.googleDriveOAuth2Api) = {
+        id: "__GDRIVE_CREDENTIAL_ID__",
+        name: "__GDRIVE_CREDENTIAL_NAME__"
+      }
     | (.nodes[]? | select(.type == "n8n-nodes-base.telegram" or .type == "n8n-nodes-base.telegramTrigger") | .credentials.telegramApi) = {
         id: "__TELEGRAM_CREDENTIAL_ID__",
         name: "__TELEGRAM_CREDENTIAL_NAME__"

@@ -1,0 +1,46 @@
+Sau khi đã đủ content + metadata, trước khi gửi notify thành công:
+tới node chia nội dung ra cho dễ làm ảnh và tts khớp, nhiệm vụ:
+Với mỗi phần (intro, part_01, part_02,...) lại chia ra 3 câu làm 1 dữ kiện.
+=> Kết quả trả ra dạng mảng các dữ kiện [{partName, index, text}]
+Tách ra thành 2 nhánh lớn.
+1. Nhánh đi tạo ảnh: 
+- Cứ 1 dữ kiện đi tạo ảnh gửi text kèm prompt cố định "Tạo ảnh mô tả đoạn văn, phong cách hiện thực".
+- Sử dụng nano banana pro để tạo ành, ảnh 16:9.
+Sau khi chạy hết dữ kiện thì trả ra kết quả [{partName, index, text, image}]
+=> sau khi tạo hình ảnh thì dùng hình ảnh để làm các video nhỏ (tạm chưa làm, trả video rỗng):
+Sau khi chạy hết dữ kiện thì trả ra kết quả [{partName, index, text, image, video}]
+
+2. Nhánh đi TTS
+- Cứ 1 dữ kiện đi tạo TTS thông qua api bên dưới để được file âm thanh
+### 🚀 Stream qua POST (Khuyến nghị cho dự án khác)
+Phù hợp cho văn bản dài và dễ dàng truyền tham số phức tạp.
+- **Endpoint:** `/stream`
+- **Phương thức:** `POST`
+- **Tham số (JSON Body):**
+  - `text` (Bắt buộc): Nội dung văn bản cần đọc.
+  - `voice_id` (Tùy chọn): ID giọng nói.
+  - `temperature` (Tùy chọn): Độ sáng tạo (mặc định 1.0).
+  - `top_k` (Tùy chọn): Top-K sampling (mặc định 50).
+  - `max_chars` (Tùy chọn): Max chars per chunk (mặc định 256).
+  - `silence_p` (Tùy chọn): Khoảng im lặng giữa các đoạn (mặc định 0.0).
+  - `crossfade_p` (Tùy chọn): Độ dài chuyển tiếp mượt (mặc định 0.05).
+- **Ví dụ Curl:**
+```bash
+curl -X POST http://localhost:8001/stream \
+     -H "Content-Type: application/json" \
+     -d '{
+       "text": "Đây là nội dung văn bản dài cần được tổng hợp giọng nói qua phương thức POST.",
+       "voice_id": "ngochuyen",
+       "temperature": 0.8,
+       "silence_p": 0.05,
+       "crossfade_p": 0.03
+     }' \
+     --output output.wav
+```
+- Lấy Duration từ file âm thanh
+=> Kết quả trả ra dạng mảng các dữ kiện [{partName, index, text, voice, duration}].
+
+
+Merge data 2 nhánh lại gộp data lại luôn và cho cái debug nào đó để thấy full data cuối cùng.
+2 nhánh công việc này đều chạy rất mất thời gian, lưu ý để thiết kế tránh các lỗi 1 node 300s, hoặc các wait timeout không đáng.
+Đoạn công việc nào chưa defined đủ thông tin để làm thì tạm thời để node trống forward tới node sau với field lẽ ra phải có để rỗng là được.
