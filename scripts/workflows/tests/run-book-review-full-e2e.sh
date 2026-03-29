@@ -49,6 +49,7 @@ fi
 TMP_DIR="$(mktemp -d)"
 PATCHED_TEMPLATE="$TMP_DIR/book-review-full-e2e.workflow.json"
 EXECUTION_JSON="$TMP_DIR/execution.json"
+START_EXECUTION_JSON="$TMP_DIR/start-execution.json"
 
 NEEDS_RESTORE=0
 RESTORE_DONE=0
@@ -328,6 +329,7 @@ START_HTTP_CODE="$(post_telegram_message_update "$START_UPDATE_ID" "book-review 
 assert_http_success "$START_HTTP_CODE" "Start webhook"
 START_EXEC_ID="$(resolve_execution_id_by_update_id "$START_UPDATE_ID" "$START_EPOCH" || true)"
 [ -n "$START_EXEC_ID" ] || fatal "Cannot map start update_id=$START_UPDATE_ID to execution."
+cp "$EXECUTION_JSON" "$START_EXECUTION_JSON"
 
 assert_worker_event 'init_review'
 SESSION_TOKEN="$(jq -r '((.data // .).resultData.runData["Handle Reviewer Event"][0].data.main[0][0].json.session_token // empty)' "$EXECUTION_JSON")"
@@ -340,23 +342,28 @@ MEDIA_CONTINUE_EXEC_ID="$(resolve_execution_id_by_update_id "$MEDIA_CONTINUE_UPD
 [ -n "$MEDIA_CONTINUE_EXEC_ID" ] || fatal "Cannot map media callback update_id=$MEDIA_CONTINUE_UPDATE_ID to execution."
 assert_worker_event 'media_continue'
 
-MEDIA_PIPELINE_STATUS="$(jq -r '((((.data // .).resultData.runData["Persist Media Debug (Worker)"] // []) | map(.data.main[0][0].json.media_pipeline_status // empty) | .[-1]) // empty)' "$EXECUTION_JSON")"
-SESSION_FOLDER_URL="$(jq -r '((((.data // .).resultData.runData["Persist Media Debug (Worker)"] // []) | map(.data.main[0][0].json.session_folder_url // empty) | .[-1]) // empty)' "$EXECUTION_JSON")"
-SESSION_SHEET_URL="$(jq -r '((((.data // .).resultData.runData["Persist Media Debug (Worker)"] // []) | map(.data.main[0][0].json.session_sheet_url // empty) | .[-1]) // empty)' "$EXECUTION_JSON")"
-SESSION_SHEET_CREATE_STATUS_CODE="$(jq -r '((((.data // .).resultData.runData["Persist Media Debug (Worker)"] // []) | map(.data.main[0][0].json.session_sheet_create_status_code // 0) | .[-1]) // 0)' "$EXECUTION_JSON")"
+MEDIA_PIPELINE_STATUS="$(jq -r '((((.data // .).resultData.runData["Finalize Media Assets (Worker)"] // []) | map(.data.main[0][0].json.media_pipeline_status // empty) | .[-1]) // empty)' "$EXECUTION_JSON")"
+SESSION_FOLDER_URL="$(jq -r '((((.data // .).resultData.runData["Finalize Session Assets Package (Worker)"] // []) | map(.data.main[0][0].json.session_folder_url // empty) | .[-1]) // empty)' "$EXECUTION_JSON")"
+SESSION_SHEET_URL="$(jq -r '((((.data // .).resultData.runData["Finalize Session Assets Package (Worker)"] // []) | map(.data.main[0][0].json.session_sheet_url // empty) | .[-1]) // empty)' "$EXECUTION_JSON")"
+SESSION_SHEET_CREATE_STATUS_CODE="$(jq -r '((((.data // .).resultData.runData["Finalize Session Assets Package (Worker)"] // []) | map(.data.main[0][0].json.session_sheet_update_status_code // 0) | .[-1]) // 0)' "$EXECUTION_JSON")"
 SESSION_SHEET_ERROR_MESSAGE="$(jq -r '((((.data // .).resultData.runData["Create Session Sheet (Worker)"] // []) | map(.data.main[0][0].json.body.error.message // empty) | .[-1]) // empty)' "$EXECUTION_JSON")"
-REVIEW_FILE_URL="$(jq -r '((((.data // .).resultData.runData["Persist Media Debug (Worker)"] // []) | map(.data.main[0][0].json.session_review_file_url // empty) | .[-1]) // empty)' "$EXECUTION_JSON")"
-METADATA_FILE_URL="$(jq -r '((((.data // .).resultData.runData["Persist Media Debug (Worker)"] // []) | map(.data.main[0][0].json.session_metadata_file_url // empty) | .[-1]) // empty)' "$EXECUTION_JSON")"
-MANIFEST_FILE_URL="$(jq -r '((((.data // .).resultData.runData["Persist Media Debug (Worker)"] // []) | map(.data.main[0][0].json.session_manifest_file_url // empty) | .[-1]) // empty)' "$EXECUTION_JSON")"
-MEDIA_ASSETS_COUNT="$(jq -r '((((.data // .).resultData.runData["Persist Media Debug (Worker)"] // []) | map(.data.main[0][0].json.media_assets // []) | .[-1] | length) // 0)' "$EXECUTION_JSON")"
-TTS_GENERATED_COUNT="$(jq -r '((((.data // .).resultData.runData["Persist Media Debug (Worker)"] // []) | map(.data.main[0][0].json.media_stats.tts_generated_count // 0) | .[-1]) // 0)' "$EXECUTION_JSON")"
-IMAGE_GENERATED_COUNT="$(jq -r '((((.data // .).resultData.runData["Persist Media Debug (Worker)"] // []) | map(.data.main[0][0].json.media_stats.image_generated_count // 0) | .[-1]) // 0)' "$EXECUTION_JSON")"
+REVIEW_FILE_URL="$(jq -r '((((.data // .).resultData.runData["Finalize Session Assets Package (Worker)"] // []) | map(.data.main[0][0].json.session_review_file_url // empty) | .[-1]) // empty)' "$EXECUTION_JSON")"
+if [ -z "$REVIEW_FILE_URL" ] && [ -f "$START_EXECUTION_JSON" ]; then
+  REVIEW_FILE_URL="$(jq -r '((((.data // .).resultData.runData["Finalize Session Assets Package (Worker)"] // []) | map(.data.main[0][0].json.session_review_file_url // empty) | .[-1]) // empty)' "$START_EXECUTION_JSON")"
+fi
+METADATA_FILE_URL="$(jq -r '((((.data // .).resultData.runData["Finalize Session Assets Package (Worker)"] // []) | map(.data.main[0][0].json.session_metadata_file_url // empty) | .[-1]) // empty)' "$EXECUTION_JSON")"
+if [ -z "$METADATA_FILE_URL" ] && [ -f "$START_EXECUTION_JSON" ]; then
+  METADATA_FILE_URL="$(jq -r '((((.data // .).resultData.runData["Finalize Session Assets Package (Worker)"] // []) | map(.data.main[0][0].json.session_metadata_file_url // empty) | .[-1]) // empty)' "$START_EXECUTION_JSON")"
+fi
+MEDIA_ASSETS_COUNT="$(jq -r '((((.data // .).resultData.runData["Finalize Media Assets (Worker)"] // []) | map(.data.main[0][0].json.media_assets // []) | .[-1] | length) // 0)' "$EXECUTION_JSON")"
+TTS_GENERATED_COUNT="$(jq -r '((((.data // .).resultData.runData["Finalize Media Assets (Worker)"] // []) | map(.data.main[0][0].json.media_stats.tts_generated_count // 0) | .[-1]) // 0)' "$EXECUTION_JSON")"
+IMAGE_GENERATED_COUNT="$(jq -r '((((.data // .).resultData.runData["Finalize Media Assets (Worker)"] // []) | map(.data.main[0][0].json.media_stats.image_generated_count // 0) | .[-1]) // 0)' "$EXECUTION_JSON")"
 
 if [ -z "$MEDIA_PIPELINE_STATUS" ]; then
   fatal 'Missing media_pipeline_status on media_continue execution.'
 fi
 
-if [ -z "$SESSION_FOLDER_URL" ] || [ -z "$REVIEW_FILE_URL" ] || [ -z "$METADATA_FILE_URL" ] || [ -z "$MANIFEST_FILE_URL" ]; then
+if [ -z "$SESSION_FOLDER_URL" ] || [ -z "$REVIEW_FILE_URL" ] || [ -z "$METADATA_FILE_URL" ]; then
   fatal 'Session asset links are incomplete. Check execution in UI for details.'
 fi
 
@@ -390,12 +397,11 @@ fi
 log "- session_sheet_url: $SESSION_SHEET_URL"
 log "- review_file_url: $REVIEW_FILE_URL"
 log "- metadata_file_url: $METADATA_FILE_URL"
-log "- manifest_file_url: $MANIFEST_FILE_URL"
 
 printf '\nMedia assets (voice links):\n'
 jq -r '
   (
-    ((.data // .).resultData.runData["Persist Media Debug (Worker)"] // [])
+    ((.data // .).resultData.runData["Finalize Media Assets (Worker)"] // [])
     | map(.data.main[0][0].json.media_assets // [])
     | .[-1]
   ) // []

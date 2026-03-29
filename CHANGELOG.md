@@ -30,6 +30,38 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 - 2026-03-26: Fix workflow book-review: tra chat response truc tiep tu `Reviewer Orchestrator`, gom QC ve 1 nguon logic trong orchestrator (node AI QC giu pass-through), va sanitize `workflowPath` ve placeholder trong templates/sync script. Ly do: tranh mat metadata o response, tranh drift QC, va bo absolute path theo may local.
 
 ## 2026-03-29
+- Cleanup tiep workflow `Book Review` theo huong simple + it logic an:
+  - `Parse Telegram Event` doi sang callback-only parser (chi xu ly inline button `brv:media:c|s:<session_token>`), bo lookup command-text qua Data Table.
+  - `Handle Reviewer Event` bo progress message no-op/thua (`Dang tao noi dung` o worker va thong bao `Dang xu ly TTS va anh...`), giu flow telegraph ro rang hon.
+  - `Generate Full Review` doi timer progress ve nhịp co dinh moi 3 giay.
+  - `Send Review QC And Action` bo fallback text generic `Chua co feedback QC.`, thay bang feedback fallback cu the hon.
+- Hardening test runner full E2E:
+  - `scripts/workflows/tests/run-book-review-full-e2e.sh` cap nhat doc data tu topology moi (`Finalize Media Assets`, `Finalize Session Assets Package`) thay cho node cu `Persist Media Debug`.
+  - Bo dependency `manifest_file_url`.
+  - Them fallback lay `review_file_url`/`metadata_file_url` tu execution `init_review` neu execution `media_continue` khong carry lai context link.
+- Verification runtime sau patch:
+  - Import workflow pass (`Book Review` ID `4g3N5urBBIuo9HcJ`).
+  - Checklist pass `9/9`.
+  - E2E nhanh pass: execution `1580` (HTTP `200`).
+  - Full E2E pass: start execution `1588`, media execution `1590` (HTTP `200`).
+  - Ghi nhan runtime issue ben ngoai workflow: TTS API tren `127.0.0.1:8001` dang `ECONNREFUSED` nen `tts_generated_count=0`.
+- Refactor giam node cho `Book Review` (UI clean + flow gon hon):
+  - Bo 3 node khong can thiet: `Prepare Session + Init Event`, `Persist Media Debug (Worker)`, `Send Informations`.
+  - `Parse Review Sections` nay tao luon `session_token` + `event_type=init_review`, route truc tiep sang `Set Config (Worker)`.
+  - Flow notify worker doi thanh `Build Notify Payload (Worker) -> Notify via Shared Workflow (Main)` (khong qua split node trung gian).
+  - Cap nhat automation scripts theo topology moi:
+    - `scripts/workflows/tests/test-book-review-checklist.mjs` bo hard requirement node cu, them assert route moi.
+    - `scripts/workflows/tests/run-book-review-e2e.sh` doi required node preflight sang `Set Config (Worker)`.
+  - Verify lai:
+    - Checklist PASS `9/9`.
+    - E2E PASS (execution `1576`, webhook `200`).
+  - Tiep tuc toi gian cum Drive-persist de giam clutter UI:
+    - Bo nhanh manifest file: `If Persist Manifest File (Worker)`, `Google Drive Save Manifest File (Worker)`, `Merge Manifest File Context (Worker)`, `Prepare Manifest File Link (Worker)`.
+    - Bo `If Session Sheet Exists (Worker)`; flow sheet nay create-moi 1 lan trong media finalize path.
+    - Tong so node workflow chinh giam them: `65 -> 60`.
+  - Verify lan 2:
+    - Checklist PASS `9/9`.
+    - E2E PASS (execution `1578`, webhook `200`).
 - Don gian hoa luong notify `Book Review` theo huong shared notifier truc tiep:
   - Bo node gate `If Should Notify Externally (Worker)`.
   - Bo field `should_notify_externally` trong payload start + worker.

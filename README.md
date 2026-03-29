@@ -254,32 +254,31 @@ Book review chat pipeline:
 - Notify hub cho workflow review sach da chuan hoa theo pattern:
   - Parse thong diep bat dau: `Bắt đầu review: {{user_input}}`.
   - Start command se push thong bao tien trinh som: `Dang tao noi dung ...` (route qua shared notify).
-  - Moi payload thong bao (main/router/worker/start-message) deu dua vao mang `send_informations`.
-  - `Send Informations` (`Split Out`) se split theo `send_informations` va giu full data (`include=allOtherFields`).
-  - `Set Notify Targets (Main)` duoc dat ngay truoc `Notify via Shared Workflow (Main)` va la diem set target notify duy nhat.
+  - Worker build payload thong bao o `Build Notify Payload (Worker)` roi goi truc tiep `Notify via Shared Workflow (Main)`.
+  - Da bo node `Send Informations` de giam clutter UI.
+  - `Set Notify Targets (Main)` giu vai tro set target notify cho luong main/start.
+- Don gian hoa init session:
+  - Da bo node `Prepare Session + Init Event`.
+  - `Parse Review Sections` tao `session_token` + gan `event_type=init_review`, sau do route thang vao worker config.
 - Runtime UX + Drive persistence (update 2026-03-29):
-  - Progress message trong reviewer worker duoc edit moi 3 giay (`Dang tao noi dung`, `Dang tao metadata`, `Dang tao TTS`, `Dang tao anh`) va xoa sau khi xong step.
+  - Progress message `Dang tao noi dung...` duoc gui ngay khi bat dau `book-review ...`, auto edit moi 3 giay, va xoa khi tao noi dung xong.
   - Callback action `Tao Media` khong popup text du; workflow chi ack silent + clear inline keyboard.
+  - Node `Parse Telegram Event` chi lang nghe callback inline button (`brv:media:c|s:<session_token>`) de luong reviewer gon va de trace.
   - Session folder name giu theo format `book-review-<slug-book>-<session_token>` va duoc tai su dung trong suot session (khong tao folder moi neu da co ID).
   - Persist asset theo tung process/event:
-    - `init_review`: upsert review file + upsert metadata file.
-    - `media_continue`/`auto_continue_media`: persist manifest + session sheet + media assets.
+    - `init_review`: tao folder session + subfolder `voice/image`, sau do persist `review file` + `metadata file`.
+    - `media_continue`/`auto_continue_media`: xu ly TTS + image, persist media assets va `session sheet`.
   - Telegram sau `book-review ...` se gui ngay link Drive cho `review file`, `metadata file`, `session folder` (va `session sheet` neu co).
   - QC review duoc tach rieng khoi gate reviewer; chi gui block `[QC REVIEW]`, khong co nut action.
-- Truoc notify success (chi cho `media_continue`/`auto_continue_media`), worker chay media branch node-based theo nhanh ro rang:
-  - `Process Media Assets (chunk+gate)` -> `Generate Image Assets (Worker)` + `Generate TTS Assets (Worker)` (goi subworkflow, parallel) -> `Merge Media Results` -> `Finalize Media Assets`.
-  - `Process Media Assets` va `Finalize Media Assets` deu goi `Persist Media Debug` (2 checkpoint: `prepared` va `finalized`) de khong mat dau khi fail giua nhanh media.
-  - `Route Final Persist To Notify` dung sau `Persist Media Debug` de chi cho checkpoint `finalized` di tiep sang `Build Notify Payload` (tranh notify duplicate tu checkpoint som).
-  - `Process Media Assets` tach review thanh chunk 3 cau va gate theo event final-success truoc khi fan-out.
-  - `Generate Image Assets` + `Generate TTS Assets` chay song song theo tung chunk, sau do duoc merge deterministic theo `chunk_key`.
-  - `Finalize Media Assets` tong hop output vao `media_assets`/`media_pipeline_status`, dong thoi gan `media_finished_at` + `media_elapsed_seconds`; neu thieu config hoac loi API thi soft-fail de khong chan luong chinh.
-  - `Persist Media Debug` mac dinh `enabled`; luu log quan trong vao Data Table (`media_debug_store_name`, default `book_review_media_debug`) de truy vet execution that bai/sai data.
-  - Mac dinh runtime media da tang cho workload dai: `image_timeout_ms=900000`, `tts_timeout_ms=900000`, `image_parallelism=2`, `tts_parallelism=2` (van co clamp `1..5`).
+- Media branch node-first (chi chay cho `media_continue`/`auto_continue_media`):
+  - `Process Media Assets (chunk+gate)` -> `Generate Image Assets (Worker)` + `Generate TTS Assets (Worker)` (parallel subworkflow) -> `Merge Media Results` -> `Finalize Media Assets`.
+  - Chunk media duoc merge deterministic theo `chunk_key`; output tong hop vao `media_assets` + `media_pipeline_status` + `media_stats`.
+  - Mac dinh runtime media: `image_timeout_ms=900000`, `tts_timeout_ms=900000`, `image_parallelism=2`, `tts_parallelism=2` (clamp `1..5`).
 - Master prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-master-prompt.txt` (placeholder `{{USER_INPUT}}`)
 - Metadata prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-metadata-prompt.txt`
 - QC prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-qc-prompt.txt`
 - Review-edit prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-review-edit-prompt.txt`
-- Workflow hop nhat ket thuc moi nhanh bang notify hub: `build payload -> Send Informations -> Set Notify Targets (Main) -> Shared Notification Router`; khong con su dung node chat response cu (`Return Chat Response`).
+- Workflow hop nhat ket thuc moi nhanh bang notify hub: `Build Notify Payload (Worker) -> Notify via Shared Workflow (Main)`; payload worker mac dinh `notify_targets=none` de tranh spam `n8n INFO`.
 
 Quy tac import/update:
 - Script import da la **UPSERT**:
@@ -347,7 +346,7 @@ bash scripts/workflows/tests/run-book-review-full-e2e.sh
 # custom message:
 bash scripts/workflows/tests/run-book-review-full-e2e.sh env.n8n.local env.cliproxy.local "Sách Đắc Nhân Tâm của Dale Carnegie"
 ```
-- Script se patch webhook test, goi du 3 buoc reviewer event, verify `media_pipeline_status`, va check link session assets (folder, files, sheet), sau do auto restore workflow template.
+- Script se patch webhook test, goi 2 buoc reviewer event (`start -> media_continue`), verify `media_pipeline_status`, va check link session assets (folder, files, sheet), sau do auto restore workflow template.
 - Neu `session_sheet_url` rong va node `Create Session Sheet (Worker)` tra loi `>=400`, script se fail voi thong diep chi tiet tu Google API.
 - Dieu kien bat buoc de pass full E2E co session sheet: trong Google Cloud project cua OAuth credential phai bat `Google Sheets API` (`sheets.googleapis.com`).
 - Checklist preflight + cac issue runtime chung: `docs/testing-runtime-incidents.md`.

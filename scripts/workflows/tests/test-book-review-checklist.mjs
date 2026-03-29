@@ -262,7 +262,6 @@ async function runChecklist() {
           'Set Config (Main)',
           'Generate Full Review',
           'Parse Review Sections',
-          'Prepare Session + Init Event',
           'Handle Reviewer Event',
           'Process Media Assets (Worker)',
           'Generate Image Assets (Worker)',
@@ -274,6 +273,12 @@ async function runChecklist() {
         for (const nodeName of mainRequired) {
           assert((mainWorkflow.nodes ?? []).some((node) => node.name === nodeName), `Missing node: ${nodeName}`);
         }
+
+        const parseTargets = getTargets(mainWorkflow, 'Parse Review Sections');
+        assert(
+          parseTargets.includes('Set Config (Worker)'),
+          'Parse Review Sections must route directly to Set Config (Worker)',
+        );
 
         const imageExecNode = getNode(mainWorkflow, 'Generate Image Assets (Worker)');
         assert(

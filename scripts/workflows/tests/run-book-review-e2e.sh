@@ -192,7 +192,7 @@ required_nodes=(
   "Set Config (Main)"
   "Generate Full Review"
   "Parse Review Sections"
-  "Prepare Session + Init Event"
+  "Set Config (Worker)"
 )
 
 for node_name in "${required_nodes[@]}"; do
