@@ -30,6 +30,17 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 - 2026-03-26: Fix workflow book-review: tra chat response truc tiep tu `Reviewer Orchestrator`, gom QC ve 1 nguon logic trong orchestrator (node AI QC giu pass-through), va sanitize `workflowPath` ve placeholder trong templates/sync script. Ly do: tranh mat metadata o response, tranh drift QC, va bo absolute path theo may local.
 
 ## 2026-03-29
+- TTS progress + realtime sheet update (book-review):
+  - `Handle Reviewer Event` bo sung metadata progress TTS (`tts_progress_message_id`, `tts_progress_started_at_ms`, `tts_progress_estimated_minutes`) va truyen xuong media branch.
+  - `Process Media Assets (Worker)` bo sung `order` toan cuc cho tung chunk va `tts_progress_total_files`.
+  - `Prepare TTS Workflow Input (Worker)` truyen context progress (`message_id`, `started_at`, `estimate`, `total`) vao subworkflow `TTS`.
+  - `TTS` workflow them node `Update TTS Progress Message` de edit Telegram text theo dang `Dang tao TTS... (... ) | file x/y`.
+  - `TTS` workflow them nhanh realtime Google Sheets update theo tung voice (`Write Voice Row To Session Sheet (Realtime)`) khi co `session_sheet_id`.
+  - `Normalize Inputs` + `Finalize TTS Results` giu truong `order` de mapping dung dong sheet.
+  - Import workflow da cap nhat thanh cong:
+    - `Text To Images`: `tcF2wcybrmgzFNew`
+    - `TTS`: `2F1jBI12C6NtslBN`
+    - `Book Review`: `4g3N5urBBIuo9HcJ`
 - Cleanup tiep workflow `Book Review` theo huong simple + it logic an:
   - `Parse Telegram Event` doi sang callback-only parser (chi xu ly inline button `brv:media:c|s:<session_token>`), bo lookup command-text qua Data Table.
   - `Handle Reviewer Event` bo progress message no-op/thua (`Dang tao noi dung` o worker va thong bao `Dang xu ly TTS va anh...`), giu flow telegraph ro rang hon.

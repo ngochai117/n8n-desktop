@@ -262,12 +262,14 @@ Book review chat pipeline:
   - `Parse Review Sections` tao `session_token` + gan `event_type=init_review`, sau do route thang vao worker config.
 - Runtime UX + Drive persistence (update 2026-03-29):
   - Progress message `Dang tao noi dung...` duoc gui ngay khi bat dau `book-review ...`, auto edit moi 3 giay, va xoa khi tao noi dung xong.
+  - Progress message TTS bo sung counter `file x/y` (x la so chunk da xu ly theo thu tu, y la tong chunk TTS) trong khi dang tao voice.
   - Callback action `Tao Media` khong popup text du; workflow chi ack silent + clear inline keyboard.
   - Node `Parse Telegram Event` chi lang nghe callback inline button (`brv:media:c|s:<session_token>`) de luong reviewer gon va de trace.
   - Session folder name giu theo format `book-review-<slug-book>-<session_token>` va duoc tai su dung trong suot session (khong tao folder moi neu da co ID).
   - Persist asset theo tung process/event:
     - `init_review`: tao folder session + subfolder `voice/image`, sau do persist `review file` + `metadata file`.
     - `media_continue`/`auto_continue_media`: xu ly TTS + image, persist media assets va `session sheet`.
+  - Neu da co `session_sheet_id`, TTS workflow se update tung dong `assets` ngay khi upload xong moi file voice (realtime row update).
   - Telegram sau `book-review ...` se gui ngay link Drive cho `review file`, `metadata file`, `session folder` (va `session sheet` neu co).
   - QC review duoc tach rieng khoi gate reviewer; chi gui block `[QC REVIEW]`, khong co nut action.
 - Media branch node-first (chi chay cho `media_continue`/`auto_continue_media`):
