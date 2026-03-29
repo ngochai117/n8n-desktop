@@ -1,6 +1,6 @@
-# n8n Local + MCP + Skills + CLIProxyAPI OAuth
+# n8n Local + MCP + Skills + Proxy
 
-Muc tieu cua project: chay n8n local, dung MCP + skills de build workflow, va tich hop CLIProxyAPI de goi Gemini/Codex qua OAuth auth (khong dung provider API key truc tiep).
+Muc tieu cua project: chay n8n local, dung MCP + skills de build workflow, va tich hop proxy runtime (hien tai la 9router) de goi Gemini/Codex qua OpenAI-compatible endpoint (khong dung provider API key truc tiep trong workflow JSON).
 
 ## Living Document Rule
 - Moi thay doi script, cau hinh, quy trinh van hanh: bat buoc cap nhat file nay.
@@ -8,7 +8,7 @@ Muc tieu cua project: chay n8n local, dung MCP + skills de build workflow, va ti
 
 ## Git hygiene
 - Local-only files khong commit: `.mcp.json`, `env.*.local`, `.vendor/`, `.DS_Store`, editor temp files.
-- Dung `env.n8n.local.example` va `env.cliproxy.local.example` lam mau de tao env local tren tung may.
+- Dung `env.n8n.local.example` va `env.proxy.local.example` lam mau de tao env local tren tung may.
 - `workflow-registry.json`, scripts, workflows, docs va file `.example` la thanh phan cua repo va nen duoc version control.
 
 ## Agent Environment Note
@@ -97,13 +97,11 @@ bash scripts/bootstrap/enable-full-mcp.sh
 bash scripts/bootstrap/verify-local.sh
 ```
 
-## CLIProxyAPI OAuth setup (Gemini + Codex)
+## Proxy local setup (Gemini + Codex, runtime hien tai: 9router)
 ### Env contract
-Su dung file `env.cliproxy.local` (neu chua co, script se tu tao):
-- `CLIPROXY_BASE_URL` (mac dinh: `http://127.0.0.1:8317`)
-- `CLIPROXY_CLIENT_KEY` (client key de n8n goi proxy)
-- `CLIPROXY_MANAGEMENT_KEY` (key dang nhap trang management)
-- `CLIPROXY_GOOGLE_PROJECT_ID` (optional; neu de trong, login Gemini se cho phep chon trong luong OAuth)
+Su dung file `env.proxy.local` (neu chua co, script se tu tao):
+- `PROXY_BASE_URL` (mac dinh: `http://127.0.0.1:20128`)
+- `PROXY_API_KEY` (API key copy tu Dashboard cua 9router)
 - `TELEGRAM_BOT_TOKEN` (optional; dung cho workflow notify Telegram)
 - `TELEGRAM_CHAT_ID` (optional; chat/user/group ID de nhan notify)
 - `GGCHAT_WEBHOOK_URL` (optional; incoming webhook URL cho Google Chat)
@@ -114,86 +112,70 @@ Su dung file `env.cliproxy.local` (neu chua co, script se tu tao):
 - `GDRIVE_ROOT_FOLDER_ID` (optional; root folder Google Drive cho media pipeline)
 - `GDRIVE_CREDENTIAL_NAME` (optional; ten credential Google Drive trong n8n de mapping config)
 
-Mau file: `env.cliproxy.local.example`
+Mau file: `env.proxy.local.example`
 
-### One-command setup + pause OAuth
+### One-command setup
 ```bash
-bash scripts/cliproxy/setup-cliproxy-oauth.sh
+bash scripts/proxy/setup-proxy.sh
 ```
 Script se:
-- Kiem tra `brew`, `curl`, `jq`, `n8n`
-- Cai `cliproxyapi` qua Homebrew neu chua co
-- Sync config local-only vao `~/.cli-proxy-api/config.yaml`
-- Tu dong tao/luu `CLIPROXY_MANAGEMENT_KEY` trong env neu chua co
-- Chay Gemini OAuth (`--login`) + Codex OAuth (`--codex-login`) voi pause
-- Start `brew services cliproxyapi`
-- Verify:
-  - `GET /v1/models`
-  - `POST /v1/chat/completions`
-  - test unauthorized khi thieu auth header
+- Kiem tra `curl`, `jq`
+- Cai `9router` qua npm global neu chua co
+- Start 9router local (background) neu chua chay
+- Verify endpoint `GET /v1/models` (neu da co `PROXY_API_KEY`)
 - Tu dong import workflow demo Gemini + OpenAI vao n8n (neu co `env.n8n.local`)
 
 ### Optional flags
 ```bash
-bash scripts/cliproxy/setup-cliproxy-oauth.sh --skip-oauth
-bash scripts/cliproxy/setup-cliproxy-oauth.sh --skip-workflow-import
-bash scripts/cliproxy/setup-cliproxy-oauth.sh --env-file /path/to/env.file
+bash scripts/proxy/setup-proxy.sh --skip-install
+bash scripts/proxy/setup-proxy.sh --skip-start
+bash scripts/proxy/setup-proxy.sh --skip-verify
+bash scripts/proxy/setup-proxy.sh --skip-workflow-import
+bash scripts/proxy/setup-proxy.sh --env-file /path/to/env.file
 ```
 
-## Quan ly CLIProxy qua Web UI
-Management Center:
+### Dashboard + API key
+Dashboard:
 ```text
-http://127.0.0.1:8317/management.html#/login
+http://127.0.0.1:20128/dashboard
 ```
+- Vao tab providers de ket noi account/provider.
+- Copy API key trong dashboard roi dien vao `PROXY_API_KEY` trong `env.proxy.local`.
 
-Dang nhap:
-- `Current URL`: `http://127.0.0.1:8317`
-- `Management Key`: lay tu `env.cliproxy.local` (bien `CLIPROXY_MANAGEMENT_KEY`)
-
-Neu quen key:
-- Key plain-text de xem lai nam trong file env (`env.cliproxy.local`), khong nam trong `~/.cli-proxy-api/config.yaml` vi server co the hash key sau khi start.
-- Co the rotate key bang cach sua `CLIPROXY_MANAGEMENT_KEY` trong env roi chay lai:
-```bash
-bash scripts/cliproxy/setup-cliproxy-oauth.sh --skip-oauth --skip-workflow-import
-```
-
-Them account Gemini/Codex/khac:
-- Vao menu `OAuth Login` trong Management Center.
-- Chon provider va login them account moi.
-- Quay lai `Auth Files` de refresh va bat/tat account theo nhu cau.
-
-Mac dinh uu tien model moi nhat:
-- Gemini demo: `gemini-3-flash-preview`
-- Book review fallback model: `gemini-2.5-pro` (tu dong fallback neu model chinh gap capacity 429)
-- OpenAI demo: `gpt-5.4`
+Model duoc cau hinh tap trung trong `env.proxy.local`:
+- `CONTENT_MODEL` (Book Review content + OpenAI demo)
+- `FALLBACK_MODEL` (fallback khi content model gap capacity)
+- `QC_MODEL` (model cho luong QC)
+- `GEMINI_CONTENT_MODEL` (Gemini demo)
+- `IMAGE_MODEL` (model tao anh)
 
 ## Xem model nhanh (command line)
 Liet ke toan bo model:
 ```bash
-source env.cliproxy.local
-curl -sS -H "Authorization: Bearer $CLIPROXY_CLIENT_KEY" "$CLIPROXY_BASE_URL/v1/models" | jq -r '.data[].id' | sort
+source env.proxy.local
+curl -sS -H "Authorization: Bearer $PROXY_API_KEY" "$PROXY_BASE_URL/v1/models" | jq -r '.data[].id' | sort
 ```
 
 Chi xem model Gemini:
 ```bash
-source env.cliproxy.local
-curl -sS -H "Authorization: Bearer $CLIPROXY_CLIENT_KEY" "$CLIPROXY_BASE_URL/v1/models" | jq -r '.data[].id' | rg '^gemini' | sort
+source env.proxy.local
+curl -sS -H "Authorization: Bearer $PROXY_API_KEY" "$PROXY_BASE_URL/v1/models" | jq -r '.data[].id' | rg '^gemini' | sort
 ```
 
 Chi xem model OpenAI:
 ```bash
-source env.cliproxy.local
-curl -sS -H "Authorization: Bearer $CLIPROXY_CLIENT_KEY" "$CLIPROXY_BASE_URL/v1/models" | jq -r '.data[].id' | rg '^gpt' | sort
+source env.proxy.local
+curl -sS -H "Authorization: Bearer $PROXY_API_KEY" "$PROXY_BASE_URL/v1/models" | jq -r '.data[].id' | rg '^(cx/)?gpt' | sort
 ```
 
 Fetch model moi nhat + goi y model moi nhat (khong vao menu):
 ```bash
-source env.cliproxy.local
-curl -sS -H "Authorization: Bearer $CLIPROXY_CLIENT_KEY" "$CLIPROXY_BASE_URL/v1/models" \
+source env.proxy.local
+curl -sS -H "Authorization: Bearer $PROXY_API_KEY" "$PROXY_BASE_URL/v1/models" \
 | jq -r '.data[].id' \
 | awk '
   /^gemini/ {gem[++g]= $0}
-  /^gpt/    {gpt[++o]= $0}
+  /^(cx\/)?gpt/ {gpt[++o]= $0}
   END {
     print "Gemini models:";
     for (i=1;i<=g;i++) print "  " gem[i];
@@ -205,8 +187,8 @@ curl -sS -H "Authorization: Bearer $CLIPROXY_CLIENT_KEY" "$CLIPROXY_BASE_URL/v1/
 ## Workflow demo Gemini + OpenAI + Book Review Chat
 Template workflows:
 - `workflows/shared/shared-notification-router.workflow.json`
-- `workflows/demo/gemini-cliproxy-demo.workflow.json`
-- `workflows/demo/openai-cliproxy-demo.workflow.json`
+- `workflows/demo/gemini-proxy-demo.workflow.json`
+- `workflows/demo/openai-proxy-demo.workflow.json`
 - `workflows/book-review/book-review.workflow.json`
 - `workflows/book-review/text-to-images.workflow.json`
 - `workflows/book-review/tts.workflow.json`
@@ -224,8 +206,8 @@ workflows/
     text-to-images.workflow.json
     tts.workflow.json
   demo/
-    gemini-cliproxy-demo.workflow.json
-    openai-cliproxy-demo.workflow.json
+    gemini-proxy-demo.workflow.json
+    openai-proxy-demo.workflow.json
   shared/
     shared-notification-router.workflow.json
 ```
@@ -233,7 +215,7 @@ workflows/
 Pipeline:
 - `Manual Trigger`
 - `Set Config`
-- `HTTP Request` -> `POST {CLIPROXY_BASE_URL}/v1/chat/completions`
+- `HTTP Request` -> `POST {PROXY_BASE_URL}/v1/chat/completions`
 - `Code` node extract text tu `choices[0].message.content`
 - `Set Notify Targets` node de chon kenh notify theo workflow (`telegram`, `ggchat`, hoac ket hop CSV)
 - `Code` node build notify payload dong (`status`, `summary`, `details`)
@@ -298,12 +280,12 @@ bash scripts/workflows/sync/sync-workflows-from-n8n.sh
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply
 
 # Chi sync 1 workflow theo ten
-bash scripts/workflows/sync/sync-workflows-from-n8n.sh --name "Demo Gemini via CLIProxyAPI" --apply
+bash scripts/workflows/sync/sync-workflows-from-n8n.sh --name "Demo Gemini via Proxy API" --apply
 
 # Apply nhung khong ghi changelog
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply --no-log
 ```
-- Script se sanitize truong nhay cam (`cliproxy_base_url`, `cliproxy_client_key`, `n8n_api_url`, `n8n_api_key`, `image_api_key`, `gdrive_root_folder_id`, `gdrive_credential_name`) va workflow placeholders (`Notify via Shared Workflow`, `text_to_images_workflow_id`, `tts_workflow_id`) truoc khi ghi file.
+- Script se sanitize truong nhay cam (`proxy_base_url`, `proxy_api_key`, `n8n_api_url`, `n8n_api_key`, `image_api_key`, `gdrive_root_folder_id`, `gdrive_credential_name`) va workflow placeholders (`Notify via Shared Workflow`, `text_to_images_workflow_id`, `tts_workflow_id`) truoc khi ghi file.
 - `workflow-registry.json` nen luu `template` dang duong dan tuong doi (vi du: `workflows/book-review/book-review.workflow.json`) de tranh vo path khi doi ten folder project.
 - Khi chay `--apply` (mac dinh), script se auto append log vao `CHANGELOG.md`.
 
@@ -316,7 +298,7 @@ bash scripts/workflows/import/import-openai-demo-workflow.sh
 bash scripts/workflows/import/import-book-review-workflow.sh
 # or custom prompt files:
 bash scripts/workflows/import/import-book-review-workflow.sh \
-  env.n8n.local env.cliproxy.local \
+  env.n8n.local env.proxy.local \
   workflows/book-review/text-to-images.workflow.json \
   workflows/book-review/tts.workflow.json \
   workflows/book-review/book-review.workflow.json \
@@ -336,7 +318,7 @@ E2E nhanh cho book review (khong can tu tim webhook path):
 ```bash
 bash scripts/workflows/tests/run-book-review-e2e.sh
 # custom message:
-bash scripts/workflows/tests/run-book-review-e2e.sh env.n8n.local env.cliproxy.local "Sách Đắc Nhân Tâm của Dale Carnegie"
+bash scripts/workflows/tests/run-book-review-e2e.sh env.n8n.local env.proxy.local "Sách Đắc Nhân Tâm của Dale Carnegie"
 ```
 - Script se tu patch `Telegram Trigger` sang webhook test (`book-review-e2e-codex/webhook`), simulate Telegram update (co secret header), in execution summary, sau do restore workflow ve template goc.
 - Script in them `payload_update_id` va mac dinh chi chap nhan execution co `update_id` khop payload vua gui (tranh bat nham execution cu).
@@ -346,7 +328,7 @@ Full E2E cho book review (start -> media_continue + check session assets):
 ```bash
 bash scripts/workflows/tests/run-book-review-full-e2e.sh
 # custom message:
-bash scripts/workflows/tests/run-book-review-full-e2e.sh env.n8n.local env.cliproxy.local "Sách Đắc Nhân Tâm của Dale Carnegie"
+bash scripts/workflows/tests/run-book-review-full-e2e.sh env.n8n.local env.proxy.local "Sách Đắc Nhân Tâm của Dale Carnegie"
 ```
 - Script se patch webhook test, goi 2 buoc reviewer event (`start -> media_continue`), verify `media_pipeline_status`, va check link session assets (folder, files, sheet), sau do auto restore workflow template.
 - Neu `session_sheet_url` rong va node `Create Session Sheet (Worker)` tra loi `>=400`, script se fail voi thong diep chi tiet tu Google API.
@@ -383,11 +365,10 @@ bash scripts/workflows/tests/check-book-review-debug-table.sh env.n8n.local book
 - `docs/testing-runtime-incidents.md`: so tay runtime/test incidents + preflight checklist truoc E2E
 - `.mcp.json`: config MCP project-level
 - `env.n8n.local.example`: mau env n8n
-- `env.cliproxy.local.example`: mau env cliproxy
+- `env.proxy.local.example`: mau env proxy (runtime hien tai: 9router)
 - `workflow-registry.json`: registry workflow (id, name, template, last sync) de upsert theo ID
-- `configs/cliproxy.config.template.yaml`: template config cliproxy
 - `scripts/README.md`: so do phan cap scripts + lenh thong dung
-- `scripts/cliproxy/setup-cliproxy-oauth.sh`: setup A-Z cho cliproxy oauth
+- `scripts/proxy/setup-proxy.sh`: setup A-Z cho proxy local (runtime hien tai: 9router)
 - `scripts/workflows/import/import-workflow.sh`: core importer upsert workflow template vao n8n
 - `scripts/workflows/import/import-gemini-demo-workflow.sh`: wrapper import workflow Gemini demo vao n8n
 - `scripts/workflows/import/import-shared-notification-router-workflow.sh`: import workflow notify router da kenh dung chung
@@ -400,8 +381,8 @@ bash scripts/workflows/tests/check-book-review-debug-table.sh env.n8n.local book
 - `scripts/workflows/tests/run-book-review-full-e2e.sh`: full e2e runner 2-step reviewer flow + verify session assets tren Drive/Sheet
 - `scripts/workflows/tests/check-book-review-media-output.sh`: kiem tra media data tren execution (summary + schema + error reasons)
 - `scripts/workflows/tests/check-book-review-debug-table.sh`: xem log media debug trong Data Table (ho tro loc theo `session_token`)
-- `workflows/demo/gemini-cliproxy-demo.workflow.json`: workflow demo template
-- `workflows/demo/openai-cliproxy-demo.workflow.json`: workflow OpenAI demo template
+- `workflows/demo/gemini-proxy-demo.workflow.json`: workflow demo template
+- `workflows/demo/openai-proxy-demo.workflow.json`: workflow OpenAI demo template
 - `workflows/book-review/book-review.workflow.json`: workflow book-review main (generate + router + worker + media merge)
 - `workflows/book-review/text-to-images.workflow.json`: workflow reusable tao nhieu anh tu text chunks
 - `workflows/book-review/tts.workflow.json`: workflow reusable tao TTS tu text chunks

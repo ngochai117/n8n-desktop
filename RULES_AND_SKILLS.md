@@ -16,19 +16,19 @@ bash scripts/bootstrap/enable-full-mcp.sh
 bash scripts/bootstrap/verify-local.sh
 ```
 
-### Skill B: Setup CLIProxyAPI OAuth
+### Skill B: Setup proxy runtime
 ```bash
-bash scripts/cliproxy/setup-cliproxy-oauth.sh
+bash scripts/proxy/setup-proxy.sh
 ```
 
-### Skill C: Quan ly account/model qua Management Center
+### Skill C: Quan ly account/model qua dashboard proxy
 Web UI:
 ```text
-http://127.0.0.1:8317/management.html#/login
+http://127.0.0.1:20128/dashboard
 ```
-- Dang nhap bang `CLIPROXY_MANAGEMENT_KEY` (luu trong `env.cliproxy.local`)
-- Them account qua tab `OAuth Login`
-- Quan ly auth files va enabled/disabled qua tab `Auth Files`
+- Dang nhap bang password dashboard (neu runtime yeu cau)
+- Copy API key de dien vao `PROXY_API_KEY` (luu trong `env.proxy.local`)
+- Ket noi provider tai dashboard truoc khi chay workflow demo
 
 ### Skill D: Import/Update workflow demos
 ```bash

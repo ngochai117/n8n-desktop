@@ -14,7 +14,7 @@ Muc tieu: luu cac van de phat sinh khi chay/import/test workflow (dac biet E2E),
 1. Verify env + API keys:
 ```bash
 source env.n8n.local
-source env.cliproxy.local
+source env.proxy.local
 [ -n "$N8N_API_URL" ] && [ -n "$N8N_API_KEY" ]
 ```
 2. Verify n8n API song:

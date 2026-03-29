@@ -6,7 +6,7 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 - 2026-03-24: Khoi tao README living doc + bo script bootstrap/verify/full-mode + plan.md. Ly do: trien khai setup n8n local + MCP + skills tu dau.
 - 2026-03-25: Them CLIProxyAPI OAuth stack (Gemini + Codex), script setup A-Z + workflow demo Gemini + import script. Ly do: dung auth flow thay provider API key va tao demo workflow su dung Gemini.
 - 2026-03-25: Them workflow demo OpenAI qua CLIProxyAPI + script import rieng, va setup script import ca Gemini/OpenAI. Ly do: can demo tuong tu cho luong OpenAI.
-- 2026-03-25: Nang cap default model demo len `gemini-3.1-pro-preview` va `gpt-5.4`; bo sung cach tra cuu model. Ly do: uu tien model moi nhat va de quan sat list model nhanh.
+- 2026-03-25: Nang cap default model demo len `gemini-3.1-pro-preview` va `cx/gpt-5.4`; bo sung cach tra cuu model. Ly do: uu tien model moi nhat va de quan sat list model nhanh.
 - 2026-03-25: Them huong dan nhanh xem model bang lenh CLI (all/gemini/openai). Ly do: tra cuu model nhanh khi can doi model workflow.
 - 2026-03-25: Chuyen import workflow sang co che upsert theo ID + them `workflow-registry.json` + bo tai lieu `RULES_AND_SKILLS.md`. Ly do: tranh tao trung workflow va chuan hoa quy tac van hanh.
 - 2026-03-25: Hardening import workflow upsert (skip archived ID, fallback tim ID theo template/name, xu ly API response an toan). Ly do: dam bao update dung workflow va khong tao trung khi chay lap.
@@ -30,6 +30,12 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 - 2026-03-26: Fix workflow book-review: tra chat response truc tiep tu `Reviewer Orchestrator`, gom QC ve 1 nguon logic trong orchestrator (node AI QC giu pass-through), va sanitize `workflowPath` ve placeholder trong templates/sync script. Ly do: tranh mat metadata o response, tranh drift QC, va bo absolute path theo may local.
 
 ## 2026-03-29
+- Cleanup naming/runtime contract theo huong `proxy` thuần (khong giu backward compatibility):
+  - Xoa wrapper scripts cu (`scripts/9router/setup-9router.sh`, `scripts/cliproxy/setup-cliproxy-oauth.sh`) va loai bo env aliases `ROUTER_*`/`CLIPROXY_*`.
+  - Doi ten demo templates thanh `workflows/demo/gemini-proxy-demo.workflow.json` + `workflows/demo/openai-proxy-demo.workflow.json`; cap nhat wrappers import + registry.
+  - Chuan hoa docs/rules (`README.md`, `scripts/README.md`, `AGENTS.md`, `AGENT_RULES_PROJECT.md`, `RULES_AND_SKILLS.md`) de chi con `env.proxy.local`, `PROXY_*`, `scripts/proxy/setup-proxy.sh`.
+  - Don dep regression sau broad replace: bo duplicate assignment o `import-workflow.sh`, `sync-workflows-from-n8n.sh`, `test-book-review-checklist.mjs`.
+  - Verify: `bash -n` scripts pass; checklist automation pass `9/9`.
 - TTS progress + realtime sheet update (book-review):
   - `Handle Reviewer Event` bo sung metadata progress TTS (`tts_progress_message_id`, `tts_progress_started_at_ms`, `tts_progress_estimated_minutes`) va truyen xuong media branch.
   - `Process Media Assets (Worker)` bo sung `order` toan cuc cho tung chunk va `tts_progress_total_files`.
@@ -358,3 +364,17 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
   - `book-review.workflow.json`: doi clash handling cua `Merge Session Folder Context (Worker)`, `Merge Voice Folder Context (Worker)`, `Merge Image Folder Context (Worker)` sang `preferInput2` de giu dung folder id vua tao (khong bi ghi de boi session folder id).
   - `tts.workflow.json`: `Normalize TTS Response` them helper `chooseVoiceFileName()` de bo ten generic nhu `stream`, ep filename theo `chunk_key` (`tts-<chunk_key>.wav|mp3`) khi provider tra ve ten chung.
   - Verify runtime (execution `1465`): `voice_folder_id` tach rieng voi `session_folder_id` va co URL folder `voice` dung.
+
+## 2026-03-29
+- Migrate runtime tu CLI Proxy sang 9router:
+  - Them script moi `scripts/9router/setup-9router.sh` (install/start/verify/import workflow).
+  - Doi default env cua cac script `run/import/tests` sang `env.9router.local` + fallback tuong thich nguoc `env.cliproxy.local`.
+  - Core importer map `ROUTER_BASE_URL`/`ROUTER_API_KEY` vao workflow config (va van fallback `CLIPROXY_*` de tranh vo workflow cu).
+  - Cap nhat docs van hanh (`README.md`, `scripts/README.md`, `docs/testing-runtime-incidents.md`) va bo sung `env.9router.local.example`.
+  - Giu `scripts/cliproxy/setup-cliproxy-oauth.sh` dang wrapper redirect sang setup 9router de khong vo command cu.
+- Chuan hoa naming trung tinh `proxy` de de doi provider ve sau:
+  - Them entrypoint chinh `scripts/proxy/setup-proxy.sh`; giu `scripts/9router/setup-9router.sh` va `scripts/cliproxy/setup-cliproxy-oauth.sh` lam wrapper tuong thich nguoc.
+  - Doi default env sang `env.proxy.local` + bo sung `env.proxy.local.example`; loai bo 2 file example cu (`env.9router.local.example`, `env.cliproxy.local.example`) de giam nham lan.
+  - Doi cac script `run/import/tests` sang bien `PROXY_*`/`PROXY_ENV_FILE`, fallback tu `ROUTER_*` va `CLIPROXY_*`.
+  - Cap nhat importer/sync de support them assignment `proxy_base_url`/`proxy_api_key` ben canh `router_*` va `cliproxy_*`.
+  - Cap nhat docs van hanh (`README.md`, `scripts/README.md`, `docs/testing-runtime-incidents.md`) theo naming `proxy`.

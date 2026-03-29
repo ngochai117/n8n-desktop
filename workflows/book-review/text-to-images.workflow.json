@@ -181,7 +181,7 @@
             {
               "id": "media-image_poll_interval_seconds",
               "name": "image_poll_interval_seconds",
-              "value": "={{ $json.image_poll_interval_seconds || 10 }}",
+              "value": "={{ $json.image_poll_interval_seconds || 3 }}",
               "type": "number"
             },
             {
@@ -255,7 +255,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction splitSentences(text) {\n  const normalized = normalizeText(text)\n    .replace(/\\n+/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim();\n\n  if (!normalized) return [];\n\n  const matches = normalized.match(/[^.!?…]+[.!?…]+|[^.!?…]+$/g) ?? [];\n  const sentences = matches.map((item) => item.trim()).filter(Boolean);\n  return sentences.length > 0 ? sentences : [normalized];\n}\n\nfunction buildChunksFromText(text, prefix = 'part_text') {\n  const sentences = splitSentences(text);\n  if (sentences.length === 0) return [];\n\n  const chunks = [];\n  let localIndex = 0;\n\n  for (let cursor = 0; cursor < sentences.length; cursor += 3) {\n    localIndex += 1;\n    const block = sentences.slice(cursor, cursor + 3);\n    const chunkText = block.join(' ').trim();\n    if (!chunkText) continue;\n\n    chunks.push({\n      chunk_key: prefix + ':' + localIndex,\n      partName: prefix,\n      index: localIndex,\n      text: chunkText,\n      sentence_count: block.length,\n    });\n  }\n\n  return chunks;\n}\n\nfunction normalizeChunkManifest(items) {\n  if (!Array.isArray(items)) return [];\n\n  const normalized = [];\n  for (const item of items) {\n    const text = normalizeText(item?.text);\n    if (!text) continue;\n    const partName = String(item?.partName ?? item?.part_name ?? 'part_unknown').trim() || 'part_unknown';\n    const indexRaw = Number(item?.index ?? item?.order ?? normalized.length + 1);\n    const index = Number.isFinite(indexRaw) && indexRaw > 0 ? Math.floor(indexRaw) : (normalized.length + 1);\n    const sentenceCountRaw = Number(item?.sentence_count ?? 0);\n    const sentenceCount = Number.isFinite(sentenceCountRaw) && sentenceCountRaw > 0\n      ? Math.min(3, Math.floor(sentenceCountRaw))\n      : Math.min(3, splitSentences(text).length || 1);\n\n    normalized.push({\n      chunk_key: String(item?.chunk_key ?? (partName + ':' + index)).trim() || (partName + ':' + index),\n      partName,\n      index,\n      text,\n      sentence_count: sentenceCount,\n    });\n  }\n\n  return normalized;\n}\n\nfunction parseDriveFileIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/d\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return String(byPath[1] ?? '').trim();\n\n  const byQuery = text.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return String(byQuery[1] ?? '').trim();\n\n  const byUc = text.match(/\\/uc\\?.*?[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byUc) return String(byUc[1] ?? '').trim();\n\n  return '';\n}\n\nfunction parseDriveFolderIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/folders\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return String(byPath[1] ?? '').trim();\n\n  const byQuery = text.match(/[?&]folder=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return String(byQuery[1] ?? '').trim();\n\n  return '';\n}\n\nfunction readFirstBinaryText(binaryMap) {\n  const keys = Object.keys(binaryMap ?? {});\n  if (keys.length === 0) return '';\n\n  const first = binaryMap[keys[0]];\n  const base64 = safeText(first?.data);\n  if (!base64) return '';\n\n  try {\n    return Buffer.from(base64, 'base64').toString('utf8');\n  } catch (_) {\n    return '';\n  }\n}\n\nlet inputMode = safeText(input.input_mode).toLowerCase();\nif (!inputMode) {\n  inputMode = safeText(input.drive_file_url) ? 'drive_url' : 'form_upload';\n}\nif (inputMode !== 'form_upload' && inputMode !== 'drive_url') {\n  inputMode = 'form_upload';\n}\n\nlet outputMode = safeText(input.output_mode, 'inline').toLowerCase();\nif (outputMode !== 'inline' && outputMode !== 'drive_export') {\n  outputMode = 'inline';\n}\n\nconst driveFileUrl = safeText(input.drive_file_url);\nconst driveOutputFolderUrl = safeText(input.drive_output_folder_url);\nconst driveFileId = parseDriveFileIdFromUrl(driveFileUrl);\nconst driveOutputFolderId = safeText(input.drive_output_folder_id) || parseDriveFolderIdFromUrl(driveOutputFolderUrl) || safeText(input.gdrive_root_folder_id) || safeText(input.gdrive_root_folder_id_default);\n\nconst incomingManifest = Array.isArray(input.chunk_manifest) && input.chunk_manifest.length > 0 ? input.chunk_manifest : input.media_chunks;\nlet chunks = normalizeChunkManifest(incomingManifest);\n\nif (chunks.length === 0) {\n  const sourceText = normalizeText(input.input_text ?? input.text ?? input.content ?? readFirstBinaryText(binary));\n  if (sourceText) {\n    chunks = buildChunksFromText(sourceText, 'full_text');\n  }\n}\n\nconst requestId = safeText(input.request_id, 'req-' + Date.now().toString(36));\nconst needsDriveDownload = inputMode === 'drive_url' && chunks.length === 0 && !!driveFileUrl && !!driveFileId;\nconst driveUrlStatus =\n  inputMode === 'drive_url'\n    ? (driveFileId ? 'parsed' : (driveFileUrl ? 'invalid_url' : 'missing_url'))\n    : 'not_required';\n\nreturn {\n  ...input,\n  workflow: 'text-to-images',\n  request_id: requestId,\n  input_mode: inputMode,\n  output_mode: outputMode,\n  drive_file_url: driveFileUrl,\n  drive_file_id: driveFileId,\n  drive_output_folder_url: driveOutputFolderUrl,\n  drive_output_folder_id: driveOutputFolderId,\n  drive_url_status: driveUrlStatus,\n  needs_drive_download: needsDriveDownload,\n  media_chunks: chunks,\n  chunk_manifest: chunks,\n  media_should_run: chunks.length > 0,\n};"
+        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction splitSentences(text) {\n  const normalized = normalizeText(text)\n    .replace(/\\n+/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim();\n\n  if (!normalized) return [];\n\n  const matches = normalized.match(/[^.!?…]+[.!?…]+|[^.!?…]+$/g) ?? [];\n  const sentences = matches.map((item) => item.trim()).filter(Boolean);\n  return sentences.length > 0 ? sentences : [normalized];\n}\n\nfunction normalizePartNameForFile(rawValue) {\n  const raw = String(rawValue ?? '').trim().toLowerCase();\n  const base = raw.replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '') || 'part';\n  return base.replace(/^(part)_?(\\d+)$/i, (_, prefix, digits) => prefix + '_' + String(digits).padStart(3, '0'));\n}\n\nfunction buildImageFileName(partName, index) {\n  const normalizedPart = normalizePartNameForFile(partName);\n  const idxRaw = Number(index);\n  const idx = Number.isFinite(idxRaw) && idxRaw > 0 ? Math.floor(idxRaw) : 1;\n  return 'img-' + normalizedPart + '_' + String(idx).padStart(3, '0') + '.png';\n}\n\nfunction buildChunksFromText(text, prefix = 'part_text') {\n  const sentences = splitSentences(text);\n  if (sentences.length === 0) return [];\n\n  const chunks = [];\n  let localIndex = 0;\n\n  for (let cursor = 0; cursor < sentences.length; cursor += 3) {\n    localIndex += 1;\n    const block = sentences.slice(cursor, cursor + 3);\n    const chunkText = block.join(' ').trim();\n    if (!chunkText) continue;\n\n    chunks.push({\n      order: chunks.length + 1,\n      chunk_key: prefix + ':' + localIndex,\n      partName: prefix,\n      index: localIndex,\n      text: chunkText,\n      sentence_count: block.length,\n      image_file_name: buildImageFileName(prefix, localIndex),\n    });\n  }\n\n  return chunks;\n}\n\nfunction normalizeChunkManifest(items) {\n  if (!Array.isArray(items)) return [];\n\n  const normalized = [];\n  for (const item of items) {\n    const text = normalizeText(item?.text);\n    if (!text) continue;\n    const partName = String(item?.partName ?? item?.part_name ?? 'part_unknown').trim() || 'part_unknown';\n    const indexRaw = Number(item?.index ?? item?.order ?? normalized.length + 1);\n    const index = Number.isFinite(indexRaw) && indexRaw > 0 ? Math.floor(indexRaw) : (normalized.length + 1);\n    const sentenceCountRaw = Number(item?.sentence_count ?? 0);\n    const sentenceCount = Number.isFinite(sentenceCountRaw) && sentenceCountRaw > 0\n      ? Math.min(3, Math.floor(sentenceCountRaw))\n      : Math.min(3, splitSentences(text).length || 1);\n    const orderRaw = Number(item?.order ?? item?.global_order ?? item?.sequence ?? normalized.length + 1);\n    const order = Number.isFinite(orderRaw) && orderRaw > 0 ? Math.floor(orderRaw) : (normalized.length + 1);\n    const imageFileName = safeText(item?.image_file_name, buildImageFileName(partName, index));\n\n    normalized.push({\n      order,\n      chunk_key: String(item?.chunk_key ?? (partName + ':' + index)).trim() || (partName + ':' + index),\n      partName,\n      index,\n      text,\n      sentence_count: sentenceCount,\n      image_file_name: imageFileName,\n    });\n  }\n\n  return normalized;\n}\n\nfunction parseDriveFileIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/d\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return String(byPath[1] ?? '').trim();\n\n  const byQuery = text.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return String(byQuery[1] ?? '').trim();\n\n  const byUc = text.match(/\\/uc\\?.*?[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byUc) return String(byUc[1] ?? '').trim();\n\n  return '';\n}\n\nfunction parseDriveFolderIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/folders\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return String(byPath[1] ?? '').trim();\n\n  const byQuery = text.match(/[?&]folder=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return String(byQuery[1] ?? '').trim();\n\n  return '';\n}\n\nfunction readFirstBinaryText(binaryMap) {\n  const keys = Object.keys(binaryMap ?? {});\n  if (keys.length === 0) return '';\n\n  const first = binaryMap[keys[0]];\n  const base64 = safeText(first?.data);\n  if (!base64) return '';\n\n  try {\n    return Buffer.from(base64, 'base64').toString('utf8');\n  } catch (_) {\n    return '';\n  }\n}\n\nlet inputMode = safeText(input.input_mode).toLowerCase();\nif (!inputMode) {\n  inputMode = safeText(input.drive_file_url) ? 'drive_url' : 'form_upload';\n}\nif (inputMode !== 'form_upload' && inputMode !== 'drive_url') {\n  inputMode = 'form_upload';\n}\n\nlet outputMode = safeText(input.output_mode, 'inline').toLowerCase();\nif (outputMode !== 'inline' && outputMode !== 'drive_export') {\n  outputMode = 'inline';\n}\n\nconst driveFileUrl = safeText(input.drive_file_url);\nconst driveOutputFolderUrl = safeText(input.drive_output_folder_url);\nconst driveFileId = parseDriveFileIdFromUrl(driveFileUrl);\nconst driveOutputFolderId = safeText(input.drive_output_folder_id) || parseDriveFolderIdFromUrl(driveOutputFolderUrl) || safeText(input.gdrive_root_folder_id) || safeText(input.gdrive_root_folder_id_default);\n\nconst incomingManifest = Array.isArray(input.chunk_manifest) && input.chunk_manifest.length > 0 ? input.chunk_manifest : input.media_chunks;\nlet chunks = normalizeChunkManifest(incomingManifest);\n\nif (chunks.length === 0) {\n  const sourceText = normalizeText(input.input_text ?? input.text ?? input.content ?? readFirstBinaryText(binary));\n  if (sourceText) {\n    chunks = buildChunksFromText(sourceText, 'full_text');\n  }\n}\n\nconst requestId = safeText(input.request_id, 'req-' + Date.now().toString(36));\nconst needsDriveDownload = inputMode === 'drive_url' && chunks.length === 0 && !!driveFileUrl && !!driveFileId;\nconst driveUrlStatus =\n  inputMode === 'drive_url'\n    ? (driveFileId ? 'parsed' : (driveFileUrl ? 'invalid_url' : 'missing_url'))\n    : 'not_required';\n\nreturn {\n  ...input,\n  workflow: 'text-to-images',\n  request_id: requestId,\n  input_mode: inputMode,\n  output_mode: outputMode,\n  drive_file_url: driveFileUrl,\n  drive_file_id: driveFileId,\n  drive_output_folder_url: driveOutputFolderUrl,\n  drive_output_folder_id: driveOutputFolderId,\n  drive_url_status: driveUrlStatus,\n  needs_drive_download: needsDriveDownload,\n  media_chunks: chunks,\n  chunk_manifest: chunks,\n  media_should_run: chunks.length > 0,\n};"
       }
     },
     {
@@ -323,7 +323,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction splitSentences(text) {\n  const normalized = normalizeText(text)\n    .replace(/\\n+/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim();\n\n  if (!normalized) return [];\n\n  const matches = normalized.match(/[^.!?…]+[.!?…]+|[^.!?…]+$/g) ?? [];\n  const sentences = matches.map((item) => item.trim()).filter(Boolean);\n  return sentences.length > 0 ? sentences : [normalized];\n}\n\nfunction buildChunksFromText(text, prefix = 'part_text') {\n  const sentences = splitSentences(text);\n  if (sentences.length === 0) return [];\n\n  const chunks = [];\n  let localIndex = 0;\n\n  for (let cursor = 0; cursor < sentences.length; cursor += 3) {\n    localIndex += 1;\n    const block = sentences.slice(cursor, cursor + 3);\n    const chunkText = block.join(' ').trim();\n    if (!chunkText) continue;\n\n    chunks.push({\n      chunk_key: prefix + ':' + localIndex,\n      partName: prefix,\n      index: localIndex,\n      text: chunkText,\n      sentence_count: block.length,\n    });\n  }\n\n  return chunks;\n}\n\nfunction normalizeChunkManifest(items) {\n  if (!Array.isArray(items)) return [];\n\n  const normalized = [];\n  for (const item of items) {\n    const text = normalizeText(item?.text);\n    if (!text) continue;\n    const partName = String(item?.partName ?? item?.part_name ?? 'part_unknown').trim() || 'part_unknown';\n    const indexRaw = Number(item?.index ?? item?.order ?? normalized.length + 1);\n    const index = Number.isFinite(indexRaw) && indexRaw > 0 ? Math.floor(indexRaw) : (normalized.length + 1);\n    const sentenceCountRaw = Number(item?.sentence_count ?? 0);\n    const sentenceCount = Number.isFinite(sentenceCountRaw) && sentenceCountRaw > 0\n      ? Math.min(3, Math.floor(sentenceCountRaw))\n      : Math.min(3, splitSentences(text).length || 1);\n\n    normalized.push({\n      chunk_key: String(item?.chunk_key ?? (partName + ':' + index)).trim() || (partName + ':' + index),\n      partName,\n      index,\n      text,\n      sentence_count: sentenceCount,\n    });\n  }\n\n  return normalized;\n}\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nlet chunks = Array.isArray(input.media_chunks) ? input.media_chunks : [];\nif (chunks.length > 0) {\n  return {\n    ...input,\n    drive_read_status: 'skipped_existing_chunks',\n  };\n}\n\nconst keys = Object.keys(binary ?? {});\nif (keys.length === 0) {\n  return {\n    ...input,\n    media_chunks: [],\n    chunk_manifest: [],\n    media_should_run: false,\n    drive_read_status: 'missing_binary',\n  };\n}\n\nconst first = binary[keys[0]];\nconst raw = safeText(first?.data);\nif (!raw) {\n  return {\n    ...input,\n    media_chunks: [],\n    chunk_manifest: [],\n    media_should_run: false,\n    drive_read_status: 'empty_binary',\n  };\n}\n\nlet text = '';\ntry {\n  text = Buffer.from(raw, 'base64').toString('utf8');\n} catch (_) {\n  text = '';\n}\n\nchunks = buildChunksFromText(text, 'drive_file');\n\nreturn {\n  ...input,\n  media_chunks: chunks,\n  chunk_manifest: chunks,\n  media_should_run: chunks.length > 0,\n  drive_read_status: chunks.length > 0 ? 'decoded' : 'decoded_empty',\n};"
+        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction splitSentences(text) {\n  const normalized = normalizeText(text)\n    .replace(/\\n+/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim();\n\n  if (!normalized) return [];\n\n  const matches = normalized.match(/[^.!?…]+[.!?…]+|[^.!?…]+$/g) ?? [];\n  const sentences = matches.map((item) => item.trim()).filter(Boolean);\n  return sentences.length > 0 ? sentences : [normalized];\n}\n\nfunction normalizePartNameForFile(rawValue) {\n  const raw = String(rawValue ?? '').trim().toLowerCase();\n  const base = raw.replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '') || 'part';\n  return base.replace(/^(part)_?(\\d+)$/i, (_, prefix, digits) => prefix + '_' + String(digits).padStart(3, '0'));\n}\n\nfunction buildImageFileName(partName, index) {\n  const normalizedPart = normalizePartNameForFile(partName);\n  const idxRaw = Number(index);\n  const idx = Number.isFinite(idxRaw) && idxRaw > 0 ? Math.floor(idxRaw) : 1;\n  return 'img-' + normalizedPart + '_' + String(idx).padStart(3, '0') + '.png';\n}\n\nfunction buildChunksFromText(text, prefix = 'part_text') {\n  const sentences = splitSentences(text);\n  if (sentences.length === 0) return [];\n\n  const chunks = [];\n  let localIndex = 0;\n\n  for (let cursor = 0; cursor < sentences.length; cursor += 3) {\n    localIndex += 1;\n    const block = sentences.slice(cursor, cursor + 3);\n    const chunkText = block.join(' ').trim();\n    if (!chunkText) continue;\n\n    chunks.push({\n      order: chunks.length + 1,\n      chunk_key: prefix + ':' + localIndex,\n      partName: prefix,\n      index: localIndex,\n      text: chunkText,\n      sentence_count: block.length,\n      image_file_name: buildImageFileName(prefix, localIndex),\n    });\n  }\n\n  return chunks;\n}\n\nfunction normalizeChunkManifest(items) {\n  if (!Array.isArray(items)) return [];\n\n  const normalized = [];\n  for (const item of items) {\n    const text = normalizeText(item?.text);\n    if (!text) continue;\n    const partName = String(item?.partName ?? item?.part_name ?? 'part_unknown').trim() || 'part_unknown';\n    const indexRaw = Number(item?.index ?? item?.order ?? normalized.length + 1);\n    const index = Number.isFinite(indexRaw) && indexRaw > 0 ? Math.floor(indexRaw) : (normalized.length + 1);\n    const sentenceCountRaw = Number(item?.sentence_count ?? 0);\n    const sentenceCount = Number.isFinite(sentenceCountRaw) && sentenceCountRaw > 0\n      ? Math.min(3, Math.floor(sentenceCountRaw))\n      : Math.min(3, splitSentences(text).length || 1);\n    const orderRaw = Number(item?.order ?? item?.global_order ?? item?.sequence ?? normalized.length + 1);\n    const order = Number.isFinite(orderRaw) && orderRaw > 0 ? Math.floor(orderRaw) : (normalized.length + 1);\n    const imageFileName = safeText(item?.image_file_name, buildImageFileName(partName, index));\n\n    normalized.push({\n      order,\n      chunk_key: String(item?.chunk_key ?? (partName + ':' + index)).trim() || (partName + ':' + index),\n      partName,\n      index,\n      text,\n      sentence_count: sentenceCount,\n      image_file_name: imageFileName,\n    });\n  }\n\n  return normalized;\n}\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nlet chunks = Array.isArray(input.media_chunks) ? input.media_chunks : [];\nif (chunks.length > 0) {\n  return {\n    ...input,\n    drive_read_status: 'skipped_existing_chunks',\n  };\n}\n\nconst keys = Object.keys(binary ?? {});\nif (keys.length === 0) {\n  return {\n    ...input,\n    media_chunks: [],\n    chunk_manifest: [],\n    media_should_run: false,\n    drive_read_status: 'missing_binary',\n  };\n}\n\nconst first = binary[keys[0]];\nconst raw = safeText(first?.data);\nif (!raw) {\n  return {\n    ...input,\n    media_chunks: [],\n    chunk_manifest: [],\n    media_should_run: false,\n    drive_read_status: 'empty_binary',\n  };\n}\n\nlet text = '';\ntry {\n  text = Buffer.from(raw, 'base64').toString('utf8');\n} catch (_) {\n  text = '';\n}\n\nchunks = buildChunksFromText(text, 'drive_file');\n\nreturn {\n  ...input,\n  media_chunks: chunks,\n  chunk_manifest: chunks,\n  media_should_run: chunks.length > 0,\n  drive_read_status: chunks.length > 0 ? 'decoded' : 'decoded_empty',\n};"
       }
     },
     {
@@ -569,7 +569,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { request_id: $json.request_id, workflow: $json.workflow, chunk_key: $json.chunk_key, part_name: $json.partName, index: $json.index, text: $json.text, prompt: $json.image_prompt_fixed, model: $json.image_model, aspect_ratio: $json.image_aspect_ratio, input_mode: $json.input_mode, output_mode: $json.output_mode, drive_file_id: $json.drive_file_id || '', source: 'text-to-images' } }}",
+        "jsonBody": "={{ { request_id: $json.request_id, workflow: $json.workflow, chunk_key: $json.chunk_key, part_name: $json.partName, index: $json.index, order: $json.order, text: $json.text, prompt: $json.image_prompt_fixed, model: $json.image_model, aspect_ratio: $json.image_aspect_ratio, input_mode: $json.input_mode, output_mode: $json.output_mode, drive_file_id: $json.drive_file_id || '', source: 'text-to-images', image_file_name: String($json.image_file_name || ''), file_name: String($json.image_file_name || '') } }}",
         "options": {}
       }
     },
@@ -608,7 +608,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction pickFirstString(values) {\n  for (const value of values) {\n    const text = String(value ?? '').trim();\n    if (text) return text;\n  }\n  return '';\n}\n\nfunction pickResponseSource(value) {\n  const candidates = [value, value?.body, value?.data, value?.response, value?.result, value?.output, value?.json];\n  for (const candidate of candidates) {\n    if (candidate && typeof candidate === 'object') return candidate;\n  }\n  return value ?? {};\n}\n\nfunction normalizeBaseUrl(baseUrl) {\n  return String(baseUrl ?? '').trim().replace(/\\/$/, '');\n}\n\nfunction buildStatusUrl(baseUrl, statusPath, jobId) {\n  const normalizedBase = normalizeBaseUrl(baseUrl);\n  const normalizedPath = String(statusPath ?? '/jobs').trim() || '/jobs';\n  const path = normalizedPath.startsWith('/') ? normalizedPath : '/' + normalizedPath;\n  const safeJobId = encodeURIComponent(String(jobId ?? '').trim());\n  if (!normalizedBase) return '';\n  return normalizedBase + path.replace(/\\/$/, '') + '/' + safeJobId;\n}\n\nconst source = pickResponseSource(input);\nconst errorText = safeText(input.error?.message ?? input.error ?? source.error?.message ?? source.error, '');\n\nconst requestId = safeText(\n  input.request_id,\n  safeText(source.request_id, safeText(source.job_id, safeText(source.id, 'req-' + Date.now().toString(36)))),\n);\n\nconst jobId = pickFirstString([\n  source.job_id,\n  source.jobId,\n  source.id,\n  source.data?.job_id,\n  source.data?.jobId,\n  source.data?.id,\n  source.result?.job_id,\n  source.result?.jobId,\n  source.result?.id,\n  source.job?.id,\n  source.output?.job_id,\n  source.output?.jobId,\n  source.output?.id,\n  requestId,\n]);\n\nconst jobStatus = pickFirstString([\n  source.status,\n  source.state,\n  source.job_status,\n  source.jobStatus,\n  source.data?.status,\n  source.data?.state,\n  source.result?.status,\n  source.result?.state,\n  source.output?.status,\n  source.output?.state,\n  source.job?.status,\n]).toLowerCase();\n\nlet image = pickFirstString([\n  source.image,\n  source.image_url,\n  source.imageUrl,\n  source.url,\n  source.output_url,\n  source.outputUrl,\n  source.data?.image,\n  source.data?.image_url,\n  source.data?.imageUrl,\n  source.data?.url,\n  source.result?.image,\n  source.result?.image_url,\n  source.result?.imageUrl,\n  source.result?.url,\n  source.output?.image,\n  source.output?.image_url,\n  source.output?.imageUrl,\n  source.output?.url,\n  Array.isArray(source.output) ? source.output[0]?.url : '',\n]);\n\nif (!image) {\n  const base64 = pickFirstString([\n    source.image_base64,\n    source.imageBase64,\n    source.b64_json,\n    source.data?.image_base64,\n    source.data?.imageBase64,\n    source.result?.image_base64,\n    source.result?.imageBase64,\n    source.output?.image_base64,\n    source.output?.imageBase64,\n  ]).replace(/^data:image\\/[a-zA-Z0-9+.-]+;base64,/, '');\n  if (base64) {\n    image = 'data:image/png;base64,' + base64;\n  }\n}\n\nconst video = pickFirstString([\n  source.video,\n  source.video_url,\n  source.videoUrl,\n  source.data?.video,\n  source.data?.video_url,\n  source.data?.videoUrl,\n  source.result?.video,\n  source.result?.video_url,\n  source.result?.videoUrl,\n  source.output?.video,\n  source.output?.video_url,\n  source.output?.videoUrl,\n]);\n\nconst jobCreatedStatus = jobStatus || (image || video ? 'done' : 'pending');\nconst timeoutMsRaw = Number(input.image_timeout_ms ?? 900000);\nconst timeoutMs = Number.isFinite(timeoutMsRaw) ? Math.max(10000, Math.floor(timeoutMsRaw)) : 900000;\nconst intervalRaw = Number(input.image_poll_interval_seconds ?? 10);\nconst pollIntervalSeconds = Number.isFinite(intervalRaw) ? Math.max(1, Math.floor(intervalRaw)) : 10;\nconst startedAt = safeText(input.image_poll_started_at, new Date().toISOString());\nconst deadlineAt = safeText(input.image_poll_deadline_at, new Date(Date.now() + timeoutMs).toISOString());\nconst pollState = errorText\n  ? 'failed'\n  : ['failed', 'error', 'cancelled', 'canceled', 'timeout', 'aborted', 'rejected'].includes(jobCreatedStatus)\n    ? 'failed'\n    : ['done', 'succeeded', 'success', 'completed', 'complete', 'ready', 'finished'].includes(jobCreatedStatus) || image || video\n      ? 'done'\n      : 'pending';\n\nconst imageStatus = pollState === 'done'\n  ? (image || video ? 'generated' : 'failed')\n  : pollState === 'failed' ? 'failed' : 'pending';\n\nconst errorReason = pollState === 'failed'\n  ? errorText || (image || video ? null : 'image_job_create_missing_asset')\n  : null;\n\nreturn {\n  ...input,\n  request_id: requestId,\n  image_job_id: jobId,\n  image_job_status: jobCreatedStatus,\n  image_job_status_url: buildStatusUrl(input.image_api_base_url, input.image_job_status_path, jobId),\n  image_poll_state: pollState,\n  image_poll_started_at: startedAt,\n  image_poll_deadline_at: deadlineAt,\n  image_poll_interval_seconds: pollIntervalSeconds,\n  image: image || '',\n  video: video || '',\n  image_status: imageStatus,\n  error_reason: errorReason,\n};"
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction pickFirstString(values) {\n  for (const value of values) {\n    const text = String(value ?? '').trim();\n    if (text) return text;\n  }\n  return '';\n}\n\nfunction pickResponseSource(value) {\n  const candidates = [value, value?.body, value?.data, value?.response, value?.result, value?.output, value?.json];\n  for (const candidate of candidates) {\n    if (candidate && typeof candidate === 'object') return candidate;\n  }\n  return value ?? {};\n}\n\nfunction normalizeBaseUrl(baseUrl) {\n  return String(baseUrl ?? '').trim().replace(/\\/$/, '');\n}\n\nfunction buildStatusUrl(baseUrl, statusPath, jobId) {\n  const normalizedBase = normalizeBaseUrl(baseUrl);\n  const normalizedPath = String(statusPath ?? '/jobs').trim() || '/jobs';\n  const path = normalizedPath.startsWith('/') ? normalizedPath : '/' + normalizedPath;\n  const safeJobId = encodeURIComponent(String(jobId ?? '').trim());\n  if (!normalizedBase) return '';\n  return normalizedBase + path.replace(/\\/$/, '') + '/' + safeJobId;\n}\n\nconst source = pickResponseSource(input);\nconst errorText = safeText(input.error?.message ?? input.error ?? source.error?.message ?? source.error, '');\n\nconst requestId = safeText(\n  input.request_id,\n  safeText(source.request_id, safeText(source.job_id, safeText(source.id, 'req-' + Date.now().toString(36)))),\n);\n\nconst jobId = pickFirstString([\n  source.job_id,\n  source.jobId,\n  source.id,\n  source.data?.job_id,\n  source.data?.jobId,\n  source.data?.id,\n  source.result?.job_id,\n  source.result?.jobId,\n  source.result?.id,\n  source.job?.id,\n  source.output?.job_id,\n  source.output?.jobId,\n  source.output?.id,\n  requestId,\n]);\n\nconst jobStatus = pickFirstString([\n  source.status,\n  source.state,\n  source.job_status,\n  source.jobStatus,\n  source.data?.status,\n  source.data?.state,\n  source.result?.status,\n  source.result?.state,\n  source.output?.status,\n  source.output?.state,\n  source.job?.status,\n]).toLowerCase();\n\nlet image = pickFirstString([\n  source.image,\n  source.image_url,\n  source.imageUrl,\n  source.url,\n  source.output_url,\n  source.outputUrl,\n  source.data?.image,\n  source.data?.image_url,\n  source.data?.imageUrl,\n  source.data?.url,\n  source.result?.image,\n  source.result?.image_url,\n  source.result?.imageUrl,\n  source.result?.url,\n  source.output?.image,\n  source.output?.image_url,\n  source.output?.imageUrl,\n  source.output?.url,\n  Array.isArray(source.output) ? source.output[0]?.url : '',\n]);\n\nif (!image) {\n  const base64 = pickFirstString([\n    source.image_base64,\n    source.imageBase64,\n    source.b64_json,\n    source.data?.image_base64,\n    source.data?.imageBase64,\n    source.result?.image_base64,\n    source.result?.imageBase64,\n    source.output?.image_base64,\n    source.output?.imageBase64,\n  ]).replace(/^data:image\\/[a-zA-Z0-9+.-]+;base64,/, '');\n  if (base64) {\n    image = 'data:image/png;base64,' + base64;\n  }\n}\n\nconst video = pickFirstString([\n  source.video,\n  source.video_url,\n  source.videoUrl,\n  source.data?.video,\n  source.data?.video_url,\n  source.data?.videoUrl,\n  source.result?.video,\n  source.result?.video_url,\n  source.result?.videoUrl,\n  source.output?.video,\n  source.output?.video_url,\n  source.output?.videoUrl,\n]);\n\nconst jobCreatedStatus = jobStatus || (image || video ? 'done' : 'pending');\nconst timeoutMsRaw = Number(input.image_timeout_ms ?? 900000);\nconst timeoutMs = Number.isFinite(timeoutMsRaw) ? Math.max(10000, Math.floor(timeoutMsRaw)) : 900000;\nconst intervalRaw = Number(input.image_poll_interval_seconds ?? 3);\nconst pollIntervalSeconds = Number.isFinite(intervalRaw) ? Math.max(1, Math.floor(intervalRaw)) : 10;\nconst startedAt = safeText(input.image_poll_started_at, new Date().toISOString());\nconst deadlineAt = safeText(input.image_poll_deadline_at, new Date(Date.now() + timeoutMs).toISOString());\nconst pollState = errorText\n  ? 'failed'\n  : ['failed', 'error', 'cancelled', 'canceled', 'timeout', 'aborted', 'rejected'].includes(jobCreatedStatus)\n    ? 'failed'\n    : ['done', 'succeeded', 'success', 'completed', 'complete', 'ready', 'finished'].includes(jobCreatedStatus) || image || video\n      ? 'done'\n      : 'pending';\n\nconst imageStatus = pollState === 'done'\n  ? (image || video ? 'generated' : 'failed')\n  : pollState === 'failed' ? 'failed' : 'pending';\n\nconst errorReason = pollState === 'failed'\n  ? errorText || (image || video ? null : 'image_job_create_missing_asset')\n  : null;\n\nreturn {\n  ...input,\n  request_id: requestId,\n  image_job_id: jobId,\n  image_job_status: jobCreatedStatus,\n  image_job_status_url: buildStatusUrl(input.image_api_base_url, input.image_job_status_path, jobId),\n  image_poll_state: pollState,\n  image_poll_started_at: startedAt,\n  image_poll_deadline_at: deadlineAt,\n  image_poll_interval_seconds: pollIntervalSeconds,\n  image: image || '',\n  video: video || '',\n  image_status: imageStatus,\n  error_reason: errorReason,\n};"
       }
     },
     {
@@ -622,7 +622,7 @@
       ],
       "parameters": {
         "resume": "timeInterval",
-        "amount": "={{ $json.image_poll_interval_seconds || 10 }}",
+        "amount": "={{ $json.image_poll_interval_seconds || 3 }}",
         "unit": "seconds",
         "options": {}
       },
@@ -731,7 +731,7 @@
           },
           "conditions": [
             {
-              "leftValue": "={{ $json.image_poll_pending === true }}",
+              "leftValue": "={{ $json.image_poll_state === 'pending' }}",
               "rightValue": "",
               "operator": {
                 "type": "boolean",
@@ -755,7 +755,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const inputItems = $input.all().map((item) => item.json ?? {});\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction clampInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction normalizeItem(item) {\n  return {\n    chunk_key: safeText(item.chunk_key),\n    partName: safeText(item.partName),\n    index: clampInt(item.index, 0, 0, 1000000),\n    text: safeText(item.text),\n    sentence_count: clampInt(item.sentence_count, 0, 0, 3),\n    image: safeText(item.image),\n    video: safeText(item.video),\n    image_status: safeText(item.image_status, 'unknown'),\n    error_reason: item.error_reason ?? null,\n  };\n}\n\nconst sortedItems = inputItems\n  .map(normalizeItem)\n  .sort((a, b) => a.index - b.index || a.chunk_key.localeCompare(b.chunk_key));\n\nconst first = inputItems[0] ?? {};\nconst requestId = safeText(first.request_id, 'req-' + Date.now().toString(36));\n\nreturn [{\n  json: {\n    ...first,\n    workflow: 'text-to-images',\n    request_id: requestId,\n    media_image_items: sortedItems,\n  },\n}];"
+        "jsCode": "const inputItems = $input.all().map((item) => item.json ?? {});\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction clampInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction normalizeItem(item) {\n  return {\n    order: clampInt(item.order, 0, 0, 1000000),\n    chunk_key: safeText(item.chunk_key),\n    partName: safeText(item.partName),\n    index: clampInt(item.index, 0, 0, 1000000),\n    text: safeText(item.text),\n    sentence_count: clampInt(item.sentence_count, 0, 0, 3),\n    image: safeText(item.image),\n    video: safeText(item.video),\n    image_status: safeText(item.image_status, 'unknown'),\n    image_file_name: safeText(item.image_file_name),\n    error_reason: item.error_reason ?? null,\n  };\n}\n\nconst sortedItems = inputItems\n  .map(normalizeItem)\n  .sort((a, b) => a.order - b.order || a.index - b.index || a.chunk_key.localeCompare(b.chunk_key));\n\nconst first = inputItems[0] ?? {};\nconst requestId = safeText(first.request_id, 'req-' + Date.now().toString(36));\n\nreturn [{\n  json: {\n    ...first,\n    workflow: 'text-to-images',\n    request_id: requestId,\n    media_image_items: sortedItems,\n  },\n}];"
       }
     },
     {
@@ -770,6 +770,113 @@
       "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "const input = $json ?? {};\n\nreturn {\n  ...input,\n  media_image_items: [],\n};"
+      }
+    },
+    {
+      "id": "img-update-progress-message",
+      "name": "Update Image Progress Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2470,
+        120
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0) {\n  const number = Number(value);\n  if (!Number.isFinite(number)) {\n    return fallback;\n  }\n  return Math.floor(number);\n}\n\nfunction formatElapsedLabel(elapsedSecondsInput = 0) {\n  const elapsedSeconds = Math.max(0, asInt(elapsedSecondsInput, 0));\n  const elapsedMinutes = Math.floor(elapsedSeconds / 60);\n  const remainingSeconds = elapsedSeconds % 60;\n  return elapsedMinutes > 0\n    ? (elapsedMinutes + ' phut ' + String(remainingSeconds).padStart(2, '0') + ' giay')\n    : (remainingSeconds + ' giay');\n}\n\nfunction resolveChunk(source) {\n  if (source?.media_chunks && typeof source.media_chunks === 'object' && !Array.isArray(source.media_chunks)) {\n    return source.media_chunks;\n  }\n  return source ?? {};\n}\n\nconst chunk = resolveChunk(input);\nconst requestHelper =\n  helpers?.httpRequest ??\n  (typeof $helpers !== 'undefined' ? $helpers?.httpRequest : undefined);\n\nconst telegramBotToken = safeText(input.telegram_bot_token);\nconst telegramChatId = safeText(input.telegram_chat_id);\nconst progressMessageId = asInt(input.image_progress_message_id, 0);\nconst estimateMinutes = Math.max(1, asInt(input.image_progress_estimated_minutes, 3) || 3);\nconst totalFromManifest = Array.isArray(input.chunk_manifest) ? input.chunk_manifest.length : 0;\nconst totalFiles = Math.max(0, asInt(input.image_progress_total_files, totalFromManifest));\nconst rawDone = asInt(chunk?.order ?? input.order ?? chunk?.index ?? input.index, 0);\nconst doneFiles = totalFiles > 0\n  ? Math.min(Math.max(rawDone, 0), totalFiles)\n  : Math.max(rawDone, 0);\nconst startedAtMs = asInt(input.image_progress_started_at_ms, Date.now());\nconst elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000));\n\nconst progressSuffix = totalFiles > 0\n  ? (' | file ' + doneFiles + '/' + totalFiles)\n  : '';\n\nconst progressText = 'Dang tao anh... (da cho ' + formatElapsedLabel(elapsedSeconds) + ' / du kien ' + estimateMinutes + ' phut)' + progressSuffix;\n\nlet updateStatus = 'skipped';\nlet updateError = null;\nif (telegramBotToken && telegramChatId && progressMessageId > 0 && typeof requestHelper === 'function') {\n  try {\n    await requestHelper({\n      method: 'POST',\n      url: 'https://api.telegram.org/bot' + telegramBotToken + '/editMessageText',\n      body: {\n        chat_id: telegramChatId,\n        message_id: progressMessageId,\n        text: progressText,\n        disable_web_page_preview: true,\n      },\n      json: true,\n      timeout: 20000,\n    });\n    updateStatus = 'sent';\n  } catch (error) {\n    updateStatus = 'failed';\n    updateError = safeText(error?.message, String(error)).slice(0, 280) || 'telegram_edit_failed';\n  }\n}\n\nreturn {\n  ...input,\n  image_progress_last_text: progressText,\n  image_progress_files_done: doneFiles,\n  image_progress_total_files: totalFiles,\n  image_progress_update_status: updateStatus,\n  image_progress_update_error: updateError,\n};"
+      }
+    },
+    {
+      "id": "img-if-session-sheet-realtime-update",
+      "name": "If Session Sheet Realtime Update (Image)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2660,
+        120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.image_status === 'generated' && !!$json.session_sheet_id && Number($json.order ?? $json.media_chunks?.order ?? 0) > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "img-write-row-session-sheet-realtime",
+      "name": "Write Image Row To Session Sheet (Realtime)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2860,
+        40
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent($json.session_sheet_id || '') + '/values:batchUpdate' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => { const orderRaw = Number($json.order ?? $json.media_chunks?.order ?? 0); const order = Number.isFinite(orderRaw) && orderRaw > 0 ? Math.floor(orderRaw) : 1; const row = order + 1; const chunk = ($json.media_chunks && typeof $json.media_chunks === 'object' && !Array.isArray($json.media_chunks)) ? $json.media_chunks : $json; const indexRaw = Number(chunk.index ?? $json.index ?? order); const index = Number.isFinite(indexRaw) && indexRaw > 0 ? Math.floor(indexRaw) : order; return { valueInputOption: 'RAW', data: [ { range: 'assets!A' + row + ':F' + row, values: [[ String(order), String(chunk.chunk_key ?? $json.chunk_key ?? ''), String(chunk.partName ?? chunk.part_name ?? $json.partName ?? ''), String(index), String(chunk.text ?? $json.text ?? ''), String($json.image ?? '') ]] }, { range: 'assets!I' + row + ':K' + row, values: [[ String($json.image_status ?? ''), String($json.tts_status ?? ''), String($json.error_reason ?? '') ]] } ] }; })() }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "img-merge-realtime-sheet-update-context",
+      "name": "Merge Realtime Sheet Update Context (Image)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3040,
+        120
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput1",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
+        }
       }
     }
   ],
@@ -1050,6 +1157,11 @@
             "node": "If Image Still Pending?",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Update Image Progress Message",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -1093,6 +1205,54 @@
           }
         ]
       ]
+    },
+    "Update Image Progress Message": {
+      "main": [
+        [
+          {
+            "node": "If Session Sheet Realtime Update (Image)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Session Sheet Realtime Update (Image)": {
+      "main": [
+        [
+          {
+            "node": "Write Image Row To Session Sheet (Realtime)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Realtime Sheet Update Context (Image)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge Realtime Sheet Update Context (Image)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Image Row To Session Sheet (Realtime)": {
+      "main": [
+        [
+          {
+            "node": "Merge Realtime Sheet Update Context (Image)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Realtime Sheet Update Context (Image)": {
+      "main": []
     }
   },
   "settings": {

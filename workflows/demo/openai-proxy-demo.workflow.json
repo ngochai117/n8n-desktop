@@ -1,15 +1,12 @@
 {
-  "name": "Demo Gemini via CLIProxyAPI",
+  "name": "Demo OpenAI via Proxy API",
   "nodes": [
     {
       "id": "1",
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [
-        -520,
-        0
-      ],
+      "position": [-520, 0],
       "parameters": {}
     },
     {
@@ -17,35 +14,32 @@
       "name": "Set Config",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        -300,
-        0
-      ],
+      "position": [-300, 0],
       "parameters": {
         "assignments": {
           "assignments": [
             {
               "id": "2-1",
               "name": "prompt",
-              "value": "Say hello from Gemini via CLIProxyAPI in one short sentence.",
+              "value": "Explain in one short sentence how OpenAI works via Proxy API.",
               "type": "string"
             },
             {
               "id": "2-2",
-              "name": "model",
-              "value": "gemini-3-flash-preview",
+              "name": "content_model",
+              "value": "cx/gpt-5.4",
               "type": "string"
             },
             {
               "id": "2-3",
-              "name": "cliproxy_base_url",
-              "value": "__CLIPROXY_BASE_URL__",
+              "name": "proxy_base_url",
+              "value": "__PROXY_BASE_URL__",
               "type": "string"
             },
             {
               "id": "2-4",
-              "name": "cliproxy_client_key",
-              "value": "__CLIPROXY_CLIENT_KEY__",
+              "name": "proxy_api_key",
+              "value": "__PROXY_API_KEY__",
               "type": "string"
             }
           ]
@@ -54,28 +48,25 @@
     },
     {
       "id": "3",
-      "name": "Call Gemini via CLIProxyAPI",
+      "name": "Call OpenAI via Proxy API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
-      "position": [
-        -40,
-        0
-      ],
+      "position": [-40, 0],
       "parameters": {
         "method": "POST",
-        "url": "={{ $json.cliproxy_base_url + '/v1/chat/completions' }}",
+        "url": "={{ $json.proxy_base_url + '/v1/chat/completions' }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
               "name": "Authorization",
-              "value": "={{ 'Bearer ' + $json.cliproxy_client_key }}"
+              "value": "={{ 'Bearer ' + $json.proxy_api_key }}"
             }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { model: $json.model, messages: [{ role: 'user', content: $json.prompt }], stream: false } }}",
+        "jsonBody": "={{ { model: $json.content_model, messages: [{ role: 'user', content: $json.prompt }], stream: false } }}",
         "options": {}
       },
       "continueOnFail": true
@@ -85,12 +76,9 @@
       "name": "Extract Answer",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        220,
-        0
-      ],
+      "position": [220, 0],
       "parameters": {
-        "jsCode": "const errorPayload = $json?.error;\nconst hasError = errorPayload !== undefined && errorPayload !== null;\nconst errorMessage = hasError\n  ? String(errorPayload?.message ?? errorPayload)\n  : '';\nconst content = hasError\n  ? ''\n  : String($json?.choices?.[0]?.message?.content ?? '').trim();\nconst status = hasError ? 'failed' : 'success';\nconst summary = hasError\n  ? `API call failed: ${errorMessage || 'Unknown error'}`\n  : (content || 'API call succeeded with empty reply.');\n\nreturn [{\n  json: {\n    status,\n    model: $json?.model ?? null,\n    reply: content,\n    error: errorMessage || null,\n    summary,\n    raw: $json\n  }\n}];"
+        "jsCode": "const errorPayload = $json?.error;\nconst hasError = errorPayload !== undefined && errorPayload !== null;\nconst errorMessage = hasError\n  ? String(errorPayload?.message ?? errorPayload)\n  : '';\nconst content = hasError\n  ? ''\n  : String($json?.choices?.[0]?.message?.content ?? '').trim();\nconst status = hasError ? 'failed' : 'success';\nconst summary = hasError\n  ? `API call failed: ${errorMessage || 'Unknown error'}`\n  : (content || 'API call succeeded with empty reply.');\n\nreturn [{\n  json: {\n    status,\n    content_model: $json?.model ?? null,\n    reply: content,\n    error: errorMessage || null,\n    summary,\n    raw: $json\n  }\n}];"
       }
     },
     {
@@ -98,10 +86,7 @@
       "name": "Set Notify Targets",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        480,
-        0
-      ],
+      "position": [480, 0],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -139,12 +124,9 @@
       "name": "Build Notify Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        740,
-        0
-      ],
+      "position": [740, 0],
       "parameters": {
-        "jsCode": "const data = $json ?? {};\nconst status = String(data.status ?? 'unknown');\nconst details = [\n  data.model ? `model=${data.model}` : null,\n  data.error ? `error=${data.error}` : null,\n  data.reply ? `reply=${String(data.reply).slice(0, 220)}` : null\n].filter(Boolean).join(' | ');\n\nreturn [{\n  json: {\n    status,\n    source_workflow: 'Demo Gemini via CLIProxyAPI',\n    summary: String(data.summary ?? 'Workflow execution finished.'),\n    details,\n    notify_targets: String(data.notify_targets ?? 'telegram'),\n    telegram_bot_token: String(data.telegram_bot_token ?? '').trim(),\n    telegram_chat_id: String(data.telegram_chat_id ?? '').trim(),\n    ggchat_webhook_url: String(data.ggchat_webhook_url ?? '').trim(),\n    timestamp: new Date().toISOString()\n  }\n}];"
+        "jsCode": "const data = $json ?? {};\nconst status = String(data.status ?? 'unknown');\nconst details = [\n  data.content_model ? `model=${data.content_model}` : null,\n  data.error ? `error=${data.error}` : null,\n  data.reply ? `reply=${String(data.reply).slice(0, 220)}` : null\n].filter(Boolean).join(' | ');\n\nreturn [{\n  json: {\n    status,\n    source_workflow: 'Demo OpenAI via Proxy API',\n    summary: String(data.summary ?? 'Workflow execution finished.'),\n    details,\n    notify_targets: String(data.notify_targets ?? 'telegram'),\n    telegram_bot_token: String(data.telegram_bot_token ?? '').trim(),\n    telegram_chat_id: String(data.telegram_chat_id ?? '').trim(),\n    ggchat_webhook_url: String(data.ggchat_webhook_url ?? '').trim(),\n    timestamp: new Date().toISOString()\n  }\n}];"
       }
     },
     {
@@ -152,10 +134,7 @@
       "name": "Notify via Shared Workflow",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.1,
-      "position": [
-        1000,
-        0
-      ],
+      "position": [1000, 0],
       "parameters": {
         "source": "localFile",
         "workflowPath": "__SHARED_NOTIFICATION_WORKFLOW_PATH__",
@@ -183,14 +162,14 @@
       "main": [
         [
           {
-            "node": "Call Gemini via CLIProxyAPI",
+            "node": "Call OpenAI via Proxy API",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Call Gemini via CLIProxyAPI": {
+    "Call OpenAI via Proxy API": {
       "main": [
         [
           {

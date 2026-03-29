@@ -3,8 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
 N8N_ENV_FILE_INPUT="${1:-env.n8n.local}"
-CLIPROXY_ENV_FILE_INPUT="${2:-env.cliproxy.local}"
-WORKFLOW_TEMPLATE_INPUT="${3:-workflows/demo/gemini-cliproxy-demo.workflow.json}"
+PROXY_ENV_FILE_INPUT="${2:-env.proxy.local}"
+WORKFLOW_TEMPLATE_INPUT="${3:-workflows/demo/gemini-proxy-demo.workflow.json}"
 REGISTRY_TEMPLATE_INPUT="${WORKFLOW_REGISTRY_TEMPLATE:-$WORKFLOW_TEMPLATE_INPUT}"
 WORKFLOW_REGISTRY_FILE="${WORKFLOW_REGISTRY_FILE:-$ROOT_DIR/workflow-registry.json}"
 N8N_WORKFLOW_LIST_LIMIT="${N8N_WORKFLOW_LIST_LIMIT:-250}"
@@ -55,7 +55,7 @@ require_cmd curl
 require_cmd jq
 
 N8N_ENV_FILE="$(resolve_path "$N8N_ENV_FILE_INPUT")"
-CLIPROXY_ENV_FILE="$(resolve_path "$CLIPROXY_ENV_FILE_INPUT")"
+PROXY_ENV_FILE="$(resolve_path "$PROXY_ENV_FILE_INPUT")"
 WORKFLOW_TEMPLATE="$(resolve_path "$WORKFLOW_TEMPLATE_INPUT")"
 REGISTRY_TEMPLATE="$(normalize_registry_template "$REGISTRY_TEMPLATE_INPUT")"
 REGISTRY_TEMPLATE_ABS="$(resolve_path "$REGISTRY_TEMPLATE_INPUT")"
@@ -64,20 +64,20 @@ TEXT_TO_IMAGES_WORKFLOW_PATH="$(resolve_path "$TEXT_TO_IMAGES_WORKFLOW_PATH")"
 TTS_WORKFLOW_PATH="$(resolve_path "$TTS_WORKFLOW_PATH")"
 
 [ -f "$N8N_ENV_FILE" ] || { echo "Missing file: $N8N_ENV_FILE" >&2; exit 1; }
-[ -f "$CLIPROXY_ENV_FILE" ] || { echo "Missing file: $CLIPROXY_ENV_FILE" >&2; exit 1; }
+[ -f "$PROXY_ENV_FILE" ] || { echo "Missing file: $PROXY_ENV_FILE" >&2; exit 1; }
 [ -f "$WORKFLOW_TEMPLATE" ] || { echo "Missing file: $WORKFLOW_TEMPLATE" >&2; exit 1; }
 
 set -a
 # shellcheck source=/dev/null
 source "$N8N_ENV_FILE"
 # shellcheck source=/dev/null
-source "$CLIPROXY_ENV_FILE"
+source "$PROXY_ENV_FILE"
 set +a
 
 : "${N8N_API_URL:?N8N_API_URL is required}"
 : "${N8N_API_KEY:?N8N_API_KEY is required}"
-: "${CLIPROXY_BASE_URL:?CLIPROXY_BASE_URL is required}"
-: "${CLIPROXY_CLIENT_KEY:?CLIPROXY_CLIENT_KEY is required}"
+: "${PROXY_BASE_URL:?PROXY_BASE_URL is required}"
+: "${PROXY_API_KEY:?PROXY_API_KEY is required}"
 N8N_API_URL_DEFAULT="${N8N_API_URL:-}"
 N8N_API_KEY_DEFAULT="${N8N_API_KEY:-}"
 
@@ -93,6 +93,11 @@ TTS_API_BASE_URL_DEFAULT="${TTS_API_BASE_URL:-http://127.0.0.1:8001}"
 TTS_VOICE_ID_DEFAULT="${TTS_VOICE_ID:-ngochuyen}"
 GDRIVE_ROOT_FOLDER_ID_DEFAULT="${GDRIVE_ROOT_FOLDER_ID_DEFAULT:-${GDRIVE_ROOT_FOLDER_ID:-}}"
 GDRIVE_CREDENTIAL_NAME_DEFAULT="${GDRIVE_CREDENTIAL_NAME:-}"
+CONTENT_MODEL_DEFAULT="${CONTENT_MODEL:-cx/gpt-5.4}"
+FALLBACK_MODEL_DEFAULT="${FALLBACK_MODEL:-cx/gpt-5.2}"
+QC_MODEL_DEFAULT="${QC_MODEL:-$CONTENT_MODEL_DEFAULT}"
+GEMINI_CONTENT_MODEL_DEFAULT="${GEMINI_CONTENT_MODEL:-gemini-3-flash-preview}"
+IMAGE_MODEL_DEFAULT="${IMAGE_MODEL:-nano-banana-pro}"
 
 if [ "$N8N_WORKFLOW_LIST_LIMIT" -gt 250 ]; then
   echo "N8N_WORKFLOW_LIST_LIMIT must be <= 250 (current: $N8N_WORKFLOW_LIST_LIMIT)" >&2
@@ -428,8 +433,8 @@ fi
 resolve_media_subworkflow_ids
 
 payload="$(jq \
-  --arg base "$CLIPROXY_BASE_URL" \
-  --arg key "$CLIPROXY_CLIENT_KEY" \
+  --arg base "$PROXY_BASE_URL" \
+  --arg key "$PROXY_API_KEY" \
   --arg n8nApiUrl "$N8N_API_URL_DEFAULT" \
   --arg n8nApiKey "$N8N_API_KEY_DEFAULT" \
   --arg notifyPath "$SHARED_NOTIFICATION_ROUTER_PATH" \
@@ -453,9 +458,21 @@ payload="$(jq \
   --arg ttsWorkflowId "$TTS_WORKFLOW_ID" \
   --arg telegramCredentialId "$telegram_credential_id" \
   --arg telegramCredentialName "$TELEGRAM_CREDENTIAL_NAME_DEFAULT" \
+  --arg contentModel "$CONTENT_MODEL_DEFAULT" \
+  --arg fallbackModel "$FALLBACK_MODEL_DEFAULT" \
+  --arg qcModel "$QC_MODEL_DEFAULT" \
+  --arg geminiContentModel "$GEMINI_CONTENT_MODEL_DEFAULT" \
+  --arg imageModelExpr "={{ \$json.image_model || \"$IMAGE_MODEL_DEFAULT\" }}" \
+  --arg qcModelExpr "={{ \$json.qc_model || \"$QC_MODEL_DEFAULT\" }}" \
   '
-  (.nodes[] | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[] | select(.name=="cliproxy_base_url") | .value) = $base
-  | (.nodes[] | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[] | select(.name=="cliproxy_client_key") | .value) = $key
+  (.name | tostring | test("gemini"; "i")) as $isGeminiWorkflow
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="content_model") | .value) = (if $isGeminiWorkflow then $geminiContentModel else $contentModel end)
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="fallback_model") | .value) = $fallbackModel
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="qc_model") | .value) = $qcModel
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="image_model") | .value) = $imageModelExpr
+  | (.nodes[]? | select(.name=="Set Config (Worker)") | .parameters.assignments.assignments[]? | select(.name=="qc_model") | .value) = $qcModelExpr
+  | (.nodes[] | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[] | select(.name=="proxy_base_url") | .value) = $base
+  | (.nodes[] | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[] | select(.name=="proxy_api_key") | .value) = $key
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="n8n_api_url") | .value) = $n8nApiUrl
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="n8n_api_key") | .value) = $n8nApiKey
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="notify_targets") | .value) = $notifyTargets

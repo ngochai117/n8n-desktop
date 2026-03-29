@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
 N8N_ENV_FILE="${1:-$ROOT_DIR/env.n8n.local}"
-CLIPROXY_ENV_FILE="${2:-$ROOT_DIR/env.cliproxy.local}"
+PROXY_ENV_FILE="${2:-$ROOT_DIR/env.proxy.local}"
 MESSAGE_INPUT="${3:-Sách Đắc Nhân Tâm của Dale Carnegie}"
 TIMEOUT_SECONDS="${BOOK_REVIEW_E2E_TIMEOUT_SECONDS:-35}"
 EXECUTION_LOOKUP_TIMEOUT_SECONDS="${BOOK_REVIEW_E2E_EXECUTION_LOOKUP_TIMEOUT_SECONDS:-240}"
@@ -27,7 +27,7 @@ fatal() {
 }
 
 [ -f "$N8N_ENV_FILE" ] || fatal "Missing file: $N8N_ENV_FILE"
-[ -f "$CLIPROXY_ENV_FILE" ] || fatal "Missing file: $CLIPROXY_ENV_FILE"
+[ -f "$PROXY_ENV_FILE" ] || fatal "Missing file: $PROXY_ENV_FILE"
 [ -f "$TEXT_TO_IMAGES_WORKFLOW_TEMPLATE" ] || fatal "Missing file: $TEXT_TO_IMAGES_WORKFLOW_TEMPLATE"
 [ -f "$TTS_WORKFLOW_TEMPLATE" ] || fatal "Missing file: $TTS_WORKFLOW_TEMPLATE"
 [ -f "$WORKFLOW_TEMPLATE" ] || fatal "Missing file: $WORKFLOW_TEMPLATE"
@@ -65,7 +65,7 @@ restore_workflow() {
 
   bash "$ROOT_DIR/scripts/workflows/import/import-book-review-workflow.sh" \
     "$N8N_ENV_FILE" \
-    "$CLIPROXY_ENV_FILE" \
+    "$PROXY_ENV_FILE" \
     "$TEXT_TO_IMAGES_WORKFLOW_TEMPLATE" \
     "$TTS_WORKFLOW_TEMPLATE" \
     "$WORKFLOW_TEMPLATE" \
@@ -120,7 +120,7 @@ jq \
 
 bash "$ROOT_DIR/scripts/workflows/import/import-book-review-workflow.sh" \
   "$N8N_ENV_FILE" \
-  "$CLIPROXY_ENV_FILE" \
+  "$PROXY_ENV_FILE" \
   "$TEXT_TO_IMAGES_WORKFLOW_TEMPLATE" \
   "$TTS_WORKFLOW_TEMPLATE" \
   "$PATCHED_TEMPLATE" \
@@ -177,9 +177,28 @@ assert_http_success() {
 activate_workflow
 sleep 1
 
+extract_execution_update_id() {
+  jq -r '
+    (.data // .) as $root
+    | [
+        ($root.resultData.runData["Telegram Trigger"][0].data.main[0][0].json.update_id // empty),
+        ($root.resultData.runData["Telegram Trigger"][0].data.main[0][0].json.body.update_id // empty),
+        ($root.resultData.runData["Parse Telegram Event"][0].data.main[0][0].json.update_id // empty),
+        ($root.resultData.runData["Parse Telegram Event"][0].data.main[0][0].json.body.update_id // empty),
+        ([ $root.resultData.runData[]?[]?.data?.main[]?[]?.json?.update_id ] | map(select(. != null)) | last // empty),
+        ([ $root.resultData.runData[]?[]?.data?.main[]?[]?.json?.body?.update_id ] | map(select(. != null)) | last // empty)
+      ]
+    | map(select(. != null and . != ""))
+    | map(tostring)
+    | .[0] // empty
+  ' "$EXECUTION_JSON" 2>/dev/null || true
+}
+
 resolve_execution_id_by_update_id() {
   local update_id="$1"
   local started_after_epoch="${2:-0}"
+  local update_id_text
+  update_id_text="$(printf '%s' "$update_id")"
   local found_exec=''
   local deadline=$(( $(date +%s) + EXECUTION_LOOKUP_TIMEOUT_SECONDS ))
 
@@ -192,8 +211,8 @@ resolve_execution_id_by_update_id() {
       curl -sS -H "X-N8N-API-KEY: $N8N_API_KEY" \
         "$N8N_API_URL/api/v1/executions/$candidate_id?includeData=true" > "$EXECUTION_JSON"
 
-      uid="$(jq -r '((.data // .).resultData.runData["Telegram Trigger"][0].data.main[0][0].json.update_id // empty)' "$EXECUTION_JSON" 2>/dev/null || true)"
-      if [ "$uid" = "$update_id" ]; then
+      uid="$(extract_execution_update_id)"
+      if [ "$uid" = "$update_id_text" ]; then
         found_exec="$candidate_id"
         break
       fi
@@ -208,6 +227,8 @@ resolve_execution_id_by_update_id() {
             .mode == "webhook" and
             ($startedAfterEpoch == 0 or (started_epoch >= $startedAfterEpoch))
           ))
+        | sort_by(started_epoch)
+        | reverse
         | .[].id
       '
     )

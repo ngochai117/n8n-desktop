@@ -9,8 +9,8 @@ Muc tieu: tach script theo domain de de quan ly khi so luong workflow tang.
   - `verify-local.sh`: kiem tra local setup
   - `enable-full-mcp.sh`: bat full-mode mcp bang env n8n
 
-- `scripts/cliproxy/`
-  - `setup-cliproxy-oauth.sh`: setup OAuth + verify CLIProxy + import demo workflows (optional)
+- `scripts/proxy/`
+  - `setup-proxy.sh`: setup local proxy runtime (hien tai: 9router) + verify API + import demo workflows (optional)
 
 - `scripts/run/`
   - `run-n8n.sh`: chay n8n local (load env + `n8n start`)
@@ -40,7 +40,7 @@ bash scripts/bootstrap/bootstrap-local.sh
 bash scripts/bootstrap/verify-local.sh
 bash scripts/bootstrap/enable-full-mcp.sh
 
-bash scripts/cliproxy/setup-cliproxy-oauth.sh
+bash scripts/proxy/setup-proxy.sh
 
 bash scripts/run/run-n8n.sh
 bash scripts/run/run-n8n-docker.sh
@@ -53,7 +53,7 @@ bash scripts/workflows/import/import-openai-demo-workflow.sh
 bash scripts/workflows/import/import-book-review-workflow.sh
 # optional custom prompt template for book-review:
 bash scripts/workflows/import/import-book-review-workflow.sh \
-  env.n8n.local env.cliproxy.local \
+  env.n8n.local env.proxy.local \
   workflows/book-review/text-to-images.workflow.json \
   workflows/book-review/tts.workflow.json \
   workflows/book-review/book-review.workflow.json \

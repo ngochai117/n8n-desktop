@@ -89,8 +89,8 @@ sanitize_and_shape_workflow() {
       connections: .connections,
       settings: (.settings // {})
     }
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "cliproxy_base_url") | .value) = "__CLIPROXY_BASE_URL__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "cliproxy_client_key") | .value) = "__CLIPROXY_CLIENT_KEY__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "proxy_base_url") | .value) = "__PROXY_BASE_URL__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "proxy_api_key") | .value) = "__PROXY_API_KEY__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "n8n_api_url") | .value) = "__N8N_API_URL__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "n8n_api_key") | .value) = "__N8N_API_KEY__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "telegram_bot_token") | .value) = "__TELEGRAM_BOT_TOKEN__"

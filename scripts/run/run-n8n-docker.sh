@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 N8N_ENV_FILE="${N8N_ENV_FILE:-$ROOT_DIR/env.n8n.local}"
-CLIPROXY_ENV_FILE="${CLIPROXY_ENV_FILE:-$ROOT_DIR/env.cliproxy.local}"
+PROXY_ENV_FILE="${PROXY_ENV_FILE:-$ROOT_DIR/env.proxy.local}"
 DATA_DIR="${N8N_DOCKER_DATA_DIR:-$ROOT_DIR/.vendor/docker/n8n-data}"
 
 command -v docker >/dev/null 2>&1 || {
@@ -21,7 +21,7 @@ CMD=(
 )
 
 [ -f "$N8N_ENV_FILE" ] && CMD+=(--env-file "$N8N_ENV_FILE")
-[ -f "$CLIPROXY_ENV_FILE" ] && CMD+=(--env-file "$CLIPROXY_ENV_FILE")
+[ -f "$PROXY_ENV_FILE" ] && CMD+=(--env-file "$PROXY_ENV_FILE")
 
 CMD+=(docker.n8n.io/n8nio/n8n:latest)
 

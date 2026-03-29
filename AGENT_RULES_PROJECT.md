@@ -19,9 +19,9 @@ Project: `n8n-desktop`
 - Tra cuu model qua Management Center hoac `GET /v1/models` truoc khi doi model.
 
 ## 3) Runtime security policy
-- CLIProxyAPI bind localhost (`127.0.0.1`), management UI bat local va bao ve bang `CLIPROXY_MANAGEMENT_KEY`.
-- Dung `CLIPROXY_CLIENT_KEY` cho client-to-proxy auth.
-- OAuth provider auth luu trong `~/.cli-proxy-api`.
+- Proxy runtime phai bind localhost (`127.0.0.1`/`localhost`) cho local-only security.
+- Dung `PROXY_API_KEY` cho client-to-proxy auth (khong hard-code trong workflow/template).
+- Khong commit env local (`env.proxy.local`) va data runtime local (`~/.9router`) vao repo.
 
 ## 4) Documentation policy
 - Moi thay doi quy trinh van hanh: cap nhat `README.md`.
@@ -32,7 +32,7 @@ Project: `n8n-desktop`
 - `bash scripts/bootstrap/bootstrap-local.sh`
 - `bash scripts/bootstrap/verify-local.sh`
 - `bash scripts/bootstrap/enable-full-mcp.sh`
-- `bash scripts/cliproxy/setup-cliproxy-oauth.sh`
+- `bash scripts/proxy/setup-proxy.sh`
 - `bash scripts/workflows/import/import-shared-notification-router-workflow.sh`
 - `bash scripts/workflows/import/import-gemini-demo-workflow.sh`
 - `bash scripts/workflows/import/import-openai-demo-workflow.sh`

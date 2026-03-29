@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
 N8N_ENV_FILE="${1:-$ROOT_DIR/env.n8n.local}"
-CLIPROXY_ENV_FILE="${2:-$ROOT_DIR/env.cliproxy.local}"
+PROXY_ENV_FILE="${2:-$ROOT_DIR/env.proxy.local}"
 MESSAGE_INPUT="${3:-Sách Nhà Giả Kim của tác giả Paulo Coelho}"
 TIMEOUT_SECONDS="${BOOK_REVIEW_E2E_TIMEOUT_SECONDS:-35}"
 PREFLIGHT_ONLY="${BOOK_REVIEW_E2E_PREFLIGHT_ONLY:-false}"
@@ -30,7 +30,7 @@ fatal() {
 }
 
 [ -f "$N8N_ENV_FILE" ] || fatal "Missing file: $N8N_ENV_FILE"
-[ -f "$CLIPROXY_ENV_FILE" ] || fatal "Missing file: $CLIPROXY_ENV_FILE"
+[ -f "$PROXY_ENV_FILE" ] || fatal "Missing file: $PROXY_ENV_FILE"
 [ -f "$TEXT_TO_IMAGES_WORKFLOW_TEMPLATE" ] || fatal "Missing file: $TEXT_TO_IMAGES_WORKFLOW_TEMPLATE"
 [ -f "$TTS_WORKFLOW_TEMPLATE" ] || fatal "Missing file: $TTS_WORKFLOW_TEMPLATE"
 [ -f "$WORKFLOW_TEMPLATE" ] || fatal "Missing file: $WORKFLOW_TEMPLATE"
@@ -65,7 +65,7 @@ restore_workflow() {
 
   bash "$ROOT_DIR/scripts/workflows/import/import-book-review-workflow.sh" \
     "$N8N_ENV_FILE" \
-    "$CLIPROXY_ENV_FILE" \
+    "$PROXY_ENV_FILE" \
     "$TEXT_TO_IMAGES_WORKFLOW_TEMPLATE" \
     "$TTS_WORKFLOW_TEMPLATE" \
     "$WORKFLOW_TEMPLATE" \
@@ -89,26 +89,8 @@ collect_candidate_execution_ids() {
     echo "$executions_json" | jq -r --arg wf "$WORKFLOW_ID" --arg start "$started_after" '
       .data
       | map(select(.workflowId == $wf and .mode == "webhook" and .startedAt >= $start))
-      | .[].id
-    '
-  )
-
-  while IFS= read -r exec_id; do
-    [ -n "$exec_id" ] || continue
-    local exists=0
-    for known_id in "${CANDIDATE_EXEC_IDS[@]-}"; do
-      if [ "$known_id" = "$exec_id" ]; then
-        exists=1
-        break
-      fi
-    done
-    if [ "$exists" -eq 0 ]; then
-      CANDIDATE_EXEC_IDS+=("$exec_id")
-    fi
-  done < <(
-    echo "$executions_json" | jq -r --arg wf "$WORKFLOW_ID" '
-      .data
-      | map(select(.workflowId == $wf and .mode == "webhook"))
+      | sort_by(.startedAt)
+      | reverse
       | .[].id
     '
   )
@@ -131,15 +113,37 @@ resolve_execution_id_once() {
       "$N8N_API_URL/api/v1/executions/$candidate_id?includeData=true" > "$EXECUTION_JSON"
 
     has_main_trigger="$(jq -r --arg node "$TELEGRAM_TRIGGER_NODE" '((((.data // .).resultData.runData) // {}) | has($node))' "$EXECUTION_JSON")"
-    trigger_update_id="$(jq -r --arg node "$TELEGRAM_TRIGGER_NODE" '((.data // .).resultData.runData[$node][0].data.main[0][0].json.update_id // empty)' "$EXECUTION_JSON")"
+    trigger_update_id="$(extract_execution_update_id)"
 
     if [ "$has_main_trigger" = 'true' ] && [ -n "$payload_update_id" ] && [ "$trigger_update_id" = "$payload_update_id" ]; then
+      EXEC_ID="$candidate_id"
+      return 0
+    fi
+
+    if [ "$has_main_trigger" = 'true' ] && [ -z "$payload_update_id" ]; then
       EXEC_ID="$candidate_id"
       return 0
     fi
   done
 
   return 1
+}
+
+extract_execution_update_id() {
+  jq -r '
+    (.data // .) as $root
+    | [
+        ($root.resultData.runData["Telegram Trigger"][0].data.main[0][0].json.update_id // empty),
+        ($root.resultData.runData["Telegram Trigger"][0].data.main[0][0].json.body.update_id // empty),
+        ($root.resultData.runData["Parse Telegram Event"][0].data.main[0][0].json.update_id // empty),
+        ($root.resultData.runData["Parse Telegram Event"][0].data.main[0][0].json.body.update_id // empty),
+        ([ $root.resultData.runData[]?[]?.data?.main[]?[]?.json?.update_id ] | map(select(. != null)) | last // empty),
+        ([ $root.resultData.runData[]?[]?.data?.main[]?[]?.json?.body?.update_id ] | map(select(. != null)) | last // empty)
+      ]
+    | map(select(. != null and . != ""))
+    | map(tostring)
+    | .[0] // empty
+  ' "$EXECUTION_JSON" 2>/dev/null || true
 }
 
 resolve_execution_id_with_retry() {
@@ -239,7 +243,7 @@ jq \
 
 bash "$ROOT_DIR/scripts/workflows/import/import-book-review-workflow.sh" \
   "$N8N_ENV_FILE" \
-  "$CLIPROXY_ENV_FILE" \
+  "$PROXY_ENV_FILE" \
   "$TEXT_TO_IMAGES_WORKFLOW_TEMPLATE" \
   "$TTS_WORKFLOW_TEMPLATE" \
   "$PATCHED_TEMPLATE" \
@@ -307,10 +311,14 @@ EXEC_JSON="$(curl -sS -H "X-N8N-API-KEY: $N8N_API_KEY" "$N8N_API_URL/api/v1/exec
 EXEC_ID=''
 collect_candidate_execution_ids "$EXEC_JSON" "$START_TS"
 
-if [ -n "$PAYLOAD_UPDATE_ID" ] && [ "$STRICT_UPDATE_ID" = 'true' ]; then
+if [ -n "$PAYLOAD_UPDATE_ID" ]; then
   LOOKUP_DEADLINE_TS=$(( $(date +%s) + EXECUTION_LOOKUP_TIMEOUT_SECONDS ))
   if ! resolve_execution_id_with_retry "$PAYLOAD_UPDATE_ID" "$LOOKUP_DEADLINE_TS" "$START_TS"; then
-    fatal "Cannot map payload_update_id=$PAYLOAD_UPDATE_ID to a webhook execution within ${EXECUTION_LOOKUP_TIMEOUT_SECONDS}s."
+    if [ "$STRICT_UPDATE_ID" = 'true' ]; then
+      fatal "Cannot map payload_update_id=$PAYLOAD_UPDATE_ID to a webhook execution within ${EXECUTION_LOOKUP_TIMEOUT_SECONDS}s."
+    else
+      log "Warning: Cannot map payload_update_id=$PAYLOAD_UPDATE_ID, fallback to latest webhook execution after START_TS."
+    fi
   fi
 fi
 

@@ -10,7 +10,7 @@ Day la entrypoint cho AI agents trong repo nay.
 
 ## Scope
 - `AGENT_RULES_GLOBAL.md`: quy tac dung chung, co the copy sang project khac.
-- `AGENT_RULES_PROJECT.md`: quy tac rieng cho project n8n + cliproxy nay.
+- `AGENT_RULES_PROJECT.md`: quy tac rieng cho project n8n + proxy runtime nay.
 - `RULES_AND_SKILLS.md`: lenh van hanh va thao tac thuc thi.
 
 ## Governance

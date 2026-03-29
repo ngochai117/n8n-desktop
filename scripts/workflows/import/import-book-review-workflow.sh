@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
 N8N_ENV_FILE="${1:-$ROOT_DIR/env.n8n.local}"
-CLIPROXY_ENV_FILE="${2:-$ROOT_DIR/env.cliproxy.local}"
+PROXY_ENV_FILE="${2:-$ROOT_DIR/env.proxy.local}"
 TEXT_TO_IMAGES_WORKFLOW_TEMPLATE="${3:-$ROOT_DIR/workflows/book-review/text-to-images.workflow.json}"
 TTS_WORKFLOW_TEMPLATE="${4:-$ROOT_DIR/workflows/book-review/tts.workflow.json}"
 MAIN_WORKFLOW_TEMPLATE="${5:-$ROOT_DIR/workflows/book-review/book-review.workflow.json}"
@@ -58,7 +58,7 @@ import_one() {
   WORKFLOW_REGISTRY_TEMPLATE="$template" \
   bash "$ROOT_DIR/scripts/workflows/import/import-workflow.sh" \
     "$N8N_ENV_FILE" \
-    "$CLIPROXY_ENV_FILE" \
+    "$PROXY_ENV_FILE" \
     "$source_template"
 }
 
