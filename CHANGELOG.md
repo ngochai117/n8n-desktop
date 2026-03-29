@@ -29,6 +29,53 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 - 2026-03-26: Sync workflow templates tu n8n UI ve JSON (apply, changed=0, unchanged=1, failed=0). Chi tiet: `CHANGELOG.md`.
 - 2026-03-26: Fix workflow book-review: tra chat response truc tiep tu `Reviewer Orchestrator`, gom QC ve 1 nguon logic trong orchestrator (node AI QC giu pass-through), va sanitize `workflowPath` ve placeholder trong templates/sync script. Ly do: tranh mat metadata o response, tranh drift QC, va bo absolute path theo may local.
 
+## 2026-03-29
+- Don gian hoa luong notify `Book Review` theo huong shared notifier truc tiep:
+  - Bo node gate `If Should Notify Externally (Worker)`.
+  - Bo field `should_notify_externally` trong payload start + worker.
+  - Noi truc tiep `Send Informations` -> `Set Notify Targets (Main)` -> `Notify via Shared Workflow (Main)`.
+  - Quy tac gate notify chi con `notify_targets` (`telegram/ggchat/all` de gui, `none` de skip), de debug thieu notify de hon.
+- Fix UX thong bao preview/link Drive:
+  - Bo noi dung placeholder `Link Drive se duoc gui trong thong bao tiep theo` trong `sendReviewPreview`.
+  - `sendReviewPreview` chi gui khi da co link Drive thuc te.
+  - Them node `Notify Session Drive Links (Worker)` sau `Finalize Session Assets Package (Worker)` de gui Telegram message chua link Drive (review/metadata/folder/sheet) ngay khi persist xong.
+- Refactor tiep luong notify + asset theo feedback runtime:
+  - `If Final Success Event (Worker)` ca 2 nhanh deu route vao `Process Media Assets (Worker)`; media branch duoc gate ben trong node theo event final (`metadata_continue`/`auto_continue_metadata`) de tranh chay TTS/Anh som, nhung van tao/persist session assets cho init/review change.
+  - Bo spam notify hub: `Build Notify Payload (Worker)` + start payload (`Code in JavaScript`) mac dinh `notify_targets='none'` (khong con message `n8n INFO: Book Review` du).
+  - `Set Notify Targets (Main)` doi sang fallback expression, ton trong `notify_targets` tren tung payload thay vi override cung.
+  - Them node `Send Review QC And Action (Worker)` sau `Notify Session Drive Links (Worker)` de gui block `[QC REVIEW]` + buttons sau khi da co link Drive.
+  - Bo co `skip_worker_notify` trong worker flow.
+  - Nang cap progress helper trong `Handle Reviewer Event`: thong diep step co elapsed minutes (`da cho X phut`) va auto edit moi 60s, sau khi xong se xoa message.
+- Dieu chinh nhanh theo feedback "co message moi gui":
+  - Them node `If Has Notify Message (Main)` sau `Send Informations`; chi item co `message` moi di tiep sang `Set Notify Targets (Main)` va shared router.
+  - `Set Notify Targets (Main)` quay lai set cung placeholder env (khong phu thuoc payload `notify_targets`).
+  - Shared workflow `Shared Notification Router` cap nhat: Telegram uu tien gui `message` neu co, fallback moi dung `title + body` (giam prefix `n8n INFO` cho cac message step).
+- Fix UX callback/progress:
+  - Bo start notify tĩnh (`Code in JavaScript` set `message=''`, `notify_targets='none'`) de tranh hien thong bao khong update.
+  - `lockCallbackActionMessage` khong con `editMessageText` voi prefix `✅ ...`; chi clear inline keyboard.
+  - Refactor tiep Book Review workflow theo feedback runtime Telegram + Drive:
+  - Progress message trong `Handle Reviewer Event` cap nhat moi 3 giay (hien thi elapsed theo giay) va van auto-delete khi step xong.
+  - Bo callback ack text `Da ghi nhan tiep tuc review/metadata` (callback query chi ack silent + clear inline keyboard).
+  - Session drive context (folder/file/sheet IDs + URLs) duoc luu/restore trong payload session; bo sung node `Persist Session Asset Context (Worker)` de ghi nguoc context sau moi lan persist.
+  - `Prepare Session Drive Context (Worker)` chi tao folder/subfolder khi thieu ID, giu on dinh 1 folder/session khi reviewer tiep tuc chinh sua.
+  - Tach persist theo process/event:
+    - `init_review`/`review_change`: review file.
+    - `review_continue`/`auto_continue_review`/`metadata_change`: metadata file.
+    - `metadata_continue`/`auto_continue_metadata`: manifest + session sheet.
+  - Them update path theo file ID cho review/metadata (`Google Drive Update Review File (Worker)`, `Google Drive Update Metadata File (Worker)`) de replace noi dung thay vi tao file moi.
+  - Metadata preview da gui link Drive (qua `Notify Session Drive Links`) thay vi gui block text metadata.
+  - `Send Review QC And Action (Worker)` cap nhat nhanh metadata: message metadata action se gui link Drive (`metadata file`, `session folder`, `session sheet`) khi co, khong con text chung khong link.
+  - Don gian hoa reviewer flow theo huong 1-gate:
+    - Master prompt bo sung contract metadata block (`<<<METADATA_JSON>>> ... <<<END_METADATA_JSON>>>`) va `Parse Review Sections` boc tach metadata tu response ban dau.
+    - Session bootstrap + worker stage doi sang `media_pending`; callback Telegram chi con 2 action `Tao Media`/`Dung` (`brv:media:c|s:<token>`).
+    - `Prepare Session Assets Package (Worker)` persist theo event moi:
+      - `init_review`: review file + metadata file.
+      - `media_continue`: manifest + session sheet + media assets.
+    - `Notify Session Drive Links (Worker)` chi gui cho `init_review`, kem link review/metadata/folder/sheet.
+    - `Process Media Assets (Worker)` + `If Final Success Event (Worker)` doi gate sang `media_continue` (co giu backward-compatible event cu trong parser/if conditions).
+    - QC tach khoi gate media: `Send Review QC And Action (Worker)` gui buttons `Tao Media|Dung` truoc, sau do moi danh gia va gui block `[QC REVIEW]` (khong con action tiep tuc QC).
+    - Cap nhat tooling/test docs theo flow moi: `run-book-review-full-e2e.sh` chuyen sang 2 buoc (`start -> media_continue`) va README/testing incidents dong bo mo ta.
+
 ## 2026-03-27
 - Them ghi chu moi truong agent trong `README.md`: neu shell khong co `node`/`npm` thi uu tien patch bang `jq` + `apply_patch`, va check `command -v node` truoc khi chay checklist `.mjs`.
 - Chuan hoa ghi chu moi truong agent: truong hop `nvm` khien shell agent khong thay `node`, can verify/chay checklist qua shell interactive `zsh -lic` truoc khi ket luan thieu Node.
@@ -111,6 +158,23 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 - Cap nhat rules project: bo sung policy clean UI grouping + routing nodes phai giu full data.
 
 ## 2026-03-28
+- Tinh chinh workflow `Book Review` theo huong node-first + Telegram progress UX:
+  - Bo node `Return Chat Response` khoi luong chinh (khong con chat-response branch).
+  - Them node `Finalize Step Progress Messages (Worker)` de xoa cac message tien trinh Telegram sau khi step/media hoan tat.
+  - `Handle Reviewer Event` doi thong diep ACK cu (`Da nhan lenh ... Dang xu ly`) sang thong diep tien trinh theo step:
+    - `Dang tao noi dung...`
+    - `QC dang danh gia...`
+    - `Dang tao TTS...`
+    - `Dang tao anh...`
+  - Bo gui `[FINAL OUTPUT]` + bo gui lai `Metadata cuoi` tren Telegram; thay bang thong diep tiep tuc media (`Dang xu ly TTS va anh...`).
+  - Worker notify payload bo sung link Drive/session (`review_file`, `metadata_file`, `manifest_file`, `session_folder`, `session_sheet`) de gui ve Telegram qua shared notify router.
+- Chuan hoa ten session folder Drive:
+  - `Prepare Session Drive Context (Worker)` doi format folder sang `book-review-<ten-sach-slug>-<sessionkey>`.
+- Cap nhat script E2E nhanh:
+  - `scripts/workflows/tests/run-book-review-e2e.sh` bo assert node `Return Chat Response` vi node nay da duoc loai bo.
+- Fix notify start-command cho Telegram:
+  - Revert parser start-command ve dung format goc `book-review ...` (khong mo rong typo alias).
+  - Sua node start payload (`Code in JavaScript`) de bat `should_notify_externally=true`, nham dam bao thong bao tien trinh dau vao duoc gui ra Telegram ngay khi bat dau.
 - Bo sung config/env cho Google Drive de chuan bi tach media workflow:
   - Them 2 field moi trong `Set Config (Main/Worker)`: `gdrive_root_folder_id`, `gdrive_credential_name`.
   - `import-workflow.sh` doc env `GDRIVE_ROOT_FOLDER_ID`, `GDRIVE_CREDENTIAL_NAME` va inject vao workflow khi import.

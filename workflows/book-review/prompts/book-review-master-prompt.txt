@@ -35,7 +35,8 @@ OUTPUT CONTRACT (BẮT BUỘC):
 * mở đầu: intro
 * thân bài: part_01, part_02, part_03, ... (tăng dần 2 chữ số)
 * kết: outro
-4. Không được chèn chuỗi marker vào nội dung văn bản.
+4. Trả thêm metadata JSON theo block marker riêng.
+5. Không được chèn chuỗi marker vào nội dung văn bản.
 
 FORMAT PHẢI ĐÚNG:
 
@@ -55,6 +56,10 @@ FORMAT PHẢI ĐÚNG:
 ...noi dung phan ket...
 <<<END_SECTION>>>
 
+<<<METADATA_JSON>>>
+{"title":"...","caption":"...","thumbnail_text":"...","hashtags":["#tag1","#tag2","#tag3"]}
+<<<END_METADATA_JSON>>>
+
 DÒNG CUỐI CÙNG BẮT BUỘC CHỈ LÀ MỘT TAG:
 -CONTINUE-
 hoặc
@@ -64,3 +69,5 @@ QUY TẮC TAG (BẮT BUỘC):
 1. Nếu dùng -CONTINUE- hoặc -END- thì không được có bất kỳ ký tự nào phía sau tag đó.
 2. Không thêm câu nhắc kiểu "hãy nói Continue" hoặc lời bình ngoài format.
 3. Nếu chưa xong, phải kết thúc ở ranh giới SECTION rồi mới in -CONTINUE-.
+4. Chỉ in `<<<METADATA_JSON>>>...<<<END_METADATA_JSON>>>` ở lượt kết thúc `-END-` (không in ở lượt `-CONTINUE-`).
+5. JSON metadata phải hợp lệ và đủ 4 key: `title`, `caption`, `thumbnail_text`, `hashtags`.

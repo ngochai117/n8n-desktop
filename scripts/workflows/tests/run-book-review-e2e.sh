@@ -193,7 +193,6 @@ required_nodes=(
   "Generate Full Review"
   "Parse Review Sections"
   "Prepare Session + Init Event"
-  "Return Chat Response"
 )
 
 for node_name in "${required_nodes[@]}"; do

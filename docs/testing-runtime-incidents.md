@@ -3,7 +3,7 @@
 Muc tieu: luu cac van de phat sinh khi chay/import/test workflow (dac biet E2E), uu tien cac van de he thong/cau hinh/runtime, KHONG phai loi business logic.
 
 ## Tai sao run E2E co the lau
-1. `run-book-review-full-e2e.sh` la flow 3 buoc (`start -> review_continue -> metadata_continue`), khong phai 1 request don.
+1. `run-book-review-full-e2e.sh` (sau refactor 2026-03-29) la flow 2 buoc (`start -> media_continue`), khong phai 1 request don.
 2. Moi lan run script se import workflow test + restore workflow goc sau khi xong, ton them thoi gian I/O/API.
 3. Script co polling de map execution theo `update_id`; timeout lookup co the den vai phut neu he thong ban.
 4. Full flow co media branch (TTS/image). Neu text dai -> chunk nhieu -> so request tang manh.

@@ -248,16 +248,25 @@ Book review chat pipeline:
 - Main flow (`book-review.workflow.json`) goi 2 subworkflow media qua `Execute Workflow`:
   - `Generate Image Assets (Worker)` -> `Text To Images`
   - `Generate TTS Assets (Worker)` -> `TTS`
-- Main generate branch tra `message_ack + session_token + reviewer_stage=review_pending` (duoc kick-off tu Telegram command `book-review ...`).
-- Callback data router su dung format ngan <=64 bytes: `brv:rvw:c:<token>`, `brv:rvw:x:<token>`, `brv:meta:c:<token>`, ...
+- Main generate branch tra `message_ack + session_token + reviewer_stage=media_pending` (duoc kick-off tu Telegram command `book-review ...`).
+- Callback data router su dung format ngan <=64 bytes: `brv:media:c:<token>` (Tao Media), `brv:media:s:<token>` (Dung).
 - Khong con nhanh scheduler timeout; router xu ly truc tiep callback/message event.
 - Notify hub cho workflow review sach da chuan hoa theo pattern:
   - Parse thong diep bat dau: `Bắt đầu review: {{user_input}}`.
+  - Start command se push thong bao tien trinh som: `Dang tao noi dung ...` (route qua shared notify).
   - Moi payload thong bao (main/router/worker/start-message) deu dua vao mang `send_informations`.
   - `Send Informations` (`Split Out`) se split theo `send_informations` va giu full data (`include=allOtherFields`).
   - `Set Notify Targets (Main)` duoc dat ngay truoc `Notify via Shared Workflow (Main)` va la diem set target notify duy nhat.
-- Luong revise review trong worker giu full context (`master prompt da inject user_input + review text + reviewer instruction`) va khong fallback clipping.
-- Truoc notify success (chi cho `metadata_continue`/`auto_continue_metadata`), worker chay media branch node-based theo nhanh ro rang:
+- Runtime UX + Drive persistence (update 2026-03-29):
+  - Progress message trong reviewer worker duoc edit moi 3 giay (`Dang tao noi dung`, `Dang tao metadata`, `Dang tao TTS`, `Dang tao anh`) va xoa sau khi xong step.
+  - Callback action `Tao Media` khong popup text du; workflow chi ack silent + clear inline keyboard.
+  - Session folder name giu theo format `book-review-<slug-book>-<session_token>` va duoc tai su dung trong suot session (khong tao folder moi neu da co ID).
+  - Persist asset theo tung process/event:
+    - `init_review`: upsert review file + upsert metadata file.
+    - `media_continue`/`auto_continue_media`: persist manifest + session sheet + media assets.
+  - Telegram sau `book-review ...` se gui ngay link Drive cho `review file`, `metadata file`, `session folder` (va `session sheet` neu co).
+  - QC review duoc tach rieng khoi gate reviewer; chi gui block `[QC REVIEW]`, khong co nut action.
+- Truoc notify success (chi cho `media_continue`/`auto_continue_media`), worker chay media branch node-based theo nhanh ro rang:
   - `Process Media Assets (chunk+gate)` -> `Generate Image Assets (Worker)` + `Generate TTS Assets (Worker)` (goi subworkflow, parallel) -> `Merge Media Results` -> `Finalize Media Assets`.
   - `Process Media Assets` va `Finalize Media Assets` deu goi `Persist Media Debug` (2 checkpoint: `prepared` va `finalized`) de khong mat dau khi fail giua nhanh media.
   - `Route Final Persist To Notify` dung sau `Persist Media Debug` de chi cho checkpoint `finalized` di tiep sang `Build Notify Payload` (tranh notify duplicate tu checkpoint som).
@@ -270,7 +279,7 @@ Book review chat pipeline:
 - Metadata prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-metadata-prompt.txt`
 - QC prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-qc-prompt.txt`
 - Review-edit prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-review-edit-prompt.txt`
-- Workflow hop nhat ket thuc moi nhanh bang notify hub: `build payload -> Send Informations -> Set Notify Targets (Main) -> Shared Notification Router`, dong thoi tra chat response tu hub cung du lieu.
+- Workflow hop nhat ket thuc moi nhanh bang notify hub: `build payload -> Send Informations -> Set Notify Targets (Main) -> Shared Notification Router`; khong con su dung node chat response cu (`Return Chat Response`).
 
 Quy tac import/update:
 - Script import da la **UPSERT**:
@@ -332,7 +341,7 @@ bash scripts/workflows/tests/run-book-review-e2e.sh env.n8n.local env.cliproxy.l
 - Script in them `payload_update_id` va mac dinh chi chap nhan execution co `update_id` khop payload vua gui (tranh bat nham execution cu).
 - Neu can fallback sang behavior cu khi debug nhanh: `BOOK_REVIEW_E2E_STRICT_UPDATE_ID=false bash scripts/workflows/tests/run-book-review-e2e.sh`.
 
-Full E2E cho book review (start -> review_continue -> metadata_continue + check session assets):
+Full E2E cho book review (start -> media_continue + check session assets):
 ```bash
 bash scripts/workflows/tests/run-book-review-full-e2e.sh
 # custom message:
@@ -387,7 +396,7 @@ bash scripts/workflows/tests/check-book-review-debug-table.sh env.n8n.local book
 - `scripts/workflows/tests/test-book-review-checklist.sh`: chay full automation checklist cho workflow review sach
 - `scripts/workflows/tests/test-book-review-checklist.mjs`: test runner chi tiet cho checklist automation
 - `scripts/workflows/tests/run-book-review-e2e.sh`: e2e runner book review (patch Telegram webhook test -> simulate update -> auto restore)
-- `scripts/workflows/tests/run-book-review-full-e2e.sh`: full e2e runner 3-step reviewer flow + verify session assets tren Drive/Sheet
+- `scripts/workflows/tests/run-book-review-full-e2e.sh`: full e2e runner 2-step reviewer flow + verify session assets tren Drive/Sheet
 - `scripts/workflows/tests/check-book-review-media-output.sh`: kiem tra media data tren execution (summary + schema + error reasons)
 - `scripts/workflows/tests/check-book-review-debug-table.sh`: xem log media debug trong Data Table (ho tro loc theo `session_token`)
 - `workflows/demo/gemini-cliproxy-demo.workflow.json`: workflow demo template

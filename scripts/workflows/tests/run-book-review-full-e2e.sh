@@ -333,19 +333,12 @@ assert_worker_event 'init_review'
 SESSION_TOKEN="$(jq -r '((.data // .).resultData.runData["Handle Reviewer Event"][0].data.main[0][0].json.session_token // empty)' "$EXECUTION_JSON")"
 [ -n "$SESSION_TOKEN" ] || fatal 'Cannot resolve session token from start execution.'
 
-REVIEW_CONTINUE_UPDATE_ID=$((BASE_UPDATE_ID + 1))
-REVIEW_CONTINUE_HTTP_CODE="$(post_telegram_callback_update "$REVIEW_CONTINUE_UPDATE_ID" "brv:rvw:c:$SESSION_TOKEN" "$EPOCH_NOW")"
-assert_http_success "$REVIEW_CONTINUE_HTTP_CODE" "Review continue callback"
-REVIEW_CONTINUE_EXEC_ID="$(resolve_execution_id_by_update_id "$REVIEW_CONTINUE_UPDATE_ID" "$START_EPOCH" || true)"
-[ -n "$REVIEW_CONTINUE_EXEC_ID" ] || fatal "Cannot map review callback update_id=$REVIEW_CONTINUE_UPDATE_ID to execution."
-assert_worker_event 'review_continue'
-
-METADATA_CONTINUE_UPDATE_ID=$((BASE_UPDATE_ID + 2))
-METADATA_CONTINUE_HTTP_CODE="$(post_telegram_callback_update "$METADATA_CONTINUE_UPDATE_ID" "brv:meta:c:$SESSION_TOKEN" "$EPOCH_NOW")"
-assert_http_success "$METADATA_CONTINUE_HTTP_CODE" "Metadata continue callback"
-METADATA_CONTINUE_EXEC_ID="$(resolve_execution_id_by_update_id "$METADATA_CONTINUE_UPDATE_ID" "$START_EPOCH" || true)"
-[ -n "$METADATA_CONTINUE_EXEC_ID" ] || fatal "Cannot map metadata callback update_id=$METADATA_CONTINUE_UPDATE_ID to execution."
-assert_worker_event 'metadata_continue'
+MEDIA_CONTINUE_UPDATE_ID=$((BASE_UPDATE_ID + 1))
+MEDIA_CONTINUE_HTTP_CODE="$(post_telegram_callback_update "$MEDIA_CONTINUE_UPDATE_ID" "brv:media:c:$SESSION_TOKEN" "$EPOCH_NOW")"
+assert_http_success "$MEDIA_CONTINUE_HTTP_CODE" "Media continue callback"
+MEDIA_CONTINUE_EXEC_ID="$(resolve_execution_id_by_update_id "$MEDIA_CONTINUE_UPDATE_ID" "$START_EPOCH" || true)"
+[ -n "$MEDIA_CONTINUE_EXEC_ID" ] || fatal "Cannot map media callback update_id=$MEDIA_CONTINUE_UPDATE_ID to execution."
+assert_worker_event 'media_continue'
 
 MEDIA_PIPELINE_STATUS="$(jq -r '((((.data // .).resultData.runData["Persist Media Debug (Worker)"] // []) | map(.data.main[0][0].json.media_pipeline_status // empty) | .[-1]) // empty)' "$EXECUTION_JSON")"
 SESSION_FOLDER_URL="$(jq -r '((((.data // .).resultData.runData["Persist Media Debug (Worker)"] // []) | map(.data.main[0][0].json.session_folder_url // empty) | .[-1]) // empty)' "$EXECUTION_JSON")"
@@ -360,7 +353,7 @@ TTS_GENERATED_COUNT="$(jq -r '((((.data // .).resultData.runData["Persist Media 
 IMAGE_GENERATED_COUNT="$(jq -r '((((.data // .).resultData.runData["Persist Media Debug (Worker)"] // []) | map(.data.main[0][0].json.media_stats.image_generated_count // 0) | .[-1]) // 0)' "$EXECUTION_JSON")"
 
 if [ -z "$MEDIA_PIPELINE_STATUS" ]; then
-  fatal 'Missing media_pipeline_status on metadata_continue execution.'
+  fatal 'Missing media_pipeline_status on media_continue execution.'
 fi
 
 if [ -z "$SESSION_FOLDER_URL" ] || [ -z "$REVIEW_FILE_URL" ] || [ -z "$METADATA_FILE_URL" ] || [ -z "$MANIFEST_FILE_URL" ]; then
@@ -377,14 +370,12 @@ fi
 printf '\n'
 log 'Full E2E result'
 log "- start_http_code: $START_HTTP_CODE"
-log "- review_continue_http_code: $REVIEW_CONTINUE_HTTP_CODE"
-log "- metadata_continue_http_code: $METADATA_CONTINUE_HTTP_CODE"
+log "- media_continue_http_code: $MEDIA_CONTINUE_HTTP_CODE"
 log "- start_execution_id: $START_EXEC_ID"
-log "- review_continue_execution_id: $REVIEW_CONTINUE_EXEC_ID"
-log "- metadata_continue_execution_id: $METADATA_CONTINUE_EXEC_ID"
+log "- media_continue_execution_id: $MEDIA_CONTINUE_EXEC_ID"
 if [ -n "${N8N_EDITOR_BASE_URL:-}" ]; then
   UI_BASE="${N8N_EDITOR_BASE_URL%/}"
-  log "- metadata_execution_ui_url: $UI_BASE/workflow/$WORKFLOW_ID/executions/$METADATA_CONTINUE_EXEC_ID"
+  log "- media_execution_ui_url: $UI_BASE/workflow/$WORKFLOW_ID/executions/$MEDIA_CONTINUE_EXEC_ID"
 fi
 log "- session_token: $SESSION_TOKEN"
 log "- media_pipeline_status: $MEDIA_PIPELINE_STATUS"

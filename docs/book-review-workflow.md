@@ -2,12 +2,11 @@
 
 ## Muc tieu
 - Tao 1 ban review day du (`intro`, `part_xx`, `outro`) tu Gemini.
-- QC AI danh gia chat luong noi dung truoc khi qua metadata.
-- Reviewer duyet qua Telegram voi 2 stage:
-  1. Stage Review: tiep tuc / dung / doi noi dung review.
-  2. Stage Metadata: tiep tuc / dung / doi metadata.
-- Metadata duoc tao 1 request/lần va tra du bo:
-  - `title`, `caption`, `thumbnail_text`, `hashtags`, `youtube_description_long`.
+- Master prompt tra kem metadata trong cung response, workflow boc tach metadata rieng:
+  - `title`, `caption`, `thumbnail_text`, `hashtags`.
+- Reviewer Telegram chi con 1 gate:
+  - `Tao Media` / `Dung`.
+- QC AI chay tach rieng, khong block gate `Tao Media`.
 
 ## Topology
 1. `book-review.workflow.json` (main):
@@ -25,16 +24,15 @@
    - Output modes: `inline | drive_export`
 
 ## Reviewer Orchestration
-- Gui preview review + diem QC len Telegram.
-- Hien inline buttons: `Tiếp tục | Dừng | Đổi`.
-- Dong thoi chap nhan chat command:
-  - `tiep` / `continue`
-  - `dung` / `stop`
-  - `doi <yeu_cau_chinh_sua>`
-- Neu reviewer chon `doi`, worker goi AI de sua lai review theo instruction va QC lai.
-- Khi reviewer `tiep` o stage review, node moi tao metadata.
-- Stage metadata cung co `Tiếp tục | Dừng | Đổi`; `doi` se goi AI tao lai full bundle metadata.
-- Neu reviewer tiep tuc den final success (`metadata_continue`/`auto_continue_metadata`), main moi chay media branch va merge ket qua.
+- Sau lenh `book-review ...`, workflow tao session + persist ngay review/metadata len Drive.
+- Telegram gui message `[REVIEW READY]` kem link:
+  - review file
+  - metadata file
+  - session folder
+  - session sheet (neu co)
+- Hien inline buttons: `Tao Media | Dung` (callback `brv:media:c|s:<token>`).
+- Neu reviewer bam `Tao Media` (`media_continue`), main moi chay media branch va merge ket qua.
+- QC duoc gui message `[QC REVIEW]` rieng, khong con inline action tiep tuc.
 
 ## Output chinh
 - `full_review`

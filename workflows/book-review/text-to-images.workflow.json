@@ -67,7 +67,8 @@
           ]
         },
         "options": {}
-      }
+      },
+      "webhookId": "text-to-images-form-trigger-webhook"
     },
     {
       "id": "3",
