@@ -257,7 +257,12 @@ Book review chat pipeline:
 - Media branch node-first (chi chay cho `media_continue`/`auto_continue_media`):
   - `Process Media Assets (chunk+gate)` -> `Generate Image Assets (Worker)` + `Generate TTS Assets (Worker)` (parallel subworkflow) -> `Merge Media Results` -> `Finalize Media Assets`.
   - Chunk media duoc merge deterministic theo `chunk_key`; output tong hop vao `media_assets` + `media_pipeline_status` + `media_stats`.
-  - Mac dinh runtime media: `image_timeout_ms=900000`, `tts_timeout_ms=900000`, `image_parallelism=2`, `tts_parallelism=2` (clamp `1..5`).
+  - Rule chunk media (ap dung cho ca TTS va image):
+    - Neu section la `part_XX` va co title (`<<<SECTION|part_XX|...>>>`), title duoc tao thanh chunk dau tien cua part.
+    - `intro/outro` khong tao chunk title rieng.
+    - Noi dung trong `**...**` duoc tach thanh 1 chunk rieng.
+    - Noi dung thuong duoc chunk thong minh theo cau, gioi han toi da `256` ky tu/chunk (giu ranh gioi ket thuc cau, uu tien giu dung dau nhay dong/mo).
+  - Mac dinh runtime media: `image_timeout_ms=900000`, `tts_timeout_ms=900000`, `image_parallelism=2`, `tts_parallelism=2` (batch song song clamp `1..20`).
 - Master prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-master-prompt.txt` (placeholder `{{USER_INPUT}}`)
 - Metadata prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-metadata-prompt.txt`
 - QC prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-qc-prompt.txt`

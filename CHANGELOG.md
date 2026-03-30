@@ -2,6 +2,21 @@
 
 Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automation scripts).
 
+## 2026-03-30
+- Cap nhat media chunking cho `Book Review` + subworkflow `TTS` + `Text To Images`:
+  - Ho tro parse SECTION marker linh hoat (`intro/outro` khong bat buoc title, `part_XX` co title).
+  - Them chunk title rieng cho moi `part_XX` (title thanh chunk dau tien); `intro/outro` khong tao title chunk.
+  - Noi dung trong `**...**` duoc tach thanh chunk doc lap.
+  - Noi dung thuong doi sang chunk thong minh theo cau voi gioi han `256` ky tu/chunk (uu tien giu cau va dau nhay dong/mo trong cung chunk).
+- Bat `parallelism` thuc su cho media subworkflow:
+  - `Loop Over TTS Chunks`: `batchSize` doc tu `tts_parallelism` (mac dinh `2`).
+  - `Loop Over Image Chunks`: `batchSize` doc tu `image_parallelism` (mac dinh `2`).
+- Cap nhat prompt contract:
+  - Fix typo format marker trong `book-review-master-prompt.txt` (`part_02` dong vi du du `>>>`).
+- Verify:
+  - Re-import 3 workflow thanh cong (`Text To Images`, `TTS`, `Book Review`).
+  - Checklist automation pass `9/9`.
+
 ## Historical Entries Migrated from README Update Log (deduped)
 - 2026-03-24: Khoi tao README living doc + bo script bootstrap/verify/full-mode + plan.md. Ly do: trien khai setup n8n local + MCP + skills tu dau.
 - 2026-03-25: Them CLIProxyAPI OAuth stack (Gemini + Codex), script setup A-Z + workflow demo Gemini + import script. Ly do: dung auth flow thay provider API key va tao demo workflow su dung Gemini.

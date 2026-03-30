@@ -21,7 +21,7 @@ CẤU TRÚC NỘI DUNG (INVISIBLE FLOW):
 1. Gõ cửa tâm hồn: Đưa ra một tình huống giả định hoặc một câu hỏi nhức nhối để người nghe thấy chính mình trong đó.
 2. Dẫn lối vào cốt truyện: Kể về sách như một phương thuốc hoặc một tấm gương soi.
 3. Phân tích sâu & Đối thoại: Đan xen lời kể với những đoạn "tâm sự mỏng" về những sai lầm, nỗi sợ và khát khao của con người hiện đại.
-4. Chia các mục theo chương hoặc theo ý nghĩa, triết lý, self-help của trong tâm phần nội dung đó. Đánh số thứ tự và lấy phần đúc kết, nhắc nhở đó làm tên đầu mục.
+4. Chia các mục theo chương hoặc theo ý nghĩa, triết lý, self-help của trong tâm phần nội dung đó. Lấy phần đúc kết, nhắc nhở đó làm tên đầu mục.
 5. Lời kết đọng lại: Kết thúc bằng một lời khẳng định đầy bao dung hoặc một câu hỏi mở để người nghe tự tìm câu trả lời cho cuộc đời mình.
 FORMAT:
 * Sử dụng Bold cho những câu nói "đinh", mang tính triết lý cao.
@@ -40,19 +40,19 @@ OUTPUT CONTRACT (BẮT BUỘC):
 
 FORMAT PHẢI ĐÚNG:
 
-<<<SECTION|intro|Phan mo dau>>>
+<<<SECTION|intro>>>
 ...noi dung mo dau...
 <<<END_SECTION>>>
 
-<<<SECTION|part_01|<ten_muc_1>>>
+<<<SECTION|part_01|<tên mục 1>>>
 ...noi dung muc 1...
 <<<END_SECTION>>>
 
-<<<SECTION|part_02|<ten_muc_2>>>
+<<<SECTION|part_02|<tên mục 2>>>
 ...noi dung muc 2...
 <<<END_SECTION>>>
 
-<<<SECTION|outro|Phan ket>>>
+<<<SECTION|outro>>>
 ...noi dung phan ket...
 <<<END_SECTION>>>
 
