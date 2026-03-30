@@ -15,7 +15,8 @@ declare -a CANDIDATE_EXEC_IDS=()
 TEXT_TO_IMAGES_WORKFLOW_TEMPLATE="$ROOT_DIR/workflows/book-review/text-to-images.workflow.json"
 TTS_WORKFLOW_TEMPLATE="$ROOT_DIR/workflows/book-review/tts.workflow.json"
 WORKFLOW_TEMPLATE="$ROOT_DIR/workflows/book-review/book-review.workflow.json"
-MASTER_PROMPT_TEMPLATE="$ROOT_DIR/workflows/book-review/prompts/book-review-master-prompt.txt"
+SCENE_OUTLINE_PROMPT_TEMPLATE="$ROOT_DIR/workflows/book-review/prompts/book-review-scene-outline-prompt.txt"
+SCENE_EXPAND_PROMPT_TEMPLATE="$ROOT_DIR/workflows/book-review/prompts/book-review-scene-expand-prompt.txt"
 METADATA_PROMPT_TEMPLATE="$ROOT_DIR/workflows/book-review/prompts/book-review-metadata-prompt.txt"
 QC_PROMPT_TEMPLATE="$ROOT_DIR/workflows/book-review/prompts/book-review-qc-prompt.txt"
 REVIEW_EDIT_PROMPT_TEMPLATE="$ROOT_DIR/workflows/book-review/prompts/book-review-review-edit-prompt.txt"
@@ -34,7 +35,8 @@ fatal() {
 [ -f "$TEXT_TO_IMAGES_WORKFLOW_TEMPLATE" ] || fatal "Missing file: $TEXT_TO_IMAGES_WORKFLOW_TEMPLATE"
 [ -f "$TTS_WORKFLOW_TEMPLATE" ] || fatal "Missing file: $TTS_WORKFLOW_TEMPLATE"
 [ -f "$WORKFLOW_TEMPLATE" ] || fatal "Missing file: $WORKFLOW_TEMPLATE"
-[ -f "$MASTER_PROMPT_TEMPLATE" ] || fatal "Missing file: $MASTER_PROMPT_TEMPLATE"
+[ -f "$SCENE_OUTLINE_PROMPT_TEMPLATE" ] || fatal "Missing file: $SCENE_OUTLINE_PROMPT_TEMPLATE"
+[ -f "$SCENE_EXPAND_PROMPT_TEMPLATE" ] || fatal "Missing file: $SCENE_EXPAND_PROMPT_TEMPLATE"
 [ -f "$METADATA_PROMPT_TEMPLATE" ] || fatal "Missing file: $METADATA_PROMPT_TEMPLATE"
 [ -f "$QC_PROMPT_TEMPLATE" ] || fatal "Missing file: $QC_PROMPT_TEMPLATE"
 [ -f "$REVIEW_EDIT_PROMPT_TEMPLATE" ] || fatal "Missing file: $REVIEW_EDIT_PROMPT_TEMPLATE"
@@ -69,7 +71,8 @@ restore_workflow() {
     "$TEXT_TO_IMAGES_WORKFLOW_TEMPLATE" \
     "$TTS_WORKFLOW_TEMPLATE" \
     "$WORKFLOW_TEMPLATE" \
-    "$MASTER_PROMPT_TEMPLATE" \
+    "$SCENE_OUTLINE_PROMPT_TEMPLATE" \
+    "$SCENE_EXPAND_PROMPT_TEMPLATE" \
     "$METADATA_PROMPT_TEMPLATE" \
     "$QC_PROMPT_TEMPLATE" \
     "$REVIEW_EDIT_PROMPT_TEMPLATE" >/dev/null
@@ -247,7 +250,8 @@ bash "$ROOT_DIR/scripts/workflows/import/import-book-review-workflow.sh" \
   "$TEXT_TO_IMAGES_WORKFLOW_TEMPLATE" \
   "$TTS_WORKFLOW_TEMPLATE" \
   "$PATCHED_TEMPLATE" \
-  "$MASTER_PROMPT_TEMPLATE" \
+  "$SCENE_OUTLINE_PROMPT_TEMPLATE" \
+  "$SCENE_EXPAND_PROMPT_TEMPLATE" \
   "$METADATA_PROMPT_TEMPLATE" \
   "$QC_PROMPT_TEMPLATE" \
   "$REVIEW_EDIT_PROMPT_TEMPLATE" >/dev/null

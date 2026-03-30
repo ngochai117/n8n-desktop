@@ -12,10 +12,13 @@ N8N_API_RETRY_MAX="${N8N_API_RETRY_MAX:-6}"
 N8N_API_RETRY_DELAY_SECONDS="${N8N_API_RETRY_DELAY_SECONDS:-1}"
 SHARED_NOTIFICATION_ROUTER_PATH="${SHARED_NOTIFICATION_ROUTER_PATH:-$ROOT_DIR/workflows/shared/shared-notification-router.workflow.json}"
 TEXT_TO_IMAGES_WORKFLOW_PATH="${TEXT_TO_IMAGES_WORKFLOW_PATH:-$ROOT_DIR/workflows/book-review/text-to-images.workflow.json}"
+TEXT_TO_VIDEOS_WORKFLOW_PATH="${TEXT_TO_VIDEOS_WORKFLOW_PATH:-$ROOT_DIR/workflows/book-review/text-to-videos-veo3.workflow.json}"
 TTS_WORKFLOW_PATH="${TTS_WORKFLOW_PATH:-$ROOT_DIR/workflows/book-review/tts.workflow.json}"
 TEXT_TO_IMAGES_WORKFLOW_ID="${TEXT_TO_IMAGES_WORKFLOW_ID:-}"
+TEXT_TO_VIDEOS_WORKFLOW_ID="${TEXT_TO_VIDEOS_WORKFLOW_ID:-}"
 TTS_WORKFLOW_ID="${TTS_WORKFLOW_ID:-}"
 TEXT_TO_IMAGES_WORKFLOW_NAME_DEFAULT="${TEXT_TO_IMAGES_WORKFLOW_NAME:-Text To Images}"
+TEXT_TO_VIDEOS_WORKFLOW_NAME_DEFAULT="${TEXT_TO_VIDEOS_WORKFLOW_NAME:-Text To Videos VEO3}"
 TTS_WORKFLOW_NAME_DEFAULT="${TTS_WORKFLOW_NAME:-TTS}"
 
 resolve_path() {
@@ -61,6 +64,7 @@ REGISTRY_TEMPLATE="$(normalize_registry_template "$REGISTRY_TEMPLATE_INPUT")"
 REGISTRY_TEMPLATE_ABS="$(resolve_path "$REGISTRY_TEMPLATE_INPUT")"
 SHARED_NOTIFICATION_ROUTER_PATH="$(resolve_path "$SHARED_NOTIFICATION_ROUTER_PATH")"
 TEXT_TO_IMAGES_WORKFLOW_PATH="$(resolve_path "$TEXT_TO_IMAGES_WORKFLOW_PATH")"
+TEXT_TO_VIDEOS_WORKFLOW_PATH="$(resolve_path "$TEXT_TO_VIDEOS_WORKFLOW_PATH")"
 TTS_WORKFLOW_PATH="$(resolve_path "$TTS_WORKFLOW_PATH")"
 
 [ -f "$N8N_ENV_FILE" ] || { echo "Missing file: $N8N_ENV_FILE" >&2; exit 1; }
@@ -98,6 +102,10 @@ FALLBACK_MODEL_DEFAULT="${FALLBACK_MODEL:-cx/gpt-5.2}"
 QC_MODEL_DEFAULT="${QC_MODEL:-$CONTENT_MODEL_DEFAULT}"
 GEMINI_CONTENT_MODEL_DEFAULT="${GEMINI_CONTENT_MODEL:-gemini-3-flash-preview}"
 IMAGE_MODEL_DEFAULT="${IMAGE_MODEL:-nano-banana-pro}"
+VIDEO_MODEL_DEFAULT="${VIDEO_MODEL:-veo3}"
+MEDIA_VISUAL_MODE_DEFAULT="${MEDIA_VISUAL_MODE:-image}"
+VIDEO_CLIP_DURATION_SECONDS_DEFAULT="${VIDEO_CLIP_DURATION_SECONDS:-8}"
+VIDEO_TARGET_BUFFER_SECONDS_DEFAULT="${VIDEO_TARGET_BUFFER_SECONDS:-1}"
 
 if [ "$N8N_WORKFLOW_LIST_LIMIT" -gt 250 ]; then
   echo "N8N_WORKFLOW_LIST_LIMIT must be <= 250 (current: $N8N_WORKFLOW_LIST_LIMIT)" >&2
@@ -207,10 +215,14 @@ workflow_template_has_node_name() {
 
 resolve_media_subworkflow_ids() {
   local needs_text_to_images="false"
+  local needs_text_to_videos="false"
   local needs_tts="false"
 
   if workflow_template_has_set_assignment "text_to_images_workflow_id" || workflow_template_has_node_name "Generate Image Assets (Worker)"; then
     needs_text_to_images="true"
+  fi
+  if workflow_template_has_set_assignment "text_to_videos_workflow_id"; then
+    needs_text_to_videos="true"
   fi
 
   if workflow_template_has_set_assignment "tts_workflow_id" || workflow_template_has_node_name "Generate TTS Assets (Worker)"; then
@@ -221,6 +233,12 @@ resolve_media_subworkflow_ids() {
     TEXT_TO_IMAGES_WORKFLOW_ID="$(find_workflow_id_by_name "$TEXT_TO_IMAGES_WORKFLOW_NAME_DEFAULT")"
     if [ -n "$TEXT_TO_IMAGES_WORKFLOW_ID" ]; then
       log "Resolved Text To Images workflow ID by name '$TEXT_TO_IMAGES_WORKFLOW_NAME_DEFAULT': $TEXT_TO_IMAGES_WORKFLOW_ID"
+    fi
+  fi
+  if [ "$needs_text_to_videos" = "true" ] && [ -z "$TEXT_TO_VIDEOS_WORKFLOW_ID" ]; then
+    TEXT_TO_VIDEOS_WORKFLOW_ID="$(find_workflow_id_by_name "$TEXT_TO_VIDEOS_WORKFLOW_NAME_DEFAULT")"
+    if [ -n "$TEXT_TO_VIDEOS_WORKFLOW_ID" ]; then
+      log "Resolved Text To Videos workflow ID by name '$TEXT_TO_VIDEOS_WORKFLOW_NAME_DEFAULT': $TEXT_TO_VIDEOS_WORKFLOW_ID"
     fi
   fi
 
@@ -234,6 +252,11 @@ resolve_media_subworkflow_ids() {
   if [ "$needs_text_to_images" = "true" ] && [ -z "$TEXT_TO_IMAGES_WORKFLOW_ID" ]; then
     echo "Cannot resolve TEXT_TO_IMAGES_WORKFLOW_ID for workflow '$WORKFLOW_TEMPLATE'." >&2
     echo "Import 'Text To Images' first or set TEXT_TO_IMAGES_WORKFLOW_ID before importing this workflow." >&2
+    exit 1
+  fi
+  if [ "$needs_text_to_videos" = "true" ] && [ -z "$TEXT_TO_VIDEOS_WORKFLOW_ID" ]; then
+    echo "Cannot resolve TEXT_TO_VIDEOS_WORKFLOW_ID for workflow '$WORKFLOW_TEMPLATE'." >&2
+    echo "Import 'Text To Videos VEO3' first or set TEXT_TO_VIDEOS_WORKFLOW_ID before importing this workflow." >&2
     exit 1
   fi
 
@@ -453,8 +476,10 @@ payload="$(jq \
   --arg gdriveCredentialResolvedName "$gdrive_credential_name" \
   --arg gdriveCredentialType "$gdrive_credential_type" \
   --arg textToImagesWorkflowPath "$TEXT_TO_IMAGES_WORKFLOW_PATH" \
+  --arg textToVideosWorkflowPath "$TEXT_TO_VIDEOS_WORKFLOW_PATH" \
   --arg ttsWorkflowPath "$TTS_WORKFLOW_PATH" \
   --arg textToImagesWorkflowId "$TEXT_TO_IMAGES_WORKFLOW_ID" \
+  --arg textToVideosWorkflowId "$TEXT_TO_VIDEOS_WORKFLOW_ID" \
   --arg ttsWorkflowId "$TTS_WORKFLOW_ID" \
   --arg telegramCredentialId "$telegram_credential_id" \
   --arg telegramCredentialName "$TELEGRAM_CREDENTIAL_NAME_DEFAULT" \
@@ -463,6 +488,10 @@ payload="$(jq \
   --arg qcModel "$QC_MODEL_DEFAULT" \
   --arg geminiContentModel "$GEMINI_CONTENT_MODEL_DEFAULT" \
   --arg imageModelExpr "={{ \$json.image_model || \"$IMAGE_MODEL_DEFAULT\" }}" \
+  --arg videoModel "$VIDEO_MODEL_DEFAULT" \
+  --arg mediaVisualMode "$MEDIA_VISUAL_MODE_DEFAULT" \
+  --argjson videoClipDuration "$VIDEO_CLIP_DURATION_SECONDS_DEFAULT" \
+  --argjson videoTargetBuffer "$VIDEO_TARGET_BUFFER_SECONDS_DEFAULT" \
   --arg qcModelExpr "={{ \$json.qc_model || \"$QC_MODEL_DEFAULT\" }}" \
   '
   (.name | tostring | test("gemini"; "i")) as $isGeminiWorkflow
@@ -470,6 +499,10 @@ payload="$(jq \
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="fallback_model") | .value) = $fallbackModel
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="qc_model") | .value) = $qcModel
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="image_model") | .value) = $imageModelExpr
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="video_model") | .value) = $videoModel
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="media_visual_mode") | .value) = $mediaVisualMode
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="video_clip_duration_seconds") | .value) = $videoClipDuration
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="video_target_buffer_seconds") | .value) = $videoTargetBuffer
   | (.nodes[]? | select(.name=="Set Config (Worker)") | .parameters.assignments.assignments[]? | select(.name=="qc_model") | .value) = $qcModelExpr
   | (.nodes[] | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[] | select(.name=="proxy_base_url") | .value) = $base
   | (.nodes[] | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[] | select(.name=="proxy_api_key") | .value) = $key
@@ -486,9 +519,15 @@ payload="$(jq \
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="gdrive_root_folder_id") | .value) = $gdriveRootFolderId
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="gdrive_credential_name") | .value) = $gdriveCredentialName
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="text_to_images_workflow_path") | .value) = $textToImagesWorkflowPath
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="text_to_videos_workflow_path") | .value) = $textToVideosWorkflowPath
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="tts_workflow_path") | .value) = $ttsWorkflowPath
   | if $textToImagesWorkflowId != "" then
       (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="text_to_images_workflow_id") | .value) = $textToImagesWorkflowId
+    else
+      .
+    end
+  | if $textToVideosWorkflowId != "" then
+      (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="text_to_videos_workflow_id") | .value) = $textToVideosWorkflowId
     else
       .
     end
@@ -510,8 +549,8 @@ payload="$(jq \
       (.nodes[]? | select(.name=="Generate Image Assets (Worker)") | .parameters.source) = "database"
       | (.nodes[]? | select(.name=="Generate Image Assets (Worker)") | .parameters.workflowId) = {
           "__rl": true,
-          "mode": "list",
-          "value": $textToImagesWorkflowId
+          "mode": "id",
+          "value": "={{ (() => { const mode = String($json.media_visual_mode || 'image').toLowerCase(); if (mode === 'video') { return $json.text_to_videos_workflow_id || '__TEXT_TO_VIDEOS_WORKFLOW_ID__'; } return $json.text_to_images_workflow_id || '__TEXT_TO_IMAGES_WORKFLOW_ID__'; })() }}"
         }
       | (.nodes[]? | select(.name=="Generate Image Assets (Worker)") | .parameters) |= del(.workflowPath)
     else

@@ -1,0 +1,41 @@
+PROMPT SCENE OUTLINE: THE CONTENT ARCHITECT (V4)
+
+ROLE:
+- Bạn là kiến trúc sư xây dựng khung cảnh cho video review sách dài.
+
+TASK:
+- Thiết kế dàn ý cho video 16:9 với tổng thời lượng 15-20 phút.
+
+STYLE KERNEL (INJECTED FROM MASTER):
+__BOOK_REVIEW_STYLE_KERNEL__
+
+HARD CONSTRAINTS:
+- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.
+- scene_count là số nguyên từ 8 đến 14. Nếu không chắc, dùng 10.
+- Cảnh đầu (order=1) bắt buộc scene_role="hook".
+- Cảnh cuối bắt buộc scene_role="outro".
+- Các cảnh cốt lõi phải dày dặn, không viết cảnh siêu nhỏ.
+- Chọn 1 góc nhìn phân tích chính và 1 góc nhìn hỗ trợ (không phân mảng quá nhiều).
+- Mục tiêu từng cảnh phải có ý nghĩa sâu sắc, không chỉ lặp lại nội dung chương sách.
+- Chọn rõ `primary_lens` và `secondary_lens`, không để trống.
+
+LANGUAGE:
+- Tiếng Việt cho các giá trị nội dung (key JSON giữ tiếng Anh theo schema).
+
+REQUIRED OUTPUT SCHEMA (EXACT KEYS):
+{
+  "angle": "string",
+  "target_audience": "string",
+  "primary_lens": "string",
+  "secondary_lens": "string",
+  "scene_count": 10,
+  "estimated_total_duration_sec": 1020,
+  "scenes": [
+    {
+      "order": 1,
+      "scene_role": "hook|core|outro",
+      "scene_goal": "string",
+      "key_points": ["string"]
+    }
+  ]
+}

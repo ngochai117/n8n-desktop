@@ -3,6 +3,74 @@
 Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automation scripts).
 
 ## 2026-03-30
+- Prompt maintainability refactor (master-style single source):
+  - `book-review-master-prompt.txt` doi sang format co marker `STYLE KERNEL START ... STYLE KERNEL END`.
+  - Prompt con (`scene-outline`, `scene-expand`, `metadata`, `qc`, `review-edit`) giu role/task rieng va dung placeholder `__BOOK_REVIEW_STYLE_KERNEL__`.
+  - `import-book-review-workflow.sh` them buoc render prompt: extract style kernel tu master va inject vao prompt con truoc khi import workflow.
+  - Cap nhat docs `README.md`, `scripts/README.md` ve co che style kernel.
+
+- Hardening metadata generation + style alignment (Book Review):
+  - `Handle Reviewer Event`:
+    - Them unwrap schema metadata (`metadata_output`, `output.metadata`, `data.metadata`, ...) thay vi chi doc top-level keys.
+    - Khong con silently fill fallback generic khi model tra sai shape; neu thieu key se set `metadata_error` ro nguyen nhan (`missing required keys/fields`).
+    - Fallback metadata doi sang dynamic theo `user_input` (title/caption/hashtags linh hoat hon), bo hardcoded cum tu generic "Góc nhìn đáng suy ngẫm".
+  - Prompt updates:
+    - `book-review-scene-outline-prompt.txt`: bo sung style kernel (hook/bridge/no-meta/lens) de pass outline bám giọng review.
+    - `book-review-scene-expand-prompt.txt`: bo sung style kernel + adaptive lens theo the loai de narration it kho khan.
+    - `book-review-metadata-prompt.txt`: siết anti-generic phrases va buoc metadata ke thua giọng nội dung review.
+  - Verify:
+    - `bash scripts/workflows/tests/test-book-review-checklist.sh` -> PASS `9/9`.
+    - `bash scripts/workflows/import/import-book-review-workflow.sh` -> update thanh cong `Text To Images`, `Text To Videos VEO3`, `TTS`, `Book Review`.
+
+- Them visual mode dual-path cho media pipeline (giu `text-to-images`, bo sung `text-to-videos-veo3`):
+  - Tao workflow moi: `workflows/book-review/text-to-videos-veo3.workflow.json` (name: `Text To Videos VEO3`).
+  - Main workflow:
+    - Them config `media_visual_mode` (`image|video`, mac dinh `image`), `text_to_videos_workflow_id`, `video_model`, `video_clip_duration_seconds`, `video_target_buffer_seconds`.
+    - `Generate Image Assets (Worker)` doi sang dynamic subworkflow routing theo `media_visual_mode` (image -> `Text To Images`, video -> `Text To Videos VEO3`).
+    - Media orchestration doi sang `TTS -> visual` de visual path co the nhan `duration_seconds` thuc te tu TTS.
+    - `Finalize Media Assets (Worker)` + `Prepare Session Assets Package (Worker)` doi sang merge visual linh hoat (`video_*` + `image_*` aliases), render payload co `visual_url` + `video_url` + `image_url`.
+    - Session context/package bo sung alias `session_video_folder_*` ben canh `session_image_folder_*`.
+  - `Text To Videos VEO3`:
+    - Add config `video_clip_duration_seconds`, `video_target_buffer_seconds`, `video_mock_mode`.
+    - `Create Image Job` payload bo sung strategy contract:
+      - `generation_strategy=generate_until_enough`
+      - `target_duration_seconds`, `shot_count_initial`, `shot_prompts_en[]`, `duration_buffer_seconds`, `clip_duration_average_seconds`
+      - `concat_and_trim=true`, `trim_to_target_duration=true`, `filler_policy=hold_last_frame`
+    - Normalize/collect output chuan hoa `video_url/video_status/video_drive_*` va giu alias `image_*` de tuong thich nguoc.
+  - Import/sync tooling:
+    - `import-book-review-workflow.sh` import them `text-to-videos-veo3` truoc `tts`/`book-review`.
+    - `import-workflow.sh` + `sync-workflows-from-n8n.sh` bo sung placeholder/config `text_to_videos_workflow_id` va dynamic workflowId expression cho node visual branch.
+    - Them env example: `MEDIA_VISUAL_MODE`, `VIDEO_MODEL`, `VIDEO_CLIP_DURATION_SECONDS`, `VIDEO_TARGET_BUFFER_SECONDS`.
+  - Verify:
+    - `jq empty` pass cho workflow JSON chinh.
+    - JS code-node syntax check pass.
+    - `bash scripts/workflows/tests/test-book-review-checklist.sh` -> PASS `9/9`.
+
+- Book Review V2 scene-manifest pipeline (thay SECTION canonical):
+  - Main workflow:
+    - `Generate Full Review` doi sang 2-pass (`scene-outline` -> `scene-expand`) va output `review_manifest` + `review_readable`.
+    - `Parse Review Sections` doi sang normalize manifest/scene, tao compatibility fields + readable draft.
+    - `Process Media Assets (Worker)` tao media items theo scene (`scene_id/order`) thay vi chunk `partName:index`.
+    - `Prepare Image/TTS Workflow Input (Worker)` truyen contract scene bat buoc (`scene_id`, `scene_title`, `narration_text`, `image_prompt_en`, ...).
+    - `Finalize Media Assets (Worker)` merge ket qua theo `scene_id`, giu partial-failure path.
+    - `Prepare Session Assets Package (Worker)` doi sheet schema theo scene; file Drive doi thanh `review_readable.txt` + `review_manifest.json`.
+    - `Notify Session Drive Links (Worker)` doi label notify sang readable/manifest links.
+    - `Persist Session Asset Context (Worker)` + `Handle Reviewer Event` giu `review_manifest/review_readable` xuyen session callback.
+  - Subworkflow media:
+    - `Text To Images`: `Normalize Inputs` + `Build Chunks From Drive File` + `Collect Image Results` doi sang scene contract.
+    - `Create Image Job` doi prompt source sang `$json.image_prompt_en` tren main path.
+    - `TTS`: `Normalize Inputs` + `Build Chunks From Drive File` doi sang scene contract.
+    - `Finalize TTS Results` emit `scene_id`, `voice_url`, `duration_seconds`; `Prepare Uploaded Voice Item` giu `voice_url`.
+  - Config/import:
+    - Them prompt placeholders `scene_outline_prompt_template`, `scene_expand_prompt_template` vao `Set Config (Main/Worker)`.
+    - Bo sung render config placeholders (`render_*`) cho future render contract.
+  - Test/docs:
+    - Viet lai `scripts/workflows/tests/test-book-review-checklist.mjs` theo scene-manifest contract (9 tests).
+    - Cap nhat `docs/book-review-workflow.md` va `README.md` (prompt files, import args, contract V2).
+  - Verify:
+    - `bash scripts/workflows/tests/test-book-review-checklist.sh` -> PASS `9/9`.
+    - `bash scripts/workflows/import/import-book-review-workflow.sh` -> re-import thanh cong `Text To Images`, `TTS`, `Book Review`.
+
 - Cap nhat media chunking cho `Book Review` + subworkflow `TTS` + `Text To Images`:
   - Ho tro parse SECTION marker linh hoat (`intro/outro` khong bat buoc title, `part_XX` co title).
   - Them chunk title rieng cho moi `part_XX` (title thanh chunk dau tien); `intro/outro` khong tao title chunk.

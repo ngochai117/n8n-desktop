@@ -100,6 +100,7 @@ sanitize_and_shape_workflow() {
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "gdrive_root_folder_id") | .value) = "__GDRIVE_ROOT_FOLDER_ID__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "gdrive_credential_name") | .value) = "__GDRIVE_CREDENTIAL_NAME__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "text_to_images_workflow_id") | .value) = "__TEXT_TO_IMAGES_WORKFLOW_ID__"
+    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "text_to_videos_workflow_id") | .value) = "__TEXT_TO_VIDEOS_WORKFLOW_ID__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "tts_workflow_id") | .value) = "__TTS_WORKFLOW_ID__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "shared_notification_workflow_path") | .value) = "__SHARED_NOTIFICATION_WORKFLOW_PATH__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "master_prompt_template") | .value) = "__BOOK_REVIEW_MASTER_PROMPT__"
@@ -116,7 +117,7 @@ sanitize_and_shape_workflow() {
     | (.nodes[]? | select(.name == "Generate Image Assets (Worker)") | .parameters.workflowId) = {
         "__rl": true,
         "mode": "id",
-        "value": "={{ $json.text_to_images_workflow_id || \"__TEXT_TO_IMAGES_WORKFLOW_ID__\" }}"
+        "value": "={{ (() => { const mode = String($json.media_visual_mode || 'image').toLowerCase(); if (mode === 'video') { return $json.text_to_videos_workflow_id || \"__TEXT_TO_VIDEOS_WORKFLOW_ID__\"; } return $json.text_to_images_workflow_id || \"__TEXT_TO_IMAGES_WORKFLOW_ID__\"; })() }}"
       }
     | (.nodes[]? | select(.name == "Generate Image Assets (Worker)") | .parameters) |= del(.workflowPath)
     | (.nodes[]? | select(.name == "Generate TTS Assets (Worker)") | .parameters.source) = "database"

@@ -1,61 +1,63 @@
-# Book Review Workflow (Main + Reusable Media)
+# Book Review Workflow V2 (Scene-Based)
 
 ## Muc tieu
-- Tao 1 ban review day du (`intro`, `part_xx`, `outro`) tu Gemini.
-- Master prompt tra kem metadata trong cung response, workflow boc tach metadata rieng:
-  - `title`, `caption`, `thumbnail_text`, `hashtags`.
-- Reviewer Telegram chi con 1 gate:
-  - `Tao Media` / `Dung`.
-- QC AI chay tach rieng, khong block gate `Tao Media`.
+- Chuyen canonical content tu `SECTION` sang `review_manifest.scenes`.
+- Output video target `16:9`, `15-20 phut`, text review dai (`~15k-20k ky tu`) voi so scene gioi han `8-14`.
+- Reviewer gate giu nguyen `Tao Media | Dung`, nhung reviewer xem `review_readable` + link `review_manifest`.
 
 ## Topology
 1. `book-review.workflow.json` (main):
-   - Main generate (`Generate Full Review`, `Parse Review Sections`)
-   - Router (`Telegram Trigger`, `Parse Telegram Event`, `Parse Telegram Start Command`)
-   - Worker (`Handle Reviewer Event`)
-   - Media orchestration (`Process Media Assets (Worker)` -> Execute `Text To Images` + `TTS` -> `Finalize Media Assets (Worker)`)
-2. `text-to-images.workflow.json` (reusable):
-   - `Execute Workflow Trigger` + `Form Trigger`
-   - Input modes: `form_upload | drive_url`
-   - Output modes: `inline | drive_export`
-3. `tts.workflow.json` (reusable):
-   - `Execute Workflow Trigger` + `Form Trigger`
-   - Input modes: `form_upload | drive_url`
-   - Output modes: `inline | drive_export`
+   - Generate 2-pass:
+     - `Generate Full Review`: pass 1 scene outline -> pass 2 scene manifest.
+     - `Parse Review Sections`: normalize `review_manifest` + tao `review_readable`.
+   - Reviewer worker:
+     - `Handle Reviewer Event`
+     - `Send Review QC And Action (Worker)`
+   - Media orchestration:
+     - `Process Media Assets (Worker)`
+     - Execute `TTS` truoc, sau do execute visual workflow theo `media_visual_mode`:
+       - `image` -> `Text To Images`
+       - `video` -> `Text To Videos VEO3`
+     - `Finalize Media Assets (Worker)`
+2. `text-to-images.workflow.json`:
+   - Nhan truc tiep scene items (`scene_id`, `order`, `image_prompt_en`, ...)
+   - Tra ve item theo scene (`image_url`, `image_status`, `image_drive_*`).
+3. `text-to-videos-veo3.workflow.json`:
+   - Nhan truc tiep scene items + duration target theo scene.
+   - Contract request da ho tro strategy `generate_until_enough`:
+     - `target_duration_seconds`
+     - `shot_count_initial`
+     - `shot_prompts_en[]`
+     - `duration_buffer_seconds`
+   - Co `mock_mode` de test khi chua co tai khoan Veo3.
+   - Tra ve item theo scene (`video_url`, `video_status`, `video_drive_*`) va giu alias `image_*` de tuong thich nguoc.
+4. `tts.workflow.json`:
+   - Nhan truc tiep scene items (`scene_id`, `order`, `narration_text`, ...)
+   - Tra ve item theo scene (`voice_url`, `tts_status`, `duration_seconds`, `voice_drive_*`).
 
-## Reviewer Orchestration
-- Sau lenh `book-review ...`, workflow tao session + persist ngay review/metadata len Drive.
-- Telegram gui message `[REVIEW READY]` kem link:
-  - review file
-  - metadata file
-  - session folder
-  - session sheet (neu co)
-- Hien inline buttons: `Tao Media | Dung` (callback `brv:media:c|s:<token>`).
-- Neu reviewer bam `Tao Media` (`media_continue`), main moi chay media branch va merge ket qua.
-- QC duoc gui message `[QC REVIEW]` rieng, khong con inline action tiep tuc.
+## Data Contracts
+- Source-of-truth moi: `review_manifest`:
+  - `book { title, author, style_keywords }`
+  - `video { aspect_ratio, target_duration_min_sec, target_duration_max_sec, estimated_total_duration_sec }`
+  - `scenes[] { scene_id, order, scene_title, scene_role, narration_text, image_prompt_en, highlight_quote_vi, estimated_duration_sec, transition }`
+- Reviewer-readable: `review_readable` (text) duoc sinh tu `review_manifest`.
+- Media merge key: `scene_id + order`.
+- Main config ho tro mode:
+  - `media_visual_mode=image` (mac dinh, su dung luong anh)
+  - `media_visual_mode=video` (bat luong `text-to-videos-veo3`)
 
-## Output chinh
-- `full_review`
-- QC fields: `qc_checks`, `qc_issues`, `hook_score`, `clarity_score`, `originality_score`, `practical_value_score`, `risk_level`, `score_warnings`
-- Metadata fields:
-  - `video_title`
-  - `video_caption`
-  - `video_thumbnail_text`
-  - `video_hashtags`
-  - `youtube_description_long`
-- Reviewer fields:
-  - `reviewer_session_token`
-  - `reviewer_decision`
-  - `reviewer_gate_status`
-  - `reviewer_commands`
-- `message`: review + JSON payload tong hop
-- Media fields:
-  - `media_assets` (merge deterministic theo `chunk_key`)
-  - `media_pipeline_status`
-  - `media_stats`
+## Session + Drive
+- Session assets v2:
+  - `review_readable.txt`
+  - `review_manifest.json`
+  - session folder + session sheet (neu bat)
+- Telegram `[REVIEW READY]` gui links:
+  - readable draft
+  - scene manifest
+  - session folder/sheet (neu co)
 
-## Luu y van hanh
-- Flow reviewer khong dung `sendAndWait` webhook.
-- Chi can outbound call den Telegram Bot API (`sendMessage`, callback APIs).
-- Neu Telegram token/chat id thieu, node reviewer se skip va tra ket qua hien co.
-- Workflow media reusable co the chay doc lap khong can full luong `book-review`.
+## Luu y
+- `scene_01` luon la hook; scene cuoi luon la outro.
+- QC co them context `review_manifest` + `review_readable`.
+- Khi dung mode `video`, target duration scene uu tien lay tu `TTS duration_seconds`; neu thieu thi fallback `estimated_duration_sec`.
+- Path render server duoc chuan bi contract payload trong session package; v1 van uu tien persist Drive + media assets.

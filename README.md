@@ -107,6 +107,10 @@ Su dung file `env.proxy.local` (neu chua co, script se tu tao):
 - `GGCHAT_WEBHOOK_URL` (optional; incoming webhook URL cho Google Chat)
 - `IMAGE_API_BASE_URL` (optional; endpoint tao anh cho media branch book-review)
 - `IMAGE_API_KEY` (optional; auth key cho image API)
+- `MEDIA_VISUAL_MODE` (optional; `image` hoac `video`, mac dinh `image`)
+- `VIDEO_MODEL` (optional; mac dinh `veo3` khi dung `text-to-videos-veo3`)
+- `VIDEO_CLIP_DURATION_SECONDS` (optional; mac dinh `8`)
+- `VIDEO_TARGET_BUFFER_SECONDS` (optional; mac dinh `1`)
 - `TTS_API_BASE_URL` (optional; mac dinh `http://127.0.0.1:8001`)
 - `TTS_VOICE_ID` (optional; mac dinh `ngochuyen`)
 - `GDRIVE_ROOT_FOLDER_ID` (optional; root folder Google Drive cho media pipeline)
@@ -191,6 +195,7 @@ Template workflows:
 - `workflows/demo/openai-proxy-demo.workflow.json`
 - `workflows/book-review/book-review.workflow.json`
 - `workflows/book-review/text-to-images.workflow.json`
+- `workflows/book-review/text-to-videos-veo3.workflow.json`
 - `workflows/book-review/tts.workflow.json`
 
 Workflow folder structure:
@@ -198,12 +203,14 @@ Workflow folder structure:
 workflows/
   book-review/
     prompts/
-      book-review-master-prompt.txt
+      book-review-scene-outline-prompt.txt
+      book-review-scene-expand-prompt.txt
       book-review-metadata-prompt.txt
       book-review-qc-prompt.txt
       book-review-review-edit-prompt.txt
     book-review.workflow.json
     text-to-images.workflow.json
+    text-to-videos-veo3.workflow.json
     tts.workflow.json
   demo/
     gemini-proxy-demo.workflow.json
@@ -224,13 +231,21 @@ Pipeline:
 
 Book review chat pipeline:
 - Kien truc tach thanh 3 workflow:
-  - `book-review.workflow.json` (main): generate + parse + router + worker + merge media.
-  - `text-to-images.workflow.json`: workflow reusable tao anh (Form Trigger + Drive URL + Execute Workflow Trigger).
+  - `book-review.workflow.json` (main): scene-outline -> scene-manifest -> reviewer gate -> media orchestration.
+  - `text-to-images.workflow.json`: workflow reusable tao anh.
+  - `text-to-videos-veo3.workflow.json`: workflow reusable tao video theo scene (co mock mode, contract `generate_until_enough`).
   - `tts.workflow.json`: workflow reusable tao giọng doc (Form Trigger + Drive URL + Execute Workflow Trigger).
-- Main flow (`book-review.workflow.json`) goi 2 subworkflow media qua `Execute Workflow`:
-  - `Generate Image Assets (Worker)` -> `Text To Images`
-  - `Generate TTS Assets (Worker)` -> `TTS`
-- Main generate branch tra `message_ack + session_token + reviewer_stage=media_pending` (duoc kick-off tu Telegram command `book-review ...`).
+- Main flow (`book-review.workflow.json`) goi media qua `Execute Workflow` theo mode:
+  - `media_visual_mode=image` -> `Generate Image Assets (Worker)` goi `Text To Images`.
+  - `media_visual_mode=video` -> `Generate Image Assets (Worker)` goi `Text To Videos VEO3`.
+  - `Generate TTS Assets (Worker)` van goi `TTS`.
+- Main generate branch dung 2-pass content:
+  - Pass 1: tao `scene_outline` (scene_count 8-14, scene_01 hook, scene cuoi outro)
+  - Pass 2: mo rong thanh `review_manifest` day du scene contract.
+- Main output song song:
+  - `review_manifest` (JSON source-of-truth)
+  - `review_readable` (ban doc cho reviewer)
+  - persist file Drive: `review_readable.txt` + `review_manifest.json`.
 - Callback data router su dung format ngan <=64 bytes: `brv:media:c:<token>` (Tao Media), `brv:media:s:<token>` (Dung).
 - Khong con nhanh scheduler timeout; router xu ly truc tiep callback/message event.
 - Notify hub cho workflow review sach da chuan hoa theo pattern:
@@ -252,21 +267,25 @@ Book review chat pipeline:
     - `init_review`: tao folder session + subfolder `voice/image`, sau do persist `review file` + `metadata file`.
     - `media_continue`/`auto_continue_media`: xu ly TTS + image, persist media assets va `session sheet`.
   - Neu da co `session_sheet_id`, TTS workflow se update tung dong `assets` ngay khi upload xong moi file voice (realtime row update).
-  - Telegram sau `book-review ...` se gui ngay link Drive cho `review file`, `metadata file`, `session folder` (va `session sheet` neu co).
+  - Telegram sau `book-review ...` se gui ngay link Drive cho `review_readable`, `review_manifest`, `session folder` (va `session sheet` neu co).
   - QC review duoc tach rieng khoi gate reviewer; chi gui block `[QC REVIEW]`, khong co nut action.
 - Media branch node-first (chi chay cho `media_continue`/`auto_continue_media`):
-  - `Process Media Assets (chunk+gate)` -> `Generate Image Assets (Worker)` + `Generate TTS Assets (Worker)` (parallel subworkflow) -> `Merge Media Results` -> `Finalize Media Assets`.
-  - Chunk media duoc merge deterministic theo `chunk_key`; output tong hop vao `media_assets` + `media_pipeline_status` + `media_stats`.
-  - Rule chunk media (ap dung cho ca TTS va image):
-    - Neu section la `part_XX` va co title (`<<<SECTION|part_XX|...>>>`), title duoc tao thanh chunk dau tien cua part.
-    - `intro/outro` khong tao chunk title rieng.
-    - Noi dung trong `**...**` duoc tach thanh 1 chunk rieng.
-    - Noi dung thuong duoc chunk thong minh theo cau, gioi han toi da `256` ky tu/chunk (giu ranh gioi ket thuc cau, uu tien giu dung dau nhay dong/mo).
+  - `Process Media Assets (chunk+gate)` -> `Generate TTS Assets (Worker)` -> `Generate Image Assets (Worker)` -> `Finalize Media Assets`.
+  - `Generate Image Assets (Worker)` chon subworkflow theo `media_visual_mode` (`image|video`).
+  - Asset media merge deterministic theo `scene_id + order` (khong con `partName:index`), output giu ca `image_*` va `video_*` de tuong thich nguoc.
+  - Contract media V2:
+    - image input: `scene_id`, `order`, `scene_title`, `narration_text`, `image_prompt_en`, `highlight_quote_vi`, `drive_output_folder_id`.
+    - tts input: `scene_id`, `order`, `scene_title`, `narration_text`, `image_prompt_en`, `highlight_quote_vi`, `drive_output_folder_id`.
+  - TTS/image fail tung scene khong lam mat ket qua scene khac; finalize van tong hop `media_assets`.
   - Mac dinh runtime media: `image_timeout_ms=900000`, `tts_timeout_ms=900000`, `image_parallelism=2`, `tts_parallelism=2` (batch song song clamp `1..20`).
-- Master prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-master-prompt.txt` (placeholder `{{USER_INPUT}}`)
+- Scene outline prompt: `workflows/book-review/prompts/book-review-scene-outline-prompt.txt`
+- Scene expand prompt: `workflows/book-review/prompts/book-review-scene-expand-prompt.txt`
 - Metadata prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-metadata-prompt.txt`
 - QC prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-qc-prompt.txt`
 - Review-edit prompt duoc tach rieng tai: `workflows/book-review/prompts/book-review-review-edit-prompt.txt`
+- Master style source: `workflows/book-review/prompts/book-review-master-prompt.txt`
+  - Prompt con dung placeholder `__BOOK_REVIEW_STYLE_KERNEL__`.
+  - Import script se inject style tu block `STYLE KERNEL START ... STYLE KERNEL END` trong master prompt.
 - Workflow hop nhat ket thuc moi nhanh bang notify hub: `Build Notify Payload (Worker) -> Notify via Shared Workflow (Main)`; payload worker mac dinh `notify_targets=none` de tranh spam `n8n INFO`.
 
 Quy tac import/update:
@@ -290,7 +309,7 @@ bash scripts/workflows/sync/sync-workflows-from-n8n.sh --name "Demo Gemini via P
 # Apply nhung khong ghi changelog
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply --no-log
 ```
-- Script se sanitize truong nhay cam (`proxy_base_url`, `proxy_api_key`, `n8n_api_url`, `n8n_api_key`, `image_api_key`, `gdrive_root_folder_id`, `gdrive_credential_name`) va workflow placeholders (`Notify via Shared Workflow`, `text_to_images_workflow_id`, `tts_workflow_id`) truoc khi ghi file.
+- Script se sanitize truong nhay cam (`proxy_base_url`, `proxy_api_key`, `n8n_api_url`, `n8n_api_key`, `image_api_key`, `gdrive_root_folder_id`, `gdrive_credential_name`) va workflow placeholders (`Notify via Shared Workflow`, `text_to_images_workflow_id`, `text_to_videos_workflow_id`, `tts_workflow_id`) truoc khi ghi file.
 - `workflow-registry.json` nen luu `template` dang duong dan tuong doi (vi du: `workflows/book-review/book-review.workflow.json`) de tranh vo path khi doi ten folder project.
 - Khi chay `--apply` (mac dinh), script se auto append log vao `CHANGELOG.md`.
 
@@ -301,13 +320,17 @@ bash scripts/workflows/import/import-shared-notification-router-workflow.sh
 bash scripts/workflows/import/import-gemini-demo-workflow.sh
 bash scripts/workflows/import/import-openai-demo-workflow.sh
 bash scripts/workflows/import/import-book-review-workflow.sh
+# optional override template text-to-videos:
+# TEXT_TO_VIDEOS_WORKFLOW_TEMPLATE=workflows/book-review/text-to-videos-veo3.workflow.json \
+#   bash scripts/workflows/import/import-book-review-workflow.sh
 # or custom prompt files:
 bash scripts/workflows/import/import-book-review-workflow.sh \
   env.n8n.local env.proxy.local \
   workflows/book-review/text-to-images.workflow.json \
   workflows/book-review/tts.workflow.json \
   workflows/book-review/book-review.workflow.json \
-  workflows/book-review/prompts/book-review-master-prompt.txt \
+  workflows/book-review/prompts/book-review-scene-outline-prompt.txt \
+  workflows/book-review/prompts/book-review-scene-expand-prompt.txt \
   workflows/book-review/prompts/book-review-metadata-prompt.txt \
   workflows/book-review/prompts/book-review-qc-prompt.txt \
   workflows/book-review/prompts/book-review-review-edit-prompt.txt
@@ -317,7 +340,8 @@ Automation checklist test (book review workflow):
 ```bash
 bash scripts/workflows/tests/test-book-review-checklist.sh
 ```
-- Chay checklist topology + contract cho 3 workflow (`book-review`, `text-to-images`, `tts`), bao gom regression generate/parse + media merge.
+- Chay checklist topology + contract cho workflow chinh (`book-review`) va subworkflow media (`text-to-images`, `tts`), bao gom regression generate/parse + media merge.
+- Neu bat mode video, import them `text-to-videos-veo3.workflow.json` de kiem tra contract video path.
 
 E2E nhanh cho book review (khong can tu tim webhook path):
 ```bash
@@ -390,9 +414,11 @@ bash scripts/workflows/tests/check-book-review-debug-table.sh env.n8n.local book
 - `workflows/demo/openai-proxy-demo.workflow.json`: workflow OpenAI demo template
 - `workflows/book-review/book-review.workflow.json`: workflow book-review main (generate + router + worker + media merge)
 - `workflows/book-review/text-to-images.workflow.json`: workflow reusable tao nhieu anh tu text chunks
+- `workflows/book-review/text-to-videos-veo3.workflow.json`: workflow reusable tao video theo scene (mock + VEO3 contract)
 - `workflows/book-review/tts.workflow.json`: workflow reusable tao TTS tu text chunks
 - `workflows/shared/shared-notification-router.workflow.json`: workflow notify router da kenh (telegram/ggchat)
-- `workflows/book-review/prompts/book-review-master-prompt.txt`: master prompt nguon de edit de dang
+- `workflows/book-review/prompts/book-review-scene-outline-prompt.txt`: prompt pass 1 xac dinh angle + scene_count + muc tieu tung scene
+- `workflows/book-review/prompts/book-review-scene-expand-prompt.txt`: prompt pass 2 sinh `review_manifest` day du theo scene
 - `workflows/book-review/prompts/book-review-metadata-prompt.txt`: metadata prompt nguon de edit title/caption/thumbnail/hashtags
 - `workflows/book-review/prompts/book-review-qc-prompt.txt`: prompt QC danh gia noi dung/diem/rui ro
 - `workflows/book-review/prompts/book-review-review-edit-prompt.txt`: prompt revise ban review theo instruction reviewer

@@ -1,0 +1,54 @@
+PROMPT SCENE EXPAND: THE SCRIPTWRITER (V4)
+
+ROLE:
+- Bạn là người viết kịch bản kể chuyện cho video review sách dài.
+
+TASK:
+- Mở rộng dàn ý thành một review_manifest sẵn sàng sản xuất.
+
+STYLE KERNEL (INJECTED FROM MASTER):
+__BOOK_REVIEW_STYLE_KERNEL__
+
+HARD CONSTRAINTS:
+- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.
+- Giữ đúng số lượng cảnh từ dàn ý.
+- Tổng narration_text: 15.000 - 20.000 ký tự tiếng Việt.
+- Hook/Outro: 45-75 giây mỗi cảnh.
+- Core scenes: 75-120 giây mỗi cảnh, tối thiểu 45 giây.
+- scene_01 là hook, scene cuối là outro.
+- image_prompt_en: viết bằng tiếng Anh và không để trống.
+- highlight_quote_vi: tùy chọn, không có thì để chuỗi rỗng.
+- transition mặc định "cut".
+
+ANTI-RIGID CONSTRAINTS:
+- Tuyệt đối không dùng các mẫu câu lặp đi lặp lại giữa các cảnh.
+- Không biến narration thành danh sách liệt kê tóm tắt.
+- Giữ sự cân bằng giữa chiều sâu cảm xúc và tính ứng dụng thực tế.
+
+REQUIRED OUTPUT SCHEMA (EXACT KEYS):
+{
+  "book": {
+    "title": "string",
+    "author": "string",
+    "style_keywords": ["string"]
+  },
+  "video": {
+    "aspect_ratio": "16:9",
+    "target_duration_min_sec": 900,
+    "target_duration_max_sec": 1200,
+    "estimated_total_duration_sec": 0
+  },
+  "scenes": [
+    {
+      "scene_id": "scene_01",
+      "order": 1,
+      "scene_title": "string",
+      "scene_role": "hook|core|outro",
+      "narration_text": "string",
+      "image_prompt_en": "string",
+      "highlight_quote_vi": "string",
+      "estimated_duration_sec": 0,
+      "transition": "cut"
+    }
+  ]
+}

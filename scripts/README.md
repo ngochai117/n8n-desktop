@@ -22,7 +22,7 @@ Muc tieu: tach script theo domain de de quan ly khi so luong workflow tang.
   - `import-gemini-demo-workflow.sh`: wrapper import workflow Gemini demo
   - `import-shared-notification-router-workflow.sh`: wrapper import workflow notify router da kenh dung chung
   - `import-openai-demo-workflow.sh`: wrapper import workflow OpenAI demo
-  - `import-book-review-workflow.sh`: wrapper import 3 workflow (`text-to-images` -> `tts` -> `book-review`) + inject prompt templates cho `book-review`
+  - `import-book-review-workflow.sh`: wrapper import 4 workflow (`text-to-images` -> `text-to-videos-veo3` -> `tts` -> `book-review`) + inject prompt templates cho `book-review` (render style kernel tu master prompt vao placeholder `__BOOK_REVIEW_STYLE_KERNEL__`)
 
 - `scripts/workflows/sync/`
   - `sync-workflows-from-n8n.sh`: sync workflow state tu n8n UI ve file JSON template
@@ -57,7 +57,8 @@ bash scripts/workflows/import/import-book-review-workflow.sh \
   workflows/book-review/text-to-images.workflow.json \
   workflows/book-review/tts.workflow.json \
   workflows/book-review/book-review.workflow.json \
-  workflows/book-review/prompts/book-review-master-prompt.txt \
+  workflows/book-review/prompts/book-review-scene-outline-prompt.txt \
+  workflows/book-review/prompts/book-review-scene-expand-prompt.txt \
   workflows/book-review/prompts/book-review-metadata-prompt.txt \
   workflows/book-review/prompts/book-review-qc-prompt.txt \
   workflows/book-review/prompts/book-review-review-edit-prompt.txt

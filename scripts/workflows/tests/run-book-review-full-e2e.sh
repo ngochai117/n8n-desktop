@@ -8,11 +8,14 @@ MESSAGE_INPUT="${3:-Sách Đắc Nhân Tâm của Dale Carnegie}"
 TIMEOUT_SECONDS="${BOOK_REVIEW_E2E_TIMEOUT_SECONDS:-35}"
 EXECUTION_LOOKUP_TIMEOUT_SECONDS="${BOOK_REVIEW_E2E_EXECUTION_LOOKUP_TIMEOUT_SECONDS:-240}"
 EXECUTION_LIST_LIMIT="${BOOK_REVIEW_E2E_EXECUTION_LIST_LIMIT:-250}"
+START_EXECUTION_TIMEOUT_SECONDS="${BOOK_REVIEW_E2E_START_EXECUTION_TIMEOUT_SECONDS:-600}"
+MEDIA_EXECUTION_TIMEOUT_SECONDS="${BOOK_REVIEW_E2E_MEDIA_EXECUTION_TIMEOUT_SECONDS:-1800}"
 
 TEXT_TO_IMAGES_WORKFLOW_TEMPLATE="$ROOT_DIR/workflows/book-review/text-to-images.workflow.json"
 TTS_WORKFLOW_TEMPLATE="$ROOT_DIR/workflows/book-review/tts.workflow.json"
 WORKFLOW_TEMPLATE="$ROOT_DIR/workflows/book-review/book-review.workflow.json"
-MASTER_PROMPT_TEMPLATE="$ROOT_DIR/workflows/book-review/prompts/book-review-master-prompt.txt"
+SCENE_OUTLINE_PROMPT_TEMPLATE="$ROOT_DIR/workflows/book-review/prompts/book-review-scene-outline-prompt.txt"
+SCENE_EXPAND_PROMPT_TEMPLATE="$ROOT_DIR/workflows/book-review/prompts/book-review-scene-expand-prompt.txt"
 METADATA_PROMPT_TEMPLATE="$ROOT_DIR/workflows/book-review/prompts/book-review-metadata-prompt.txt"
 QC_PROMPT_TEMPLATE="$ROOT_DIR/workflows/book-review/prompts/book-review-qc-prompt.txt"
 REVIEW_EDIT_PROMPT_TEMPLATE="$ROOT_DIR/workflows/book-review/prompts/book-review-review-edit-prompt.txt"
@@ -31,7 +34,8 @@ fatal() {
 [ -f "$TEXT_TO_IMAGES_WORKFLOW_TEMPLATE" ] || fatal "Missing file: $TEXT_TO_IMAGES_WORKFLOW_TEMPLATE"
 [ -f "$TTS_WORKFLOW_TEMPLATE" ] || fatal "Missing file: $TTS_WORKFLOW_TEMPLATE"
 [ -f "$WORKFLOW_TEMPLATE" ] || fatal "Missing file: $WORKFLOW_TEMPLATE"
-[ -f "$MASTER_PROMPT_TEMPLATE" ] || fatal "Missing file: $MASTER_PROMPT_TEMPLATE"
+[ -f "$SCENE_OUTLINE_PROMPT_TEMPLATE" ] || fatal "Missing file: $SCENE_OUTLINE_PROMPT_TEMPLATE"
+[ -f "$SCENE_EXPAND_PROMPT_TEMPLATE" ] || fatal "Missing file: $SCENE_EXPAND_PROMPT_TEMPLATE"
 [ -f "$METADATA_PROMPT_TEMPLATE" ] || fatal "Missing file: $METADATA_PROMPT_TEMPLATE"
 [ -f "$QC_PROMPT_TEMPLATE" ] || fatal "Missing file: $QC_PROMPT_TEMPLATE"
 [ -f "$REVIEW_EDIT_PROMPT_TEMPLATE" ] || fatal "Missing file: $REVIEW_EDIT_PROMPT_TEMPLATE"
@@ -69,7 +73,8 @@ restore_workflow() {
     "$TEXT_TO_IMAGES_WORKFLOW_TEMPLATE" \
     "$TTS_WORKFLOW_TEMPLATE" \
     "$WORKFLOW_TEMPLATE" \
-    "$MASTER_PROMPT_TEMPLATE" \
+    "$SCENE_OUTLINE_PROMPT_TEMPLATE" \
+    "$SCENE_EXPAND_PROMPT_TEMPLATE" \
     "$METADATA_PROMPT_TEMPLATE" \
     "$QC_PROMPT_TEMPLATE" \
     "$REVIEW_EDIT_PROMPT_TEMPLATE" >/dev/null
@@ -124,7 +129,8 @@ bash "$ROOT_DIR/scripts/workflows/import/import-book-review-workflow.sh" \
   "$TEXT_TO_IMAGES_WORKFLOW_TEMPLATE" \
   "$TTS_WORKFLOW_TEMPLATE" \
   "$PATCHED_TEMPLATE" \
-  "$MASTER_PROMPT_TEMPLATE" \
+  "$SCENE_OUTLINE_PROMPT_TEMPLATE" \
+  "$SCENE_EXPAND_PROMPT_TEMPLATE" \
   "$METADATA_PROMPT_TEMPLATE" \
   "$QC_PROMPT_TEMPLATE" \
   "$REVIEW_EDIT_PROMPT_TEMPLATE" >/dev/null
@@ -197,17 +203,27 @@ extract_execution_update_id() {
 resolve_execution_id_by_update_id() {
   local update_id="$1"
   local started_after_epoch="${2:-0}"
+  local lookup_timeout_seconds="${3:-$EXECUTION_LOOKUP_TIMEOUT_SECONDS}"
   local update_id_text
   update_id_text="$(printf '%s' "$update_id")"
   local found_exec=''
-  local deadline=$(( $(date +%s) + EXECUTION_LOOKUP_TIMEOUT_SECONDS ))
+  local fallback_exec=''
+  local last_fallback_exec=''
+  local deadline=$(( $(date +%s) + lookup_timeout_seconds ))
 
   while [ "$(date +%s)" -lt "$deadline" ]; do
-    local exec_json candidate_id uid
-    exec_json="$(curl -sS -H "X-N8N-API-KEY: $N8N_API_KEY" "$N8N_API_URL/api/v1/executions?limit=$EXECUTION_LIST_LIMIT")"
+    local exec_finished_json exec_running_json exec_json candidate_id uid
+    exec_finished_json="$(curl -sS -H "X-N8N-API-KEY: $N8N_API_KEY" "$N8N_API_URL/api/v1/executions?limit=$EXECUTION_LIST_LIMIT")"
+    exec_running_json="$(curl -sS -H "X-N8N-API-KEY: $N8N_API_KEY" "$N8N_API_URL/api/v1/executions?status=running&limit=$EXECUTION_LIST_LIMIT")"
+    exec_json="$(jq -cn --argjson f "$exec_finished_json" --argjson r "$exec_running_json" '{data: (($f.data // []) + ($r.data // []))}')"
 
+    fallback_exec=''
     while IFS= read -r candidate_id; do
       [ -n "$candidate_id" ] || continue
+      if [ -z "$fallback_exec" ]; then
+        fallback_exec="$candidate_id"
+      fi
+
       curl -sS -H "X-N8N-API-KEY: $N8N_API_KEY" \
         "$N8N_API_URL/api/v1/executions/$candidate_id?includeData=true" > "$EXECUTION_JSON"
 
@@ -238,10 +254,53 @@ resolve_execution_id_by_update_id() {
       return 0
     fi
 
+    if [ -n "$fallback_exec" ]; then
+      last_fallback_exec="$fallback_exec"
+    fi
+
     sleep 1
   done
 
+  if [ -n "$last_fallback_exec" ]; then
+    curl -sS -H "X-N8N-API-KEY: $N8N_API_KEY" \
+      "$N8N_API_URL/api/v1/executions/$last_fallback_exec?includeData=true" > "$EXECUTION_JSON"
+    printf '[book-review-full-e2e] %s\n' "Fallback execution mapping for update_id=$update_id_text -> execution_id=$last_fallback_exec" >&2
+    printf '%s\n' "$last_fallback_exec"
+    return 0
+  fi
+
   return 1
+}
+
+wait_for_execution_terminal() {
+  local execution_id="$1"
+  local timeout_seconds="${2:-600}"
+  local label="${3:-execution}"
+  local deadline=$(( $(date +%s) + timeout_seconds ))
+
+  while [ "$(date +%s)" -lt "$deadline" ]; do
+    local status
+    curl -sS -H "X-N8N-API-KEY: $N8N_API_KEY" \
+      "$N8N_API_URL/api/v1/executions/$execution_id?includeData=true" > "$EXECUTION_JSON"
+    status="$(jq -r '.status // empty' "$EXECUTION_JSON")"
+
+    case "$status" in
+      success)
+        return 0
+        ;;
+      error|failed|crashed|canceled|cancelled)
+        fatal "Execution $execution_id ($label) ended with status=$status."
+        ;;
+      running|new|waiting|unknown|"")
+        sleep 3
+        ;;
+      *)
+        sleep 3
+        ;;
+    esac
+  done
+
+  fatal "Execution $execution_id ($label) did not finish within ${timeout_seconds}s."
 }
 
 post_telegram_message_update() {
@@ -348,8 +407,9 @@ log "gdrive_root_folder_id_default=$TEST_GDRIVE_FOLDER_ID"
 START_UPDATE_ID="$BASE_UPDATE_ID"
 START_HTTP_CODE="$(post_telegram_message_update "$START_UPDATE_ID" "book-review $MESSAGE_INPUT" "$EPOCH_NOW")"
 assert_http_success "$START_HTTP_CODE" "Start webhook"
-START_EXEC_ID="$(resolve_execution_id_by_update_id "$START_UPDATE_ID" "$START_EPOCH" || true)"
+START_EXEC_ID="$(resolve_execution_id_by_update_id "$START_UPDATE_ID" "$START_EPOCH" "$EXECUTION_LOOKUP_TIMEOUT_SECONDS" || true)"
 [ -n "$START_EXEC_ID" ] || fatal "Cannot map start update_id=$START_UPDATE_ID to execution."
+wait_for_execution_terminal "$START_EXEC_ID" "$START_EXECUTION_TIMEOUT_SECONDS" 'start execution'
 cp "$EXECUTION_JSON" "$START_EXECUTION_JSON"
 
 assert_worker_event 'init_review'
@@ -359,8 +419,9 @@ SESSION_TOKEN="$(jq -r '((.data // .).resultData.runData["Handle Reviewer Event"
 MEDIA_CONTINUE_UPDATE_ID=$((BASE_UPDATE_ID + 1))
 MEDIA_CONTINUE_HTTP_CODE="$(post_telegram_callback_update "$MEDIA_CONTINUE_UPDATE_ID" "brv:media:c:$SESSION_TOKEN" "$EPOCH_NOW")"
 assert_http_success "$MEDIA_CONTINUE_HTTP_CODE" "Media continue callback"
-MEDIA_CONTINUE_EXEC_ID="$(resolve_execution_id_by_update_id "$MEDIA_CONTINUE_UPDATE_ID" "$START_EPOCH" || true)"
+MEDIA_CONTINUE_EXEC_ID="$(resolve_execution_id_by_update_id "$MEDIA_CONTINUE_UPDATE_ID" "$START_EPOCH" "$MEDIA_EXECUTION_TIMEOUT_SECONDS" || true)"
 [ -n "$MEDIA_CONTINUE_EXEC_ID" ] || fatal "Cannot map media callback update_id=$MEDIA_CONTINUE_UPDATE_ID to execution."
+wait_for_execution_terminal "$MEDIA_CONTINUE_EXEC_ID" "$MEDIA_EXECUTION_TIMEOUT_SECONDS" 'media_continue execution'
 assert_worker_event 'media_continue'
 
 MEDIA_PIPELINE_STATUS="$(jq -r '((((.data // .).resultData.runData["Finalize Media Assets (Worker)"] // []) | map(.data.main[0][0].json.media_pipeline_status // empty) | .[-1]) // empty)' "$EXECUTION_JSON")"
