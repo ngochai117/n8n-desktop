@@ -2,6 +2,12 @@
 
 Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automation scripts).
 
+## 2026-03-31
+- Them wrapper import tong cho toan bo workflow:
+  - Tao script moi `scripts/workflows/import/import-all-workflows.sh`.
+  - Script all importer doi sang co che tu dong quet wrapper `import-*.sh` (bo qua `import-all-workflows.sh` va `import-workflow.sh`), uu tien thu tu `shared-notification-router` -> `gemini-demo` -> `openai-demo` -> `book-review`, sau do chay wrapper moi theo alphabet.
+  - Cap nhat huong dan lenh + naming convention trong `README.md` va `scripts/README.md`.
+
 ## 2026-03-30
 - Prompt maintainability refactor (master-style single source):
   - `book-review-master-prompt.txt` doi sang format co marker `STYLE KERNEL START ... STYLE KERNEL END`.

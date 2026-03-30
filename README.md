@@ -316,6 +316,7 @@ bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply --no-log
 Import thu cong neu can:
 ```bash
 bash scripts/workflows/import/import-workflow.sh
+bash scripts/workflows/import/import-all-workflows.sh
 bash scripts/workflows/import/import-shared-notification-router-workflow.sh
 bash scripts/workflows/import/import-gemini-demo-workflow.sh
 bash scripts/workflows/import/import-openai-demo-workflow.sh
@@ -335,6 +336,8 @@ bash scripts/workflows/import/import-book-review-workflow.sh \
   workflows/book-review/prompts/book-review-qc-prompt.txt \
   workflows/book-review/prompts/book-review-review-edit-prompt.txt
 ```
+- `import-all-workflows.sh` tu dong quet tat ca wrapper `scripts/workflows/import/import-*.sh` (bo qua `import-all-workflows.sh` va `import-workflow.sh`).
+- De workflow moi tu dong duoc gom vao lenh all, chi can them wrapper theo naming convention `import-*.sh`.
 
 Automation checklist test (book review workflow):
 ```bash
@@ -399,6 +402,7 @@ bash scripts/workflows/tests/check-book-review-debug-table.sh env.n8n.local book
 - `scripts/README.md`: so do phan cap scripts + lenh thong dung
 - `scripts/proxy/setup-proxy.sh`: setup A-Z cho proxy local (runtime hien tai: 9router)
 - `scripts/workflows/import/import-workflow.sh`: core importer upsert workflow template vao n8n
+- `scripts/workflows/import/import-all-workflows.sh`: wrapper import toan bo workflow, tu dong quet `import-*.sh` (bo qua `import-all-workflows.sh` va `import-workflow.sh`), uu tien thu tu `shared` -> `gemini` -> `openai` -> `book-review`, sau do chay cac wrapper moi theo alphabet
 - `scripts/workflows/import/import-gemini-demo-workflow.sh`: wrapper import workflow Gemini demo vao n8n
 - `scripts/workflows/import/import-shared-notification-router-workflow.sh`: import workflow notify router da kenh dung chung
 - `scripts/workflows/import/import-openai-demo-workflow.sh`: import workflow OpenAI demo vao n8n

@@ -3,37 +3,37 @@
     "Demo Gemini via Proxy API": {
       "id": "eKVjShNKmbjf4T8a",
       "template": "workflows/demo/gemini-proxy-demo.workflow.json",
-      "lastSyncedAt": "2026-03-30T09:27:05Z"
+      "lastSyncedAt": "2026-03-30T18:14:56Z"
     },
     "Demo OpenAI via Proxy API": {
       "id": "x62qzfGcBeqrfueM",
       "template": "workflows/demo/openai-proxy-demo.workflow.json",
-      "lastSyncedAt": "2026-03-28T05:01:21Z"
+      "lastSyncedAt": "2026-03-30T18:14:57Z"
     },
     "Shared Notification Router": {
       "id": "2oIMm0rwQPf8j4oC",
       "template": "workflows/shared/shared-notification-router.workflow.json",
-      "lastSyncedAt": "2026-03-28T17:55:12Z"
+      "lastSyncedAt": "2026-03-30T18:14:55Z"
     },
     "Text To Images": {
       "id": "tcF2wcybrmgzFNew",
       "template": "workflows/book-review/text-to-images.workflow.json",
-      "lastSyncedAt": "2026-03-30T10:35:58Z"
+      "lastSyncedAt": "2026-03-30T18:14:58Z"
     },
     "TTS": {
       "id": "2F1jBI12C6NtslBN",
       "template": "workflows/book-review/tts.workflow.json",
-      "lastSyncedAt": "2026-03-30T10:36:00Z"
+      "lastSyncedAt": "2026-03-30T18:15:00Z"
     },
     "Book Review": {
       "id": "4g3N5urBBIuo9HcJ",
       "template": "workflows/book-review/book-review.workflow.json",
-      "lastSyncedAt": "2026-03-30T10:36:04Z"
+      "lastSyncedAt": "2026-03-30T18:15:04Z"
     },
     "Text To Videos VEO3": {
       "id": "nZGQkU7QJ4diuMko",
       "template": "workflows/book-review/text-to-videos-veo3.workflow.json",
-      "lastSyncedAt": "2026-03-30T10:35:59Z"
+      "lastSyncedAt": "2026-03-30T18:14:59Z"
     }
   }
 }

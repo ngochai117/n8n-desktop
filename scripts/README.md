@@ -18,6 +18,7 @@ Muc tieu: tach script theo domain de de quan ly khi so luong workflow tang.
   - `run-cloudflared-tunnel.sh`: chay Cloudflared tunnel qua Docker
 
 - `scripts/workflows/import/`
+  - `import-all-workflows.sh`: wrapper import toan bo workflow, tu dong quet `import-*.sh` (bo qua `import-all-workflows.sh` va `import-workflow.sh`), uu tien thu tu `shared` -> `gemini` -> `openai` -> `book-review`, sau do chay cac wrapper moi theo alphabet
   - `import-workflow.sh`: import/upsert generic workflow template (core importer)
   - `import-gemini-demo-workflow.sh`: wrapper import workflow Gemini demo
   - `import-shared-notification-router-workflow.sh`: wrapper import workflow notify router da kenh dung chung
@@ -47,6 +48,7 @@ bash scripts/run/run-n8n-docker.sh
 bash scripts/run/run-cloudflared-tunnel.sh <your-token>
 
 bash scripts/workflows/import/import-workflow.sh
+bash scripts/workflows/import/import-all-workflows.sh
 bash scripts/workflows/import/import-gemini-demo-workflow.sh
 bash scripts/workflows/import/import-shared-notification-router-workflow.sh
 bash scripts/workflows/import/import-openai-demo-workflow.sh
