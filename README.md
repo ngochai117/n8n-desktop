@@ -195,6 +195,7 @@ Template workflows:
 - `workflows/demo/gemini-proxy-demo.workflow.json`
 - `workflows/demo/openai-proxy-demo.workflow.json`
 - `workflows/book-review/book-review.workflow.json`
+- `workflows/book-review/book-review-ai-agent.workflow.json`
 - `workflows/book-review/text-to-images.workflow.json`
 - `workflows/book-review/text-to-videos-veo3.workflow.json`
 - `workflows/book-review/tts.workflow.json`
@@ -210,6 +211,7 @@ workflows/
       book-review-qc-prompt.txt
       book-review-review-edit-prompt.txt
     book-review.workflow.json
+    book-review-ai-agent.workflow.json
     text-to-images.workflow.json
     text-to-videos-veo3.workflow.json
     tts.workflow.json
@@ -225,7 +227,8 @@ workflows/
 - Input chinh: `rootFolderId`, `folderPath`, `action`, `file` (binary)
 - Input them: `fileName` (optional), `binaryFieldName` (optional)
 - Neu khong truyen `rootFolderId` thi workflow tu mac dinh `root` (My Drive).
-- `action` ho tro: `upsert` (default), `get`, `delete`, `list`
+- `action` ho tro: `upsert` (default), `get`, `delete`, `list`, `ensureFolder`
+- `ensureFolder` chi dam bao tao duong dan folder (neu can) va tra `folderId/folderUrl`, khong can truyen file binary.
 - `upsert` se tao folder thieu theo `folderPath`; `get/delete/list` chi doc/xoa/liet ke, khong tao folder moi.
 - Output co san `folderId`, `folderUrl`, `fileId`, `fileUrl`
 
@@ -255,7 +258,7 @@ Book review chat pipeline:
 - Main output song song:
   - `review_manifest` (JSON source-of-truth)
   - `review_readable` (ban doc cho reviewer)
-  - persist file Drive: `review_readable.txt` + `review_manifest.json`.
+  - persist file Drive: `review_readable.txt` + `review_manifest.json` (goi workflow reusable `GG Drive Mananger` theo `action=upsert`).
 - Callback data router su dung format ngan <=64 bytes: `brv:media:c:<token>` (Tao Media), `brv:media:s:<token>` (Dung).
 - Khong con nhanh scheduler timeout; router xu ly truc tiep callback/message event.
 - Notify hub cho workflow review sach da chuan hoa theo pattern:
@@ -274,7 +277,7 @@ Book review chat pipeline:
   - Node `Parse Telegram Event` chi lang nghe callback inline button (`brv:media:c|s:<session_token>`) de luong reviewer gon va de trace.
   - Session folder name giu theo format `book-review-<slug-book>-<session_token>` va duoc tai su dung trong suot session (khong tao folder moi neu da co ID).
   - Persist asset theo tung process/event:
-    - `init_review`: tao folder session + subfolder `voice/image`, sau do persist `review file` + `metadata file`.
+    - `init_review`: tao folder session (1 cap), sau do persist `review file` + `metadata file`.
     - `media_continue`/`auto_continue_media`: xu ly TTS + image, persist media assets va `session sheet`.
   - Neu da co `session_sheet_id`, TTS workflow se update tung dong `assets` ngay khi upload xong moi file voice (realtime row update).
   - Telegram sau `book-review ...` se gui ngay link Drive cho `review_readable`, `review_manifest`, `session folder` (va `session sheet` neu co).
@@ -307,7 +310,7 @@ Quy tac import/update:
 
 Sync tu UI ve JSON template (khuyen nghi truoc khi nho AI sua workflow):
 ```bash
-# Preview thay doi, khong ghi file
+# Preview thay doi, khong ghi file (mac dinh sync ALL workflow non-archived tren n8n UI)
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh
 
 # Ghi file template tu state hien tai tren n8n UI
@@ -316,22 +319,34 @@ bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply
 # Chi sync 1 workflow theo ten
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --name "Demo Gemini via Proxy API" --apply
 
+# Chi sync 1 workflow theo ID
+bash scripts/workflows/sync/sync-workflows-from-n8n.sh --id eKVjShNKmbjf4T8a --apply
+
+# Sync nhieu workflow theo ID (repeatable hoac comma-separated)
+bash scripts/workflows/sync/sync-workflows-from-n8n.sh --id eKVjShNKmbjf4T8a --id x62qzfGcBeqrfueM --apply
+bash scripts/workflows/sync/sync-workflows-from-n8n.sh --id eKVjShNKmbjf4T8a,x62qzfGcBeqrfueM --apply
+
 # Apply nhung khong ghi changelog
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply --no-log
 ```
-- Script se sanitize truong nhay cam (`proxy_base_url`, `proxy_api_key`, `n8n_api_url`, `n8n_api_key`, `image_api_key`, `gdrive_root_folder_id`, `gdrive_credential_name`) va workflow placeholders (`Notify via Shared Workflow`, `text_to_images_workflow_id`, `text_to_videos_workflow_id`, `tts_workflow_id`) truoc khi ghi file.
+- Script se sanitize truong nhay cam (`proxy_base_url`, `proxy_api_key`, `n8n_api_url`, `n8n_api_key`, `image_api_key`, `gdrive_root_folder_id`, `gdrive_credential_name`) va workflow placeholders (`Notify via Shared Workflow`, `text_to_images_workflow_id`, `text_to_videos_workflow_id`, `tts_workflow_id`, `gg_drive_manager_workflow_path`, `gg_sheet_manager_workflow_path`) truoc khi ghi file.
+- Script auto upsert `workflow-registry.json`, tu tao `template` path cho workflow moi, va tu tao wrapper import `scripts/workflows/import/import-*.sh` neu workflow chua co wrapper.
+- Template path workflow moi uu tien theo folder metadata tu n8n UI (neu API co tra ve). Neu khong co metadata, script fallback theo ten workflow dang path (`Folder/Subfolder/Workflow`).
+- Co che conflict-safe: uu tien map theo `id`; neu trung `name` nhung khac `id` thi tao key/path/wrapper moi de tranh dup.
 - `workflow-registry.json` nen luu `template` dang duong dan tuong doi (vi du: `workflows/book-review/book-review.workflow.json`) de tranh vo path khi doi ten folder project.
-- Khi chay `--apply` (mac dinh), script se auto append log vao `CHANGELOG.md`.
+- Khi chay `--apply`, script se auto append log vao `CHANGELOG.md` (tru khi dung `--no-log`).
 
 Import thu cong neu can:
 ```bash
 bash scripts/workflows/import/import-workflow.sh
 bash scripts/workflows/import/import-all-workflows.sh
 bash scripts/workflows/import/import-gg-drive-manager-workflow.sh
+bash scripts/workflows/import/import-gg-sheet-manager-workflow.sh
 bash scripts/workflows/import/import-shared-notification-router-workflow.sh
 bash scripts/workflows/import/import-gemini-demo-workflow.sh
 bash scripts/workflows/import/import-openai-demo-workflow.sh
 bash scripts/workflows/import/import-book-review-workflow.sh
+bash scripts/workflows/import/import-book-review-ai-agent-workflow.sh
 # optional override template text-to-videos:
 # TEXT_TO_VIDEOS_WORKFLOW_TEMPLATE=workflows/book-review/text-to-videos-veo3.workflow.json \
 #   bash scripts/workflows/import/import-book-review-workflow.sh
@@ -346,6 +361,12 @@ bash scripts/workflows/import/import-book-review-workflow.sh \
   workflows/book-review/prompts/book-review-metadata-prompt.txt \
   workflows/book-review/prompts/book-review-qc-prompt.txt \
   workflows/book-review/prompts/book-review-review-edit-prompt.txt
+# optional override workflow path for GG Drive Mananger:
+# GG_DRIVE_MANAGER_WORKFLOW_PATH=/abs/path/to/workflows/shared/gg-drive-manager.workflow.json \
+#   bash scripts/workflows/import/import-book-review-workflow.sh
+# optional override workflow path for GG Sheet Manager:
+# GG_SHEET_MANAGER_WORKFLOW_PATH=/abs/path/to/workflows/shared/gg-sheet-manager.workflow.json \
+#   bash scripts/workflows/import/import-book-review-workflow.sh
 ```
 - `import-all-workflows.sh` tu dong quet tat ca wrapper `scripts/workflows/import/import-*.sh` (bo qua `import-all-workflows.sh` va `import-workflow.sh`).
 - De workflow moi tu dong duoc gom vao lenh all, chi can them wrapper theo naming convention `import-*.sh`.
@@ -415,10 +436,12 @@ bash scripts/workflows/tests/check-book-review-debug-table.sh env.n8n.local book
 - `scripts/workflows/import/import-workflow.sh`: core importer upsert workflow template vao n8n
 - `scripts/workflows/import/import-all-workflows.sh`: wrapper import toan bo workflow, tu dong quet `import-*.sh` (bo qua `import-all-workflows.sh` va `import-workflow.sh`), uu tien thu tu `shared` -> `gemini` -> `openai` -> `book-review`, sau do chay cac wrapper moi theo alphabet
 - `scripts/workflows/import/import-gg-drive-manager-workflow.sh`: import workflow reusable `GG Drive Mananger`
+- `scripts/workflows/import/import-gg-sheet-manager-workflow.sh`: import workflow reusable `GG Sheet Manager`
 - `scripts/workflows/import/import-gemini-demo-workflow.sh`: wrapper import workflow Gemini demo vao n8n
 - `scripts/workflows/import/import-shared-notification-router-workflow.sh`: import workflow notify router da kenh dung chung
 - `scripts/workflows/import/import-openai-demo-workflow.sh`: import workflow OpenAI demo vao n8n
 - `scripts/workflows/import/import-book-review-workflow.sh`: import workflow book review hop nhat vao n8n
+- `scripts/workflows/import/import-book-review-ai-agent-workflow.sh`: import workflow `Book Review AI Agent` vao n8n
 - `scripts/workflows/sync/sync-workflows-from-n8n.sh`: sync workflow state tu n8n UI ve JSON templates (preview/apply)
 - `scripts/workflows/tests/test-book-review-checklist.sh`: chay full automation checklist cho workflow review sach
 - `scripts/workflows/tests/test-book-review-checklist.mjs`: test runner chi tiet cho checklist automation
@@ -429,10 +452,12 @@ bash scripts/workflows/tests/check-book-review-debug-table.sh env.n8n.local book
 - `workflows/demo/gemini-proxy-demo.workflow.json`: workflow demo template
 - `workflows/demo/openai-proxy-demo.workflow.json`: workflow OpenAI demo template
 - `workflows/book-review/book-review.workflow.json`: workflow book-review main (generate + router + worker + media merge)
+- `workflows/book-review/book-review-ai-agent.workflow.json`: workflow `Book Review AI Agent` duoc sync tu n8n UI
 - `workflows/book-review/text-to-images.workflow.json`: workflow reusable tao nhieu anh tu text chunks
 - `workflows/book-review/text-to-videos-veo3.workflow.json`: workflow reusable tao video theo scene (mock + VEO3 contract)
 - `workflows/book-review/tts.workflow.json`: workflow reusable tao TTS tu text chunks
 - `workflows/shared/gg-drive-manager.workflow.json`: workflow reusable quan ly file Google Drive theo `rootFolderId/folderPath/action`
+- `workflows/shared/gg-sheet-manager.workflow.json`: workflow reusable quan ly tao/cap nhat Google Sheet assets theo action
 - `workflows/shared/shared-notification-router.workflow.json`: workflow notify router da kenh (telegram/ggchat)
 - `workflows/book-review/prompts/book-review-scene-outline-prompt.txt`: prompt pass 1 xac dinh angle + scene_count + muc tieu tung scene
 - `workflows/book-review/prompts/book-review-scene-expand-prompt.txt`: prompt pass 2 sinh `review_manifest` day du theo scene

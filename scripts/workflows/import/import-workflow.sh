@@ -12,6 +12,7 @@ N8N_API_RETRY_MAX="${N8N_API_RETRY_MAX:-6}"
 N8N_API_RETRY_DELAY_SECONDS="${N8N_API_RETRY_DELAY_SECONDS:-1}"
 SHARED_NOTIFICATION_ROUTER_PATH="${SHARED_NOTIFICATION_ROUTER_PATH:-$ROOT_DIR/workflows/shared/shared-notification-router.workflow.json}"
 GG_DRIVE_MANAGER_WORKFLOW_PATH="${GG_DRIVE_MANAGER_WORKFLOW_PATH:-$ROOT_DIR/workflows/shared/gg-drive-manager.workflow.json}"
+GG_SHEET_MANAGER_WORKFLOW_PATH="${GG_SHEET_MANAGER_WORKFLOW_PATH:-$ROOT_DIR/workflows/shared/gg-sheet-manager.workflow.json}"
 TEXT_TO_IMAGES_WORKFLOW_PATH="${TEXT_TO_IMAGES_WORKFLOW_PATH:-$ROOT_DIR/workflows/book-review/text-to-images.workflow.json}"
 TEXT_TO_VIDEOS_WORKFLOW_PATH="${TEXT_TO_VIDEOS_WORKFLOW_PATH:-$ROOT_DIR/workflows/book-review/text-to-videos-veo3.workflow.json}"
 TTS_WORKFLOW_PATH="${TTS_WORKFLOW_PATH:-$ROOT_DIR/workflows/book-review/tts.workflow.json}"
@@ -65,6 +66,7 @@ REGISTRY_TEMPLATE="$(normalize_registry_template "$REGISTRY_TEMPLATE_INPUT")"
 REGISTRY_TEMPLATE_ABS="$(resolve_path "$REGISTRY_TEMPLATE_INPUT")"
 SHARED_NOTIFICATION_ROUTER_PATH="$(resolve_path "$SHARED_NOTIFICATION_ROUTER_PATH")"
 GG_DRIVE_MANAGER_WORKFLOW_PATH="$(resolve_path "$GG_DRIVE_MANAGER_WORKFLOW_PATH")"
+GG_SHEET_MANAGER_WORKFLOW_PATH="$(resolve_path "$GG_SHEET_MANAGER_WORKFLOW_PATH")"
 TEXT_TO_IMAGES_WORKFLOW_PATH="$(resolve_path "$TEXT_TO_IMAGES_WORKFLOW_PATH")"
 TEXT_TO_VIDEOS_WORKFLOW_PATH="$(resolve_path "$TEXT_TO_VIDEOS_WORKFLOW_PATH")"
 TTS_WORKFLOW_PATH="$(resolve_path "$TTS_WORKFLOW_PATH")"
@@ -464,6 +466,7 @@ payload="$(jq \
   --arg n8nApiKey "$N8N_API_KEY_DEFAULT" \
   --arg notifyPath "$SHARED_NOTIFICATION_ROUTER_PATH" \
   --arg ggDriveManagerWorkflowPath "$GG_DRIVE_MANAGER_WORKFLOW_PATH" \
+  --arg ggSheetManagerWorkflowPath "$GG_SHEET_MANAGER_WORKFLOW_PATH" \
   --arg notifyTargets "$NOTIFY_TARGETS_DEFAULT" \
   --arg notifyTargetsExpr "={{ \$json.notify_targets || \"$NOTIFY_TARGETS_DEFAULT\" }}" \
   --arg telegramBotToken "$TELEGRAM_BOT_TOKEN_DEFAULT" \
@@ -544,6 +547,8 @@ payload="$(jq \
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="shared_notification_workflow_path") | .value) = $notifyPath
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="gg_drive_manager_workflow_path") | .value) = $ggDriveManagerWorkflowPath
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="ggDriveManagerWorkflowPath") | .value) = $ggDriveManagerWorkflowPath
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="gg_sheet_manager_workflow_path") | .value) = $ggSheetManagerWorkflowPath
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="ggSheetManagerWorkflowPath") | .value) = $ggSheetManagerWorkflowPath
   | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.includeOtherFields) = true
   | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name=="notify_targets") | .value) = $notifyTargetsExpr
   | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name=="telegram_bot_token") | .value) = $telegramBotToken

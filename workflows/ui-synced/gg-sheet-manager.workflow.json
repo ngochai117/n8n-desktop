@@ -1,0 +1,553 @@
+{
+  "name": "GG Sheet Manager",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1120,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-1",
+              "name": "gdriveCredentialName",
+              "value": "__GDRIVE_CREDENTIAL_NAME__",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "2",
+      "name": "Set Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -896,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst rawAction = safeText(input.action, 'ensureAndWrite').toLowerCase();\nconst action = rawAction === 'ensuresheet'\n  ? 'ensureSheet'\n  : (rawAction === 'writerows' ? 'writeRows' : 'ensureAndWrite');\n\nconst sessionSheetId = safeText(input.session_sheet_id, safeText(input.sheetId));\nconst sessionSheetName = safeText(input.session_sheet_name, safeText(input.sheetName, 'book-review-assets'));\nconst sheetTabName = safeText(input.sheetTabName, 'assets');\nconst targetFolderId = safeText(input.session_folder_id, safeText(input.targetFolderId));\nconst sheetRows = Array.isArray(input.session_sheet_rows)\n  ? input.session_sheet_rows\n  : (Array.isArray(input.sheetRows) ? input.sheetRows : []);\n\nconst shouldEnsure = action === 'ensureAndWrite' || action === 'ensureSheet';\nconst shouldWrite = action === 'ensureAndWrite' || action === 'writeRows';\nconst shouldMove = shouldEnsure && targetFolderId !== '';\nconst shouldCreateSheet = shouldEnsure && sessionSheetId === '';\nconst missingSheetIdForWrite = action === 'writeRows' && sessionSheetId === '';\nconst shouldCallWriteApi = shouldWrite && !missingSheetIdForWrite;\n\nreturn {\n  ...input,\n  action,\n  sheetId: sessionSheetId,\n  sheetName: sessionSheetName,\n  sheetTabName,\n  targetFolderId,\n  sheetRows,\n  shouldEnsure,\n  shouldWrite,\n  shouldMove,\n  shouldCreateSheet,\n  missingSheetIdForWrite,\n  shouldCallWriteApi,\n};"
+      },
+      "id": "3",
+      "name": "Normalize Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.shouldCreateSheet === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "4",
+      "name": "If Need Create Sheet",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -448,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://sheets.googleapis.com/v4/spreadsheets",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { properties: { title: $json.sheetName || \"book-review-assets\" }, sheets: [{ properties: { title: $json.sheetTabName || \"assets\" } }] } }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "5",
+      "name": "Create Sheet",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -224,
+        224
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst sheetId = safeText(input.sheetId);\nconst sheetUrl = sheetId ? 'https://docs.google.com/spreadsheets/d/' + sheetId : '';\n\nreturn {\n  ...input,\n  statusCode: sheetId ? 200 : 404,\n  body: {\n    spreadsheetId: sheetId,\n    spreadsheetUrl: sheetUrl,\n  },\n};"
+      },
+      "id": "6",
+      "name": "Use Existing Sheet",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst body = input.body && typeof input.body === 'object' ? input.body : {};\nconst sheetId = safeText(body.spreadsheetId, safeText(input.sheetId, safeText(input.session_sheet_id)));\nconst sheetUrl = safeText(\n  body.spreadsheetUrl,\n  safeText(input.sheetUrl, sheetId ? 'https://docs.google.com/spreadsheets/d/' + sheetId : ''),\n);\n\nconst createStatusCode = Number(input.statusCode ?? 0);\n\nreturn {\n  ...input,\n  session_sheet_id: sheetId,\n  session_sheet_url: sheetUrl,\n  session_sheet_create_status_code: Number.isFinite(createStatusCode) ? createStatusCode : 0,\n};"
+      },
+      "id": "7",
+      "name": "Prepare Sheet Meta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.shouldMove === true && String($json.session_sheet_id || \"\").trim() !== \"\" }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "8",
+      "name": "If Should Move Sheet",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": "={{ $json.session_sheet_id }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": "={{ $json.targetFolderId }}",
+        "authentication": "oAuth2"
+      },
+      "id": "9",
+      "name": "Move Sheet To Folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        448,
+        224
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nreturn {\n  ...input,\n  session_sheet_move_status: 'success',\n};"
+      },
+      "id": "10",
+      "name": "Prepare Move Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nreturn {\n  ...input,\n  session_sheet_move_status: 'skipped',\n};"
+      },
+      "id": "11",
+      "name": "Prepare Move Skipped",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.shouldCallWriteApi === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "12",
+      "name": "If Should Write Rows",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ \"https://sheets.googleapis.com/v4/spreadsheets/\" + encodeURIComponent($json.session_sheet_id || \"\") + \"/values/\" + encodeURIComponent(($json.sheetTabName || \"assets\") + \"!A1\") + \"?valueInputOption=RAW\" }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { values: Array.isArray($json.sheetRows) ? $json.sheetRows : [] } }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "13",
+      "name": "Write Sheet Rows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1120,
+        224
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nconst statusCode = Number(input.statusCode ?? 0);\nreturn {\n  ...input,\n  session_sheet_update_status_code: Number.isFinite(statusCode) ? statusCode : 0,\n};"
+      },
+      "id": "14",
+      "name": "Prepare Write Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nreturn {\n  ...input,\n  session_sheet_update_status_code: 0,\n};"
+      },
+      "id": "15",
+      "name": "Prepare Write Skipped",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        416
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst sheetId = safeText(input.session_sheet_id);\nconst sheetUrl = safeText(input.session_sheet_url, sheetId ? 'https://docs.google.com/spreadsheets/d/' + sheetId : '');\n\nconst writeStatusCodeRaw = Number(input.session_sheet_update_status_code ?? 0);\nconst writeStatusCode = Number.isFinite(writeStatusCodeRaw) ? writeStatusCodeRaw : 0;\nconst writeOk = input.shouldWrite !== true\n  ? true\n  : (input.missingSheetIdForWrite === true\n      ? false\n      : (writeStatusCode >= 200 && writeStatusCode < 300));\nconst ensureOk = input.shouldEnsure !== true || sheetId !== '';\n\nreturn {\n  ...input,\n  status: ensureOk && writeOk ? 'success' : 'partial',\n  sheetId,\n  sheetUrl,\n  session_sheet_id: sheetId,\n  session_sheet_url: sheetUrl,\n  session_sheet_create_status_code: Number(input.session_sheet_create_status_code ?? 0),\n  session_sheet_update_status_code: writeStatusCode,\n};"
+      },
+      "id": "16",
+      "name": "Build Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        320
+      ]
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Set Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Config": {
+      "main": [
+        [
+          {
+            "node": "Normalize Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Request": {
+      "main": [
+        [
+          {
+            "node": "If Need Create Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Need Create Sheet": {
+      "main": [
+        [
+          {
+            "node": "Create Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Use Existing Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Sheet": {
+      "main": [
+        [
+          {
+            "node": "Prepare Sheet Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use Existing Sheet": {
+      "main": [
+        [
+          {
+            "node": "Prepare Sheet Meta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Sheet Meta": {
+      "main": [
+        [
+          {
+            "node": "If Should Move Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Should Move Sheet": {
+      "main": [
+        [
+          {
+            "node": "Move Sheet To Folder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Move Skipped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move Sheet To Folder": {
+      "main": [
+        [
+          {
+            "node": "Prepare Move Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Move Context": {
+      "main": [
+        [
+          {
+            "node": "If Should Write Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Move Skipped": {
+      "main": [
+        [
+          {
+            "node": "If Should Write Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Should Write Rows": {
+      "main": [
+        [
+          {
+            "node": "Write Sheet Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Write Skipped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Sheet Rows": {
+      "main": [
+        [
+          {
+            "node": "Prepare Write Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Write Result": {
+      "main": [
+        [
+          {
+            "node": "Build Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Write Skipped": {
+      "main": [
+        [
+          {
+            "node": "Build Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
+}

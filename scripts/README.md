@@ -21,13 +21,15 @@ Muc tieu: tach script theo domain de de quan ly khi so luong workflow tang.
   - `import-all-workflows.sh`: wrapper import toan bo workflow, tu dong quet `import-*.sh` (bo qua `import-all-workflows.sh` va `import-workflow.sh`), uu tien thu tu `shared` -> `gemini` -> `openai` -> `book-review`, sau do chay cac wrapper moi theo alphabet
   - `import-workflow.sh`: import/upsert generic workflow template (core importer)
   - `import-gg-drive-manager-workflow.sh`: wrapper import workflow reusable `GG Drive Mananger`
+  - `import-gg-sheet-manager-workflow.sh`: wrapper import workflow reusable `GG Sheet Manager`
   - `import-gemini-demo-workflow.sh`: wrapper import workflow Gemini demo
   - `import-shared-notification-router-workflow.sh`: wrapper import workflow notify router da kenh dung chung
   - `import-openai-demo-workflow.sh`: wrapper import workflow OpenAI demo
   - `import-book-review-workflow.sh`: wrapper import 4 workflow (`text-to-images` -> `text-to-videos-veo3` -> `tts` -> `book-review`) + inject prompt templates cho `book-review` (render style kernel tu master prompt vao placeholder `__BOOK_REVIEW_STYLE_KERNEL__`)
+  - `import-book-review-ai-agent-workflow.sh`: wrapper import workflow `Book Review AI Agent`
 
 - `scripts/workflows/sync/`
-  - `sync-workflows-from-n8n.sh`: sync workflow state tu n8n UI ve file JSON template
+  - `sync-workflows-from-n8n.sh`: sync workflow state tu n8n UI ve file JSON template + auto upsert registry + auto tao wrapper import cho workflow moi (uu tien layout theo folder UI neu API co metadata)
 
 - `scripts/workflows/tests/`
   - `test-book-review-checklist.sh`: runner checklist automation
@@ -51,10 +53,12 @@ bash scripts/run/run-cloudflared-tunnel.sh <your-token>
 bash scripts/workflows/import/import-workflow.sh
 bash scripts/workflows/import/import-all-workflows.sh
 bash scripts/workflows/import/import-gg-drive-manager-workflow.sh
+bash scripts/workflows/import/import-gg-sheet-manager-workflow.sh
 bash scripts/workflows/import/import-gemini-demo-workflow.sh
 bash scripts/workflows/import/import-shared-notification-router-workflow.sh
 bash scripts/workflows/import/import-openai-demo-workflow.sh
 bash scripts/workflows/import/import-book-review-workflow.sh
+bash scripts/workflows/import/import-book-review-ai-agent-workflow.sh
 # optional custom prompt template for book-review:
 bash scripts/workflows/import/import-book-review-workflow.sh \
   env.n8n.local env.proxy.local \
@@ -66,9 +70,18 @@ bash scripts/workflows/import/import-book-review-workflow.sh \
   workflows/book-review/prompts/book-review-metadata-prompt.txt \
   workflows/book-review/prompts/book-review-qc-prompt.txt \
   workflows/book-review/prompts/book-review-review-edit-prompt.txt
+# optional override GG Drive manager workflow path for Execute Workflow nodes:
+# GG_DRIVE_MANAGER_WORKFLOW_PATH=/abs/path/to/workflows/shared/gg-drive-manager.workflow.json \
+#   bash scripts/workflows/import/import-book-review-workflow.sh
+# optional override GG Sheet manager workflow path for Execute Workflow nodes:
+# GG_SHEET_MANAGER_WORKFLOW_PATH=/abs/path/to/workflows/shared/gg-sheet-manager.workflow.json \
+#   bash scripts/workflows/import/import-book-review-workflow.sh
 
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply
+bash scripts/workflows/sync/sync-workflows-from-n8n.sh --id eKVjShNKmbjf4T8a --apply
+bash scripts/workflows/sync/sync-workflows-from-n8n.sh --id eKVjShNKmbjf4T8a --id x62qzfGcBeqrfueM --apply
+bash scripts/workflows/sync/sync-workflows-from-n8n.sh --id eKVjShNKmbjf4T8a,x62qzfGcBeqrfueM --apply
 
 bash scripts/workflows/tests/test-book-review-checklist.sh
 bash scripts/workflows/tests/run-book-review-e2e.sh

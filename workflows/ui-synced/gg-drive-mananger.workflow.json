@@ -2,38 +2,30 @@
   "name": "GG Drive Mananger",
   "nodes": [
     {
+      "parameters": {},
       "id": "1",
       "name": "When Executed by Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
       "position": [
         -1520,
-        80
-      ],
-      "parameters": {}
+        472
+      ]
     },
     {
-      "id": "2",
-      "name": "Set Config",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -1300,
-        80
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
             {
               "id": "cfg-1",
               "name": "gdriveRootFolderId",
-              "value": "={{ $json.gdriveRootFolderId || '__GDRIVE_ROOT_FOLDER_ID__' }}",
+              "value": "__GDRIVE_ROOT_FOLDER_ID__",
               "type": "string"
             },
             {
               "id": "cfg-2",
               "name": "gdriveCredentialName",
-              "value": "={{ $json.gdriveCredentialName || '__GDRIVE_CREDENTIAL_NAME__' }}",
+              "value": "__GDRIVE_CREDENTIAL_NAME__",
               "type": "string"
             },
             {
@@ -46,30 +38,30 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
+      },
+      "id": "2",
+      "name": "Set Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1296,
+        472
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nconst rootFolderIdRaw = String(input.rootFolderId ?? '').trim();\nconst rootFolderId = rootFolderIdRaw || 'root';\n\nconst rawPath = String(input.folderPath ?? '').trim();\nconst normalizedPath = rawPath\n  .replace(/^\\/+|\\/+$/g, '')\n  .replace(/\\/+/g, '/');\n\nconst segments = normalizedPath ? normalizedPath.split('/').filter(Boolean) : [];\nconst currentSegment = segments[0] || '';\nconst remainingPath = segments.length > 1 ? segments.slice(1).join('/') : '';\n\nconst explicitBinaryField = String(input.binaryFieldName ?? '').trim();\nconst availableBinaryFields = Object.keys(binary);\nconst binaryFieldName = explicitBinaryField && binary[explicitBinaryField]\n  ? explicitBinaryField\n  : (availableBinaryFields[0] || '');\n\nconst binaryFile = binaryFieldName ? binary[binaryFieldName] : null;\nconst binaryFileName = String(binaryFile?.fileName ?? '').trim();\nconst targetFileName = String(input.fileName ?? binaryFileName ?? '').trim() || 'uploaded-file.bin';\n\nconst rawAction = String(input.action ?? 'upsert').trim().toLowerCase();\nconst action = rawAction === 'get'\n  ? 'get'\n  : (rawAction === 'delete'\n      ? 'delete'\n      : (rawAction === 'list' ? 'list' : 'upsert'));\n\nconst requestedFolderPath = String(input.requestedFolderPath ?? normalizedPath);\nconst targetFolderId = String(input.targetFolderId ?? '');\n\nreturn [{\n  json: {\n    ...input,\n    action,\n    rootFolderId,\n    requestedFolderPath,\n    folderPath: normalizedPath,\n    currentSegment,\n    remainingPath,\n    baseFolderId: rootFolderId,\n    targetFolderId,\n    binaryFieldName,\n    hasBinaryFile: Boolean(binaryFile),\n    targetFileName\n  }\n}];"
+      },
       "id": "3",
       "name": "Normalize Request",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1080,
-        80
-      ],
-      "parameters": {
-        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nconst rootFolderIdRaw = String(input.rootFolderId ?? '').trim();\nconst rootFolderId = rootFolderIdRaw || 'root';\n\nconst rawPath = String(input.folderPath ?? '').trim();\nconst normalizedPath = rawPath\n  .replace(/^\\/+|\\/+$/g, '')\n  .replace(/\\/+/g, '/');\n\nconst segments = normalizedPath ? normalizedPath.split('/').filter(Boolean) : [];\nconst currentSegment = segments[0] || '';\nconst remainingPath = segments.length > 1 ? segments.slice(1).join('/') : '';\n\nconst explicitBinaryField = String(input.binaryFieldName ?? '').trim();\nconst availableBinaryFields = Object.keys(binary);\nconst binaryFieldName = explicitBinaryField && binary[explicitBinaryField]\n  ? explicitBinaryField\n  : (availableBinaryFields[0] || '');\n\nconst binaryFile = binaryFieldName ? binary[binaryFieldName] : null;\nconst binaryFileName = String(binaryFile?.fileName ?? '').trim();\nconst targetFileName = String(input.fileName ?? binaryFileName ?? '').trim() || 'uploaded-file.bin';\n\nconst rawAction = String(input.action ?? 'upsert').trim().toLowerCase();\nconst action = rawAction === 'get'\n  ? 'get'\n  : (rawAction === 'delete'\n      ? 'delete'\n      : (rawAction === 'list'\n          ? 'list'\n          : (rawAction === 'ensurefolder' ? 'ensureFolder' : 'upsert')));\n\nconst requestedFolderPath = String(input.requestedFolderPath ?? normalizedPath);\nconst targetFolderId = String(input.targetFolderId ?? '');\n\nreturn [{\n  json: {\n    ...input,\n    action,\n    rootFolderId,\n    requestedFolderPath,\n    folderPath: normalizedPath,\n    currentSegment,\n    remainingPath,\n    baseFolderId: rootFolderId,\n    targetFolderId,\n    binaryFieldName,\n    hasBinaryFile: Boolean(binaryFile),\n    targetFileName\n  }\n}];"
-      }
+        -1072,
+        472
+      ]
     },
     {
-      "id": "4",
-      "name": "If Has Segment",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        -860,
-        80
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -90,27 +82,25 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "4",
+      "name": "If Has Segment",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -848,
+        472
+      ]
     },
     {
-      "id": "5",
-      "name": "Search Current Folder",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [
-        -640,
-        -80
-      ],
-      "alwaysOutputData": true,
       "parameters": {
-        "authentication": "oAuth2",
         "resource": "fileFolder",
-        "operation": "search",
         "searchMethod": "query",
         "queryString": "={{ (() => { const escapeQuery = (value) => String(value ?? '').replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\"); const segmentName = escapeQuery($json.currentSegment || ''); const parentId = String($json.baseFolderId || 'root').trim() || 'root'; return \"name = '\" + segmentName + \"' and mimeType = 'application/vnd.google-apps.folder' and trashed = false and '\" + parentId + \"' in parents\"; })() }}",
-        "returnAll": false,
         "limit": 1,
+        "filter": {},
         "options": {
           "fields": [
             "id",
@@ -121,6 +111,15 @@
           ]
         }
       },
+      "id": "5",
+      "name": "Search Current Folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -624,
+        472
+      ],
+      "alwaysOutputData": true,
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
@@ -129,38 +128,30 @@
       }
     },
     {
-      "id": "6",
-      "name": "Merge Folder Search Context",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        -420,
-        -80
-      ],
       "parameters": {
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {
-          "includeUnpaired": true,
           "clashHandling": {
             "values": {
               "resolveClash": "preferInput1",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
-          }
+          },
+          "includeUnpaired": true
         }
-      }
+      },
+      "id": "6",
+      "name": "Merge Folder Search Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -400,
+        256
+      ]
     },
     {
-      "id": "7",
-      "name": "If Folder Exists",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        -200,
-        -80
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -181,18 +172,19 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "7",
+      "name": "If Folder Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -176,
+        184
+      ]
     },
     {
-      "id": "8",
-      "name": "Set Existing Folder Context",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        20,
-        -180
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -224,17 +216,17 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
+      },
+      "id": "8",
+      "name": "Set Existing Folder Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        16
+      ]
     },
     {
-      "id": "38",
-      "name": "If Can Create Missing Folder",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        20,
-        -20
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -255,18 +247,19 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "38",
+      "name": "If Can Create Missing Folder",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        48,
+        256
+      ]
     },
     {
-      "id": "39",
-      "name": "Build Folder Not Found Result",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        240,
-        -140
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -310,24 +303,36 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
+      },
+      "id": "39",
+      "name": "Build Folder Not Found Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        272,
+        160
+      ]
     },
     {
+      "parameters": {
+        "resource": "folder",
+        "name": "={{ $json.currentSegment || '' }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": "={{ $json.baseFolderId || 'root' }}",
+        "options": {}
+      },
       "id": "9",
       "name": "Create Missing Folder",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        20,
-        20
+        272,
+        352
       ],
-      "parameters": {
-        "authentication": "oAuth2",
-        "resource": "folder",
-        "operation": "create",
-        "name": "={{ $json.currentSegment || '' }}",
-        "folderId": "={{ $json.baseFolderId || 'root' }}"
-      },
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
@@ -336,38 +341,30 @@
       }
     },
     {
-      "id": "10",
-      "name": "Merge Created Folder Context",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        240,
-        20
-      ],
       "parameters": {
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {
-          "includeUnpaired": false,
           "clashHandling": {
             "values": {
               "resolveClash": "preferInput1",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
-          }
+          },
+          "includeUnpaired": false
         }
-      }
+      },
+      "id": "10",
+      "name": "Merge Created Folder Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        496,
+        424
+      ]
     },
     {
-      "id": "11",
-      "name": "Set Created Folder Context",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        460,
-        20
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -399,17 +396,17 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
+      },
+      "id": "11",
+      "name": "Set Created Folder Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        424
+      ]
     },
     {
-      "id": "12",
-      "name": "If Has Remaining Path",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        680,
-        -80
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -430,18 +427,19 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "12",
+      "name": "If Has Remaining Path",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        944,
+        256
+      ]
     },
     {
-      "id": "13",
-      "name": "Prepare Recursive Request",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        900,
-        -220
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -467,34 +465,34 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
+      },
+      "id": "13",
+      "name": "Prepare Recursive Request",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1168,
+        208
+      ]
     },
     {
-      "id": "14",
-      "name": "Execute Recursive Workflow",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.1,
-      "position": [
-        1120,
-        -220
-      ],
       "parameters": {
         "source": "localFile",
         "workflowPath": "={{ $json.selfWorkflowPath || 'workflows/shared/gg-drive-manager.workflow.json' }}",
         "options": {
           "waitForSubWorkflow": true
         }
-      }
+      },
+      "id": "14",
+      "name": "Execute Recursive Workflow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [
+        1392,
+        208
+      ]
     },
     {
-      "id": "15",
-      "name": "Set Target Folder Root",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -640,
-        240
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -526,17 +524,17 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
-    },
-    {
-      "id": "16",
-      "name": "Finalize Target Context",
+      },
+      "id": "15",
+      "name": "Set Target Folder Root",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        900,
-        80
-      ],
+        944,
+        640
+      ]
+    },
+    {
       "parameters": {
         "assignments": {
           "assignments": [
@@ -562,19 +560,18 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
+      },
+      "id": "16",
+      "name": "Finalize Target Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1168,
+        592
+      ]
     },
     {
-      "id": "28",
-      "name": "Switch Action",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
-      "position": [
-        1120,
-        80
-      ],
       "parameters": {
-        "mode": "rules",
         "rules": {
           "values": [
             {
@@ -596,9 +593,7 @@
                   }
                 ],
                 "combinator": "and"
-              },
-              "renameOutput": false,
-              "outputKey": ""
+              }
             },
             {
               "conditions": {
@@ -619,9 +614,7 @@
                   }
                 ],
                 "combinator": "and"
-              },
-              "renameOutput": false,
-              "outputKey": ""
+              }
             },
             {
               "conditions": {
@@ -642,32 +635,7 @@
                   }
                 ],
                 "combinator": "and"
-              },
-              "renameOutput": false,
-              "outputKey": ""
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.action || 'upsert' }}",
-                    "rightValue": "ensureFolder",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": false,
-              "outputKey": ""
+              }
             }
           ]
         },
@@ -676,26 +644,23 @@
           "renameFallbackOutput": "upsert",
           "allMatchingOutputs": false
         }
-      }
+      },
+      "id": "28",
+      "name": "Switch Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1392,
+        560
+      ]
     },
     {
-      "id": "29",
-      "name": "Search Existing File (Get/Delete)",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [
-        1340,
-        340
-      ],
-      "alwaysOutputData": true,
       "parameters": {
-        "authentication": "oAuth2",
         "resource": "fileFolder",
-        "operation": "search",
         "searchMethod": "query",
         "queryString": "={{ (() => { const escapeQuery = (value) => String(value ?? '').replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\"); const fileName = escapeQuery($json.targetFileName || ''); const folderId = String($json.targetFolderId || 'root').trim() || 'root'; return \"name = '\" + fileName + \"' and mimeType != 'application/vnd.google-apps.folder' and trashed = false and '\" + folderId + \"' in parents\"; })() }}",
-        "returnAll": false,
         "limit": 1,
+        "filter": {},
         "options": {
           "fields": [
             "id",
@@ -706,6 +671,15 @@
           ]
         }
       },
+      "id": "29",
+      "name": "Search Existing File (Get/Delete)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1616,
+        664
+      ],
+      "alwaysOutputData": true,
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
@@ -714,38 +688,30 @@
       }
     },
     {
-      "id": "30",
-      "name": "Merge File Search Context (Get/Delete)",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        1560,
-        340
-      ],
       "parameters": {
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {
-          "includeUnpaired": true,
           "clashHandling": {
             "values": {
               "resolveClash": "preferInput1",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
-          }
+          },
+          "includeUnpaired": true
         }
-      }
+      },
+      "id": "30",
+      "name": "Merge File Search Context (Get/Delete)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1840,
+        656
+      ]
     },
     {
-      "id": "31",
-      "name": "If File Exists (Get/Delete)",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1780,
-        340
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -766,18 +732,19 @@
             }
           ],
           "combinator": "and"
-        }
-      }
-    },
-    {
-      "id": "32",
-      "name": "If Delete Action",
+        },
+        "options": {}
+      },
+      "id": "31",
+      "name": "If File Exists (Get/Delete)",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2000,
-        340
-      ],
+        2064,
+        664
+      ]
+    },
+    {
       "parameters": {
         "conditions": {
           "options": {
@@ -798,24 +765,32 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "32",
+      "name": "If Delete Action",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2288,
+        568
+      ]
     },
     {
+      "parameters": {
+        "operation": "deleteFile",
+        "fileId": "={{ $json.id }}",
+        "options": {}
+      },
       "id": "33",
       "name": "Delete Existing File",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        2220,
-        260
+        2512,
+        472
       ],
-      "parameters": {
-        "authentication": "oAuth2",
-        "resource": "file",
-        "operation": "deleteFile",
-        "fileId": "={{ $json.id }}"
-      },
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
@@ -824,14 +799,6 @@
       }
     },
     {
-      "id": "34",
-      "name": "Build Get File Result",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        2220,
-        420
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -881,17 +848,17 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
-    },
-    {
-      "id": "35",
-      "name": "Build Delete Result",
+      },
+      "id": "34",
+      "name": "Build Get File Result",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2660,
-        260
-      ],
+        2512,
+        664
+      ]
+    },
+    {
       "parameters": {
         "assignments": {
           "assignments": [
@@ -929,17 +896,17 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
-    },
-    {
-      "id": "36",
-      "name": "Build File Not Found Result",
+      },
+      "id": "35",
+      "name": "Build Delete Result",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2000,
-        520
-      ],
+        2960,
+        400
+      ]
+    },
+    {
       "parameters": {
         "assignments": {
           "assignments": [
@@ -983,50 +950,48 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
+      },
+      "id": "36",
+      "name": "Build File Not Found Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2288,
+        760
+      ]
     },
     {
-      "id": "37",
-      "name": "Merge Deleted File Context",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        2440,
-        260
-      ],
       "parameters": {
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {
-          "includeUnpaired": false,
           "clashHandling": {
             "values": {
               "resolveClash": "preferInput1",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
-          }
+          },
+          "includeUnpaired": false
         }
-      }
+      },
+      "id": "37",
+      "name": "Merge Deleted File Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2736,
+        400
+      ]
     },
     {
-      "id": "40",
-      "name": "Search Folder Items (List)",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [
-        1340,
-        700
-      ],
-      "alwaysOutputData": true,
       "parameters": {
-        "authentication": "oAuth2",
         "resource": "fileFolder",
-        "operation": "search",
+        "limit": "={{ Number($json.listLimit || 200) }}",
         "searchMethod": "query",
         "queryString": "={{ (() => { const customQuery = String($json.listQuery || '').trim(); if (customQuery) return customQuery; const folderId = String($json.targetFolderId || 'root').trim() || 'root'; return \"'\" + folderId + \"' in parents and trashed = false\"; })() }}",
         "returnAll": "={{ $json.listReturnAll !== false }}",
-        "limit": "={{ Number($json.listLimit || 200) }}",
+        "filter": {},
         "options": {
           "fields": [
             "id",
@@ -1038,6 +1003,15 @@
           ]
         }
       },
+      "id": "40",
+      "name": "Search Folder Items (List)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1616,
+        856
+      ],
+      "alwaysOutputData": true,
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
@@ -1046,28 +1020,19 @@
       }
     },
     {
+      "parameters": {
+        "jsCode": "const context = $('Finalize Target Context').first().json || {};\nconst inputItems = $input.all();\n\nconst toFileUrl = (row) => {\n  const id = String(row.id || '');\n  if (!id) return '';\n  const mimeType = String(row.mimeType || '');\n  if (mimeType === 'application/vnd.google-apps.folder') {\n    return row.webViewLink || ('https://drive.google.com/drive/folders/' + id);\n  }\n  return row.webViewLink || ('https://drive.google.com/file/d/' + id + '/view');\n};\n\nconst items = inputItems\n  .map((entry) => entry.json || {})\n  .filter((row) => String(row.id || '').trim().length > 0)\n  .map((row) => ({\n    id: String(row.id || ''),\n    name: String(row.name || ''),\n    mimeType: String(row.mimeType || ''),\n    size: String(row.size || ''),\n    webViewLink: String(row.webViewLink || ''),\n    url: toFileUrl(row),\n    isFolder: String(row.mimeType || '') === 'application/vnd.google-apps.folder'\n  }));\n\nreturn [{\n  json: {\n    status: 'success',\n    action: 'list',\n    folderId: String(context.targetFolderId || ''),\n    folderUrl: String(context.targetFolderUrl || ('https://drive.google.com/drive/folders/' + (context.targetFolderId || ''))),\n    itemCount: items.length,\n    items\n  }\n}];"
+      },
       "id": "41",
       "name": "Build List Result",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1560,
-        700
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const context = $('Finalize Target Context').first().json || {};\nconst inputItems = $input.all();\n\nconst toFileUrl = (row) => {\n  const id = String(row.id || '');\n  if (!id) return '';\n  const mimeType = String(row.mimeType || '');\n  if (mimeType === 'application/vnd.google-apps.folder') {\n    return row.webViewLink || ('https://drive.google.com/drive/folders/' + id);\n  }\n  return row.webViewLink || ('https://drive.google.com/file/d/' + id + '/view');\n};\n\nconst items = inputItems\n  .map((entry) => entry.json || {})\n  .filter((row) => String(row.id || '').trim().length > 0)\n  .map((row) => ({\n    id: String(row.id || ''),\n    name: String(row.name || ''),\n    mimeType: String(row.mimeType || ''),\n    size: String(row.size || ''),\n    webViewLink: String(row.webViewLink || ''),\n    url: toFileUrl(row),\n    isFolder: String(row.mimeType || '') === 'application/vnd.google-apps.folder'\n  }));\n\nreturn [{\n  json: {\n    status: 'success',\n    action: 'list',\n    folderId: String(context.targetFolderId || ''),\n    folderUrl: String(context.targetFolderUrl || ('https://drive.google.com/drive/folders/' + (context.targetFolderId || ''))),\n    itemCount: items.length,\n    items\n  }\n}];"
-      }
+        1840,
+        856
+      ]
     },
     {
-      "id": "17",
-      "name": "If Has File Binary",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1120,
-        80
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1088,27 +1053,25 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "17",
+      "name": "If Has File Binary",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1616,
+        104
+      ]
     },
     {
-      "id": "18",
-      "name": "Search Existing File",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [
-        1340,
-        -60
-      ],
-      "alwaysOutputData": true,
       "parameters": {
-        "authentication": "oAuth2",
         "resource": "fileFolder",
-        "operation": "search",
         "searchMethod": "query",
         "queryString": "={{ (() => { const escapeQuery = (value) => String(value ?? '').replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\"); const fileName = escapeQuery($json.targetFileName || ''); const folderId = String($json.targetFolderId || 'root').trim() || 'root'; return \"name = '\" + fileName + \"' and mimeType != 'application/vnd.google-apps.folder' and trashed = false and '\" + folderId + \"' in parents\"; })() }}",
-        "returnAll": false,
         "limit": 1,
+        "filter": {},
         "options": {
           "fields": [
             "id",
@@ -1119,6 +1082,15 @@
           ]
         }
       },
+      "id": "18",
+      "name": "Search Existing File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1840,
+        64
+      ],
+      "alwaysOutputData": true,
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
@@ -1127,38 +1099,30 @@
       }
     },
     {
-      "id": "19",
-      "name": "Merge File Search Context",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        1560,
-        -60
-      ],
       "parameters": {
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {
-          "includeUnpaired": true,
           "clashHandling": {
             "values": {
               "resolveClash": "preferInput1",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
-          }
+          },
+          "includeUnpaired": true
         }
-      }
+      },
+      "id": "19",
+      "name": "Merge File Search Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2064,
+        -8
+      ]
     },
     {
-      "id": "20",
-      "name": "If File Exists",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1780,
-        -60
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1179,21 +1143,20 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "20",
+      "name": "If File Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2288,
+        -56
+      ]
     },
     {
-      "id": "21",
-      "name": "Update Existing File",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [
-        2000,
-        -180
-      ],
       "parameters": {
-        "authentication": "oAuth2",
-        "resource": "file",
         "operation": "update",
         "fileId": "={{ $json.id }}",
         "changeFileContent": true,
@@ -1209,6 +1172,14 @@
           ]
         }
       },
+      "id": "21",
+      "name": "Update Existing File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2512,
+        -152
+      ],
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
@@ -1217,38 +1188,30 @@
       }
     },
     {
-      "id": "22",
-      "name": "Merge Updated File Context",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        2220,
-        -180
-      ],
       "parameters": {
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {
-          "includeUnpaired": false,
           "clashHandling": {
             "values": {
               "resolveClash": "preferInput1",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
-          }
+          },
+          "includeUnpaired": false
         }
-      }
+      },
+      "id": "22",
+      "name": "Merge Updated File Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2736,
+        -224
+      ]
     },
     {
-      "id": "23",
-      "name": "Build Updated Result",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        2440,
-        -180
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -1310,28 +1273,38 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
+      },
+      "id": "23",
+      "name": "Build Updated Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2960,
+        -224
+      ]
     },
     {
-      "id": "24",
-      "name": "Upload New File",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [
-        2000,
-        60
-      ],
       "parameters": {
-        "authentication": "oAuth2",
-        "resource": "file",
-        "operation": "upload",
         "inputDataFieldName": "={{ $json.binaryFieldName || 'data' }}",
         "name": "={{ $json.targetFileName || '' }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
         "folderId": "={{ $json.targetFolderId || 'root' }}",
         "options": {
           "simplifyOutput": false
         }
       },
+      "id": "24",
+      "name": "Upload New File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2512,
+        88
+      ],
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
@@ -1340,38 +1313,30 @@
       }
     },
     {
-      "id": "25",
-      "name": "Merge Uploaded File Context",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        2220,
-        60
-      ],
       "parameters": {
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {
-          "includeUnpaired": false,
           "clashHandling": {
             "values": {
               "resolveClash": "preferInput1",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
-          }
+          },
+          "includeUnpaired": false
         }
-      }
+      },
+      "id": "25",
+      "name": "Merge Uploaded File Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2736,
+        160
+      ]
     },
     {
-      "id": "26",
-      "name": "Build Created Result",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        2440,
-        60
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -1433,17 +1398,17 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
-    },
-    {
-      "id": "27",
-      "name": "Build Missing File Result",
+      },
+      "id": "26",
+      "name": "Build Created Result",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1340,
-        240
-      ],
+        2960,
+        160
+      ]
+    },
+    {
       "parameters": {
         "assignments": {
           "assignments": [
@@ -1499,61 +1464,15 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
-    },
-    {
-      "id": "42",
-      "name": "Build Ensure Folder Result",
+      },
+      "id": "27",
+      "name": "Build Missing File Result",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1340,
-        920
-      ],
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "result-ensure-1",
-              "name": "status",
-              "value": "success",
-              "type": "string"
-            },
-            {
-              "id": "result-ensure-2",
-              "name": "action",
-              "value": "ensureFolder",
-              "type": "string"
-            },
-            {
-              "id": "result-ensure-3",
-              "name": "folderId",
-              "value": "={{ $json.targetFolderId || \"\" }}",
-              "type": "string"
-            },
-            {
-              "id": "result-ensure-4",
-              "name": "folderUrl",
-              "value": "={{ $json.targetFolderUrl || (\"https://drive.google.com/drive/folders/\" + ($json.targetFolderId || \"\")) }}",
-              "type": "string"
-            },
-            {
-              "id": "result-ensure-5",
-              "name": "resultRootFolderId",
-              "value": "={{ $json.rootFolderId || \"\" }}",
-              "type": "string"
-            },
-            {
-              "id": "result-ensure-6",
-              "name": "resultFolderPath",
-              "value": "={{ $json.requestedFolderPath || \"\" }}",
-              "type": "string"
-            }
-          ]
-        },
-        "includeOtherFields": true,
-        "options": {}
-      }
+        1840,
+        256
+      ]
     }
   ],
   "connections": {
@@ -1806,13 +1725,6 @@
         ],
         [
           {
-            "node": "Build Ensure Folder Result",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
             "node": "If Has File Binary",
             "type": "main",
             "index": 0
@@ -2035,9 +1947,9 @@
     }
   },
   "settings": {
-    "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false,
     "executionOrder": "v1",
-    "binaryMode": "default"
+    "binaryMode": "separate",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
   }
 }

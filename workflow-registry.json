@@ -1,44 +1,59 @@
 {
   "workflows": {
-    "Demo Gemini via Proxy API": {
-      "id": "eKVjShNKmbjf4T8a",
-      "template": "workflows/demo/gemini-proxy-demo.workflow.json",
-      "lastSyncedAt": "2026-03-31T02:49:35Z"
-    },
-    "Demo OpenAI via Proxy API": {
-      "id": "x62qzfGcBeqrfueM",
-      "template": "workflows/demo/openai-proxy-demo.workflow.json",
-      "lastSyncedAt": "2026-03-31T02:49:36Z"
-    },
-    "Shared Notification Router": {
-      "id": "2oIMm0rwQPf8j4oC",
-      "template": "workflows/shared/shared-notification-router.workflow.json",
-      "lastSyncedAt": "2026-03-31T02:49:35Z"
-    },
-    "Text To Images": {
-      "id": "tcF2wcybrmgzFNew",
-      "template": "workflows/book-review/text-to-images.workflow.json",
-      "lastSyncedAt": "2026-03-31T02:49:38Z"
-    },
-    "TTS": {
-      "id": "2F1jBI12C6NtslBN",
-      "template": "workflows/book-review/tts.workflow.json",
-      "lastSyncedAt": "2026-03-31T02:49:42Z"
-    },
     "Book Review": {
       "id": "4g3N5urBBIuo9HcJ",
       "template": "workflows/book-review/book-review.workflow.json",
-      "lastSyncedAt": "2026-03-31T02:49:48Z"
+      "lastSyncedAt": "2026-03-31T18:17:34Z"
     },
-    "Text To Videos VEO3": {
-      "id": "nZGQkU7QJ4diuMko",
-      "template": "workflows/book-review/text-to-videos-veo3.workflow.json",
-      "lastSyncedAt": "2026-03-31T02:49:39Z"
+    "TTS": {
+      "id": "2F1jBI12C6NtslBN",
+      "template": "workflows/ui-synced/tts.workflow.json",
+      "lastSyncedAt": "2026-03-31T18:28:51Z"
+    },
+    "Shared Notification Router": {
+      "id": "2oIMm0rwQPf8j4oC",
+      "template": "workflows/ui-synced/shared-notification-router.workflow.json",
+      "lastSyncedAt": "2026-03-31T18:28:51Z"
+    },
+    "Book Review AI Agent": {
+      "id": "901WvOJHn6O2Hbze",
+      "template": "workflows/ui-synced/book-review-ai-agent.workflow.json",
+      "lastSyncedAt": "2026-03-31T18:28:51Z"
+    },
+    "GG Sheet Manager": {
+      "id": "Dhguhje1kdEgdj9I",
+      "template": "workflows/ui-synced/gg-sheet-manager.workflow.json",
+      "lastSyncedAt": "2026-03-31T18:28:51Z"
     },
     "GG Drive Mananger": {
       "id": "QpcIxaHiYXDqjw4p",
-      "template": "workflows/shared/gg-drive-manager.workflow.json",
-      "lastSyncedAt": "2026-03-31T11:55:31Z"
+      "template": "workflows/ui-synced/gg-drive-mananger.workflow.json",
+      "lastSyncedAt": "2026-03-31T18:28:51Z"
+    },
+    "Test AI Agent Tools": {
+      "id": "RZQbgE239zPnpGf3",
+      "template": "workflows/ui-synced/test-ai-agent-tools.workflow.json",
+      "lastSyncedAt": "2026-03-31T18:28:51Z"
+    },
+    "Demo Gemini via Proxy API": {
+      "id": "eKVjShNKmbjf4T8a",
+      "template": "workflows/ui-synced/demo-gemini-via-proxy-api.workflow.json",
+      "lastSyncedAt": "2026-03-31T18:28:51Z"
+    },
+    "Text To Videos VEO3": {
+      "id": "nZGQkU7QJ4diuMko",
+      "template": "workflows/ui-synced/text-to-videos-veo3.workflow.json",
+      "lastSyncedAt": "2026-03-31T18:28:51Z"
+    },
+    "Text To Images": {
+      "id": "tcF2wcybrmgzFNew",
+      "template": "workflows/ui-synced/text-to-images.workflow.json",
+      "lastSyncedAt": "2026-03-31T18:28:51Z"
+    },
+    "Demo OpenAI via Proxy API": {
+      "id": "x62qzfGcBeqrfueM",
+      "template": "workflows/ui-synced/demo-openai-via-proxy-api.workflow.json",
+      "lastSyncedAt": "2026-03-31T18:28:51Z"
     }
   }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "Demo OpenAI via Proxy API",
+  "name": "Demo Gemini via Proxy API",
   "nodes": [
     {
       "id": "1",
@@ -27,13 +27,13 @@
             {
               "id": "2-1",
               "name": "prompt",
-              "value": "Explain in one short sentence how OpenAI works via Proxy API.",
+              "value": "Say hello from Gemini via Proxy API in one short sentence.",
               "type": "string"
             },
             {
               "id": "2-2",
               "name": "content_model",
-              "value": "cx/gpt-5.4",
+              "value": "gemini-3-flash-preview",
               "type": "string"
             },
             {
@@ -54,7 +54,7 @@
     },
     {
       "id": "3",
-      "name": "Call OpenAI via Proxy API",
+      "name": "Call Gemini via Proxy API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
@@ -144,7 +144,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "const data = $json ?? {};\nconst status = String(data.status ?? 'unknown');\nconst details = [\n  data.content_model ? `model=${data.content_model}` : null,\n  data.error ? `error=${data.error}` : null,\n  data.reply ? `reply=${String(data.reply).slice(0, 220)}` : null\n].filter(Boolean).join(' | ');\n\nreturn [{\n  json: {\n    status,\n    source_workflow: 'Demo OpenAI via Proxy API',\n    summary: String(data.summary ?? 'Workflow execution finished.'),\n    details,\n    notify_targets: String(data.notify_targets ?? 'telegram'),\n    telegram_bot_token: String(data.telegram_bot_token ?? '').trim(),\n    telegram_chat_id: String(data.telegram_chat_id ?? '').trim(),\n    ggchat_webhook_url: String(data.ggchat_webhook_url ?? '').trim(),\n    timestamp: new Date().toISOString()\n  }\n}];"
+        "jsCode": "const data = $json ?? {};\nconst status = String(data.status ?? 'unknown');\nconst details = [\n  data.content_model ? `model=${data.content_model}` : null,\n  data.error ? `error=${data.error}` : null,\n  data.reply ? `reply=${String(data.reply).slice(0, 220)}` : null\n].filter(Boolean).join(' | ');\n\nreturn [{\n  json: {\n    status,\n    source_workflow: 'Demo Gemini via Proxy API',\n    summary: String(data.summary ?? 'Workflow execution finished.'),\n    details,\n    notify_targets: String(data.notify_targets ?? 'telegram'),\n    telegram_bot_token: String(data.telegram_bot_token ?? '').trim(),\n    telegram_chat_id: String(data.telegram_chat_id ?? '').trim(),\n    ggchat_webhook_url: String(data.ggchat_webhook_url ?? '').trim(),\n    timestamp: new Date().toISOString()\n  }\n}];"
       }
     },
     {
@@ -183,14 +183,14 @@
       "main": [
         [
           {
-            "node": "Call OpenAI via Proxy API",
+            "node": "Call Gemini via Proxy API",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Call OpenAI via Proxy API": {
+    "Call Gemini via Proxy API": {
       "main": [
         [
           {

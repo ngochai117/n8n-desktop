@@ -1,0 +1,748 @@
+{
+  "name": "Book Review AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "cx/gpt-5.4",
+          "mode": "list",
+          "cachedResultName": "cx/gpt-5.4"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1800,
+        1028
+      ],
+      "id": "94bdf134-0a4e-46d3-a158-efe3c7361b30",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "nmpOof7gCtDCf1BD",
+          "name": "Local OpenAI Proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "cx/gpt-5.4",
+          "mode": "list",
+          "cachedResultName": "cx/gpt-5.4"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1448,
+        1176
+      ],
+      "id": "5dd9ac93-398b-46be-8933-1ef63b6ae740",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "nmpOof7gCtDCf1BD",
+          "name": "Local OpenAI Proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "cx/gpt-5.4",
+          "mode": "list",
+          "cachedResultName": "cx/gpt-5.4"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1096,
+        704
+      ],
+      "id": "d8166212-904b-4e6f-9497-92558c664892",
+      "name": "OpenAI Chat Model4",
+      "credentials": {
+        "openAiApi": {
+          "id": "nmpOof7gCtDCf1BD",
+          "name": "Local OpenAI Proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "cx/gpt-5.4",
+          "mode": "list",
+          "cachedResultName": "cx/gpt-5.4"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1096,
+        1496
+      ],
+      "id": "0db38b4f-8aff-4d21-8539-7be3572a3b96",
+      "name": "OpenAI Chat Model5",
+      "credentials": {
+        "openAiApi": {
+          "id": "nmpOof7gCtDCf1BD",
+          "name": "Local OpenAI Proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Config Main').item.json.chatInput }}{{ JSON.stringify($json.output) }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $('Config Main').item.json.master_prompt }}\nPROMPT QC: THE CRITICAL SOUL EDITOR (V4)\n\nROLE:\n- Bạn là một biên tập viên QC gắt gao cho các nội dung kể chuyện review sách dài.\n\nMISSION:\n- Đánh giá chất lượng khách quan và độ khớp với phong cách Soulful Narrator.\n\nSTYLE KERNEL REFERENCE (INJECTED FROM MASTER):\n__BOOK_REVIEW_STYLE_KERNEL__\n\nEVALUATION LAYERS:\n1) Objective layer:\n- Sức mạnh của Hook.\n- Sự mạch lạc của dòng tự sự.\n- Độ nguyên bản (Originality).\n- Tính ứng dụng của Bridge vào thực tế đời sống.\n\n2) Style-fit layer:\n- Sự nhất quán của giọng kể.\n- Mạch trôi tự nhiên (tránh meta labeling).\n- Chiều sâu cảm xúc và các ẩn dụ đời thường.\n\nSCORING & FEEDBACK:\n- Thang điểm từ 0 đến 10 cho: Hook, Clarity, Originality, Practical.\n- Trừ điểm nặng nếu dính meta-label lặp đi lặp lại hoặc hô hào giáo điều.\n- Feedback phải thẳng thắn, ưu tiên các lỗi cần sửa ngay, nhưng giữ cho sự sáng tạo của người kể chuyện còn sống.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"hook\": 0,\n  \"clarity\": 0,\n  \"originality\": 0,\n  \"practical\": 0,\n  \"risk\": \"low|med|high\",\n  \"feedback\": \"string\",\n  \"qc_issues\": [\"string\"]\n}\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1104,
+        1272
+      ],
+      "id": "4de0adc6-2877-4954-81b4-cd25e0807235",
+      "name": "QC AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Config Main').item.json.chatInput }}{{ JSON.stringify($json.output) }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\nPROMPT METADATA: THE ATTENTION ARCHITECT (V4)\n\nROLE:\n- Bạn là một Chuyên gia Chiến lược Nội dung chuyên về tâm lý học hành vi cho các kênh như Better Version hay Web5ngay.\n\nMỤC TIÊU:\n- Biến \"linh hồn\" bản thảo thành Metadata có sức hút mãnh liệt, đánh vào sự tò mò trí tuệ và nỗi đau thực tế của khán giả.\n\nVOICE & STYLE:\n- Kế thừa giọng văn từ STYLE KERNEL: THE SOULFUL NARRATOR & CULTURAL ANALYST (V4).\n- Ngôn từ sắc sảo, triết lý, không giật tít rẻ tiền.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- Language: Vietnamese.\n- Caption dưới 150 chữ.\n- Hashtags: 5-7 tag, viết thường, không dấu.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"title\": \"string\",\n  \"caption\": \"string\",\n  \"thumbnail_text\": \"string\",\n  \"hashtags\": [\"#tag\"]\n}\n\nQUALITY RULES:\n1. Title:\n   - Phải chứa một \"Mâu thuẫn\" (Tension) hoặc một \"Câu hỏi tử huyệt\" chạm đến nỗi đau/khao khát của con người hiện đại.\n   - TRÁNH: \"Review sách: [Tên sách]\".\n   - NÊN: \"Tại sao bạn vẫn mãi thất bại dù đã cố gắng?\".\n\n2. Caption:\n   - Dưới 150 chữ, tiếng Việt.\n   - Cấu trúc: 1 Câu hỏi khơi gợi nỗi đau (Emotional Hook) + 1 Giá trị cốt lõi từ sách + 1 Lời hứa về sự thay đổi (Practical Takeaway).\n   - Văn phong: Tâm tình như bạn thân.\n\n3. Thumbnail Text:\n   - Cực ngắn (dưới 6 từ), clear và curiosity-driven.\n   - Phải là một lời cảnh báo hoặc một lời mời gọi mang tính quyết định, không lặp lại Title.\n\n4. Hashtags:\n   - 5-7 tags, viết thường, không dấu.\n   - Bao gồm tên sách, tên tác giả, ngách nội dung (self-help, triết lý).\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1104,
+        480
+      ],
+      "id": "d4ad4afe-c71a-4f5d-ac74-e655f1f83af8",
+      "name": "Metadata AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Config Main').item.json.chatInput }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=MASTER PROMPT: THE SOULFUL NARRATOR & CULTURAL ANALYST (V4)\n\nROLE:\n- Bạn là một storyteller: thấu cảm, đời thường, nhưng đủ sắc bén để đánh thức người nghe.\n- Giọng kể phải tự nhiên như người thật đang tâm sự, không giáo điều, không khẩu hiệu rỗng.\n\nCORE DIRECTIVES:\n1. HOOK THỨC TỈNH:\n- Mở đầu bằng một câu hỏi hoặc tình huống chạm vào nỗi đau/cột mốc mà ai cũng từng gặp.\n- Ưu tiên không nêu tên sách ngay trong câu mở đầu.\n\n2. TRIỆT TIÊU META LABEL:\n- Không viết kiểu \"Phần 1\", \"Tóm tắt\", \"Bài học\" trong narration.\n- Mạch kể phải liền, trôi tự nhiên như một cuộc đối thoại.\n\n3. THE BRIDGE (CẦU NỐI TÂM LÝ):\n- Mỗi luận điểm từ sách cần có câu nối kéo về đời thực ngay sau đó.\n- Bridge phải cụ thể: công việc, gia đình, áp lực, sai lầm, thói quen.\n- Phải giải mã được cơ chế tâm lý đằng sau hành động của nhân vật thay vì chỉ nêu ví dụ.\n\n4. ẨN DỤ ĐỜI THƯỜNG:\n- Dùng hình ảnh gần gũi để giải thích ý khó.\n- Tránh định kiến giới, tránh tâm linh hóa, tránh ví dụ cực đoan.\n\n5. XƯNG HÔ:\n- Ưu tiên \"mình/tôi\" và \"bạn\" (có thể \"bạn thân mến\" khi phù hợp).\n- Giữ cảm giác gần gũi như hai người bạn đang ngồi nói chuyện.\n\n6. NGÔN NGỮ CHIÊM NGHIỆM:\n- Lời văn đời thường, mềm mại, giàu cảm xúc nhưng rõ nghĩa.\n- Tuyệt đối tránh các từ AI cửa miệng như \"Tóm lại\", \"Nhìn chung\", \"Trong bối cảnh\".\n\nLOGIC THEO THỂ LOẠI (ADAPTIVE LENS):\n- Self-help/Tâm lý:\n  Phân tích theo 3 tầng: sinh lý - nhận thức - hành vi.\n  Không hô hào \"hãy tích cực\"; giải thích gốc rễ tiêu cực và sự không hoàn hảo.\n  Thần thái: điềm tĩnh, chữa lành, thấu suốt.\n\n- Tiểu thuyết/Ngụ ngôn:\n  Xem hành trình nhân vật như hành trình tinh thần của người nghe.\n  Biến bối cảnh/vật phẩm thành biểu tượng tâm lý để soi chiếu bản thân.\n  Thần thái: giàu hình ảnh, truyền cảm hứng, có khát vọng.\n\n- Triết học/Khoa học:\n  Dịch ý niệm khô thành câu hỏi nhân sinh và trải nghiệm sống.\n  Biến con số thành ý nghĩa cảm xúc và lựa chọn thực tế.\n\nINVISIBLE FLOW (KHUNG NGẦM):\n1. Gõ cửa tâm hồn: Mở bằng tình huống gia đình hoặc câu hỏi nhức nhối.\n2. Dẫn lối vào sách: Giới thiệu sách như tấm gương/liệu pháp để soi mình.\n3. Phân tích sâu + Đối thoại: Đan xen kể chuyện với \"tâm sự mỏng\" về sai lầm, nỗi sợ, khao khát.\n4. Triển khai các cảnh (Scenes): Đặt tiêu đề cảnh theo phần đúc kết nhắc nhở.\n5. Kết đọng: Kết bằng một khẳng định bao dung hoặc câu hỏi mở để người nghe tự phản tư.\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1808,
+        804
+      ],
+      "id": "3bf17144-d8d7-44a0-a352-dd195585b8ef",
+      "name": "Outline AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2480,
+        900
+      ],
+      "id": "945f4306-8695-48ae-893a-91925fe087cb",
+      "name": "Telegram Trigger",
+      "webhookId": "33f37b05-be97-457e-87dd-2f45f840f5b2",
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "__TELEGRAM_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -2480,
+        708
+      ],
+      "id": "190f4d23-2d0c-4ccf-aa02-0ecab8231409",
+      "name": "When chat message received",
+      "webhookId": "eff41ce5-03b3-456c-b32a-3f18639aee27"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -1808,
+        1600
+      ],
+      "id": "08f1f975-fdca-4ce0-9af8-aacffe45f1b2",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "QpcIxaHiYXDqjw4p",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/QpcIxaHiYXDqjw4p",
+          "cachedResultName": "GG Drive Mananger"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -2032,
+        1600
+      ],
+      "id": "2d3c5ee1-4209-4140-9498-6dbdd118adb5",
+      "name": "Call 'GG Drive Mananger'"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fe08b955-42dd-4719-8619-d9ffe65dc9a7",
+              "name": "masterPrompt",
+              "value": "ROLE: Bạn là một \"Vị Triết Gia Đời Thường\" (The Everyday Philosopher). Bạn không review sách; bạn dùng sách để giải mã những \"Sự thật ngầm hiểu\" về nỗi đau, khao khát và sự hèn nhát của con người hiện đại.   VOICE & STYLE: - Ngôn ngữ: Tiếng Việt đời thường, giàu hình ảnh, có nhịp điệu (Pacing).  - Thái độ: Thủ thỉ như tâm tình nhưng đanh thép khi cần \"tát tỉnh\" người nghe.  - Tuyệt đối cấm: Các từ AI cửa miệng như \"Tóm lại\", \"Nhìn chung\", \"Trong bối cảnh hiện nay\", \"Chúng ta cần phải\".  HÀNH VI CHIẾN THUẬT: 1. THE PSYCHOLOGICAL BRIDGE (Cầu nối tâm lý): Không chỉ đưa ví dụ đời thực, mà phải giải mã cơ chế tâm lý đằng sau hành động của nhân vật. (Ví dụ: Santiago sợ mất đàn cừu không phải vì tiền, mà vì não bộ đang bảo vệ sự an toàn giả tạo để từ chối sự trưởng thành đau đớn). 2. TỔNG HÒA 3 TẦNG: Mọi phân tích phải đi từ Cảm giác cơ thể (Sinh lý) -> Sự tự lừa dối trong suy nghĩ (Nhận thức) -> Sự trì trệ hoặc bứt phá (Hành vi). 3. TRÁNH CẤU TRÚC \"META\": Mạch kịch bản phải là một dòng chảy (Flow). Dùng những câu nối cảm xúc để chuyển cảnh thay vì tiêu đề cứng nhắc. 4. ẨN DỤ XUYÊN SUỐT: Chọn 1 hình ảnh ẩn dụ xuyên suốt kịch bản để làm \"mỏ neo\" cảm xúc cho người nghe.  LOGIC THEO THỂ LOẠI (ADAPTIVE LENS): - Self-help/Tâm lý: Phân tích theo 3 tầng (Sinh lý - Nhận thức - Hành vi). Không hô hào \"hãy tích cực\"; giải thích gốc rễ tiêu cực. - Tiểu thuyết/Ngụ ngôn: Xem hành trình nhân vật như hành trình tinh thần của người nghe. Biến bối cảnh thành biểu tượng tâm lý. - Triết học/Khoa học: Dịch ý niệm khô thành câu hỏi nhân sinh và lựa chọn thực tế.",
+              "type": "string"
+            },
+            {
+              "id": "7c7003f4-ae62-4abe-8629-0f57dfbb9d19",
+              "name": "telegramChatId",
+              "value": "=6920403077",
+              "type": "string"
+            },
+            {
+              "id": "5640634f-aa04-4b9b-9f1a-6705558a3d72",
+              "name": "chatInput",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "f17cdce5-1343-4c2c-a2d6-ef10cf68da88",
+              "name": "ggDriveRootFolderId",
+              "value": "1ykMeq3i9svSq97_gtA8duJyZvBg_8Fe5",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2256,
+        804
+      ],
+      "id": "80d18528-92a0-4365-859a-480a30658ac7",
+      "name": "Config Main"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.telegramChatId }}",
+        "text": "Đang tạo outline...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -2032,
+        804
+      ],
+      "id": "f9ec94b5-f4b9-4476-ae38-e876d0bd5429",
+      "name": "Send Creating Outline Message",
+      "webhookId": "5d1921ba-59cc-4e43-b3a6-c2a30eee5a98",
+      "notesInFlow": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "__TELEGRAM_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -752,
+        952
+      ],
+      "id": "d341eeef-c3dc-4581-afa3-25395d7f6531",
+      "name": "Merge Manifest"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2480,
+        1600
+      ],
+      "id": "3b2a99a7-8143-43a4-8b00-2c12243a4625",
+      "name": "Prepare Metadata File Link"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -2256,
+        1600
+      ],
+      "id": "d3168df3-006f-463a-83dc-a5851417d311",
+      "name": "Convert Manifest To File"
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Send Creating Outline Message').item.json.result.chat.id }}",
+        "messageId": "={{ $('Send Creating Outline Message').item.json.result.message_id }}",
+        "text": "Đang tạo Metadata and QC Review...",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1040,
+        880
+      ],
+      "id": "db626457-ea62-4ef1-a13e-21290c660b3a",
+      "name": "Send Creating Metadata Message",
+      "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "__TELEGRAM_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Send Creating Outline Message').item.json.result.chat.id }}",
+        "messageId": "={{ $('Send Creating Outline Message').item.json.result.message_id }}",
+        "text": "Đang tạo nội dung...",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1392,
+        656
+      ],
+      "id": "c37296a4-050c-4c12-bf2a-f34017203d7f",
+      "name": "Send Creating Content Message",
+      "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "__TELEGRAM_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Send Creating Outline Message').item.json.result.chat.id }}",
+        "messageId": "={{ $('Send Creating Outline Message').item.json.result.message_id }}",
+        "text": "Scene manifest:",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1584,
+        1600
+      ],
+      "id": "7fab4b38-a287-4234-890c-b5526c30afc0",
+      "name": "Send Require Review Metadata",
+      "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "__TELEGRAM_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"angle\": \"string\",\n  \"target_audience\": \"string\",\n  \"primary_lens\": \"string\",\n  \"secondary_lens\": \"string\",\n  \"scene_count\": 10,\n  \"estimated_total_duration_sec\": 1020,\n  \"scenes\": [\n    {\n      \"order\": 1,\n      \"scene_role\": \"hook|core|outro\",\n      \"scene_goal\": \"string\",\n      \"key_points\": [\"string\"]\n    }\n  ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -1672,
+        1028
+      ],
+      "id": "c38027f9-eb12-4bac-85ce-c26433d0395d",
+      "name": "Structured Outline Output Parser"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"book\": {\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"style_keywords\": [\"string\"]\n  },\n  \"video\": {\n    \"aspect_ratio\": \"16:9\",\n    \"target_duration_min_sec\": 900,\n    \"target_duration_max_sec\": 1200,\n    \"estimated_total_duration_sec\": 0\n  },\n  \"scenes\": [\n    {\n      \"scene_id\": \"scene_01\",\n      \"order\": 1,\n      \"scene_title\": \"string\",\n      \"scene_role\": \"hook|core|outro\",\n      \"narration_text\": \"string\",\n      \"image_prompt_en\": \"string\",\n      \"highlight_quote_vi\": \"string\",\n      \"estimated_duration_sec\": 0,\n      \"transition\": \"cut\"\n    }\n  ]\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -1320,
+        1176
+      ],
+      "id": "164722d2-496b-44ab-b98a-026859132277",
+      "name": "Structured Expand Output Parser"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"title\": \"string\",\n  \"caption\": \"string\",\n  \"thumbnail_text\": \"string\",\n  \"hashtags\": [\"#tag\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -968,
+        704
+      ],
+      "id": "304378d5-3835-43db-808d-cfb36366db1b",
+      "name": "Structured Metadata Output Parser"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Config Main').item.json.chatInput }}{{ JSON.stringify($json.output) }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\nPROMPT SCENE EXPAND: THE SCRIPTWRITER (V4)\n\nROLE:\n- Bạn là người viết kịch bản kể chuyện cho video review sách dài.\n\nTASK:\n- Mở rộng dàn ý thành một review_manifest sẵn sàng sản xuất.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- Giữ đúng số lượng cảnh từ dàn ý.\n- Tổng narration_text: 15.000 - 20.000 ký tự tiếng Việt.\n- Hook/Outro: 45-75 giây mỗi cảnh.\n- Core scenes: 75-120 giây mỗi cảnh, tối thiểu 45 giây.\n- scene_01 là hook, scene cuối là outro.\n- image_prompt_en: viết bằng tiếng Anh và không để trống.\n- highlight_quote_vi: tùy chọn, không có thì để chuỗi rỗng.\n- transition mặc định \"cut\".\n\nANTI-RIGID CONSTRAINTS:\n- Tuyệt đối không dùng các mẫu câu lặp đi lặp lại giữa các cảnh.\n- Không biến narration thành danh sách liệt kê tóm tắt.\n- Giữ sự cân bằng giữa chiều sâu cảm xúc và tính ứng dụng thực tế.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"book\": {\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"style_keywords\": [\"string\"]\n  },\n  \"video\": {\n    \"aspect_ratio\": \"16:9\",\n    \"target_duration_min_sec\": 900,\n    \"target_duration_max_sec\": 1200,\n    \"estimated_total_duration_sec\": 0\n  },\n  \"scenes\": [\n    {\n      \"scene_id\": \"scene_01\",\n      \"order\": 1,\n      \"scene_title\": \"string\",\n      \"scene_role\": \"hook|core|outro\",\n      \"narration_text\": \"string\",\n      \"image_prompt_en\": \"string\",\n      \"highlight_quote_vi\": \"string\",\n      \"estimated_duration_sec\": 0,\n      \"transition\": \"cut\"\n    }\n  ]\n}\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1456,
+        952
+      ],
+      "id": "99a2c42e-85b1-43c3-b056-af39d4e59bf0",
+      "name": "Content AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"hook\": 0,\n  \"clarity\": 0,\n  \"originality\": 0,\n  \"practical\": 0,\n  \"risk\": \"low|med|high\",\n  \"feedback\": \"string\",\n  \"qc_issues\": [\"string\"]\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -968,
+        1496
+      ],
+      "id": "619e23b4-2945-4ed1-a567-3f6377836719",
+      "name": "Structured Output Parser"
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Outline AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Content AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Metadata AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "QC AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Outline AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Creating Content Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Content AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config Main",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Config Main",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Metadata AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Merge Manifest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QC AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Merge Manifest",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Call 'GG Drive Mananger'": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config Main": {
+      "main": [
+        [
+          {
+            "node": "Send Creating Outline Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Creating Outline Message": {
+      "main": [
+        [
+          {
+            "node": "Outline AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Manifest": {
+      "main": [
+        []
+      ]
+    },
+    "Prepare Metadata File Link": {
+      "main": [
+        [
+          {
+            "node": "Convert Manifest To File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Manifest To File": {
+      "main": [
+        [
+          {
+            "node": "Call 'GG Drive Mananger'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Send Require Review Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Outline Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Outline AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Expand Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Content AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Metadata Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Metadata AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Metadata AI Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "QC AI Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Creating Metadata Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Manifest",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "QC AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
+}

@@ -38,7 +38,7 @@
             {
               "id": "2-6",
               "name": "fallback_model",
-              "value": "cx/gpt-5.4",
+              "value": "cx/gpt-5.2",
               "type": "string"
             },
             {
@@ -116,7 +116,7 @@
             {
               "id": "media-image_model",
               "name": "image_model",
-              "value": "nano-banana-pro",
+              "value": "={{ $json.image_model || \"nano-banana-pro\" }}",
               "type": "string"
             },
             {
@@ -152,7 +152,7 @@
             {
               "id": "media-tts_voice_id",
               "name": "tts_voice_id",
-              "value": "ngochuyen",
+              "value": "ngochuyen_lora",
               "type": "string"
             },
             {
@@ -328,11 +328,27 @@
               "name": "video_model",
               "value": "veo3",
               "type": "string"
+            },
+            {
+              "id": "media-gg-drive-manager-workflow-path-main",
+              "name": "gg_drive_manager_workflow_path",
+              "value": "__GG_DRIVE_MANAGER_WORKFLOW_PATH__",
+              "type": "string"
+            },
+            {
+              "name": "gg_sheet_manager_workflow_path",
+              "value": "__GG_SHEET_MANAGER_WORKFLOW_PATH__",
+              "type": "string"
+            },
+            {
+              "name": "ggSheetManagerWorkflowPath",
+              "value": "__GG_SHEET_MANAGER_WORKFLOW_PATH__",
+              "type": "string"
             }
           ]
         },
-        "options": {},
-        "includeOtherFields": true
+        "includeOtherFields": true,
+        "options": {}
       },
       "id": "2",
       "name": "Set Config (Main)",
@@ -340,7 +356,7 @@
       "typeVersion": 3.4,
       "position": [
         112,
-        -728
+        -872
       ]
     },
     {
@@ -353,7 +369,7 @@
       "typeVersion": 2,
       "position": [
         336,
-        -728
+        -872
       ]
     },
     {
@@ -367,7 +383,7 @@
       "typeVersion": 2,
       "position": [
         560,
-        -728
+        -872
       ]
     },
     {
@@ -383,8 +399,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.1,
       "position": [
-        3584,
-        -760
+        9296,
+        -992
       ],
       "alwaysOutputData": true,
       "continueOnFail": true
@@ -403,7 +419,7 @@
       "typeVersion": 1.2,
       "position": [
         -560,
-        -728
+        -776
       ],
       "webhookId": "fe383fa2-83b0-459e-afd6-829182dcfab4",
       "credentials": {
@@ -446,7 +462,7 @@
       "typeVersion": 3.4,
       "position": [
         -336,
-        -728
+        -776
       ]
     },
     {
@@ -458,8 +474,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        784,
-        -536
+        560,
+        -680
       ]
     },
     {
@@ -559,25 +575,25 @@
             {
               "id": "media-gdrive_root_folder_id-worker",
               "name": "gdrive_root_folder_id",
-              "value": "={{ $json.gdrive_root_folder_id || \"\" }}",
+              "value": "__GDRIVE_ROOT_FOLDER_ID__",
               "type": "string"
             },
             {
               "id": "media-gdrive_credential_name-worker",
               "name": "gdrive_credential_name",
-              "value": "={{ $json.gdrive_credential_name || \"\" }}",
+              "value": "__GDRIVE_CREDENTIAL_NAME__",
               "type": "string"
             },
             {
               "id": "media-image_api_base_url",
               "name": "image_api_base_url",
-              "value": "={{ $json.image_api_base_url || \"\" }}",
+              "value": "",
               "type": "string"
             },
             {
               "id": "media-image_api_key",
               "name": "image_api_key",
-              "value": "={{ $json.image_api_key || \"\" }}",
+              "value": "",
               "type": "string"
             },
             {
@@ -613,13 +629,13 @@
             {
               "id": "media-tts_api_base_url",
               "name": "tts_api_base_url",
-              "value": "={{ $json.tts_api_base_url || \"http://127.0.0.1:8001\" }}",
+              "value": "http://127.0.0.1:8001",
               "type": "string"
             },
             {
               "id": "media-tts_voice_id",
               "name": "tts_voice_id",
-              "value": "={{ $json.tts_voice_id || \"ngochuyen\" }}",
+              "value": "ngochuyen_lora",
               "type": "string"
             },
             {
@@ -691,13 +707,13 @@
             {
               "id": "media-text_to_images_workflow_id-worker",
               "name": "text_to_images_workflow_id",
-              "value": "={{ $json.text_to_images_workflow_id || \"__TEXT_TO_IMAGES_WORKFLOW_ID__\" }}",
+              "value": "__TEXT_TO_IMAGES_WORKFLOW_ID__",
               "type": "string"
             },
             {
               "id": "media-tts_workflow_id-worker",
               "name": "tts_workflow_id",
-              "value": "={{ $json.tts_workflow_id || \"__TTS_WORKFLOW_ID__\" }}",
+              "value": "__TTS_WORKFLOW_ID__",
               "type": "string"
             },
             {
@@ -715,13 +731,13 @@
             {
               "id": "auto-scene_outline_prompt_template",
               "name": "scene_outline_prompt_template",
-              "value": "={{ $json.scene_outline_prompt_template || \"__BOOK_REVIEW_SCENE_OUTLINE_PROMPT__\" }}",
+              "value": "__BOOK_REVIEW_SCENE_OUTLINE_PROMPT__",
               "type": "string"
             },
             {
               "id": "auto-scene_expand_prompt_template",
               "name": "scene_expand_prompt_template",
-              "value": "={{ $json.scene_expand_prompt_template || \"__BOOK_REVIEW_SCENE_EXPAND_PROMPT__\" }}",
+              "value": "__BOOK_REVIEW_SCENE_EXPAND_PROMPT__",
               "type": "string"
             },
             {
@@ -763,31 +779,47 @@
             {
               "id": "media-video_clip_duration_seconds-worker",
               "name": "video_clip_duration_seconds",
-              "value": "={{ $json.video_clip_duration_seconds || 8 }}",
+              "value": 8,
               "type": "number"
             },
             {
               "id": "media-video_target_buffer_seconds-worker",
               "name": "video_target_buffer_seconds",
-              "value": "={{ $json.video_target_buffer_seconds || 1 }}",
+              "value": 1,
               "type": "number"
             },
             {
               "id": "media-text_to_videos_workflow_id-worker",
               "name": "text_to_videos_workflow_id",
-              "value": "={{ $json.text_to_videos_workflow_id || \"__TEXT_TO_VIDEOS_WORKFLOW_ID__\" }}",
+              "value": "__TEXT_TO_VIDEOS_WORKFLOW_ID__",
               "type": "string"
             },
             {
               "id": "media-media_visual_mode-worker",
               "name": "media_visual_mode",
-              "value": "={{ $json.media_visual_mode || \"image\" }}",
+              "value": "image",
               "type": "string"
             },
             {
               "id": "media-video_model-worker",
               "name": "video_model",
-              "value": "={{ $json.video_model || \"veo3\" }}",
+              "value": "veo3",
+              "type": "string"
+            },
+            {
+              "id": "media-gg-drive-manager-workflow-path-worker",
+              "name": "gg_drive_manager_workflow_path",
+              "value": "__GG_DRIVE_MANAGER_WORKFLOW_PATH__",
+              "type": "string"
+            },
+            {
+              "name": "gg_sheet_manager_workflow_path",
+              "value": "__GG_SHEET_MANAGER_WORKFLOW_PATH__",
+              "type": "string"
+            },
+            {
+              "name": "ggSheetManagerWorkflowPath",
+              "value": "__GG_SHEET_MANAGER_WORKFLOW_PATH__",
               "type": "string"
             }
           ]
@@ -800,8 +832,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1008,
-        -632
+        784,
+        -776
       ]
     },
     {
@@ -814,8 +846,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1344,
-        -632
+        1232,
+        -1040
       ]
     },
     {
@@ -828,8 +860,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2912,
-        -632
+        9072,
+        -992
       ]
     },
     {
@@ -842,7 +874,7 @@
       "typeVersion": 2,
       "position": [
         -112,
-        -824
+        -872
       ]
     },
     {
@@ -858,7 +890,7 @@
       "typeVersion": 2,
       "position": [
         -560,
-        -312
+        -432
       ],
       "webhookId": "book-review-telegram-file-bridge"
     },
@@ -873,7 +905,7 @@
       "typeVersion": 2,
       "position": [
         -336,
-        -312
+        -432
       ]
     },
     {
@@ -891,7 +923,7 @@
       "typeVersion": 1.1,
       "position": [
         -112,
-        -312
+        -432
       ]
     },
     {
@@ -911,7 +943,7 @@
       "typeVersion": 1.2,
       "position": [
         112,
-        -312
+        -432
       ],
       "webhookId": "f77e06a7-86fc-4c3f-bf91-993a4cbdbc1a",
       "credentials": {
@@ -932,97 +964,89 @@
       "typeVersion": 2,
       "position": [
         1456,
-        -760
+        -1040
       ]
     },
     {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ (() => { const mode = String($json.media_visual_mode || image).toLowerCase(); if (mode === video) { return $json.text_to_videos_workflow_id || \"__TEXT_TO_VIDEOS_WORKFLOW_ID__\"; } return $json.text_to_images_workflow_id || \"__TEXT_TO_IMAGES_WORKFLOW_ID__\"; })() }}"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "source": "database"
+      },
       "id": "31",
       "name": "Generate Image Assets (Worker)",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.1,
       "position": [
-        1792,
-        -856
-      ],
+        3696,
+        -1184
+      ]
+    },
+    {
       "parameters": {
-        "source": "database",
         "workflowId": {
           "__rl": true,
-          "mode": "list",
-          "value": "={{ (() => { const mode = String($json.media_visual_mode || 'image').toLowerCase(); if (mode === 'video') { return $json.text_to_videos_workflow_id || $json.text_to_images_workflow_id || '__TEXT_TO_VIDEOS_WORKFLOW_ID__'; } return $json.text_to_images_workflow_id || '__TEXT_TO_IMAGES_WORKFLOW_ID__'; })() }}"
+          "mode": "id",
+          "value": "={{ $json.tts_workflow_id || \"__TTS_WORKFLOW_ID__\" }}"
         },
         "options": {
           "waitForSubWorkflow": true
-        }
-      }
-    },
-    {
+        },
+        "source": "database"
+      },
       "id": "32",
       "name": "Generate TTS Assets (Worker)",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.1,
       "position": [
-        1792,
-        -664
-      ],
-      "parameters": {
-        "source": "database",
-        "workflowId": {
-          "__rl": true,
-          "mode": "list",
-          "value": "={{ $json.tts_workflow_id || \"__TTS_WORKFLOW_ID__\" }}"
-        },
-        "options": {
-          "waitForSubWorkflow": true
-        }
-      }
+        3696,
+        -800
+      ]
     },
     {
-      "id": "33",
-      "name": "Merge Media Results (Worker)",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        2016,
-        -760
-      ],
       "parameters": {
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {
-          "includeUnpaired": true,
           "clashHandling": {
             "values": {
               "resolveClash": "preferInput1",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
-          }
+          },
+          "includeUnpaired": true
         }
-      }
+      },
+      "id": "33",
+      "name": "Merge Media Results (Worker)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -560,
+        -208
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction asDuration(value, fallback = 0) {\n  const number = Number(value);\n  if (!Number.isFinite(number) || number < 0) return fallback;\n  return Math.round(number * 1000) / 1000;\n}\n\nfunction computeElapsedSeconds(startedAt, finishedAtIso) {\n  const started = new Date(startedAt ?? '');\n  const finished = new Date(finishedAtIso ?? '');\n  if (Number.isNaN(started.getTime()) || Number.isNaN(finished.getTime())) return 0;\n  const elapsed = (finished.getTime() - started.getTime()) / 1000;\n  if (!Number.isFinite(elapsed) || elapsed < 0) return 0;\n  return Math.round(elapsed * 1000) / 1000;\n}\n\nfunction normalizeScene(scene, index) {\n  const source = scene && typeof scene === 'object' ? scene : {};\n  const order = asInt(source.order, index + 1, 1, 100);\n  const sceneId = safeText(source.scene_id, safeText(source.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    scene_role: safeText(source.scene_role, order === 1 ? 'hook' : 'core'),\n    narration_text: safeText(source.narration_text, safeText(source.text)),\n    image_prompt_en: safeText(source.image_prompt_en),\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    estimated_duration_sec: asDuration(source.estimated_duration_sec, order === 1 ? 60 : 95),\n    transition: safeText(source.transition, 'cut'),\n    chunk_key: safeText(source.chunk_key, sceneId),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order, 1, 100),\n    text: safeText(source.text, safeText(source.narration_text)),\n  };\n}\n\nconst chunksFromInput = Array.isArray(input.media_chunks) ? input.media_chunks : [];\nconst baseScenes = chunksFromInput.map((scene, idx) => normalizeScene(scene, idx));\n\nconst visualMode = safeText(input.media_visual_mode, 'image').toLowerCase() === 'video'\n  ? 'video'\n  : 'image';\n\nconst videoItems = Array.isArray(input.media_video_items) ? input.media_video_items : [];\nconst imageItems = Array.isArray(input.media_image_items) ? input.media_image_items : [];\nconst visualItems = videoItems.length > 0 ? videoItems : imageItems;\nconst ttsItems = Array.isArray(input.media_tts_items) ? input.media_tts_items : [];\n\nconst shouldRun = input.media_should_run === true || visualItems.length > 0 || ttsItems.length > 0;\nif (!shouldRun) {\n  const finishedAt = new Date().toISOString();\n  return {\n    ...input,\n    media_assets: [],\n    media_debug_full: [],\n    media_pipeline_status: safeText(input.media_pipeline_status, 'skipped_non_final_success'),\n    media_debug_phase: 'finalized',\n    media_finished_at: finishedAt,\n    media_elapsed_seconds: computeElapsedSeconds(input.media_started_at, finishedAt),\n    media_stats: {\n      scene_count: baseScenes.length,\n      visual_mode: visualMode,\n      visual_generated_count: 0,\n      image_generated_count: 0,\n      video_generated_count: 0,\n      tts_generated_count: 0,\n      failed_count: 0,\n      skipped_count: baseScenes.length,\n    },\n  };\n}\n\nfunction itemSceneId(item) {\n  return safeText(item?.scene_id, safeText(item?.chunk_key));\n}\n\nconst visualBySceneId = new Map();\nfor (const item of visualItems) {\n  const sceneId = itemSceneId(item);\n  if (!sceneId) continue;\n  visualBySceneId.set(sceneId, item);\n}\n\nconst ttsBySceneId = new Map();\nfor (const item of ttsItems) {\n  const sceneId = itemSceneId(item);\n  if (!sceneId) continue;\n  ttsBySceneId.set(sceneId, item);\n}\n\nconst runVisual = input.media_run_image === true;\nconst runTts = input.media_run_tts === true;\n\nconst merged = baseScenes.map((scene) => {\n  const visual = visualBySceneId.get(scene.scene_id) ?? {};\n  const tts = ttsBySceneId.get(scene.scene_id) ?? {};\n\n  const visualStatus = safeText(\n    visual.video_status,\n    safeText(visual.image_status, runVisual ? 'failed' : 'skipped_not_requested'),\n  );\n  const ttsStatus = safeText(tts.tts_status, runTts ? 'failed' : 'skipped_not_requested');\n\n  const visualUrl = safeText(\n    visual.video_url,\n    safeText(\n      visual.image_url,\n      safeText(\n        visual.video_drive_url,\n        safeText(\n          visual.image_drive_url,\n          safeText(visual.video, safeText(visual.image)),\n        ),\n      ),\n    ),\n  );\n  const voiceUrl = safeText(tts.voice_url, safeText(tts.voice_drive_url, safeText(tts.voice)));\n\n  const durationSeconds = asDuration(\n    tts.duration_seconds,\n    asDuration(\n      tts.duration,\n      asDuration(visual.duration_seconds, asDuration(scene.estimated_duration_sec, 0)),\n    ),\n  );\n\n  const errors = [\n    safeText(visual.error_reason),\n    safeText(tts.error_reason),\n  ].filter(Boolean);\n\n  return {\n    scene_id: scene.scene_id,\n    order: scene.order,\n    scene_title: scene.scene_title,\n    scene_role: scene.scene_role,\n    narration_text: scene.narration_text,\n    image_prompt_en: scene.image_prompt_en,\n    highlight_quote_vi: scene.highlight_quote_vi,\n    transition: scene.transition,\n\n    visual_mode: visualMode,\n    visual_url: visualUrl,\n    visual_status: visualStatus,\n    visual_drive_file_id: safeText(visual.video_drive_file_id, safeText(visual.image_drive_file_id)),\n    visual_drive_url: safeText(visual.video_drive_url, safeText(visual.image_drive_url, visualUrl)),\n\n    video_url: safeText(visual.video_url, visualUrl),\n    video_status: safeText(visual.video_status, visualStatus),\n    video_drive_file_id: safeText(visual.video_drive_file_id, safeText(visual.image_drive_file_id)),\n    video_drive_url: safeText(visual.video_drive_url, safeText(visual.image_drive_url, visualUrl)),\n\n    image_url: safeText(visual.image_url, visualUrl),\n    image_status: safeText(visual.image_status, visualStatus),\n    image_drive_file_id: safeText(visual.image_drive_file_id, safeText(visual.video_drive_file_id)),\n    image_drive_url: safeText(visual.image_drive_url, safeText(visual.video_drive_url, visualUrl)),\n\n    voice_url: voiceUrl,\n    tts_status: ttsStatus,\n    voice_drive_file_id: safeText(tts.voice_drive_file_id),\n    voice_drive_url: safeText(tts.voice_drive_url, voiceUrl),\n\n    duration_seconds: durationSeconds,\n    error_reason: errors.length > 0 ? errors.join(' | ') : null,\n\n    shot_count_initial: asInt(visual.shot_count_initial, 0, 0, 200),\n    duration_buffer_seconds: asDuration(visual.duration_buffer_seconds, 0),\n    clip_target_avg_seconds: asDuration(visual.clip_target_avg_seconds, 0),\n    shot_prompts_en: Array.isArray(visual.shot_prompts_en) ? visual.shot_prompts_en : [],\n\n    chunk_key: scene.chunk_key,\n    partName: scene.partName,\n    index: scene.index,\n    text: scene.text,\n    image: safeText(visual.image_url, visualUrl),\n    video: safeText(visual.video_url, visualUrl),\n    voice: voiceUrl,\n    duration: durationSeconds,\n    voice_mime_type: safeText(tts.voice_mime_type),\n    voice_bytes: asInt(tts.voice_bytes, 0, 0, 100000000),\n  };\n});\n\nconst failedCount = merged.filter((item) => item.visual_status === 'failed' || item.tts_status === 'failed').length;\nconst skippedCount = merged.filter((item) =>\n  String(item.visual_status).startsWith('skipped') || String(item.tts_status).startsWith('skipped')\n).length;\n\nconst generatedVisualCount = merged.filter((item) => item.visual_status === 'generated').length;\nconst generatedImageCount = merged.filter((item) => item.image_status === 'generated').length;\nconst generatedVideoCount = merged.filter((item) => item.video_status === 'generated').length;\nconst generatedTtsCount = merged.filter((item) => item.tts_status === 'generated').length;\n\nlet pipelineStatus = 'completed';\nif (failedCount > 0 && (generatedVisualCount > 0 || generatedTtsCount > 0)) {\n  pipelineStatus = 'completed_with_partial_failures';\n} else if (failedCount > 0) {\n  pipelineStatus = 'failed';\n} else if (skippedCount > 0) {\n  pipelineStatus = 'completed_with_skips';\n}\n\nconst finishedAt = new Date().toISOString();\n\nconst manifestInput = input.review_manifest && typeof input.review_manifest === 'object' ? input.review_manifest : {};\nconst manifestScenes = Array.isArray(manifestInput.scenes) ? manifestInput.scenes : [];\nconst estimatedTotalDurationSec = merged.reduce((sum, scene) => sum + asDuration(scene.duration_seconds, 0), 0);\n\nconst reviewManifest = {\n  ...manifestInput,\n  video: {\n    ...(manifestInput.video && typeof manifestInput.video === 'object' ? manifestInput.video : {}),\n    aspect_ratio: '16:9',\n    target_duration_min_sec: 900,\n    target_duration_max_sec: 1200,\n    estimated_total_duration_sec: estimatedTotalDurationSec > 0\n      ? estimatedTotalDurationSec\n      : asDuration(manifestInput?.video?.estimated_total_duration_sec, 0),\n  },\n  scenes: manifestScenes.length > 0\n    ? manifestScenes.map((scene, idx) => {\n        const normalized = normalizeScene(scene, idx);\n        const mergedScene = merged.find((item) => item.scene_id === normalized.scene_id);\n        return {\n          ...normalized,\n          estimated_duration_sec: mergedScene\n            ? asDuration(mergedScene.duration_seconds, normalized.estimated_duration_sec)\n            : normalized.estimated_duration_sec,\n        };\n      })\n    : merged.map((item) => ({\n        scene_id: item.scene_id,\n        order: item.order,\n        scene_title: item.scene_title,\n        scene_role: item.scene_role,\n        narration_text: item.narration_text,\n        image_prompt_en: item.image_prompt_en,\n        highlight_quote_vi: item.highlight_quote_vi,\n        estimated_duration_sec: asDuration(item.duration_seconds, 0),\n        transition: item.transition,\n      })),\n};\n\nreturn {\n  ...input,\n  review_manifest: reviewManifest,\n  media_should_run: true,\n  media_visual_mode: visualMode,\n  media_chunks: baseScenes,\n  media_assets: merged,\n  media_debug_full: merged,\n  media_pipeline_status: pipelineStatus,\n  media_debug_phase: 'finalized',\n  media_finished_at: finishedAt,\n  media_elapsed_seconds: computeElapsedSeconds(input.media_started_at, finishedAt),\n  media_stats: {\n    scene_count: baseScenes.length,\n    visual_mode: visualMode,\n    visual_generated_count: generatedVisualCount,\n    image_generated_count: generatedImageCount,\n    video_generated_count: generatedVideoCount,\n    tts_generated_count: generatedTtsCount,\n    failed_count: failedCount,\n    skipped_count: skippedCount,\n  },\n};\n"
+      },
       "id": "34",
       "name": "Finalize Media Assets (Worker)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2240,
-        -632
-      ],
-      "parameters": {
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction asDuration(value, fallback = 0) {\n  const number = Number(value);\n  if (!Number.isFinite(number) || number < 0) return fallback;\n  return Math.round(number * 1000) / 1000;\n}\n\nfunction computeElapsedSeconds(startedAt, finishedAtIso) {\n  const started = new Date(startedAt ?? '');\n  const finished = new Date(finishedAtIso ?? '');\n  if (Number.isNaN(started.getTime()) || Number.isNaN(finished.getTime())) return 0;\n  const elapsed = (finished.getTime() - started.getTime()) / 1000;\n  if (!Number.isFinite(elapsed) || elapsed < 0) return 0;\n  return Math.round(elapsed * 1000) / 1000;\n}\n\nfunction normalizeScene(scene, index) {\n  const source = scene && typeof scene === 'object' ? scene : {};\n  const order = asInt(source.order, index + 1, 1, 100);\n  const sceneId = safeText(source.scene_id, safeText(source.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    scene_role: safeText(source.scene_role, order === 1 ? 'hook' : 'core'),\n    narration_text: safeText(source.narration_text, safeText(source.text)),\n    image_prompt_en: safeText(source.image_prompt_en),\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    estimated_duration_sec: asDuration(source.estimated_duration_sec, order === 1 ? 60 : 95),\n    transition: safeText(source.transition, 'cut'),\n    chunk_key: safeText(source.chunk_key, sceneId),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order, 1, 100),\n    text: safeText(source.text, safeText(source.narration_text)),\n  };\n}\n\nconst chunksFromInput = Array.isArray(input.media_chunks) ? input.media_chunks : [];\nconst baseScenes = chunksFromInput.map((scene, idx) => normalizeScene(scene, idx));\n\nconst visualMode = safeText(input.media_visual_mode, 'image').toLowerCase() === 'video'\n  ? 'video'\n  : 'image';\n\nconst videoItems = Array.isArray(input.media_video_items) ? input.media_video_items : [];\nconst imageItems = Array.isArray(input.media_image_items) ? input.media_image_items : [];\nconst visualItems = videoItems.length > 0 ? videoItems : imageItems;\nconst ttsItems = Array.isArray(input.media_tts_items) ? input.media_tts_items : [];\n\nconst shouldRun = input.media_should_run === true || visualItems.length > 0 || ttsItems.length > 0;\nif (!shouldRun) {\n  const finishedAt = new Date().toISOString();\n  return {\n    ...input,\n    media_assets: [],\n    media_debug_full: [],\n    media_pipeline_status: safeText(input.media_pipeline_status, 'skipped_non_final_success'),\n    media_debug_phase: 'finalized',\n    media_finished_at: finishedAt,\n    media_elapsed_seconds: computeElapsedSeconds(input.media_started_at, finishedAt),\n    media_stats: {\n      scene_count: baseScenes.length,\n      visual_mode: visualMode,\n      visual_generated_count: 0,\n      image_generated_count: 0,\n      video_generated_count: 0,\n      tts_generated_count: 0,\n      failed_count: 0,\n      skipped_count: baseScenes.length,\n    },\n  };\n}\n\nfunction itemSceneId(item) {\n  return safeText(item?.scene_id, safeText(item?.chunk_key));\n}\n\nconst visualBySceneId = new Map();\nfor (const item of visualItems) {\n  const sceneId = itemSceneId(item);\n  if (!sceneId) continue;\n  visualBySceneId.set(sceneId, item);\n}\n\nconst ttsBySceneId = new Map();\nfor (const item of ttsItems) {\n  const sceneId = itemSceneId(item);\n  if (!sceneId) continue;\n  ttsBySceneId.set(sceneId, item);\n}\n\nconst runVisual = input.media_run_image === true;\nconst runTts = input.media_run_tts === true;\n\nconst merged = baseScenes.map((scene) => {\n  const visual = visualBySceneId.get(scene.scene_id) ?? {};\n  const tts = ttsBySceneId.get(scene.scene_id) ?? {};\n\n  const visualStatus = safeText(\n    visual.video_status,\n    safeText(visual.image_status, runVisual ? 'failed' : 'skipped_not_requested'),\n  );\n  const ttsStatus = safeText(tts.tts_status, runTts ? 'failed' : 'skipped_not_requested');\n\n  const visualUrl = safeText(\n    visual.video_url,\n    safeText(\n      visual.image_url,\n      safeText(\n        visual.video_drive_url,\n        safeText(\n          visual.image_drive_url,\n          safeText(visual.video, safeText(visual.image)),\n        ),\n      ),\n    ),\n  );\n  const voiceUrl = safeText(tts.voice_url, safeText(tts.voice_drive_url, safeText(tts.voice)));\n\n  const durationSeconds = asDuration(\n    tts.duration_seconds,\n    asDuration(\n      tts.duration,\n      asDuration(visual.duration_seconds, asDuration(scene.estimated_duration_sec, 0)),\n    ),\n  );\n\n  const errors = [\n    safeText(visual.error_reason),\n    safeText(tts.error_reason),\n  ].filter(Boolean);\n\n  return {\n    scene_id: scene.scene_id,\n    order: scene.order,\n    scene_title: scene.scene_title,\n    scene_role: scene.scene_role,\n    narration_text: scene.narration_text,\n    image_prompt_en: scene.image_prompt_en,\n    highlight_quote_vi: scene.highlight_quote_vi,\n    transition: scene.transition,\n\n    visual_mode: visualMode,\n    visual_url: visualUrl,\n    visual_status: visualStatus,\n    visual_drive_file_id: safeText(visual.video_drive_file_id, safeText(visual.image_drive_file_id)),\n    visual_drive_url: safeText(visual.video_drive_url, safeText(visual.image_drive_url, visualUrl)),\n\n    video_url: safeText(visual.video_url, visualUrl),\n    video_status: safeText(visual.video_status, visualStatus),\n    video_drive_file_id: safeText(visual.video_drive_file_id, safeText(visual.image_drive_file_id)),\n    video_drive_url: safeText(visual.video_drive_url, safeText(visual.image_drive_url, visualUrl)),\n\n    image_url: safeText(visual.image_url, visualUrl),\n    image_status: safeText(visual.image_status, visualStatus),\n    image_drive_file_id: safeText(visual.image_drive_file_id, safeText(visual.video_drive_file_id)),\n    image_drive_url: safeText(visual.image_drive_url, safeText(visual.video_drive_url, visualUrl)),\n\n    voice_url: voiceUrl,\n    tts_status: ttsStatus,\n    voice_drive_file_id: safeText(tts.voice_drive_file_id),\n    voice_drive_url: safeText(tts.voice_drive_url, voiceUrl),\n\n    duration_seconds: durationSeconds,\n    error_reason: errors.length > 0 ? errors.join(' | ') : null,\n\n    shot_count_initial: asInt(visual.shot_count_initial, 0, 0, 200),\n    duration_buffer_seconds: asDuration(visual.duration_buffer_seconds, 0),\n    clip_target_avg_seconds: asDuration(visual.clip_target_avg_seconds, 0),\n    shot_prompts_en: Array.isArray(visual.shot_prompts_en) ? visual.shot_prompts_en : [],\n\n    chunk_key: scene.chunk_key,\n    partName: scene.partName,\n    index: scene.index,\n    text: scene.text,\n    image: safeText(visual.image_url, visualUrl),\n    video: safeText(visual.video_url, visualUrl),\n    voice: voiceUrl,\n    duration: durationSeconds,\n    voice_mime_type: safeText(tts.voice_mime_type),\n    voice_bytes: asInt(tts.voice_bytes, 0, 0, 100000000),\n  };\n});\n\nconst failedCount = merged.filter((item) => item.visual_status === 'failed' || item.tts_status === 'failed').length;\nconst skippedCount = merged.filter((item) =>\n  String(item.visual_status).startsWith('skipped') || String(item.tts_status).startsWith('skipped')\n).length;\n\nconst generatedVisualCount = merged.filter((item) => item.visual_status === 'generated').length;\nconst generatedImageCount = merged.filter((item) => item.image_status === 'generated').length;\nconst generatedVideoCount = merged.filter((item) => item.video_status === 'generated').length;\nconst generatedTtsCount = merged.filter((item) => item.tts_status === 'generated').length;\n\nlet pipelineStatus = 'completed';\nif (failedCount > 0 && (generatedVisualCount > 0 || generatedTtsCount > 0)) {\n  pipelineStatus = 'completed_with_partial_failures';\n} else if (failedCount > 0) {\n  pipelineStatus = 'failed';\n} else if (skippedCount > 0) {\n  pipelineStatus = 'completed_with_skips';\n}\n\nconst finishedAt = new Date().toISOString();\n\nconst manifestInput = input.review_manifest && typeof input.review_manifest === 'object' ? input.review_manifest : {};\nconst manifestScenes = Array.isArray(manifestInput.scenes) ? manifestInput.scenes : [];\nconst estimatedTotalDurationSec = merged.reduce((sum, scene) => sum + asDuration(scene.duration_seconds, 0), 0);\n\nconst reviewManifest = {\n  ...manifestInput,\n  video: {\n    ...(manifestInput.video && typeof manifestInput.video === 'object' ? manifestInput.video : {}),\n    aspect_ratio: '16:9',\n    target_duration_min_sec: 900,\n    target_duration_max_sec: 1200,\n    estimated_total_duration_sec: estimatedTotalDurationSec > 0\n      ? estimatedTotalDurationSec\n      : asDuration(manifestInput?.video?.estimated_total_duration_sec, 0),\n  },\n  scenes: manifestScenes.length > 0\n    ? manifestScenes.map((scene, idx) => {\n        const normalized = normalizeScene(scene, idx);\n        const mergedScene = merged.find((item) => item.scene_id === normalized.scene_id);\n        return {\n          ...normalized,\n          estimated_duration_sec: mergedScene\n            ? asDuration(mergedScene.duration_seconds, normalized.estimated_duration_sec)\n            : normalized.estimated_duration_sec,\n        };\n      })\n    : merged.map((item) => ({\n        scene_id: item.scene_id,\n        order: item.order,\n        scene_title: item.scene_title,\n        scene_role: item.scene_role,\n        narration_text: item.narration_text,\n        image_prompt_en: item.image_prompt_en,\n        highlight_quote_vi: item.highlight_quote_vi,\n        estimated_duration_sec: asDuration(item.duration_seconds, 0),\n        transition: item.transition,\n      })),\n};\n\nreturn {\n  ...input,\n  review_manifest: reviewManifest,\n  media_should_run: true,\n  media_visual_mode: visualMode,\n  media_chunks: baseScenes,\n  media_assets: merged,\n  media_debug_full: merged,\n  media_pipeline_status: pipelineStatus,\n  media_debug_phase: 'finalized',\n  media_finished_at: finishedAt,\n  media_elapsed_seconds: computeElapsedSeconds(input.media_started_at, finishedAt),\n  media_stats: {\n    scene_count: baseScenes.length,\n    visual_mode: visualMode,\n    visual_generated_count: generatedVisualCount,\n    image_generated_count: generatedImageCount,\n    video_generated_count: generatedVideoCount,\n    tts_generated_count: generatedTtsCount,\n    failed_count: failedCount,\n    skipped_count: skippedCount,\n  },\n};\n"
-      }
+        4144,
+        -1160
+      ]
     },
     {
-      "id": "br-if-run-media-worker",
-      "name": "If Run Media (Worker)",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1568,
-        -760
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1043,18 +1067,19 @@
             }
           ],
           "combinator": "and"
-        }
-      }
-    },
-    {
-      "id": "br-if-supported-event-worker",
-      "name": "If Supported Reviewer Event (Worker)",
+        },
+        "options": {}
+      },
+      "id": "br-if-run-media-worker",
+      "name": "If Run Media (Worker)",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1168,
-        -632
-      ],
+        3248,
+        -1088
+      ]
+    },
+    {
       "parameters": {
         "conditions": {
           "options": {
@@ -1075,18 +1100,19 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "br-if-supported-event-worker",
+      "name": "If Supported Reviewer Event (Worker)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1008,
+        -776
+      ]
     },
     {
-      "id": "br-set-unsupported-event-worker",
-      "name": "Prepare Unsupported Event Result (Worker)",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1392,
-        -344
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -1124,31 +1150,31 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
+      },
+      "id": "br-set-unsupported-event-worker",
+      "name": "Prepare Unsupported Event Result (Worker)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8624,
+        -656
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction slugifyBookName(value) {\n  const normalized = String(value ?? '')\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '')\n    .toLowerCase()\n    .replace(/[^a-z0-9]+/g, '-')\n    .replace(/^-+|-+$/g, '');\n\n  if (!normalized) {\n    return 'book';\n  }\n\n  return normalized.slice(0, 80) || 'book';\n}\n\nconst sessionToken = safeText(input.session_token, 'session');\nconst safeToken = sessionToken\n  .replace(/[^a-zA-Z0-9_-]+/g, '-')\n  .replace(/^-+|-+$/g, '') || 'session';\nconst safeBookName = slugifyBookName(safeText(input.user_input, 'book'));\n\nconst rootFolderId = safeText(\n  input.gdrive_root_folder_id,\n  safeText(input.gdrive_root_folder_id_default),\n);\n\nconst sessionFolderName = 'book-review-' + safeBookName + '-' + safeToken;\nconst sessionFolderId = safeText(input.session_folder_id);\nconst sessionVoiceFolderId = safeText(input.session_voice_folder_id);\nconst sessionImageFolderId = safeText(input.session_image_folder_id);\nconst shouldCreateSessionFolder = !sessionFolderId;\n\nreturn {\n  ...input,\n  session_drive_root_folder_id: rootFolderId,\n  session_drive_should_create: Boolean(rootFolderId) && shouldCreateSessionFolder,\n  session_drive_folder_name: sessionFolderName,\n  session_voice_folder_name: 'voice',\n  session_image_folder_name: 'image',\n  session_folder_id: sessionFolderId,\n  session_folder_url: safeText(input.session_folder_url),\n  session_voice_folder_id: safeText(sessionVoiceFolderId, sessionFolderId),\n  session_voice_folder_url: safeText(input.session_voice_folder_url, safeText(input.session_folder_url)),\n  session_image_folder_id: safeText(sessionImageFolderId, sessionFolderId),\n  session_image_folder_url: safeText(input.session_image_folder_url, safeText(input.session_folder_url)),\n};\n"
+      },
       "id": "317b9270-cb8f-4c37-b0ff-1649776fb365",
       "name": "Prepare Session Drive Context (Worker)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1568,
-        -952
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction slugifyBookName(value) {\n  const normalized = String(value ?? '')\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '')\n    .toLowerCase()\n    .replace(/[^a-z0-9]+/g, '-')\n    .replace(/^-+|-+$/g, '');\n\n  if (!normalized) {\n    return 'book';\n  }\n\n  return normalized.slice(0, 80) || 'book';\n}\n\nconst sessionToken = safeText(input.session_token, 'session');\nconst safeToken = sessionToken\n  .replace(/[^a-zA-Z0-9_-]+/g, '-')\n  .replace(/^-+|-+$/g, '') || 'session';\nconst safeBookName = slugifyBookName(safeText(input.user_input, 'book'));\n\nconst rootFolderId = safeText(\n  input.gdrive_root_folder_id,\n  safeText(input.gdrive_root_folder_id_default),\n);\n\nconst sessionFolderName = 'book-review-' + safeBookName + '-' + safeToken;\nconst sessionFolderId = safeText(input.session_folder_id);\nconst sessionVoiceFolderId = safeText(input.session_voice_folder_id);\nconst sessionImageFolderId = safeText(input.session_image_folder_id);\nconst shouldCreateSessionFolder = !sessionFolderId;\n\nreturn {\n  ...input,\n  session_drive_root_folder_id: rootFolderId,\n  session_drive_should_create: Boolean(rootFolderId) && shouldCreateSessionFolder,\n  session_drive_folder_name: sessionFolderName,\n  session_voice_folder_name: 'voice',\n  session_image_folder_name: 'image',\n  session_folder_id: sessionFolderId,\n  session_folder_url: safeText(input.session_folder_url),\n  session_voice_folder_id: safeText(sessionVoiceFolderId, sessionFolderId),\n  session_voice_folder_url: safeText(input.session_voice_folder_url, safeText(input.session_folder_url)),\n  session_image_folder_id: safeText(sessionImageFolderId, sessionFolderId),\n  session_image_folder_url: safeText(input.session_image_folder_url, safeText(input.session_folder_url)),\n};\n"
-      }
+        1680,
+        -1040
+      ]
     },
     {
-      "id": "aad06e30-a7d8-4d57-851d-2c0332544fb3",
-      "name": "If Session Drive Enabled (Worker)",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1792,
-        -952
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1169,257 +1195,130 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "aad06e30-a7d8-4d57-851d-2c0332544fb3",
+      "name": "If Session Drive Enabled (Worker)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1904,
+        -1040
+      ]
     },
     {
+      "parameters": {
+        "source": "localFile",
+        "workflowPath": "={{ $json.gg_drive_manager_workflow_path || \"__GG_DRIVE_MANAGER_WORKFLOW_PATH__\" }}",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
       "id": "0d586dd0-f5ba-42c2-b191-50eb8f064f8d",
       "name": "Google Drive Create Session Folder (Worker)",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
       "position": [
-        2016,
-        -1064
-      ],
-      "parameters": {
-        "resource": "folder",
-        "operation": "create",
-        "authentication": "oAuth2",
-        "name": "={{ $json.session_drive_folder_name || (\"book-review-\" + ($json.session_token || \"session\")) }}",
-        "folderId": "={{ $json.session_drive_root_folder_id }}"
-      },
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
-        }
-      }
+        2352,
+        -1136
+      ]
     },
     {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput2",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          },
+          "includeUnpaired": true
+        }
+      },
       "id": "3a4aeb64-b157-4414-ab85-584002cce0be",
       "name": "Merge Session Folder Context (Worker)",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        2240,
-        -952
-      ],
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {
-          "includeUnpaired": true,
-          "clashHandling": {
-            "values": {
-              "resolveClash": "preferInput2",
-              "mergeMode": "shallowMerge",
-              "overrideEmpty": true
-            }
-          }
-        }
-      }
+        2576,
+        -1112
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst folderId = safeText(input.id, safeText(input.folderId, safeText(input.session_folder_id)));\nconst folderUrl = folderId\n  ? 'https://drive.google.com/drive/folders/' + folderId\n  : safeText(input.session_folder_url);\n\nreturn {\n  ...input,\n  session_folder_id: folderId,\n  session_folder_url: folderUrl,\n  session_voice_folder_id: safeText(input.session_voice_folder_id, folderId),\n  session_voice_folder_url: safeText(input.session_voice_folder_url, folderUrl),\n  session_image_folder_id: safeText(input.session_image_folder_id, folderId),\n  session_image_folder_url: safeText(input.session_image_folder_url, folderUrl),\n  session_video_folder_id: safeText(input.session_video_folder_id, safeText(input.session_image_folder_id, folderId)),\n  session_video_folder_url: safeText(input.session_video_folder_url, safeText(input.session_image_folder_url, folderUrl)),\n};"
+      },
       "id": "708a6982-7ba9-45cc-a76e-c15e96b34ecb",
       "name": "Prepare Session Folder Id (Worker)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2464,
-        -952
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst folderId = safeText(input.id, safeText(input.folderId, safeText(input.session_folder_id)));\nconst folderUrl = folderId\n  ? 'https://drive.google.com/drive/folders/' + folderId\n  : safeText(input.session_folder_url);\n\nreturn {\n  ...input,\n  session_folder_id: folderId,\n  session_folder_url: folderUrl,\n};"
-      }
+        2800,
+        -1112
+      ]
     },
     {
-      "id": "12ba9707-87d9-447e-8f92-e283f28befc4",
-      "name": "Google Drive Create Voice Folder (Worker)",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [
-        2688,
-        -1064
-      ],
       "parameters": {
-        "resource": "folder",
-        "operation": "create",
-        "authentication": "oAuth2",
-        "name": "={{ $json.session_voice_folder_name || \"voice\" }}",
-        "folderId": "={{ $json.session_folder_id }}"
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst defaultOutputFolder = safeText(\n  input.drive_output_folder_id,\n  safeText(input.session_drive_root_folder_id),\n);\n\nconst visualFolderId = safeText(\n  input.session_video_folder_id,\n  safeText(input.session_image_folder_id, defaultOutputFolder),\n);\nconst ttsFolderId = safeText(input.session_voice_folder_id, defaultOutputFolder);\n\nreturn {\n  ...input,\n  output_mode: 'drive_export',\n  image_drive_output_folder_id: visualFolderId,\n  video_drive_output_folder_id: visualFolderId,\n  tts_drive_output_folder_id: ttsFolderId,\n};\n"
       },
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
-        }
-      }
-    },
-    {
-      "id": "eb80e2f0-774e-42d3-9b8c-272c39ecafb9",
-      "name": "Merge Voice Folder Context (Worker)",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        2912,
-        -952
-      ],
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {
-          "includeUnpaired": true,
-          "clashHandling": {
-            "values": {
-              "resolveClash": "preferInput2",
-              "mergeMode": "shallowMerge",
-              "overrideEmpty": true
-            }
-          }
-        }
-      }
-    },
-    {
-      "id": "a83e56d4-ee82-4259-8810-39106be399d9",
-      "name": "Prepare Voice Folder Id (Worker)",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        3136,
-        -952
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst folderId = safeText(input.id, safeText(input.folderId, safeText(input.session_voice_folder_id)));\nconst folderUrl = folderId\n  ? 'https://drive.google.com/drive/folders/' + folderId\n  : safeText(input.session_voice_folder_url);\n\nreturn {\n  ...input,\n  session_voice_folder_id: folderId,\n  session_voice_folder_url: folderUrl,\n};"
-      }
-    },
-    {
-      "id": "024f1b1a-106c-4b0b-98a4-9e33e2e7f1d1",
-      "name": "Google Drive Create Image Folder (Worker)",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [
-        3360,
-        -1064
-      ],
-      "parameters": {
-        "resource": "folder",
-        "operation": "create",
-        "authentication": "oAuth2",
-        "name": "={{ $json.session_image_folder_name || \"image\" }}",
-        "folderId": "={{ $json.session_folder_id }}"
-      },
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
-        }
-      }
-    },
-    {
-      "id": "ca3c3fea-1c37-4262-a1c4-d85afe4f792c",
-      "name": "Merge Image Folder Context (Worker)",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        3584,
-        -952
-      ],
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {
-          "includeUnpaired": true,
-          "clashHandling": {
-            "values": {
-              "resolveClash": "preferInput2",
-              "mergeMode": "shallowMerge",
-              "overrideEmpty": true
-            }
-          }
-        }
-      }
-    },
-    {
-      "id": "aae2eacc-a3ce-4463-a633-a2952cd57f6d",
-      "name": "Prepare Image Folder Id (Worker)",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        3808,
-        -952
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst folderId = safeText(\n  input.id,\n  safeText(input.folderId, safeText(input.session_video_folder_id, safeText(input.session_image_folder_id))),\n);\nconst folderUrl = folderId\n  ? 'https://drive.google.com/drive/folders/' + folderId\n  : safeText(input.session_video_folder_url, safeText(input.session_image_folder_url));\n\nreturn {\n  ...input,\n  session_image_folder_id: folderId,\n  session_image_folder_url: folderUrl,\n  session_video_folder_id: folderId,\n  session_video_folder_url: folderUrl,\n};\n"
-      }
-    },
-    {
       "id": "773c4057-6d58-414a-ac05-51318c51705d",
       "name": "Finalize Media Routing (Worker)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4032,
-        -952
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst defaultOutputFolder = safeText(\n  input.drive_output_folder_id,\n  safeText(input.session_drive_root_folder_id),\n);\n\nconst visualFolderId = safeText(\n  input.session_video_folder_id,\n  safeText(input.session_image_folder_id, defaultOutputFolder),\n);\nconst ttsFolderId = safeText(input.session_voice_folder_id, defaultOutputFolder);\n\nreturn {\n  ...input,\n  output_mode: 'drive_export',\n  image_drive_output_folder_id: visualFolderId,\n  video_drive_output_folder_id: visualFolderId,\n  tts_drive_output_folder_id: ttsFolderId,\n};\n"
-      }
+        3024,
+        -1088
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0) {\n  const number = Number(value);\n  return Number.isFinite(number) ? Math.floor(number) : fallback;\n}\n\nfunction asDuration(value, fallback = 0) {\n  const number = Number(value);\n  if (!Number.isFinite(number) || number <= 0) {\n    return fallback;\n  }\n  return Math.round(number * 1000) / 1000;\n}\n\nfunction clamp(number, min, max) {\n  return Math.min(max, Math.max(min, number));\n}\n\nfunction normalizeShotPrompts(rawList) {\n  if (!Array.isArray(rawList)) return [];\n  return rawList\n    .map((item) => safeText(item))\n    .filter(Boolean)\n    .slice(0, 20);\n}\n\nfunction splitNarrationShots(text, targetCount) {\n  const normalized = safeText(text).replace(/\\r\\n/g, '\\n');\n  if (!normalized) return [];\n\n  const sentences = normalized\n    .split(/(?<=[.!?…])\\s+/)\n    .map((part) => part.trim())\n    .filter(Boolean);\n\n  if (sentences.length === 0) return [];\n\n  const count = Math.max(1, Math.min(targetCount, 20));\n  const prompts = [];\n  for (let i = 0; i < count; i += 1) {\n    const sentence = sentences[i % sentences.length];\n    prompts.push(sentence);\n  }\n\n  return prompts;\n}\n\nfunction buildShotPrompts(videoPromptEn, narrationText, shotCount) {\n  const basePrompt = safeText(videoPromptEn, 'cinematic storytelling shot, dynamic camera, clean composition');\n  const narrationShots = splitNarrationShots(narrationText, shotCount);\n  const prompts = [];\n\n  for (let i = 0; i < shotCount; i += 1) {\n    const detail = safeText(narrationShots[i], safeText(narrationShots[narrationShots.length - 1]));\n    const prefix = 'Shot ' + String(i + 1).padStart(2, '0') + ': ';\n    if (detail) {\n      prompts.push(prefix + basePrompt + '. Context: ' + detail);\n    } else {\n      prompts.push(prefix + basePrompt + '.');\n    }\n  }\n\n  return prompts;\n}\n\nconst chunks = Array.isArray(input.media_chunks) ? input.media_chunks : [];\nconst driveOutputFolderId = safeText(input.image_drive_output_folder_id, safeText(input.drive_output_folder_id));\n\nconst imageProgressMessageId = asInt(input.image_progress_message_id, 0);\nconst imageProgressStartedAtMs = asInt(input.image_progress_started_at_ms, 0);\nconst imageProgressEstimatedMinutes = Math.max(1, asInt(input.image_progress_estimated_minutes, 3) || 3);\nconst imageProgressTotalFiles = Math.max(0, asInt(input.image_progress_total_files, chunks.length));\n\nconst clipAvgSecondsRaw = Number(input.video_clip_duration_seconds ?? 8);\nconst clipAvgSeconds = Number.isFinite(clipAvgSecondsRaw)\n  ? clamp(Math.round(clipAvgSecondsRaw * 1000) / 1000, 4, 12)\n  : 8;\n\nconst durationBufferRaw = Number(input.video_target_buffer_seconds ?? 1);\nconst durationBufferSeconds = Number.isFinite(durationBufferRaw)\n  ? clamp(Math.round(durationBufferRaw * 1000) / 1000, 0, 5)\n  : 1;\n\nconst ttsItems = Array.isArray(input.media_tts_items) ? input.media_tts_items : [];\nconst ttsDurationBySceneId = new Map();\nfor (const item of ttsItems) {\n  const sceneId = safeText(item?.scene_id, safeText(item?.chunk_key));\n  if (!sceneId) continue;\n  const duration = asDuration(item?.duration_seconds, asDuration(item?.duration, 0));\n  if (duration > 0) {\n    ttsDurationBySceneId.set(sceneId, duration);\n  }\n}\n\nif (input.media_run_image !== true) {\n  return {\n    ...input,\n    output_mode: 'inline',\n    drive_output_folder_id: driveOutputFolderId,\n    media_should_run: false,\n    media_chunks: [],\n    chunk_manifest: [],\n    image_progress_message_id: imageProgressMessageId > 0 ? imageProgressMessageId : null,\n    image_progress_started_at_ms: imageProgressStartedAtMs > 0 ? imageProgressStartedAtMs : null,\n    image_progress_estimated_minutes: imageProgressEstimatedMinutes,\n    image_progress_total_files: imageProgressTotalFiles,\n  };\n}\n\nconst requiredChunks = chunks.map((scene, idx) => {\n  const source = scene && typeof scene === 'object' ? scene : {};\n  const order = asInt(source.order, idx + 1);\n  const sceneId = safeText(source.scene_id, 'scene_' + String(order).padStart(2, '0'));\n  const estimatedDuration = asDuration(source.estimated_duration_sec, order === 1 ? 60 : 95);\n  const ttsDuration = asDuration(ttsDurationBySceneId.get(sceneId), 0);\n  const targetDuration = ttsDuration > 0 ? ttsDuration : estimatedDuration;\n  const shotCountInitial = Math.max(1, Math.ceil(targetDuration / clipAvgSeconds));\n\n  const narrationText = safeText(source.narration_text, safeText(source.text));\n  const videoPromptEn = safeText(source.video_prompt_en, safeText(source.image_prompt_en));\n  const inputShotPrompts = normalizeShotPrompts(source.shot_prompts_en);\n  const shotPrompts = inputShotPrompts.length > 0\n    ? inputShotPrompts\n    : buildShotPrompts(videoPromptEn, narrationText, shotCountInitial);\n\n  return {\n    ...source,\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    narration_text: narrationText,\n    image_prompt_en: safeText(source.image_prompt_en, videoPromptEn),\n    video_prompt_en: videoPromptEn,\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    chunk_key: safeText(source.chunk_key, sceneId),\n    text: safeText(source.text, narrationText),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order),\n\n    duration_seconds: targetDuration,\n    target_duration_seconds: targetDuration,\n    estimated_duration_sec: estimatedDuration,\n    duration_source: ttsDuration > 0 ? 'tts' : 'estimated',\n    shot_count_initial: shotCountInitial,\n    duration_buffer_seconds: durationBufferSeconds,\n    clip_target_avg_seconds: clipAvgSeconds,\n    shot_prompts_en: shotPrompts,\n  };\n});\n\nreturn {\n  ...input,\n  output_mode: 'drive_export',\n  drive_output_folder_id: driveOutputFolderId,\n  media_should_run: true,\n  media_chunks: requiredChunks,\n  chunk_manifest: requiredChunks,\n  image_progress_message_id: imageProgressMessageId > 0 ? imageProgressMessageId : null,\n  image_progress_started_at_ms: imageProgressStartedAtMs > 0 ? imageProgressStartedAtMs : null,\n  image_progress_estimated_minutes: imageProgressEstimatedMinutes,\n  image_progress_total_files: imageProgressTotalFiles,\n};\n"
+      },
       "id": "796d3d2d-1f14-4c4e-9602-0d678170bc61",
       "name": "Prepare Image Workflow Input (Worker)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1792,
-        -920
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0) {\n  const number = Number(value);\n  return Number.isFinite(number) ? Math.floor(number) : fallback;\n}\n\nfunction asDuration(value, fallback = 0) {\n  const number = Number(value);\n  if (!Number.isFinite(number) || number <= 0) {\n    return fallback;\n  }\n  return Math.round(number * 1000) / 1000;\n}\n\nfunction clamp(number, min, max) {\n  return Math.min(max, Math.max(min, number));\n}\n\nfunction normalizeShotPrompts(rawList) {\n  if (!Array.isArray(rawList)) return [];\n  return rawList\n    .map((item) => safeText(item))\n    .filter(Boolean)\n    .slice(0, 20);\n}\n\nfunction splitNarrationShots(text, targetCount) {\n  const normalized = safeText(text).replace(/\\r\\n/g, '\\n');\n  if (!normalized) return [];\n\n  const sentences = normalized\n    .split(/(?<=[.!?…])\\s+/)\n    .map((part) => part.trim())\n    .filter(Boolean);\n\n  if (sentences.length === 0) return [];\n\n  const count = Math.max(1, Math.min(targetCount, 20));\n  const prompts = [];\n  for (let i = 0; i < count; i += 1) {\n    const sentence = sentences[i % sentences.length];\n    prompts.push(sentence);\n  }\n\n  return prompts;\n}\n\nfunction buildShotPrompts(videoPromptEn, narrationText, shotCount) {\n  const basePrompt = safeText(videoPromptEn, 'cinematic storytelling shot, dynamic camera, clean composition');\n  const narrationShots = splitNarrationShots(narrationText, shotCount);\n  const prompts = [];\n\n  for (let i = 0; i < shotCount; i += 1) {\n    const detail = safeText(narrationShots[i], safeText(narrationShots[narrationShots.length - 1]));\n    const prefix = 'Shot ' + String(i + 1).padStart(2, '0') + ': ';\n    if (detail) {\n      prompts.push(prefix + basePrompt + '. Context: ' + detail);\n    } else {\n      prompts.push(prefix + basePrompt + '.');\n    }\n  }\n\n  return prompts;\n}\n\nconst chunks = Array.isArray(input.media_chunks) ? input.media_chunks : [];\nconst driveOutputFolderId = safeText(input.image_drive_output_folder_id, safeText(input.drive_output_folder_id));\n\nconst imageProgressMessageId = asInt(input.image_progress_message_id, 0);\nconst imageProgressStartedAtMs = asInt(input.image_progress_started_at_ms, 0);\nconst imageProgressEstimatedMinutes = Math.max(1, asInt(input.image_progress_estimated_minutes, 3) || 3);\nconst imageProgressTotalFiles = Math.max(0, asInt(input.image_progress_total_files, chunks.length));\n\nconst clipAvgSecondsRaw = Number(input.video_clip_duration_seconds ?? 8);\nconst clipAvgSeconds = Number.isFinite(clipAvgSecondsRaw)\n  ? clamp(Math.round(clipAvgSecondsRaw * 1000) / 1000, 4, 12)\n  : 8;\n\nconst durationBufferRaw = Number(input.video_target_buffer_seconds ?? 1);\nconst durationBufferSeconds = Number.isFinite(durationBufferRaw)\n  ? clamp(Math.round(durationBufferRaw * 1000) / 1000, 0, 5)\n  : 1;\n\nconst ttsItems = Array.isArray(input.media_tts_items) ? input.media_tts_items : [];\nconst ttsDurationBySceneId = new Map();\nfor (const item of ttsItems) {\n  const sceneId = safeText(item?.scene_id, safeText(item?.chunk_key));\n  if (!sceneId) continue;\n  const duration = asDuration(item?.duration_seconds, asDuration(item?.duration, 0));\n  if (duration > 0) {\n    ttsDurationBySceneId.set(sceneId, duration);\n  }\n}\n\nif (input.media_run_image !== true) {\n  return {\n    ...input,\n    output_mode: 'inline',\n    drive_output_folder_id: driveOutputFolderId,\n    media_should_run: false,\n    media_chunks: [],\n    chunk_manifest: [],\n    image_progress_message_id: imageProgressMessageId > 0 ? imageProgressMessageId : null,\n    image_progress_started_at_ms: imageProgressStartedAtMs > 0 ? imageProgressStartedAtMs : null,\n    image_progress_estimated_minutes: imageProgressEstimatedMinutes,\n    image_progress_total_files: imageProgressTotalFiles,\n  };\n}\n\nconst requiredChunks = chunks.map((scene, idx) => {\n  const source = scene && typeof scene === 'object' ? scene : {};\n  const order = asInt(source.order, idx + 1);\n  const sceneId = safeText(source.scene_id, 'scene_' + String(order).padStart(2, '0'));\n  const estimatedDuration = asDuration(source.estimated_duration_sec, order === 1 ? 60 : 95);\n  const ttsDuration = asDuration(ttsDurationBySceneId.get(sceneId), 0);\n  const targetDuration = ttsDuration > 0 ? ttsDuration : estimatedDuration;\n  const shotCountInitial = Math.max(1, Math.ceil(targetDuration / clipAvgSeconds));\n\n  const narrationText = safeText(source.narration_text, safeText(source.text));\n  const videoPromptEn = safeText(source.video_prompt_en, safeText(source.image_prompt_en));\n  const inputShotPrompts = normalizeShotPrompts(source.shot_prompts_en);\n  const shotPrompts = inputShotPrompts.length > 0\n    ? inputShotPrompts\n    : buildShotPrompts(videoPromptEn, narrationText, shotCountInitial);\n\n  return {\n    ...source,\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    narration_text: narrationText,\n    image_prompt_en: safeText(source.image_prompt_en, videoPromptEn),\n    video_prompt_en: videoPromptEn,\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    chunk_key: safeText(source.chunk_key, sceneId),\n    text: safeText(source.text, narrationText),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order),\n\n    duration_seconds: targetDuration,\n    target_duration_seconds: targetDuration,\n    estimated_duration_sec: estimatedDuration,\n    duration_source: ttsDuration > 0 ? 'tts' : 'estimated',\n    shot_count_initial: shotCountInitial,\n    duration_buffer_seconds: durationBufferSeconds,\n    clip_target_avg_seconds: clipAvgSeconds,\n    shot_prompts_en: shotPrompts,\n  };\n});\n\nreturn {\n  ...input,\n  output_mode: 'drive_export',\n  drive_output_folder_id: driveOutputFolderId,\n  media_should_run: true,\n  media_chunks: requiredChunks,\n  chunk_manifest: requiredChunks,\n  image_progress_message_id: imageProgressMessageId > 0 ? imageProgressMessageId : null,\n  image_progress_started_at_ms: imageProgressStartedAtMs > 0 ? imageProgressStartedAtMs : null,\n  image_progress_estimated_minutes: imageProgressEstimatedMinutes,\n  image_progress_total_files: imageProgressTotalFiles,\n};\n"
-      }
+        3472,
+        -1184
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0) {\n  const number = Number(value);\n  return Number.isFinite(number) ? Math.floor(number) : fallback;\n}\n\nconst chunks = Array.isArray(input.media_chunks) ? input.media_chunks : [];\nconst driveOutputFolderId = safeText(input.tts_drive_output_folder_id, safeText(input.drive_output_folder_id));\n\nconst ttsProgressMessageId = asInt(input.tts_progress_message_id, 0);\nconst ttsProgressStartedAtMs = asInt(input.tts_progress_started_at_ms, 0);\nconst ttsProgressEstimatedMinutes = Math.max(1, asInt(input.tts_progress_estimated_minutes, 3) || 3);\nconst ttsProgressTotalFiles = Math.max(0, asInt(input.tts_progress_total_files, chunks.length));\n\nif (input.media_run_tts !== true) {\n  return {\n    ...input,\n    output_mode: 'inline',\n    drive_output_folder_id: driveOutputFolderId,\n    media_should_run: false,\n    media_chunks: [],\n    chunk_manifest: [],\n    tts_progress_message_id: ttsProgressMessageId > 0 ? ttsProgressMessageId : null,\n    tts_progress_started_at_ms: ttsProgressStartedAtMs > 0 ? ttsProgressStartedAtMs : null,\n    tts_progress_estimated_minutes: ttsProgressEstimatedMinutes,\n    tts_progress_total_files: ttsProgressTotalFiles,\n  };\n}\n\nconst requiredChunks = chunks.map((scene, idx) => {\n  const source = scene && typeof scene === 'object' ? scene : {};\n  const order = asInt(source.order, idx + 1);\n  const sceneId = safeText(source.scene_id, 'scene_' + String(order).padStart(2, '0'));\n  const narrationText = safeText(source.narration_text, safeText(source.text));\n\n  return {\n    ...source,\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    narration_text: narrationText,\n    image_prompt_en: safeText(source.image_prompt_en),\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    chunk_key: safeText(source.chunk_key, sceneId),\n    text: safeText(source.text, narrationText),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order),\n  };\n});\n\nreturn {\n  ...input,\n  output_mode: 'drive_export',\n  drive_output_folder_id: driveOutputFolderId,\n  media_should_run: true,\n  media_chunks: requiredChunks,\n  chunk_manifest: requiredChunks,\n  tts_progress_message_id: ttsProgressMessageId > 0 ? ttsProgressMessageId : null,\n  tts_progress_started_at_ms: ttsProgressStartedAtMs > 0 ? ttsProgressStartedAtMs : null,\n  tts_progress_estimated_minutes: ttsProgressEstimatedMinutes,\n  tts_progress_total_files: ttsProgressTotalFiles,\n};"
+      },
       "id": "991f5e08-7c1a-4c8f-a1d9-ccf50617b683",
       "name": "Prepare TTS Workflow Input (Worker)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1792,
-        -600
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0) {\n  const number = Number(value);\n  return Number.isFinite(number) ? Math.floor(number) : fallback;\n}\n\nconst chunks = Array.isArray(input.media_chunks) ? input.media_chunks : [];\nconst driveOutputFolderId = safeText(input.tts_drive_output_folder_id, safeText(input.drive_output_folder_id));\n\nconst ttsProgressMessageId = asInt(input.tts_progress_message_id, 0);\nconst ttsProgressStartedAtMs = asInt(input.tts_progress_started_at_ms, 0);\nconst ttsProgressEstimatedMinutes = Math.max(1, asInt(input.tts_progress_estimated_minutes, 3) || 3);\nconst ttsProgressTotalFiles = Math.max(0, asInt(input.tts_progress_total_files, chunks.length));\n\nif (input.media_run_tts !== true) {\n  return {\n    ...input,\n    output_mode: 'inline',\n    drive_output_folder_id: driveOutputFolderId,\n    media_should_run: false,\n    media_chunks: [],\n    chunk_manifest: [],\n    tts_progress_message_id: ttsProgressMessageId > 0 ? ttsProgressMessageId : null,\n    tts_progress_started_at_ms: ttsProgressStartedAtMs > 0 ? ttsProgressStartedAtMs : null,\n    tts_progress_estimated_minutes: ttsProgressEstimatedMinutes,\n    tts_progress_total_files: ttsProgressTotalFiles,\n  };\n}\n\nconst requiredChunks = chunks.map((scene, idx) => {\n  const source = scene && typeof scene === 'object' ? scene : {};\n  const order = asInt(source.order, idx + 1);\n  const sceneId = safeText(source.scene_id, 'scene_' + String(order).padStart(2, '0'));\n  const narrationText = safeText(source.narration_text, safeText(source.text));\n\n  return {\n    ...source,\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    narration_text: narrationText,\n    image_prompt_en: safeText(source.image_prompt_en),\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    chunk_key: safeText(source.chunk_key, sceneId),\n    text: safeText(source.text, narrationText),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order),\n  };\n});\n\nreturn {\n  ...input,\n  output_mode: 'drive_export',\n  drive_output_folder_id: driveOutputFolderId,\n  media_should_run: true,\n  media_chunks: requiredChunks,\n  chunk_manifest: requiredChunks,\n  tts_progress_message_id: ttsProgressMessageId > 0 ? ttsProgressMessageId : null,\n  tts_progress_started_at_ms: ttsProgressStartedAtMs > 0 ? ttsProgressStartedAtMs : null,\n  tts_progress_estimated_minutes: ttsProgressEstimatedMinutes,\n  tts_progress_total_files: ttsProgressTotalFiles,\n};"
-      }
+        3472,
+        -800
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asNumber(value, fallback = 0) {\n  const number = Number(value);\n  return Number.isFinite(number) ? number : fallback;\n}\n\nfunction sleepMs(ms) {\n  return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms) || 0)));\n}\n\nconst requestHelper =\n  helpers?.httpRequest ??\n  (typeof $helpers !== 'undefined' ? $helpers?.httpRequest : undefined);\n\nconst sessionToken = safeText(input.session_token, 'session');\nconst safeToken = sessionToken\n  .replace(/[^a-zA-Z0-9_-]+/g, '-')\n  .replace(/^-+|-+$/g, '') || 'session';\n\nconst sessionFolderId = safeText(input.session_folder_id);\nconst eventType = safeText(input.event_type);\nconst metadata = input.metadata && typeof input.metadata === 'object' ? input.metadata : {};\nconst assets = Array.isArray(input.media_assets) ? input.media_assets : [];\nconst visualMode = safeText(input.media_visual_mode, safeText(input.media_stats?.visual_mode, 'image'));\n\nconst reviewReadable = safeText(input.review_readable, safeText(input.full_review, safeText(input.message)));\nconst reviewManifest = input.review_manifest && typeof input.review_manifest === 'object'\n  ? input.review_manifest\n  : {\n      book: {\n        title: safeText(input.book_title),\n        author: safeText(input.book_author),\n        style_keywords: [],\n      },\n      video: {\n        aspect_ratio: '16:9',\n        target_duration_min_sec: 900,\n        target_duration_max_sec: 1200,\n        estimated_total_duration_sec: 0,\n      },\n      scenes: [],\n    };\n\nconst hasReviewFile = safeText(input.session_review_file_id) !== '';\nconst hasMetadataFile = safeText(input.session_metadata_file_id) !== '';\nconst hasSheetFile = safeText(input.session_sheet_id) !== '';\nconst isInitEvent = eventType === 'init_review';\nconst isMediaFinalizeEvent = eventType === 'media_continue' || eventType === 'auto_continue_media';\n\nconst shouldPersistReviewFile = isInitEvent && !hasReviewFile;\nconst shouldPersistMetadataFile = isInitEvent && !hasMetadataFile;\nconst shouldPersistSessionSheet = !hasSheetFile && (isInitEvent || isMediaFinalizeEvent);\nconst shouldPersistAnyAsset = shouldPersistReviewFile || shouldPersistMetadataFile || shouldPersistSessionSheet;\n\nconst rows = [[\n  'scene_id',\n  'order',\n  'scene_title',\n  'scene_role',\n  'narration_text',\n  'image_prompt_en',\n  'highlight_quote_vi',\n  'visual_mode',\n  'visual_url',\n  'video_url',\n  'image_url',\n  'voice_url',\n  'duration_seconds',\n  'visual_status',\n  'video_status',\n  'image_status',\n  'tts_status',\n  'error_reason',\n  'visual_drive_file_id',\n  'video_drive_file_id',\n  'image_drive_file_id',\n  'voice_drive_file_id',\n  'render_status',\n]];\n\nfor (let i = 0; i < assets.length; i += 1) {\n  const asset = assets[i] ?? {};\n  const visualUrl = safeText(\n    asset.visual_url,\n    safeText(asset.video_url, safeText(asset.image_url, safeText(asset.video, safeText(asset.image)))),\n  );\n\n  rows.push([\n    safeText(asset.scene_id),\n    String(Math.floor(asNumber(asset.order, i + 1))),\n    safeText(asset.scene_title),\n    safeText(asset.scene_role),\n    safeText(asset.narration_text),\n    safeText(asset.image_prompt_en),\n    safeText(asset.highlight_quote_vi),\n    safeText(asset.visual_mode, visualMode),\n    visualUrl,\n    safeText(asset.video_url, visualUrl),\n    safeText(asset.image_url, visualUrl),\n    safeText(asset.voice_url, safeText(asset.voice)),\n    String(asNumber(asset.duration_seconds, asNumber(asset.duration, 0))),\n    safeText(asset.visual_status),\n    safeText(asset.video_status),\n    safeText(asset.image_status),\n    safeText(asset.tts_status),\n    safeText(asset.error_reason),\n    safeText(asset.visual_drive_file_id),\n    safeText(asset.video_drive_file_id),\n    safeText(asset.image_drive_file_id),\n    safeText(asset.voice_drive_file_id),\n    safeText(asset.render_status),\n  ]);\n}\n\nconst renderScenes = assets\n  .map((asset) => {\n    const visualUrl = safeText(\n      asset.video_url,\n      safeText(asset.image_url, safeText(asset.visual_url, safeText(asset.video, safeText(asset.image)))),\n    );\n    const audioUrl = safeText(asset.voice_url, safeText(asset.voice));\n    return {\n      scene_id: safeText(asset.scene_id),\n      order: Math.max(1, Math.floor(asNumber(asset.order, 1))),\n      scene_title: safeText(asset.scene_title),\n      visual_url: visualUrl,\n      video_url: safeText(asset.video_url, visualUrl),\n      image_url: safeText(asset.image_url, visualUrl),\n      audio_url: audioUrl,\n      duration_seconds: asNumber(asset.duration_seconds, asNumber(asset.duration, 0)),\n      highlight_quote_vi: safeText(asset.highlight_quote_vi),\n      shot_count_initial: asNumber(asset.shot_count_initial, 0),\n      duration_buffer_seconds: asNumber(asset.duration_buffer_seconds, 0),\n    };\n  })\n  .filter((asset) => asset.visual_url && asset.audio_url);\n\nconst renderPayload = {\n  request_id: safeText(input.request_id, 'render-' + Date.now().toString(36)),\n  session_token: sessionToken,\n  output_drive_folder_id: safeText(input.session_folder_id, safeText(input.drive_output_folder_id)),\n  video: {\n    aspect_ratio: '16:9',\n    resolution: safeText(input.render_resolution, '1920x1080'),\n    fps: Number.isFinite(Number(input.render_fps)) ? Math.floor(Number(input.render_fps)) : 30,\n    output_file_name: safeText(input.render_output_file_name, 'book-review-' + safeToken + '.mp4'),\n  },\n  scenes: renderScenes,\n};\n\nlet renderStatus = 'skipped_not_required';\nlet renderJobId = safeText(input.render_job_id);\nlet renderProgress = Number.isFinite(Number(input.render_progress)) ? Number(input.render_progress) : 0;\nlet renderErrorReason = safeText(input.render_error_reason);\nlet videoDriveFileId = safeText(input.video_drive_file_id);\nlet videoDriveUrl = safeText(input.video_drive_url);\n\nconst renderApiBaseUrl = safeText(input.render_api_base_url).replace(/\\/$/, '');\nconst renderApiKey = safeText(input.render_api_key);\nconst renderPollIntervalSeconds = Math.max(1, Math.floor(asNumber(input.render_poll_interval_seconds, 5)));\nconst renderTimeoutSeconds = Math.max(20, Math.floor(asNumber(input.render_timeout_seconds, 900)));\n\nasync function callRenderApi(method, url, body) {\n  if (typeof requestHelper !== 'function') {\n    throw new Error('missing_http_helper');\n  }\n\n  const headers = {};\n  if (renderApiKey) {\n    headers.Authorization = 'Bearer ' + renderApiKey;\n    headers['x-api-key'] = renderApiKey;\n  }\n\n  return await requestHelper({\n    method,\n    url,\n    headers,\n    body,\n    json: true,\n    timeout: 120000,\n  });\n}\n\nfunction normalizeRenderStatus(value) {\n  const status = safeText(value).toLowerCase();\n  if (!status) return 'queued';\n  return status;\n}\n\nif (isMediaFinalizeEvent && renderScenes.length > 0) {\n  if (!renderApiBaseUrl) {\n    renderStatus = 'skipped_missing_render_config';\n  } else if (typeof requestHelper !== 'function') {\n    renderStatus = 'skipped_missing_http_helper';\n  } else {\n    try {\n      renderStatus = 'queued';\n      const createResponse = await callRenderApi('POST', renderApiBaseUrl + '/render/jobs', renderPayload);\n      renderJobId = safeText(createResponse?.job_id, safeText(createResponse?.jobId, safeText(createResponse?.id)));\n      renderStatus = normalizeRenderStatus(createResponse?.status);\n      renderProgress = Number.isFinite(Number(createResponse?.progress)) ? Number(createResponse.progress) : renderProgress;\n\n      if (!renderJobId) {\n        renderStatus = 'failed';\n        renderErrorReason = 'render_job_id_missing';\n      } else {\n        const startedAt = Date.now();\n        while (Date.now() - startedAt < renderTimeoutSeconds * 1000) {\n          if (['completed', 'failed'].includes(renderStatus)) {\n            break;\n          }\n\n          await sleepMs(renderPollIntervalSeconds * 1000);\n          const statusResponse = await callRenderApi('GET', renderApiBaseUrl + '/render/jobs/' + encodeURIComponent(renderJobId));\n          renderStatus = normalizeRenderStatus(statusResponse?.status);\n          renderProgress = Number.isFinite(Number(statusResponse?.progress))\n            ? Number(statusResponse.progress)\n            : renderProgress;\n          videoDriveFileId = safeText(statusResponse?.video_drive_file_id, videoDriveFileId);\n          videoDriveUrl = safeText(statusResponse?.video_drive_url, videoDriveUrl);\n          renderErrorReason = safeText(statusResponse?.error_reason, renderErrorReason);\n\n          if (['completed', 'failed'].includes(renderStatus)) {\n            break;\n          }\n        }\n\n        if (!['completed', 'failed'].includes(renderStatus)) {\n          renderStatus = 'failed';\n          renderErrorReason = renderErrorReason || 'render_timeout';\n        }\n      }\n    } catch (error) {\n      renderStatus = 'failed';\n      renderErrorReason = safeText(error?.message, String(error)) || 'render_api_error';\n    }\n  }\n}\n\nconst manifestForFile = {\n  ...reviewManifest,\n  metadata_output: metadata,\n  media_visual_mode: visualMode,\n  scene_assets: assets,\n  render_request_preview: renderPayload,\n  render_status: renderStatus,\n  render_job_id: renderJobId,\n  render_progress: renderProgress,\n  video_drive_file_id: videoDriveFileId,\n  video_drive_url: videoDriveUrl,\n  render_error_reason: renderErrorReason || null,\n};\n\nconst sessionManifest = {\n  session_token: sessionToken,\n  reviewer_stage: safeText(input.reviewer_stage),\n  stop_reason: safeText(input.stop_reason),\n  media_pipeline_status: safeText(input.media_pipeline_status),\n  media_stats: input.media_stats ?? {},\n  media_visual_mode: visualMode,\n  video_title: safeText(input.video_title),\n  video_caption: safeText(input.video_caption),\n  video_hashtags: Array.isArray(input.video_hashtags) ? input.video_hashtags : [],\n  metadata,\n  review_readable: reviewReadable,\n  review_manifest: manifestForFile,\n  media_assets: assets,\n};\n\nreturn {\n  ...input,\n  session_assets_should_persist: Boolean(sessionFolderId) && shouldPersistAnyAsset,\n  session_should_persist_review_file: shouldPersistReviewFile,\n  session_should_persist_metadata_file: shouldPersistMetadataFile,\n  session_should_persist_manifest_file: false,\n  session_should_persist_sheet: shouldPersistSessionSheet,\n  session_review_text: reviewReadable,\n  session_metadata_json: JSON.stringify(manifestForFile, null, 2),\n  session_manifest_json: JSON.stringify(sessionManifest, null, 2),\n  session_review_file_name: 'review_readable.txt',\n  session_metadata_file_name: 'review_manifest.json',\n  session_manifest_file_name: 'session-manifest.json',\n  session_sheet_name: 'book-review-scenes-' + safeToken,\n  session_sheet_rows: rows,\n  render_request_payload: renderPayload,\n  render_status: renderStatus,\n  render_job_id: renderJobId,\n  render_progress: renderProgress,\n  render_error_reason: renderErrorReason || null,\n  video_drive_file_id: videoDriveFileId,\n  video_drive_url: videoDriveUrl,\n};\n"
+      },
       "id": "1a33c4c0-d8c9-482d-a935-1096a6474967",
       "name": "Prepare Session Assets Package (Worker)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2464,
-        -440
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asNumber(value, fallback = 0) {\n  const number = Number(value);\n  return Number.isFinite(number) ? number : fallback;\n}\n\nfunction sleepMs(ms) {\n  return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(ms) || 0)));\n}\n\nconst requestHelper =\n  helpers?.httpRequest ??\n  (typeof $helpers !== 'undefined' ? $helpers?.httpRequest : undefined);\n\nconst sessionToken = safeText(input.session_token, 'session');\nconst safeToken = sessionToken\n  .replace(/[^a-zA-Z0-9_-]+/g, '-')\n  .replace(/^-+|-+$/g, '') || 'session';\n\nconst sessionFolderId = safeText(input.session_folder_id);\nconst eventType = safeText(input.event_type);\nconst metadata = input.metadata && typeof input.metadata === 'object' ? input.metadata : {};\nconst assets = Array.isArray(input.media_assets) ? input.media_assets : [];\nconst visualMode = safeText(input.media_visual_mode, safeText(input.media_stats?.visual_mode, 'image'));\n\nconst reviewReadable = safeText(input.review_readable, safeText(input.full_review, safeText(input.message)));\nconst reviewManifest = input.review_manifest && typeof input.review_manifest === 'object'\n  ? input.review_manifest\n  : {\n      book: {\n        title: safeText(input.book_title),\n        author: safeText(input.book_author),\n        style_keywords: [],\n      },\n      video: {\n        aspect_ratio: '16:9',\n        target_duration_min_sec: 900,\n        target_duration_max_sec: 1200,\n        estimated_total_duration_sec: 0,\n      },\n      scenes: [],\n    };\n\nconst hasReviewFile = safeText(input.session_review_file_id) !== '';\nconst hasMetadataFile = safeText(input.session_metadata_file_id) !== '';\nconst hasSheetFile = safeText(input.session_sheet_id) !== '';\nconst isInitEvent = eventType === 'init_review';\nconst isMediaFinalizeEvent = eventType === 'media_continue' || eventType === 'auto_continue_media';\n\nconst shouldPersistReviewFile = isInitEvent && !hasReviewFile;\nconst shouldPersistMetadataFile = isInitEvent && !hasMetadataFile;\nconst shouldPersistSessionSheet = !hasSheetFile && (isInitEvent || isMediaFinalizeEvent);\nconst shouldPersistAnyAsset = shouldPersistReviewFile || shouldPersistMetadataFile || shouldPersistSessionSheet;\n\nconst rows = [[\n  'scene_id',\n  'order',\n  'scene_title',\n  'scene_role',\n  'narration_text',\n  'image_prompt_en',\n  'highlight_quote_vi',\n  'visual_mode',\n  'visual_url',\n  'video_url',\n  'image_url',\n  'voice_url',\n  'duration_seconds',\n  'visual_status',\n  'video_status',\n  'image_status',\n  'tts_status',\n  'error_reason',\n  'visual_drive_file_id',\n  'video_drive_file_id',\n  'image_drive_file_id',\n  'voice_drive_file_id',\n  'render_status',\n]];\n\nfor (let i = 0; i < assets.length; i += 1) {\n  const asset = assets[i] ?? {};\n  const visualUrl = safeText(\n    asset.visual_url,\n    safeText(asset.video_url, safeText(asset.image_url, safeText(asset.video, safeText(asset.image)))),\n  );\n\n  rows.push([\n    safeText(asset.scene_id),\n    String(Math.floor(asNumber(asset.order, i + 1))),\n    safeText(asset.scene_title),\n    safeText(asset.scene_role),\n    safeText(asset.narration_text),\n    safeText(asset.image_prompt_en),\n    safeText(asset.highlight_quote_vi),\n    safeText(asset.visual_mode, visualMode),\n    visualUrl,\n    safeText(asset.video_url, visualUrl),\n    safeText(asset.image_url, visualUrl),\n    safeText(asset.voice_url, safeText(asset.voice)),\n    String(asNumber(asset.duration_seconds, asNumber(asset.duration, 0))),\n    safeText(asset.visual_status),\n    safeText(asset.video_status),\n    safeText(asset.image_status),\n    safeText(asset.tts_status),\n    safeText(asset.error_reason),\n    safeText(asset.visual_drive_file_id),\n    safeText(asset.video_drive_file_id),\n    safeText(asset.image_drive_file_id),\n    safeText(asset.voice_drive_file_id),\n    safeText(asset.render_status),\n  ]);\n}\n\nconst renderScenes = assets\n  .map((asset) => {\n    const visualUrl = safeText(\n      asset.video_url,\n      safeText(asset.image_url, safeText(asset.visual_url, safeText(asset.video, safeText(asset.image)))),\n    );\n    const audioUrl = safeText(asset.voice_url, safeText(asset.voice));\n    return {\n      scene_id: safeText(asset.scene_id),\n      order: Math.max(1, Math.floor(asNumber(asset.order, 1))),\n      scene_title: safeText(asset.scene_title),\n      visual_url: visualUrl,\n      video_url: safeText(asset.video_url, visualUrl),\n      image_url: safeText(asset.image_url, visualUrl),\n      audio_url: audioUrl,\n      duration_seconds: asNumber(asset.duration_seconds, asNumber(asset.duration, 0)),\n      highlight_quote_vi: safeText(asset.highlight_quote_vi),\n      shot_count_initial: asNumber(asset.shot_count_initial, 0),\n      duration_buffer_seconds: asNumber(asset.duration_buffer_seconds, 0),\n    };\n  })\n  .filter((asset) => asset.visual_url && asset.audio_url);\n\nconst renderPayload = {\n  request_id: safeText(input.request_id, 'render-' + Date.now().toString(36)),\n  session_token: sessionToken,\n  output_drive_folder_id: safeText(input.session_folder_id, safeText(input.drive_output_folder_id)),\n  video: {\n    aspect_ratio: '16:9',\n    resolution: safeText(input.render_resolution, '1920x1080'),\n    fps: Number.isFinite(Number(input.render_fps)) ? Math.floor(Number(input.render_fps)) : 30,\n    output_file_name: safeText(input.render_output_file_name, 'book-review-' + safeToken + '.mp4'),\n  },\n  scenes: renderScenes,\n};\n\nlet renderStatus = 'skipped_not_required';\nlet renderJobId = safeText(input.render_job_id);\nlet renderProgress = Number.isFinite(Number(input.render_progress)) ? Number(input.render_progress) : 0;\nlet renderErrorReason = safeText(input.render_error_reason);\nlet videoDriveFileId = safeText(input.video_drive_file_id);\nlet videoDriveUrl = safeText(input.video_drive_url);\n\nconst renderApiBaseUrl = safeText(input.render_api_base_url).replace(/\\/$/, '');\nconst renderApiKey = safeText(input.render_api_key);\nconst renderPollIntervalSeconds = Math.max(1, Math.floor(asNumber(input.render_poll_interval_seconds, 5)));\nconst renderTimeoutSeconds = Math.max(20, Math.floor(asNumber(input.render_timeout_seconds, 900)));\n\nasync function callRenderApi(method, url, body) {\n  if (typeof requestHelper !== 'function') {\n    throw new Error('missing_http_helper');\n  }\n\n  const headers = {};\n  if (renderApiKey) {\n    headers.Authorization = 'Bearer ' + renderApiKey;\n    headers['x-api-key'] = renderApiKey;\n  }\n\n  return await requestHelper({\n    method,\n    url,\n    headers,\n    body,\n    json: true,\n    timeout: 120000,\n  });\n}\n\nfunction normalizeRenderStatus(value) {\n  const status = safeText(value).toLowerCase();\n  if (!status) return 'queued';\n  return status;\n}\n\nif (isMediaFinalizeEvent && renderScenes.length > 0) {\n  if (!renderApiBaseUrl) {\n    renderStatus = 'skipped_missing_render_config';\n  } else if (typeof requestHelper !== 'function') {\n    renderStatus = 'skipped_missing_http_helper';\n  } else {\n    try {\n      renderStatus = 'queued';\n      const createResponse = await callRenderApi('POST', renderApiBaseUrl + '/render/jobs', renderPayload);\n      renderJobId = safeText(createResponse?.job_id, safeText(createResponse?.jobId, safeText(createResponse?.id)));\n      renderStatus = normalizeRenderStatus(createResponse?.status);\n      renderProgress = Number.isFinite(Number(createResponse?.progress)) ? Number(createResponse.progress) : renderProgress;\n\n      if (!renderJobId) {\n        renderStatus = 'failed';\n        renderErrorReason = 'render_job_id_missing';\n      } else {\n        const startedAt = Date.now();\n        while (Date.now() - startedAt < renderTimeoutSeconds * 1000) {\n          if (['completed', 'failed'].includes(renderStatus)) {\n            break;\n          }\n\n          await sleepMs(renderPollIntervalSeconds * 1000);\n          const statusResponse = await callRenderApi('GET', renderApiBaseUrl + '/render/jobs/' + encodeURIComponent(renderJobId));\n          renderStatus = normalizeRenderStatus(statusResponse?.status);\n          renderProgress = Number.isFinite(Number(statusResponse?.progress))\n            ? Number(statusResponse.progress)\n            : renderProgress;\n          videoDriveFileId = safeText(statusResponse?.video_drive_file_id, videoDriveFileId);\n          videoDriveUrl = safeText(statusResponse?.video_drive_url, videoDriveUrl);\n          renderErrorReason = safeText(statusResponse?.error_reason, renderErrorReason);\n\n          if (['completed', 'failed'].includes(renderStatus)) {\n            break;\n          }\n        }\n\n        if (!['completed', 'failed'].includes(renderStatus)) {\n          renderStatus = 'failed';\n          renderErrorReason = renderErrorReason || 'render_timeout';\n        }\n      }\n    } catch (error) {\n      renderStatus = 'failed';\n      renderErrorReason = safeText(error?.message, String(error)) || 'render_api_error';\n    }\n  }\n}\n\nconst manifestForFile = {\n  ...reviewManifest,\n  metadata_output: metadata,\n  media_visual_mode: visualMode,\n  scene_assets: assets,\n  render_request_preview: renderPayload,\n  render_status: renderStatus,\n  render_job_id: renderJobId,\n  render_progress: renderProgress,\n  video_drive_file_id: videoDriveFileId,\n  video_drive_url: videoDriveUrl,\n  render_error_reason: renderErrorReason || null,\n};\n\nconst sessionManifest = {\n  session_token: sessionToken,\n  reviewer_stage: safeText(input.reviewer_stage),\n  stop_reason: safeText(input.stop_reason),\n  media_pipeline_status: safeText(input.media_pipeline_status),\n  media_stats: input.media_stats ?? {},\n  media_visual_mode: visualMode,\n  video_title: safeText(input.video_title),\n  video_caption: safeText(input.video_caption),\n  video_hashtags: Array.isArray(input.video_hashtags) ? input.video_hashtags : [],\n  metadata,\n  review_readable: reviewReadable,\n  review_manifest: manifestForFile,\n  media_assets: assets,\n};\n\nreturn {\n  ...input,\n  session_assets_should_persist: Boolean(sessionFolderId) && shouldPersistAnyAsset,\n  session_should_persist_review_file: shouldPersistReviewFile,\n  session_should_persist_metadata_file: shouldPersistMetadataFile,\n  session_should_persist_manifest_file: false,\n  session_should_persist_sheet: shouldPersistSessionSheet,\n  session_review_text: reviewReadable,\n  session_metadata_json: JSON.stringify(manifestForFile, null, 2),\n  session_manifest_json: JSON.stringify(sessionManifest, null, 2),\n  session_review_file_name: 'review_readable.txt',\n  session_metadata_file_name: 'review_manifest.json',\n  session_manifest_file_name: 'session-manifest.json',\n  session_sheet_name: 'book-review-scenes-' + safeToken,\n  session_sheet_rows: rows,\n  render_request_payload: renderPayload,\n  render_status: renderStatus,\n  render_job_id: renderJobId,\n  render_progress: renderProgress,\n  render_error_reason: renderErrorReason || null,\n  video_drive_file_id: videoDriveFileId,\n  video_drive_url: videoDriveUrl,\n};\n"
-      }
+        4368,
+        -1160
+      ]
     },
     {
-      "id": "77637896-ac67-4a9a-bf8a-dcfaf2946f5a",
-      "name": "If Persist Session Assets (Worker)",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        2688,
-        -440
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1440,325 +1339,110 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "77637896-ac67-4a9a-bf8a-dcfaf2946f5a",
+      "name": "If Persist Session Assets (Worker)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4592,
+        -1160
+      ]
     },
     {
+      "parameters": {
+        "source": "localFile",
+        "workflowPath": "={{ $json.gg_drive_manager_workflow_path || \"__GG_DRIVE_MANAGER_WORKFLOW_PATH__\" }}",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
       "id": "5fa8a7ef-1529-435b-80b1-b8ee4c52a338",
       "name": "Google Drive Save Review File (Worker)",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
       "position": [
-        2912,
-        -584
-      ],
-      "parameters": {
-        "resource": "file",
-        "operation": "createFromText",
-        "authentication": "oAuth2",
-        "content": "={{ $json.session_review_text || \"\" }}",
-        "name": "={{ $json.session_review_file_name || \"review-content.txt\" }}",
-        "folderId": "={{ $json.session_folder_id || \"\" }}"
-      },
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
-        }
-      }
+        5488,
+        -992
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst fileId = safeText(input.id, safeText(input.fileId, safeText(input.session_review_file_id)));\nconst fileUrl = fileId\n  ? 'https://drive.google.com/file/d/' + fileId + '/view'\n  : safeText(input.session_review_file_url);\n\nreturn {\n  ...input,\n  session_review_file_id: fileId,\n  session_review_file_url: fileUrl,\n};"
+      },
       "id": "b228b8b7-fa52-4731-a9c8-966db7998a2e",
       "name": "Prepare Review File Link (Worker)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3360,
-        -440
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst fileId = safeText(input.id, safeText(input.fileId, safeText(input.session_review_file_id)));\nconst fileUrl = fileId\n  ? 'https://drive.google.com/file/d/' + fileId + '/view'\n  : safeText(input.session_review_file_url);\n\nreturn {\n  ...input,\n  session_review_file_id: fileId,\n  session_review_file_url: fileUrl,\n};"
-      }
+        5936,
+        -1064
+      ]
     },
     {
+      "parameters": {
+        "source": "localFile",
+        "workflowPath": "={{ $json.gg_drive_manager_workflow_path || \"__GG_DRIVE_MANAGER_WORKFLOW_PATH__\" }}",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
       "id": "02716447-5276-4c46-aa30-e8c21b016e10",
       "name": "Google Drive Save Metadata File (Worker)",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
       "position": [
-        3584,
-        -584
-      ],
-      "parameters": {
-        "resource": "file",
-        "operation": "createFromText",
-        "authentication": "oAuth2",
-        "content": "={{ $json.session_metadata_json || \"{}\" }}",
-        "name": "={{ $json.session_metadata_file_name || \"metadata.json\" }}",
-        "folderId": "={{ $json.session_folder_id || \"\" }}"
-      },
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
-        }
-      }
+        6832,
+        -944
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst fileId = safeText(input.id, safeText(input.fileId, safeText(input.session_metadata_file_id)));\nconst fileUrl = fileId\n  ? 'https://drive.google.com/file/d/' + fileId + '/view'\n  : safeText(input.session_metadata_file_url);\n\nreturn {\n  ...input,\n  session_metadata_file_id: fileId,\n  session_metadata_file_url: fileUrl,\n};"
+      },
       "id": "8e23e0fd-fc2c-47a3-9b3d-e952d775374b",
       "name": "Prepare Metadata File Link (Worker)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4032,
-        -440
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst fileId = safeText(input.id, safeText(input.fileId, safeText(input.session_metadata_file_id)));\nconst fileUrl = fileId\n  ? 'https://drive.google.com/file/d/' + fileId + '/view'\n  : safeText(input.session_metadata_file_url);\n\nreturn {\n  ...input,\n  session_metadata_file_id: fileId,\n  session_metadata_file_url: fileUrl,\n};"
-      }
+        7280,
+        -1040
+      ]
     },
     {
+      "parameters": {
+        "source": "localFile",
+        "workflowPath": "={{ $json.gg_sheet_manager_workflow_path || $json.ggSheetManagerWorkflowPath || \"__GG_SHEET_MANAGER_WORKFLOW_PATH__\" }}",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
       "id": "90ad1d2b-9b3b-4836-837f-45cd8dac2904",
-      "name": "Create Session Sheet (Worker)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
+      "name": "Google Sheets Save Session Sheet (Worker)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
       "position": [
-        4928,
-        -584
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "https://sheets.googleapis.com/v4/spreadsheets",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "googleDriveOAuth2Api",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ { properties: { title: $json.session_sheet_name || \"book-review-assets\" }, sheets: [{ properties: { title: \"assets\" } }] } }}",
-        "options": {
-          "response": {
-            "response": {
-              "fullResponse": true,
-              "neverError": true,
-              "responseFormat": "json"
-            }
-          }
-        }
-      },
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
-        }
-      }
+        7728,
+        -1112
+      ]
     },
     {
-      "id": "d55166c9-2dd1-4e58-a63d-712dffbe9bfd",
-      "name": "Merge Session Sheet Context (Worker)",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        5152,
-        -440
-      ],
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {
-          "includeUnpaired": true,
-          "clashHandling": {
-            "values": {
-              "resolveClash": "preferInput2",
-              "mergeMode": "shallowMerge",
-              "overrideEmpty": true
-            }
-          }
-        }
-      }
-    },
-    {
-      "id": "dab191c7-644e-425a-95e6-90b307eea160",
-      "name": "Prepare Session Sheet Meta (Worker)",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        5376,
-        -440
-      ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst body = input.body && typeof input.body === 'object' ? input.body : {};\nconst sheetId = safeText(body.spreadsheetId, safeText(input.spreadsheetId));\nconst sheetUrl = safeText(\n  body.spreadsheetUrl,\n  sheetId ? 'https://docs.google.com/spreadsheets/d/' + sheetId : '',\n);\n\nreturn {\n  ...input,\n  session_sheet_id: sheetId,\n  session_sheet_url: sheetUrl,\n  session_sheet_create_status_code: Number(input.statusCode ?? 0),\n};"
-      }
-    },
-    {
-      "id": "7c9ec045-afb5-42a0-8a9c-cb78b7822c50",
-      "name": "If Session Sheet Created (Worker)",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        5600,
-        -440
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "leftValue": "={{ !!$json.session_sheet_id }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        }
-      }
-    },
-    {
-      "id": "7dc5ceff-26bf-4c14-a798-1387922a13a0",
-      "name": "Google Drive Move Session Sheet (Worker)",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [
-        5824,
-        -584
-      ],
-      "parameters": {
-        "resource": "file",
-        "operation": "move",
-        "authentication": "oAuth2",
-        "fileId": "={{ $json.session_sheet_id }}",
-        "folderId": "={{ $json.session_folder_id }}"
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst sheetUpdateStatusCode = Number(input.statusCode ?? input.session_sheet_update_status_code ?? 0);\nconst sheetWriteOk = Number.isFinite(sheetUpdateStatusCode)\n  ? (sheetUpdateStatusCode >= 200 && sheetUpdateStatusCode < 300)\n  : false;\nconst shouldPersistReview = input.session_should_persist_review_file === true;\nconst shouldPersistMetadata = input.session_should_persist_metadata_file === true;\nconst shouldPersistManifest = input.session_should_persist_manifest_file === true;\nconst shouldPersistSheet = input.session_should_persist_sheet === true;\n\nconst reviewFileId = safeText(input.session_review_file_id);\nconst metadataFileId = safeText(input.session_metadata_file_id);\nconst manifestFileId = safeText(input.session_manifest_file_id);\nconst sheetId = safeText(input.session_sheet_id);\n\nlet packageStatus = 'persisted';\nif (shouldPersistReview && !reviewFileId) {\n  packageStatus = 'partial';\n}\nif (shouldPersistMetadata && !metadataFileId) {\n  packageStatus = 'partial';\n}\nif (shouldPersistManifest && !manifestFileId) {\n  packageStatus = 'partial';\n}\nif (shouldPersistSheet) {\n  if (!sheetId || !sheetWriteOk) {\n    packageStatus = 'partial';\n  }\n}\n\nconst sheetWriteStatus = shouldPersistSheet\n  ? (sheetWriteOk ? 'success' : 'failed_or_skipped')\n  : 'skipped_not_required';\n\nconst videoFolderId = safeText(input.session_video_folder_id, safeText(input.session_image_folder_id));\nconst videoFolderUrl = safeText(input.session_video_folder_url, safeText(input.session_image_folder_url));\n\nconst sessionPackageSummary = {\n  session_folder_id: safeText(input.session_folder_id),\n  session_folder_url: safeText(input.session_folder_url),\n  voice_folder_id: safeText(input.session_voice_folder_id),\n  voice_folder_url: safeText(input.session_voice_folder_url),\n  image_folder_id: safeText(input.session_image_folder_id),\n  image_folder_url: safeText(input.session_image_folder_url),\n  video_folder_id: videoFolderId,\n  video_folder_url: videoFolderUrl,\n  review_file_id: reviewFileId,\n  review_file_url: safeText(input.session_review_file_url),\n  metadata_file_id: metadataFileId,\n  metadata_file_url: safeText(input.session_metadata_file_url),\n  manifest_file_id: manifestFileId,\n  manifest_file_url: safeText(input.session_manifest_file_url),\n  sheet_id: sheetId,\n  sheet_url: safeText(input.session_sheet_url),\n  sheet_write_status: sheetWriteStatus,\n  persist_review: shouldPersistReview,\n  persist_metadata: shouldPersistMetadata,\n  persist_manifest: shouldPersistManifest,\n  persist_sheet: shouldPersistSheet,\n};\n\nreturn {\n  ...input,\n  session_assets_package_status: packageStatus,\n  session_assets_package_summary: sessionPackageSummary,\n  session_sheet_update_status_code: sheetUpdateStatusCode,\n};\n\n"
       },
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
-        }
-      }
-    },
-    {
-      "id": "12cd51b5-b056-43b6-8e28-df9b9e287c75",
-      "name": "Merge Session Sheet Move Context (Worker)",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        6048,
-        -440
-      ],
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {
-          "includeUnpaired": true,
-          "clashHandling": {
-            "values": {
-              "resolveClash": "preferInput1",
-              "mergeMode": "shallowMerge",
-              "overrideEmpty": true
-            }
-          }
-        }
-      }
-    },
-    {
-      "id": "185d13fd-58bf-410f-bc93-627c7d1aa197",
-      "name": "Write Session Sheet Rows (Worker)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        6272,
-        -440
-      ],
-      "parameters": {
-        "method": "PUT",
-        "url": "={{ \"https://sheets.googleapis.com/v4/spreadsheets/\" + encodeURIComponent($json.session_sheet_id || \"\") + \"/values/assets!A1?valueInputOption=RAW\" }}",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "googleDriveOAuth2Api",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ { values: Array.isArray($json.session_sheet_rows) ? $json.session_sheet_rows : [] } }}",
-        "options": {
-          "response": {
-            "response": {
-              "fullResponse": true,
-              "neverError": true,
-              "responseFormat": "json"
-            }
-          }
-        }
-      },
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
-        }
-      }
-    },
-    {
       "id": "73b2e757-ee87-407b-9e97-4ed6b0c9df7d",
       "name": "Finalize Session Assets Package (Worker)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6496,
-        -440
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst sheetUpdateStatusCode = Number(input.statusCode ?? input.session_sheet_update_status_code ?? 0);\nconst sheetWriteOk = Number.isFinite(sheetUpdateStatusCode)\n  ? (sheetUpdateStatusCode >= 200 && sheetUpdateStatusCode < 300)\n  : false;\nconst shouldPersistReview = input.session_should_persist_review_file === true;\nconst shouldPersistMetadata = input.session_should_persist_metadata_file === true;\nconst shouldPersistManifest = input.session_should_persist_manifest_file === true;\nconst shouldPersistSheet = input.session_should_persist_sheet === true;\n\nconst reviewFileId = safeText(input.session_review_file_id);\nconst metadataFileId = safeText(input.session_metadata_file_id);\nconst manifestFileId = safeText(input.session_manifest_file_id);\nconst sheetId = safeText(input.session_sheet_id);\n\nlet packageStatus = 'persisted';\nif (shouldPersistReview && !reviewFileId) {\n  packageStatus = 'partial';\n}\nif (shouldPersistMetadata && !metadataFileId) {\n  packageStatus = 'partial';\n}\nif (shouldPersistManifest && !manifestFileId) {\n  packageStatus = 'partial';\n}\nif (shouldPersistSheet) {\n  if (!sheetId || !sheetWriteOk) {\n    packageStatus = 'partial';\n  }\n}\n\nconst sheetWriteStatus = shouldPersistSheet\n  ? (sheetWriteOk ? 'success' : 'failed_or_skipped')\n  : 'skipped_not_required';\n\nconst videoFolderId = safeText(input.session_video_folder_id, safeText(input.session_image_folder_id));\nconst videoFolderUrl = safeText(input.session_video_folder_url, safeText(input.session_image_folder_url));\n\nconst sessionPackageSummary = {\n  session_folder_id: safeText(input.session_folder_id),\n  session_folder_url: safeText(input.session_folder_url),\n  voice_folder_id: safeText(input.session_voice_folder_id),\n  voice_folder_url: safeText(input.session_voice_folder_url),\n  image_folder_id: safeText(input.session_image_folder_id),\n  image_folder_url: safeText(input.session_image_folder_url),\n  video_folder_id: videoFolderId,\n  video_folder_url: videoFolderUrl,\n  review_file_id: reviewFileId,\n  review_file_url: safeText(input.session_review_file_url),\n  metadata_file_id: metadataFileId,\n  metadata_file_url: safeText(input.session_metadata_file_url),\n  manifest_file_id: manifestFileId,\n  manifest_file_url: safeText(input.session_manifest_file_url),\n  sheet_id: sheetId,\n  sheet_url: safeText(input.session_sheet_url),\n  sheet_write_status: sheetWriteStatus,\n  persist_review: shouldPersistReview,\n  persist_metadata: shouldPersistMetadata,\n  persist_manifest: shouldPersistManifest,\n  persist_sheet: shouldPersistSheet,\n};\n\nreturn {\n  ...input,\n  session_assets_package_status: packageStatus,\n  session_assets_package_summary: sessionPackageSummary,\n  session_sheet_update_status_code: sheetUpdateStatusCode,\n};\n\n"
-      }
-    },
-    {
-      "id": "84",
-      "name": "Merge Session Sheet Write Context (Worker)",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        3140,
-        -820
-      ],
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {
-          "includeUnpaired": true,
-          "clashHandling": {
-            "values": {
-              "resolveClash": "preferInput2",
-              "mergeMode": "shallowMerge",
-              "overrideEmpty": true
-            }
-          }
-        }
-      }
+        7952,
+        -992
+      ]
     },
     {
       "parameters": {
@@ -1770,47 +1454,39 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2240,
-        -632
+        8848,
+        -992
       ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction buildMediaButtons(sessionToken) {\n  return [[\n    { text: 'Tao Media', callback_data: 'brv:media:c:' + sessionToken },\n    { text: 'Dung', callback_data: 'brv:media:s:' + sessionToken },\n  ]];\n}\n\nconst eventType = safeText(input.event_type);\nif (eventType !== 'init_review') {\n  return {\n    ...input,\n    session_link_notify_status: 'skipped_event',\n    session_link_notify_message_id: null,\n  };\n}\n\nconst requestHelper =\n  helpers?.httpRequest ??\n  (typeof $helpers !== 'undefined' ? $helpers?.httpRequest : undefined);\n\nconst telegramBotToken = safeText(input.telegram_bot_token);\nconst telegramChatId = safeText(input.telegram_chat_id);\nif (!telegramBotToken || !telegramChatId || typeof requestHelper !== 'function') {\n  return {\n    ...input,\n    session_link_notify_status: 'skipped_missing_telegram_config',\n    session_link_notify_message_id: null,\n  };\n}\n\nconst summary = input.session_assets_package_summary && typeof input.session_assets_package_summary === 'object'\n  ? input.session_assets_package_summary\n  : {};\n\nconst sessionToken = safeText(input.session_token);\nconst readableFileUrl = safeText(input.session_review_file_url, safeText(summary.review_file_url));\nconst manifestFileUrl = safeText(input.session_metadata_file_url, safeText(summary.metadata_file_url));\nconst sessionFolderUrl = safeText(input.session_folder_url, safeText(summary.session_folder_url));\nconst sessionSheetUrl = safeText(input.session_sheet_url, safeText(summary.sheet_url));\nconst renderStatus = safeText(input.render_status);\n\nif (!readableFileUrl && !manifestFileUrl && !sessionFolderUrl && !sessionSheetUrl) {\n  return {\n    ...input,\n    session_link_notify_status: 'skipped_missing_drive_links',\n    session_link_notify_message_id: null,\n  };\n}\n\nconst shouldEmbedMediaAction = input.should_send_media_action === true || input.should_send_metadata_action === true;\n\nconst lines = [\n  '[REVIEW READY]',\n  'Session: ' + sessionToken,\n];\n\nif (readableFileUrl) {\n  lines.push('Readable draft: ' + readableFileUrl);\n}\nif (manifestFileUrl) {\n  lines.push('Scene manifest: ' + manifestFileUrl);\n}\nif (sessionFolderUrl) {\n  lines.push('Session folder: ' + sessionFolderUrl);\n}\nif (sessionSheetUrl) {\n  lines.push('Session sheet: ' + sessionSheetUrl);\n}\nif (renderStatus) {\n  lines.push('Render status: ' + renderStatus);\n}\nif (shouldEmbedMediaAction) {\n  lines.push('Chon hanh dong tiep theo:');\n}\n\nlet messageId = null;\nlet status = 'sent';\nlet errorText = '';\n\ntry {\n  const body = {\n    chat_id: telegramChatId,\n    text: lines.join('\\n'),\n    disable_web_page_preview: true,\n  };\n\n  if (shouldEmbedMediaAction && sessionToken) {\n    body.reply_markup = {\n      inline_keyboard: buildMediaButtons(sessionToken),\n    };\n  }\n\n  const response = await requestHelper({\n    method: 'POST',\n    url: 'https://api.telegram.org/bot' + telegramBotToken + '/sendMessage',\n    body,\n    json: true,\n    timeout: 60000,\n  });\n\n  const parsedMessageId = Number(response?.result?.message_id);\n  if (Number.isFinite(parsedMessageId) && parsedMessageId > 0) {\n    messageId = Math.floor(parsedMessageId);\n  }\n} catch (error) {\n  status = 'failed';\n  errorText = safeText(error?.message, String(error)).slice(0, 300);\n}\n\nconst mediaActionEmbedded = status === 'sent' && shouldEmbedMediaAction && Boolean(sessionToken);\n\nreturn {\n  ...input,\n  session_link_notify_status: status,\n  session_link_notify_error: errorText || null,\n  session_link_notify_message_id: messageId,\n  media_action_embedded: mediaActionEmbedded,\n  should_send_media_action: mediaActionEmbedded ? false : input.should_send_media_action,\n  should_send_metadata_action: mediaActionEmbedded ? false : input.should_send_metadata_action,\n  metadata_action_notify_status: mediaActionEmbedded\n    ? 'embedded_in_review_ready'\n    : safeText(input.metadata_action_notify_status, 'pending'),\n};"
+      },
       "id": "9e7a0e7a-3d2c-4f1a-a8bb-1d9d9db9c6f2",
       "name": "Notify Session Drive Links (Worker)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6720,
-        -440
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction buildMediaButtons(sessionToken) {\n  return [[\n    { text: 'Tao Media', callback_data: 'brv:media:c:' + sessionToken },\n    { text: 'Dung', callback_data: 'brv:media:s:' + sessionToken },\n  ]];\n}\n\nconst eventType = safeText(input.event_type);\nif (eventType !== 'init_review') {\n  return {\n    ...input,\n    session_link_notify_status: 'skipped_event',\n    session_link_notify_message_id: null,\n  };\n}\n\nconst requestHelper =\n  helpers?.httpRequest ??\n  (typeof $helpers !== 'undefined' ? $helpers?.httpRequest : undefined);\n\nconst telegramBotToken = safeText(input.telegram_bot_token);\nconst telegramChatId = safeText(input.telegram_chat_id);\nif (!telegramBotToken || !telegramChatId || typeof requestHelper !== 'function') {\n  return {\n    ...input,\n    session_link_notify_status: 'skipped_missing_telegram_config',\n    session_link_notify_message_id: null,\n  };\n}\n\nconst summary = input.session_assets_package_summary && typeof input.session_assets_package_summary === 'object'\n  ? input.session_assets_package_summary\n  : {};\n\nconst sessionToken = safeText(input.session_token);\nconst readableFileUrl = safeText(input.session_review_file_url, safeText(summary.review_file_url));\nconst manifestFileUrl = safeText(input.session_metadata_file_url, safeText(summary.metadata_file_url));\nconst sessionFolderUrl = safeText(input.session_folder_url, safeText(summary.session_folder_url));\nconst sessionSheetUrl = safeText(input.session_sheet_url, safeText(summary.sheet_url));\nconst renderStatus = safeText(input.render_status);\n\nif (!readableFileUrl && !manifestFileUrl && !sessionFolderUrl && !sessionSheetUrl) {\n  return {\n    ...input,\n    session_link_notify_status: 'skipped_missing_drive_links',\n    session_link_notify_message_id: null,\n  };\n}\n\nconst shouldEmbedMediaAction = input.should_send_media_action === true || input.should_send_metadata_action === true;\n\nconst lines = [\n  '[REVIEW READY]',\n  'Session: ' + sessionToken,\n];\n\nif (readableFileUrl) {\n  lines.push('Readable draft: ' + readableFileUrl);\n}\nif (manifestFileUrl) {\n  lines.push('Scene manifest: ' + manifestFileUrl);\n}\nif (sessionFolderUrl) {\n  lines.push('Session folder: ' + sessionFolderUrl);\n}\nif (sessionSheetUrl) {\n  lines.push('Session sheet: ' + sessionSheetUrl);\n}\nif (renderStatus) {\n  lines.push('Render status: ' + renderStatus);\n}\nif (shouldEmbedMediaAction) {\n  lines.push('Chon hanh dong tiep theo:');\n}\n\nlet messageId = null;\nlet status = 'sent';\nlet errorText = '';\n\ntry {\n  const body = {\n    chat_id: telegramChatId,\n    text: lines.join('\\n'),\n    disable_web_page_preview: true,\n  };\n\n  if (shouldEmbedMediaAction && sessionToken) {\n    body.reply_markup = {\n      inline_keyboard: buildMediaButtons(sessionToken),\n    };\n  }\n\n  const response = await requestHelper({\n    method: 'POST',\n    url: 'https://api.telegram.org/bot' + telegramBotToken + '/sendMessage',\n    body,\n    json: true,\n    timeout: 60000,\n  });\n\n  const parsedMessageId = Number(response?.result?.message_id);\n  if (Number.isFinite(parsedMessageId) && parsedMessageId > 0) {\n    messageId = Math.floor(parsedMessageId);\n  }\n} catch (error) {\n  status = 'failed';\n  errorText = safeText(error?.message, String(error)).slice(0, 300);\n}\n\nconst mediaActionEmbedded = status === 'sent' && shouldEmbedMediaAction && Boolean(sessionToken);\n\nreturn {\n  ...input,\n  session_link_notify_status: status,\n  session_link_notify_error: errorText || null,\n  session_link_notify_message_id: messageId,\n  media_action_embedded: mediaActionEmbedded,\n  should_send_media_action: mediaActionEmbedded ? false : input.should_send_media_action,\n  should_send_metadata_action: mediaActionEmbedded ? false : input.should_send_metadata_action,\n  metadata_action_notify_status: mediaActionEmbedded\n    ? 'embedded_in_review_ready'\n    : safeText(input.metadata_action_notify_status, 'pending'),\n};"
-      }
+        8400,
+        -992
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst OPENAI_DEFAULT_MODEL = 'cx/gpt-5.4';\n\nfunction normalizeModelName(rawValue, defaultValue = OPENAI_DEFAULT_MODEL) {\n  const fallback = String(defaultValue ?? '').trim() || OPENAI_DEFAULT_MODEL;\n  const raw = String(rawValue ?? '').trim();\n  if (!raw) {\n    return fallback;\n  }\n\n  const lowerRaw = raw.toLowerCase();\n  if (lowerRaw === 'gpt-5') {\n    return OPENAI_DEFAULT_MODEL;\n  }\n\n  if (/^cx\\//i.test(raw) || /^gemini-/i.test(raw) || /^nano-banana/i.test(raw)) {\n    return raw;\n  }\n\n  if (/^gpt-[a-z0-9.\\-]+$/i.test(raw)) {\n    return 'cx/' + raw;\n  }\n\n  return raw;\n}\n\nfunction asNumber(value, fallback = 0) {\n  if (value === null || value === undefined) {\n    return fallback;\n  }\n  const raw = typeof value === 'string' ? value.trim() : String(value);\n  if (raw === '') {\n    return fallback;\n  }\n  const num = Number(raw);\n  return Number.isFinite(num) ? num : fallback;\n}\n\nfunction clampScore(value, fallback = 6) {\n  if (value === null || value === undefined) return fallback;\n  const raw = typeof value === 'string' ? value.trim() : String(value);\n  if (raw === '') return fallback;\n  const num = Number(raw);\n  if (!Number.isFinite(num)) return fallback;\n  if (num < 0) return 0;\n  if (num > 10) return 10;\n  return Math.round(num * 10) / 10;\n}\n\nfunction normalizeRisk(value) {\n  const risk = String(value ?? '').trim().toLowerCase();\n  if (risk === 'low' || risk === 'med' || risk === 'high') return risk;\n  return 'med';\n}\n\nfunction normalizeList(value) {\n  if (Array.isArray(value)) {\n    return value.map((item) => String(item ?? '').trim()).filter(Boolean);\n  }\n  return String(value ?? '')\n    .split(/[\\n,]+/)\n    .map((item) => item.trim())\n    .filter(Boolean);\n}\n\nfunction normalizeFeedback(value, fallback = '') {\n  const raw = String(value ?? '').replace(/\\s+/g, ' ').trim();\n  const text = raw || String(fallback ?? '').replace(/\\s+/g, ' ').trim();\n  if (!text) return '';\n\n  const words = text.split(/\\s+/).filter(Boolean);\n  if (words.length <= 200) {\n    return text;\n  }\n  return words.slice(0, 200).join(' ');\n}\n\nfunction normalizeForGenericMatch(value) {\n  return String(value ?? '')\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '')\n    .replace(/[^\\w\\s]/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim()\n    .toLowerCase();\n}\n\nfunction isGenericQcFeedback(value) {\n  const normalized = normalizeForGenericMatch(value);\n  if (!normalized) return true;\n  return (\n    normalized === 'chua co feedback qc' ||\n    normalized.includes('chua co feedback qc') ||\n    normalized.includes('khong co feedback qc') ||\n    normalized.includes('no qc feedback')\n  );\n}\n\nfunction hasNonEmptyNumber(value) {\n  if (value === null || value === undefined) return false;\n  const raw = typeof value === 'string' ? value.trim() : String(value);\n  if (raw === '') return false;\n  return Number.isFinite(Number(raw));\n}\n\nfunction buildScoreWarnings(scores, threshold) {\n  const map = {\n    Hook: scores.hook_score,\n    Clarity: scores.clarity_score,\n    Originality: scores.originality_score,\n    'Practical value': scores.practical_value_score,\n  };\n\n  return Object.entries(map)\n    .filter(([, score]) => Number(score) < threshold)\n    .map(([label, score]) => label + ' score=' + score + ' < ' + threshold);\n}\n\nfunction parseJsonObject(rawText) {\n  const raw = String(rawText ?? '').trim();\n  if (!raw) return null;\n\n  try {\n    return JSON.parse(raw);\n  } catch (_) {}\n\n  const fence = raw.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);\n  if (fence) {\n    try {\n      return JSON.parse(fence[1]);\n    } catch (_) {}\n  }\n\n  const first = raw.indexOf('{');\n  const last = raw.lastIndexOf('}');\n  if (first >= 0 && last > first) {\n    try {\n      return JSON.parse(raw.slice(first, last + 1));\n    } catch (_) {}\n  }\n\n  return null;\n}\n\nfunction stripControlTags(text) {\n  const normalized = String(text ?? '').replace(/\\r\\n/g, '\\n').trim();\n  return normalized.replace(/(?:\\n|^)\\s*-\\s*(CONTINUE|END)\\s*-\\s*$/i, '').trim();\n}\n\nfunction normalizeReviewForDisplay(reviewText) {\n  const normalized = stripControlTags(reviewText);\n  const sectionRegex = /<<<SECTION\\|([^|\\n>]+)(?:\\|([^\\n>]+))?>>>\\s*([\\s\\S]*?)\\s*<<<END_SECTION>>>/g;\n  const blocks = [];\n  let match;\n\n  while ((match = sectionRegex.exec(normalized)) !== null) {\n    const title = safeText(match[2]);\n    const content = safeText(match[3]);\n    if (!content) continue;\n    blocks.push(title ? (title + '\\n' + content) : content);\n  }\n\n  if (blocks.length > 0) {\n    return blocks.join('\\n\\n').trim();\n  }\n\n  return normalized\n    .replace(/<<<SECTION\\|[^>]+>>>/g, '')\n    .replace(/<<<END_SECTION>>>/g, '')\n    .replace(/\\n{3,}/g, '\\n\\n')\n    .trim();\n}\n\nfunction buildMediaButtons(sessionToken) {\n  return [[\n    { text: 'Tao Media', callback_data: 'brv:media:c:' + sessionToken },\n    { text: 'Dung', callback_data: 'brv:media:s:' + sessionToken },\n  ]];\n}\n\nconst shouldSendQcAction = input.should_send_qc_action === true;\nconst mediaActionEmbedded = input.media_action_embedded === true;\nconst initialMetadataStatus = mediaActionEmbedded ? 'embedded_in_review_ready' : 'suppressed';\n\nif (!shouldSendQcAction) {\n  return {\n    ...input,\n    qc_action_notify_status: 'skipped',\n    metadata_action_notify_status: initialMetadataStatus,\n  };\n}\n\nconst requestHelper =\n  helpers?.httpRequest ??\n  (typeof $helpers !== 'undefined' ? $helpers?.httpRequest : undefined);\n\nconst telegramBotToken = safeText(input.telegram_bot_token);\nconst telegramChatId = safeText(input.telegram_chat_id);\nconst sessionToken = safeText(input.session_token);\n\nif (!telegramBotToken || !telegramChatId || !sessionToken || typeof requestHelper !== 'function') {\n  return {\n    ...input,\n    qc_action_notify_status: 'skipped_missing_telegram_config',\n  };\n}\n\nconst proxyBaseUrl = safeText(input.proxy_base_url).replace(/\\/$/, '');\nconst proxyApiKey = safeText(input.proxy_api_key);\nconst qcModel = normalizeModelName(input.qc_model, OPENAI_DEFAULT_MODEL);\nconst qcPromptTemplate = safeText(input.qc_prompt_template, 'You are a strict content QC editor. Return JSON only, no markdown.');\nconst qcThresholdRaw = Number(input.qc_score_warning_threshold ?? 7);\nconst qcScoreWarningThreshold = Number.isFinite(qcThresholdRaw)\n  ? Math.min(10, Math.max(0, Math.floor(qcThresholdRaw)))\n  : 7;\n\nasync function sendTelegramMessage(text, inlineKeyboardRows) {\n  const payload = {\n    chat_id: telegramChatId,\n    text: String(text ?? '').slice(0, 4000),\n  };\n\n  if (Array.isArray(inlineKeyboardRows) && inlineKeyboardRows.length > 0) {\n    payload.reply_markup = {\n      inline_keyboard: inlineKeyboardRows,\n    };\n  }\n\n  await requestHelper({\n    method: 'POST',\n    url: 'https://api.telegram.org/bot' + telegramBotToken + '/sendMessage',\n    body: payload,\n    json: true,\n    timeout: 60000,\n  });\n}\n\nasync function callOpenAI(messages) {\n  if (!proxyBaseUrl || !proxyApiKey) {\n    throw new Error('Missing proxy config for QC.');\n  }\n\n  const options = arguments[1] && typeof arguments[1] === 'object' ? arguments[1] : {};\n  const useJsonObject = options.useJsonObject !== false;\n  const body = {\n    model: qcModel,\n    messages,\n    stream: false,\n  };\n  if (useJsonObject) {\n    body.response_format = { type: 'json_object' };\n  }\n\n  return await requestHelper({\n    method: 'POST',\n    url: proxyBaseUrl + '/v1/chat/completions',\n    headers: {\n      Authorization: 'Bearer ' + proxyApiKey,\n    },\n    body,\n    json: true,\n    timeout: 180000,\n  });\n}\n\nfunction hasUsableQcObject(source) {\n  const raw = source && typeof source === 'object' ? source : {};\n  const scalarSignals = [\n    raw.hook,\n    raw.hook_score,\n    raw.clarity,\n    raw.clarity_score,\n    raw.originality,\n    raw.originality_score,\n    raw.practical,\n    raw.practical_value_score,\n    raw.risk,\n    raw.risk_level,\n    raw.feedback,\n  ];\n\n  const hasScalar = scalarSignals.some((value) => {\n    if (Number.isFinite(Number(value))) return true;\n    return safeText(value) !== '';\n  });\n\n  const hasList =\n    Array.isArray(raw.qc_issues) && raw.qc_issues.length > 0 ||\n    Array.isArray(raw.issues) && raw.issues.length > 0 ||\n    Array.isArray(raw.qc_checks) && raw.qc_checks.length > 0;\n\n  const hasScoresObject = raw.scores && typeof raw.scores === 'object';\n  return hasScalar || hasList || hasScoresObject;\n}\n\nfunction buildHeuristicFeedback(context) {\n  const review = safeText(normalizeReviewForDisplay(context.full_review));\n  const hints = [];\n\n  if (review.length > 5000) {\n    hints.push('Rut gon 10-20% de nhip doc gon hon, uu tien cau ngan va dong tu manh.');\n  }\n  if (/phan\\\\s*\\\\d+|bai\\\\s*hoc\\\\s*\\\\d+|muc\\\\s*\\\\d+/i.test(review)) {\n    hints.push('Bo kieu danh so meta (Phan 1/Bai hoc 1), chuyen sang dong ke tu su lien mach.');\n  }\n  if (!/[\\\"“”']/.test(review)) {\n    hints.push('Them 1-2 trich dan ngan (co nguon ro) de tang do tin cay va cam xuc.');\n  }\n  if (!/(vi\\\\s*du|chuyen\\\\s*that|tinh\\\\s*huong|doi\\\\s*song)/i.test(review)) {\n    hints.push('Bo sung vi du doi song cu the de tang practical value.');\n  }\n\n  if (hints.length === 0) {\n    hints.push('Mo bai bang 1 noi dau cu the, giu giong ke chuyen nguoi that, va ket bai bang 1 hanh dong nho co the lam ngay.');\n  }\n\n  return normalizeFeedback(hints.join(' '), 'Can them feedback QC cu the.');\n}\n\nfunction normalizeQcPayload(source, options = {}) {\n  const raw = source && typeof source === 'object' ? source : {};\n  const qcIssues = normalizeList(raw.qc_issues ?? raw.issues);\n  const qcChecks = Array.isArray(raw.qc_checks) ? raw.qc_checks : [];\n\n  const hookRaw = raw.hook ?? raw.hook_score ?? raw.scores?.hook;\n  const clarityRaw = raw.clarity ?? raw.clarity_score ?? raw.scores?.clarity;\n  const originalityRaw = raw.originality ?? raw.originality_score ?? raw.scores?.originality;\n  const practicalRaw = raw.practical ?? raw.practical_value_score ?? raw.scores?.practical ?? raw.scores?.practical_value;\n  const riskRaw = raw.risk ?? raw.risk_level;\n\n  const derivedIssues = qcIssues.length > 0\n    ? qcIssues\n    : qcChecks\n        .filter((check) => String(check?.status ?? '').toLowerCase() !== 'pass')\n        .map((check) => String(check?.note ?? '').trim())\n        .filter(Boolean);\n\n  const feedbackFallback = safeText(options.fallbackFeedback, derivedIssues.slice(0, 3).join('; '));\n  const qc = {\n    qc_checks: qcChecks,\n    qc_issues: derivedIssues,\n    feedback: normalizeFeedback(raw.feedback, feedbackFallback || 'Can them feedback QC cu the.'),\n    hook_score: clampScore(hookRaw, 6),\n    clarity_score: clampScore(clarityRaw, 6),\n    originality_score: clampScore(originalityRaw, 6),\n    practical_value_score: clampScore(practicalRaw, 6),\n    risk_level: normalizeRisk(riskRaw),\n    score_warnings: [],\n    qc_status: safeText(options.qcStatus, 'generated'),\n    qc_error: safeText(options.qcError) || null,\n  };\n\n  qc.score_warnings = buildScoreWarnings(qc, qcScoreWarningThreshold);\n  return qc;\n}\n\nfunction enforceQcQuality(normalizedQc, fallbackFeedback, fallbackErrorCode) {\n  const qc = normalizedQc && typeof normalizedQc === 'object' ? normalizedQc : {};\n  const safeFallbackFeedback = normalizeFeedback(fallbackFeedback, 'Can them feedback QC cu the.');\n\n  const scoresAreDefault =\n    Number(qc.hook_score) === 6 &&\n    Number(qc.clarity_score) === 6 &&\n    Number(qc.originality_score) === 6 &&\n    Number(qc.practical_value_score) === 6;\n\n  const feedbackText = safeText(qc.feedback);\n  const feedbackWordCount = feedbackText.split(/\\s+/).filter(Boolean).length;\n  const feedbackLooksGeneric = isGenericQcFeedback(feedbackText);\n  const feedbackTooShort = feedbackWordCount < 8;\n\n  if (feedbackLooksGeneric || (scoresAreDefault && feedbackTooShort)) {\n    const existingIssues = Array.isArray(qc.qc_issues) ? qc.qc_issues : [];\n    const nextIssues = existingIssues.length > 0 ? existingIssues : ['QC fallback.'];\n    return {\n      ...qc,\n      qc_issues: nextIssues,\n      feedback: safeFallbackFeedback,\n      qc_status: 'fallback',\n      qc_error: safeText(qc.qc_error, fallbackErrorCode),\n      score_warnings: buildScoreWarnings({\n        hook_score: qc.hook_score,\n        clarity_score: qc.clarity_score,\n        originality_score: qc.originality_score,\n        practical_value_score: qc.practical_value_score,\n      }, qcScoreWarningThreshold),\n    };\n  }\n\n  return qc;\n}\n\nasync function resolveQcPayload() {\n  const existingQc = input.qc && typeof input.qc === 'object'\n    ? input.qc\n    : {\n        hook_score: input.hook_score,\n        clarity_score: input.clarity_score,\n        originality_score: input.originality_score,\n        practical_value_score: input.practical_value_score,\n        risk_level: input.risk_level,\n        feedback: input.feedback,\n        score_warnings: input.score_warnings,\n        qc_status: input.qc_status,\n      };\n\n  const hasExistingScores =\n    hasNonEmptyNumber(existingQc?.hook_score) &&\n    hasNonEmptyNumber(existingQc?.clarity_score) &&\n    hasNonEmptyNumber(existingQc?.originality_score) &&\n    hasNonEmptyNumber(existingQc?.practical_value_score);\n\n  const heuristicFeedback = buildHeuristicFeedback(input);\n\n  if (hasExistingScores) {\n    const normalizedExisting = normalizeQcPayload(existingQc, {\n      qcStatus: safeText(existingQc?.qc_status, 'generated'),\n      qcError: safeText(existingQc?.qc_error),\n      fallbackFeedback: heuristicFeedback,\n    });\n    return enforceQcQuality(normalizedExisting, heuristicFeedback, 'qc_existing_payload_generic');\n  }\n\n  const fallbackQc = {\n    qc_checks: [],\n    qc_issues: ['QC fallback.'],\n    feedback: heuristicFeedback,\n    hook_score: 6,\n    clarity_score: 6,\n    originality_score: 6,\n    practical_value_score: 6,\n    risk_level: 'med',\n    score_warnings: [],\n    qc_status: 'fallback',\n    qc_error: null,\n  };\n\n  try {\n    const promptPayload = {\n      task: 'QC a Vietnamese long-form book review script.',\n      policy: {\n        quote_policy: 'Only accept direct quote if source certainty is high. Otherwise mark warn.',\n        no_rewrite: true,\n      },\n      input: {\n        request: safeText(input.user_input),\n        intro_excerpt: safeText(input.review_intro),\n        outro_excerpt: safeText(input.review_outro),\n        review_excerpt: safeText(normalizeReviewForDisplay(input.full_review)),\n        review_readable: safeText(input.review_readable, safeText(normalizeReviewForDisplay(input.full_review))),\n        review_manifest: input.review_manifest && typeof input.review_manifest === 'object' ? input.review_manifest : null,\n      },\n      required_json_schema: {\n        hook: 0,\n        clarity: 0,\n        originality: 0,\n        practical: 0,\n        risk: 'low|med|high',\n        feedback: 'string (Vietnamese, actionable, <= 200 words)',\n        qc_issues: ['string (optional)'],\n      },\n    };\n\n    const baseMessages = [\n      {\n        role: 'system',\n        content: qcPromptTemplate,\n      },\n      {\n        role: 'user',\n        content: JSON.stringify(promptPayload),\n      },\n    ];\n\n    const response = await callOpenAI(baseMessages, { useJsonObject: true });\n\n    const content = String(response?.choices?.[0]?.message?.content ?? '').trim();\n    let parsed = parseJsonObject(content);\n    if (!parsed || typeof parsed !== 'object' || !hasUsableQcObject(parsed)) {\n      const retryPromptPayload = {\n        ...promptPayload,\n        output_rule: 'Tra ve JSON day du key hook,clarity,originality,practical,risk,feedback,qc_issues; feedback bat buoc khong rong.',\n      };\n      const retryResponse = await callOpenAI([\n        {\n          role: 'system',\n          content: qcPromptTemplate,\n        },\n        {\n          role: 'user',\n          content: JSON.stringify(retryPromptPayload),\n        },\n      ], { useJsonObject: false });\n\n      const retryContent = String(retryResponse?.choices?.[0]?.message?.content ?? '').trim();\n      const retryParsed = parseJsonObject(retryContent);\n      if (!retryParsed || typeof retryParsed !== 'object' || !hasUsableQcObject(retryParsed)) {\n        throw new Error('QC response missing required fields.');\n      }\n      parsed = retryParsed;\n    }\n\n    const normalized = normalizeQcPayload(parsed, {\n      qcStatus: 'generated',\n      fallbackFeedback: heuristicFeedback,\n    });\n    return enforceQcQuality(normalized, heuristicFeedback, 'qc_payload_empty_feedback');\n  } catch (error) {\n    fallbackQc.qc_error = safeText(error?.message, String(error));\n    fallbackQc.score_warnings = buildScoreWarnings(fallbackQc, qcScoreWarningThreshold);\n    return fallbackQc;\n  }\n}\n\nlet metadataStatus = initialMetadataStatus;\nlet qcStatus = 'skipped';\nlet qcPayload = null;\n\ntry {\n  if (shouldSendQcAction) {\n    qcPayload = await resolveQcPayload();\n    const headline = safeText(input.qc_action_headline, 'QC REVIEW');\n    const lines = [\n      '[' + headline + ']',\n      'Session: ' + sessionToken,\n      'Hook=' + String(qcPayload.hook_score ?? 'n/a') +\n        ' | Clarity=' + String(qcPayload.clarity_score ?? 'n/a') +\n        ' | Originality=' + String(qcPayload.originality_score ?? 'n/a') +\n        ' | Practical=' + String(qcPayload.practical_value_score ?? 'n/a') +\n        ' | Risk=' + String(qcPayload.risk_level ?? 'med'),\n      'Feedback: ' + safeText(qcPayload.feedback, 'Can them feedback QC cu the.'),\n    ];\n\n    await sendTelegramMessage(lines.join('\\n'));\n    qcStatus = 'sent';\n  }\n\n  return {\n    ...input,\n    qc: qcPayload ?? input.qc,\n    qc_status: qcPayload?.qc_status ?? input.qc_status,\n    hook_score: qcPayload?.hook_score ?? asNumber(input.hook_score, null),\n    clarity_score: qcPayload?.clarity_score ?? asNumber(input.clarity_score, null),\n    originality_score: qcPayload?.originality_score ?? asNumber(input.originality_score, null),\n    practical_value_score: qcPayload?.practical_value_score ?? asNumber(input.practical_value_score, null),\n    risk_level: qcPayload?.risk_level ?? input.risk_level,\n    feedback: qcPayload?.feedback ?? input.feedback,\n    score_warnings: Array.isArray(qcPayload?.score_warnings) ? qcPayload.score_warnings : (Array.isArray(input.score_warnings) ? input.score_warnings : []),\n    qc_action_notify_status: qcStatus,\n    metadata_action_notify_status: metadataStatus,\n  };\n} catch (error) {\n  return {\n    ...input,\n    qc_action_notify_status: shouldSendQcAction ? 'failed' : qcStatus,\n    metadata_action_notify_status: metadataStatus,\n    qc_action_notify_error: safeText(error?.message, String(error)).slice(0, 300),\n  };\n}\n"
+      },
       "id": "f0d962cb-4ab9-453f-b0d2-f7f31e852e9b",
       "name": "Send Review QC And Action (Worker)",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6944,
-        -440
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst OPENAI_DEFAULT_MODEL = 'cx/gpt-5.4';\n\nfunction normalizeModelName(rawValue, defaultValue = OPENAI_DEFAULT_MODEL) {\n  const fallback = String(defaultValue ?? '').trim() || OPENAI_DEFAULT_MODEL;\n  const raw = String(rawValue ?? '').trim();\n  if (!raw) {\n    return fallback;\n  }\n\n  const lowerRaw = raw.toLowerCase();\n  if (lowerRaw === 'gpt-5') {\n    return OPENAI_DEFAULT_MODEL;\n  }\n\n  if (/^cx\\//i.test(raw) || /^gemini-/i.test(raw) || /^nano-banana/i.test(raw)) {\n    return raw;\n  }\n\n  if (/^gpt-[a-z0-9.\\-]+$/i.test(raw)) {\n    return 'cx/' + raw;\n  }\n\n  return raw;\n}\n\nfunction asNumber(value, fallback = 0) {\n  if (value === null || value === undefined) {\n    return fallback;\n  }\n  const raw = typeof value === 'string' ? value.trim() : String(value);\n  if (raw === '') {\n    return fallback;\n  }\n  const num = Number(raw);\n  return Number.isFinite(num) ? num : fallback;\n}\n\nfunction clampScore(value, fallback = 6) {\n  if (value === null || value === undefined) return fallback;\n  const raw = typeof value === 'string' ? value.trim() : String(value);\n  if (raw === '') return fallback;\n  const num = Number(raw);\n  if (!Number.isFinite(num)) return fallback;\n  if (num < 0) return 0;\n  if (num > 10) return 10;\n  return Math.round(num * 10) / 10;\n}\n\nfunction normalizeRisk(value) {\n  const risk = String(value ?? '').trim().toLowerCase();\n  if (risk === 'low' || risk === 'med' || risk === 'high') return risk;\n  return 'med';\n}\n\nfunction normalizeList(value) {\n  if (Array.isArray(value)) {\n    return value.map((item) => String(item ?? '').trim()).filter(Boolean);\n  }\n  return String(value ?? '')\n    .split(/[\\n,]+/)\n    .map((item) => item.trim())\n    .filter(Boolean);\n}\n\nfunction normalizeFeedback(value, fallback = '') {\n  const raw = String(value ?? '').replace(/\\s+/g, ' ').trim();\n  const text = raw || String(fallback ?? '').replace(/\\s+/g, ' ').trim();\n  if (!text) return '';\n\n  const words = text.split(/\\s+/).filter(Boolean);\n  if (words.length <= 200) {\n    return text;\n  }\n  return words.slice(0, 200).join(' ');\n}\n\nfunction normalizeForGenericMatch(value) {\n  return String(value ?? '')\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '')\n    .replace(/[^\\w\\s]/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim()\n    .toLowerCase();\n}\n\nfunction isGenericQcFeedback(value) {\n  const normalized = normalizeForGenericMatch(value);\n  if (!normalized) return true;\n  return (\n    normalized === 'chua co feedback qc' ||\n    normalized.includes('chua co feedback qc') ||\n    normalized.includes('khong co feedback qc') ||\n    normalized.includes('no qc feedback')\n  );\n}\n\nfunction hasNonEmptyNumber(value) {\n  if (value === null || value === undefined) return false;\n  const raw = typeof value === 'string' ? value.trim() : String(value);\n  if (raw === '') return false;\n  return Number.isFinite(Number(raw));\n}\n\nfunction buildScoreWarnings(scores, threshold) {\n  const map = {\n    Hook: scores.hook_score,\n    Clarity: scores.clarity_score,\n    Originality: scores.originality_score,\n    'Practical value': scores.practical_value_score,\n  };\n\n  return Object.entries(map)\n    .filter(([, score]) => Number(score) < threshold)\n    .map(([label, score]) => label + ' score=' + score + ' < ' + threshold);\n}\n\nfunction parseJsonObject(rawText) {\n  const raw = String(rawText ?? '').trim();\n  if (!raw) return null;\n\n  try {\n    return JSON.parse(raw);\n  } catch (_) {}\n\n  const fence = raw.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);\n  if (fence) {\n    try {\n      return JSON.parse(fence[1]);\n    } catch (_) {}\n  }\n\n  const first = raw.indexOf('{');\n  const last = raw.lastIndexOf('}');\n  if (first >= 0 && last > first) {\n    try {\n      return JSON.parse(raw.slice(first, last + 1));\n    } catch (_) {}\n  }\n\n  return null;\n}\n\nfunction stripControlTags(text) {\n  const normalized = String(text ?? '').replace(/\\r\\n/g, '\\n').trim();\n  return normalized.replace(/(?:\\n|^)\\s*-\\s*(CONTINUE|END)\\s*-\\s*$/i, '').trim();\n}\n\nfunction normalizeReviewForDisplay(reviewText) {\n  const normalized = stripControlTags(reviewText);\n  const sectionRegex = /<<<SECTION\\|([^|\\n>]+)(?:\\|([^\\n>]+))?>>>\\s*([\\s\\S]*?)\\s*<<<END_SECTION>>>/g;\n  const blocks = [];\n  let match;\n\n  while ((match = sectionRegex.exec(normalized)) !== null) {\n    const title = safeText(match[2]);\n    const content = safeText(match[3]);\n    if (!content) continue;\n    blocks.push(title ? (title + '\\n' + content) : content);\n  }\n\n  if (blocks.length > 0) {\n    return blocks.join('\\n\\n').trim();\n  }\n\n  return normalized\n    .replace(/<<<SECTION\\|[^>]+>>>/g, '')\n    .replace(/<<<END_SECTION>>>/g, '')\n    .replace(/\\n{3,}/g, '\\n\\n')\n    .trim();\n}\n\nfunction buildMediaButtons(sessionToken) {\n  return [[\n    { text: 'Tao Media', callback_data: 'brv:media:c:' + sessionToken },\n    { text: 'Dung', callback_data: 'brv:media:s:' + sessionToken },\n  ]];\n}\n\nconst shouldSendQcAction = input.should_send_qc_action === true;\nconst mediaActionEmbedded = input.media_action_embedded === true;\nconst initialMetadataStatus = mediaActionEmbedded ? 'embedded_in_review_ready' : 'suppressed';\n\nif (!shouldSendQcAction) {\n  return {\n    ...input,\n    qc_action_notify_status: 'skipped',\n    metadata_action_notify_status: initialMetadataStatus,\n  };\n}\n\nconst requestHelper =\n  helpers?.httpRequest ??\n  (typeof $helpers !== 'undefined' ? $helpers?.httpRequest : undefined);\n\nconst telegramBotToken = safeText(input.telegram_bot_token);\nconst telegramChatId = safeText(input.telegram_chat_id);\nconst sessionToken = safeText(input.session_token);\n\nif (!telegramBotToken || !telegramChatId || !sessionToken || typeof requestHelper !== 'function') {\n  return {\n    ...input,\n    qc_action_notify_status: 'skipped_missing_telegram_config',\n  };\n}\n\nconst proxyBaseUrl = safeText(input.proxy_base_url).replace(/\\/$/, '');\nconst proxyApiKey = safeText(input.proxy_api_key);\nconst qcModel = normalizeModelName(input.qc_model, OPENAI_DEFAULT_MODEL);\nconst qcPromptTemplate = safeText(input.qc_prompt_template, 'You are a strict content QC editor. Return JSON only, no markdown.');\nconst qcThresholdRaw = Number(input.qc_score_warning_threshold ?? 7);\nconst qcScoreWarningThreshold = Number.isFinite(qcThresholdRaw)\n  ? Math.min(10, Math.max(0, Math.floor(qcThresholdRaw)))\n  : 7;\n\nasync function sendTelegramMessage(text, inlineKeyboardRows) {\n  const payload = {\n    chat_id: telegramChatId,\n    text: String(text ?? '').slice(0, 4000),\n  };\n\n  if (Array.isArray(inlineKeyboardRows) && inlineKeyboardRows.length > 0) {\n    payload.reply_markup = {\n      inline_keyboard: inlineKeyboardRows,\n    };\n  }\n\n  await requestHelper({\n    method: 'POST',\n    url: 'https://api.telegram.org/bot' + telegramBotToken + '/sendMessage',\n    body: payload,\n    json: true,\n    timeout: 60000,\n  });\n}\n\nasync function callOpenAI(messages) {\n  if (!proxyBaseUrl || !proxyApiKey) {\n    throw new Error('Missing proxy config for QC.');\n  }\n\n  const options = arguments[1] && typeof arguments[1] === 'object' ? arguments[1] : {};\n  const useJsonObject = options.useJsonObject !== false;\n  const body = {\n    model: qcModel,\n    messages,\n    stream: false,\n  };\n  if (useJsonObject) {\n    body.response_format = { type: 'json_object' };\n  }\n\n  return await requestHelper({\n    method: 'POST',\n    url: proxyBaseUrl + '/v1/chat/completions',\n    headers: {\n      Authorization: 'Bearer ' + proxyApiKey,\n    },\n    body,\n    json: true,\n    timeout: 180000,\n  });\n}\n\nfunction hasUsableQcObject(source) {\n  const raw = source && typeof source === 'object' ? source : {};\n  const scalarSignals = [\n    raw.hook,\n    raw.hook_score,\n    raw.clarity,\n    raw.clarity_score,\n    raw.originality,\n    raw.originality_score,\n    raw.practical,\n    raw.practical_value_score,\n    raw.risk,\n    raw.risk_level,\n    raw.feedback,\n  ];\n\n  const hasScalar = scalarSignals.some((value) => {\n    if (Number.isFinite(Number(value))) return true;\n    return safeText(value) !== '';\n  });\n\n  const hasList =\n    Array.isArray(raw.qc_issues) && raw.qc_issues.length > 0 ||\n    Array.isArray(raw.issues) && raw.issues.length > 0 ||\n    Array.isArray(raw.qc_checks) && raw.qc_checks.length > 0;\n\n  const hasScoresObject = raw.scores && typeof raw.scores === 'object';\n  return hasScalar || hasList || hasScoresObject;\n}\n\nfunction buildHeuristicFeedback(context) {\n  const review = safeText(normalizeReviewForDisplay(context.full_review));\n  const hints = [];\n\n  if (review.length > 5000) {\n    hints.push('Rut gon 10-20% de nhip doc gon hon, uu tien cau ngan va dong tu manh.');\n  }\n  if (/phan\\\\s*\\\\d+|bai\\\\s*hoc\\\\s*\\\\d+|muc\\\\s*\\\\d+/i.test(review)) {\n    hints.push('Bo kieu danh so meta (Phan 1/Bai hoc 1), chuyen sang dong ke tu su lien mach.');\n  }\n  if (!/[\\\"“”']/.test(review)) {\n    hints.push('Them 1-2 trich dan ngan (co nguon ro) de tang do tin cay va cam xuc.');\n  }\n  if (!/(vi\\\\s*du|chuyen\\\\s*that|tinh\\\\s*huong|doi\\\\s*song)/i.test(review)) {\n    hints.push('Bo sung vi du doi song cu the de tang practical value.');\n  }\n\n  if (hints.length === 0) {\n    hints.push('Mo bai bang 1 noi dau cu the, giu giong ke chuyen nguoi that, va ket bai bang 1 hanh dong nho co the lam ngay.');\n  }\n\n  return normalizeFeedback(hints.join(' '), 'Can them feedback QC cu the.');\n}\n\nfunction normalizeQcPayload(source, options = {}) {\n  const raw = source && typeof source === 'object' ? source : {};\n  const qcIssues = normalizeList(raw.qc_issues ?? raw.issues);\n  const qcChecks = Array.isArray(raw.qc_checks) ? raw.qc_checks : [];\n\n  const hookRaw = raw.hook ?? raw.hook_score ?? raw.scores?.hook;\n  const clarityRaw = raw.clarity ?? raw.clarity_score ?? raw.scores?.clarity;\n  const originalityRaw = raw.originality ?? raw.originality_score ?? raw.scores?.originality;\n  const practicalRaw = raw.practical ?? raw.practical_value_score ?? raw.scores?.practical ?? raw.scores?.practical_value;\n  const riskRaw = raw.risk ?? raw.risk_level;\n\n  const derivedIssues = qcIssues.length > 0\n    ? qcIssues\n    : qcChecks\n        .filter((check) => String(check?.status ?? '').toLowerCase() !== 'pass')\n        .map((check) => String(check?.note ?? '').trim())\n        .filter(Boolean);\n\n  const feedbackFallback = safeText(options.fallbackFeedback, derivedIssues.slice(0, 3).join('; '));\n  const qc = {\n    qc_checks: qcChecks,\n    qc_issues: derivedIssues,\n    feedback: normalizeFeedback(raw.feedback, feedbackFallback || 'Can them feedback QC cu the.'),\n    hook_score: clampScore(hookRaw, 6),\n    clarity_score: clampScore(clarityRaw, 6),\n    originality_score: clampScore(originalityRaw, 6),\n    practical_value_score: clampScore(practicalRaw, 6),\n    risk_level: normalizeRisk(riskRaw),\n    score_warnings: [],\n    qc_status: safeText(options.qcStatus, 'generated'),\n    qc_error: safeText(options.qcError) || null,\n  };\n\n  qc.score_warnings = buildScoreWarnings(qc, qcScoreWarningThreshold);\n  return qc;\n}\n\nfunction enforceQcQuality(normalizedQc, fallbackFeedback, fallbackErrorCode) {\n  const qc = normalizedQc && typeof normalizedQc === 'object' ? normalizedQc : {};\n  const safeFallbackFeedback = normalizeFeedback(fallbackFeedback, 'Can them feedback QC cu the.');\n\n  const scoresAreDefault =\n    Number(qc.hook_score) === 6 &&\n    Number(qc.clarity_score) === 6 &&\n    Number(qc.originality_score) === 6 &&\n    Number(qc.practical_value_score) === 6;\n\n  const feedbackText = safeText(qc.feedback);\n  const feedbackWordCount = feedbackText.split(/\\s+/).filter(Boolean).length;\n  const feedbackLooksGeneric = isGenericQcFeedback(feedbackText);\n  const feedbackTooShort = feedbackWordCount < 8;\n\n  if (feedbackLooksGeneric || (scoresAreDefault && feedbackTooShort)) {\n    const existingIssues = Array.isArray(qc.qc_issues) ? qc.qc_issues : [];\n    const nextIssues = existingIssues.length > 0 ? existingIssues : ['QC fallback.'];\n    return {\n      ...qc,\n      qc_issues: nextIssues,\n      feedback: safeFallbackFeedback,\n      qc_status: 'fallback',\n      qc_error: safeText(qc.qc_error, fallbackErrorCode),\n      score_warnings: buildScoreWarnings({\n        hook_score: qc.hook_score,\n        clarity_score: qc.clarity_score,\n        originality_score: qc.originality_score,\n        practical_value_score: qc.practical_value_score,\n      }, qcScoreWarningThreshold),\n    };\n  }\n\n  return qc;\n}\n\nasync function resolveQcPayload() {\n  const existingQc = input.qc && typeof input.qc === 'object'\n    ? input.qc\n    : {\n        hook_score: input.hook_score,\n        clarity_score: input.clarity_score,\n        originality_score: input.originality_score,\n        practical_value_score: input.practical_value_score,\n        risk_level: input.risk_level,\n        feedback: input.feedback,\n        score_warnings: input.score_warnings,\n        qc_status: input.qc_status,\n      };\n\n  const hasExistingScores =\n    hasNonEmptyNumber(existingQc?.hook_score) &&\n    hasNonEmptyNumber(existingQc?.clarity_score) &&\n    hasNonEmptyNumber(existingQc?.originality_score) &&\n    hasNonEmptyNumber(existingQc?.practical_value_score);\n\n  const heuristicFeedback = buildHeuristicFeedback(input);\n\n  if (hasExistingScores) {\n    const normalizedExisting = normalizeQcPayload(existingQc, {\n      qcStatus: safeText(existingQc?.qc_status, 'generated'),\n      qcError: safeText(existingQc?.qc_error),\n      fallbackFeedback: heuristicFeedback,\n    });\n    return enforceQcQuality(normalizedExisting, heuristicFeedback, 'qc_existing_payload_generic');\n  }\n\n  const fallbackQc = {\n    qc_checks: [],\n    qc_issues: ['QC fallback.'],\n    feedback: heuristicFeedback,\n    hook_score: 6,\n    clarity_score: 6,\n    originality_score: 6,\n    practical_value_score: 6,\n    risk_level: 'med',\n    score_warnings: [],\n    qc_status: 'fallback',\n    qc_error: null,\n  };\n\n  try {\n    const promptPayload = {\n      task: 'QC a Vietnamese long-form book review script.',\n      policy: {\n        quote_policy: 'Only accept direct quote if source certainty is high. Otherwise mark warn.',\n        no_rewrite: true,\n      },\n      input: {\n        request: safeText(input.user_input),\n        intro_excerpt: safeText(input.review_intro),\n        outro_excerpt: safeText(input.review_outro),\n        review_excerpt: safeText(normalizeReviewForDisplay(input.full_review)),\n        review_readable: safeText(input.review_readable, safeText(normalizeReviewForDisplay(input.full_review))),\n        review_manifest: input.review_manifest && typeof input.review_manifest === 'object' ? input.review_manifest : null,\n      },\n      required_json_schema: {\n        hook: 0,\n        clarity: 0,\n        originality: 0,\n        practical: 0,\n        risk: 'low|med|high',\n        feedback: 'string (Vietnamese, actionable, <= 200 words)',\n        qc_issues: ['string (optional)'],\n      },\n    };\n\n    const baseMessages = [\n      {\n        role: 'system',\n        content: qcPromptTemplate,\n      },\n      {\n        role: 'user',\n        content: JSON.stringify(promptPayload),\n      },\n    ];\n\n    const response = await callOpenAI(baseMessages, { useJsonObject: true });\n\n    const content = String(response?.choices?.[0]?.message?.content ?? '').trim();\n    let parsed = parseJsonObject(content);\n    if (!parsed || typeof parsed !== 'object' || !hasUsableQcObject(parsed)) {\n      const retryPromptPayload = {\n        ...promptPayload,\n        output_rule: 'Tra ve JSON day du key hook,clarity,originality,practical,risk,feedback,qc_issues; feedback bat buoc khong rong.',\n      };\n      const retryResponse = await callOpenAI([\n        {\n          role: 'system',\n          content: qcPromptTemplate,\n        },\n        {\n          role: 'user',\n          content: JSON.stringify(retryPromptPayload),\n        },\n      ], { useJsonObject: false });\n\n      const retryContent = String(retryResponse?.choices?.[0]?.message?.content ?? '').trim();\n      const retryParsed = parseJsonObject(retryContent);\n      if (!retryParsed || typeof retryParsed !== 'object' || !hasUsableQcObject(retryParsed)) {\n        throw new Error('QC response missing required fields.');\n      }\n      parsed = retryParsed;\n    }\n\n    const normalized = normalizeQcPayload(parsed, {\n      qcStatus: 'generated',\n      fallbackFeedback: heuristicFeedback,\n    });\n    return enforceQcQuality(normalized, heuristicFeedback, 'qc_payload_empty_feedback');\n  } catch (error) {\n    fallbackQc.qc_error = safeText(error?.message, String(error));\n    fallbackQc.score_warnings = buildScoreWarnings(fallbackQc, qcScoreWarningThreshold);\n    return fallbackQc;\n  }\n}\n\nlet metadataStatus = initialMetadataStatus;\nlet qcStatus = 'skipped';\nlet qcPayload = null;\n\ntry {\n  if (shouldSendQcAction) {\n    qcPayload = await resolveQcPayload();\n    const headline = safeText(input.qc_action_headline, 'QC REVIEW');\n    const lines = [\n      '[' + headline + ']',\n      'Session: ' + sessionToken,\n      'Hook=' + String(qcPayload.hook_score ?? 'n/a') +\n        ' | Clarity=' + String(qcPayload.clarity_score ?? 'n/a') +\n        ' | Originality=' + String(qcPayload.originality_score ?? 'n/a') +\n        ' | Practical=' + String(qcPayload.practical_value_score ?? 'n/a') +\n        ' | Risk=' + String(qcPayload.risk_level ?? 'med'),\n      'Feedback: ' + safeText(qcPayload.feedback, 'Can them feedback QC cu the.'),\n    ];\n\n    await sendTelegramMessage(lines.join('\\n'));\n    qcStatus = 'sent';\n  }\n\n  return {\n    ...input,\n    qc: qcPayload ?? input.qc,\n    qc_status: qcPayload?.qc_status ?? input.qc_status,\n    hook_score: qcPayload?.hook_score ?? asNumber(input.hook_score, null),\n    clarity_score: qcPayload?.clarity_score ?? asNumber(input.clarity_score, null),\n    originality_score: qcPayload?.originality_score ?? asNumber(input.originality_score, null),\n    practical_value_score: qcPayload?.practical_value_score ?? asNumber(input.practical_value_score, null),\n    risk_level: qcPayload?.risk_level ?? input.risk_level,\n    feedback: qcPayload?.feedback ?? input.feedback,\n    score_warnings: Array.isArray(qcPayload?.score_warnings) ? qcPayload.score_warnings : (Array.isArray(input.score_warnings) ? input.score_warnings : []),\n    qc_action_notify_status: qcStatus,\n    metadata_action_notify_status: metadataStatus,\n  };\n} catch (error) {\n  return {\n    ...input,\n    qc_action_notify_status: shouldSendQcAction ? 'failed' : qcStatus,\n    metadata_action_notify_status: metadataStatus,\n    qc_action_notify_error: safeText(error?.message, String(error)).slice(0, 300),\n  };\n}\n"
-      }
+        8624,
+        -992
+      ]
     },
     {
-      "id": "br-if-persist-review-file-worker",
-      "name": "If Persist Review File (Worker)",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        2912,
-        -440
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -1831,18 +1507,19 @@
             }
           ],
           "combinator": "and"
-        }
-      }
-    },
-    {
-      "id": "br-if-persist-metadata-file-worker",
-      "name": "If Persist Metadata File (Worker)",
+        },
+        "options": {}
+      },
+      "id": "br-if-persist-review-file-worker",
+      "name": "If Persist Review File (Worker)",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3584,
-        -440
-      ],
+        4816,
+        -992
+      ]
+    },
+    {
       "parameters": {
         "conditions": {
           "options": {
@@ -1863,18 +1540,19 @@
             }
           ],
           "combinator": "and"
-        }
-      }
-    },
-    {
-      "id": "br-if-persist-session-sheet-worker",
-      "name": "If Persist Session Sheet (Worker)",
+        },
+        "options": {}
+      },
+      "id": "br-if-persist-metadata-file-worker",
+      "name": "If Persist Metadata File (Worker)",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        4928,
-        -440
-      ],
+        6160,
+        -968
+      ]
+    },
+    {
       "parameters": {
         "conditions": {
           "options": {
@@ -1895,56 +1573,65 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "br-if-persist-session-sheet-worker",
+      "name": "If Persist Session Sheet (Worker)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        7504,
+        -992
+      ]
     },
     {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput2",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          },
+          "includeUnpaired": true
+        }
+      },
       "id": "br-merge-review-file-context-worker",
       "name": "Merge Review File Context (Worker)",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        2608,
-        -296
-      ],
+        5712,
+        -1064
+      ]
+    },
+    {
       "parameters": {
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {
-          "includeUnpaired": true,
           "clashHandling": {
             "values": {
               "resolveClash": "preferInput2",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
-          }
+          },
+          "includeUnpaired": true
         }
-      }
-    },
-    {
+      },
       "id": "br-merge-metadata-file-context-worker",
       "name": "Merge Metadata File Context (Worker)",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        2608,
-        -152
-      ],
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {
-          "includeUnpaired": true,
-          "clashHandling": {
-            "values": {
-              "resolveClash": "preferInput2",
-              "mergeMode": "shallowMerge",
-              "overrideEmpty": true
-            }
-          }
-        }
-      }
+        7056,
+        -1040
+      ]
     },
     {
       "parameters": {
@@ -1956,33 +1643,111 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6608,
-        -440
+        8176,
+        -992
       ]
     },
     {
-      "id": "br-merge-media-branches-worker",
-      "name": "Merge Media Branches (Worker)",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        2016,
-        -760
-      ],
       "parameters": {
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {
-          "includeUnpaired": true,
           "clashHandling": {
             "values": {
               "resolveClash": "preferInput1",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
-          }
+          },
+          "includeUnpaired": true
         }
-      }
+      },
+      "id": "br-merge-media-branches-worker",
+      "name": "Merge Media Branches (Worker)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3920,
+        -1184
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst sessionFolderId = safeText(input.session_folder_id);\nconst rootFolderId = safeText(\n  sessionFolderId,\n  safeText(input.gdrive_root_folder_id, safeText(input.gdriveRootFolderId, 'root')),\n);\n\nreturn {\n  ...input,\n  rootFolderId,\n  folderPath: '',\n  fileName: safeText(input.session_review_file_name, 'review-content.txt'),\n  binaryFieldName: 'file',\n};"
+      },
+      "id": "br-prepare-review-upsert-request-worker",
+      "name": "Prepare Review File Upsert Request (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5040,
+        -992
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "session_review_text",
+        "binaryPropertyName": "file",
+        "options": {
+          "fileName": "={{ $json.session_review_file_name || \"review-content.txt\" }}"
+        }
+      },
+      "id": "br-convert-review-text-to-file-worker",
+      "name": "Convert Review Text To File (Worker)",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        5264,
+        -992
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst sessionFolderId = safeText(input.session_folder_id);\nconst rootFolderId = safeText(\n  sessionFolderId,\n  safeText(input.gdrive_root_folder_id, safeText(input.gdriveRootFolderId, 'root')),\n);\n\nreturn {\n  ...input,\n  rootFolderId,\n  folderPath: '',\n  fileName: safeText(input.session_metadata_file_name, 'metadata.json'),\n  binaryFieldName: 'file',\n};"
+      },
+      "id": "br-prepare-metadata-upsert-request-worker",
+      "name": "Prepare Metadata File Upsert Request (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6384,
+        -944
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "session_metadata_json",
+        "binaryPropertyName": "file",
+        "options": {
+          "fileName": "={{ $json.session_metadata_file_name || \"metadata.json\" }}"
+        }
+      },
+      "id": "br-convert-metadata-text-to-file-worker",
+      "name": "Convert Metadata Text To File (Worker)",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        6608,
+        -944
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nreturn {\n  ...input,\n  action: 'ensureFolder',\n  rootFolderId: safeText(input.session_drive_root_folder_id, 'root'),\n  folderPath: safeText(input.session_drive_folder_name),\n};"
+      },
+      "id": "br-prepare-session-folder-ensure-request-worker",
+      "name": "Prepare Session Folder Ensure Request (Worker)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2128,
+        -1136
+      ]
     }
   ],
   "connections": {
@@ -2250,7 +2015,7 @@
       "main": [
         [
           {
-            "node": "Google Drive Create Session Folder (Worker)",
+            "node": "Prepare Session Folder Ensure Request (Worker)",
             "type": "main",
             "index": 0
           },
@@ -2292,82 +2057,6 @@
       ]
     },
     "Prepare Session Folder Id (Worker)": {
-      "main": [
-        [
-          {
-            "node": "Google Drive Create Voice Folder (Worker)",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge Voice Folder Context (Worker)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Google Drive Create Voice Folder (Worker)": {
-      "main": [
-        [
-          {
-            "node": "Merge Voice Folder Context (Worker)",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Merge Voice Folder Context (Worker)": {
-      "main": [
-        [
-          {
-            "node": "Prepare Voice Folder Id (Worker)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Voice Folder Id (Worker)": {
-      "main": [
-        [
-          {
-            "node": "Google Drive Create Image Folder (Worker)",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge Image Folder Context (Worker)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Google Drive Create Image Folder (Worker)": {
-      "main": [
-        [
-          {
-            "node": "Merge Image Folder Context (Worker)",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Merge Image Folder Context (Worker)": {
-      "main": [
-        [
-          {
-            "node": "Prepare Image Folder Id (Worker)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Image Folder Id (Worker)": {
       "main": [
         [
           {
@@ -2484,116 +2173,11 @@
         ]
       ]
     },
-    "Create Session Sheet (Worker)": {
-      "main": [
-        [
-          {
-            "node": "Merge Session Sheet Context (Worker)",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Merge Session Sheet Context (Worker)": {
-      "main": [
-        [
-          {
-            "node": "Prepare Session Sheet Meta (Worker)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Session Sheet Meta (Worker)": {
-      "main": [
-        [
-          {
-            "node": "If Session Sheet Created (Worker)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If Session Sheet Created (Worker)": {
-      "main": [
-        [
-          {
-            "node": "Google Drive Move Session Sheet (Worker)",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge Session Sheet Move Context (Worker)",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Finalize Session Assets Package (Worker)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Google Drive Move Session Sheet (Worker)": {
-      "main": [
-        [
-          {
-            "node": "Merge Session Sheet Move Context (Worker)",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Merge Session Sheet Move Context (Worker)": {
-      "main": [
-        [
-          {
-            "node": "Write Session Sheet Rows (Worker)",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge Session Sheet Write Context (Worker)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Write Session Sheet Rows (Worker)": {
-      "main": [
-        [
-          {
-            "node": "Merge Session Sheet Write Context (Worker)",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
     "Finalize Session Assets Package (Worker)": {
       "main": [
         [
           {
             "node": "Persist Session Asset Context (Worker)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge Session Sheet Write Context (Worker)": {
-      "main": [
-        [
-          {
-            "node": "Finalize Session Assets Package (Worker)",
             "type": "main",
             "index": 0
           }
@@ -2637,7 +2221,7 @@
       "main": [
         [
           {
-            "node": "Google Drive Save Review File (Worker)",
+            "node": "Prepare Review File Upsert Request (Worker)",
             "type": "main",
             "index": 0
           },
@@ -2660,7 +2244,7 @@
       "main": [
         [
           {
-            "node": "Google Drive Save Metadata File (Worker)",
+            "node": "Prepare Metadata File Upsert Request (Worker)",
             "type": "main",
             "index": 0
           },
@@ -2683,12 +2267,7 @@
       "main": [
         [
           {
-            "node": "Create Session Sheet (Worker)",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge Session Sheet Context (Worker)",
+            "node": "Google Sheets Save Session Sheet (Worker)",
             "type": "main",
             "index": 0
           }
@@ -2740,6 +2319,72 @@
         [
           {
             "node": "Finalize Media Assets (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Review File Upsert Request (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Convert Review Text To File (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Review Text To File (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Google Drive Save Review File (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Metadata File Upsert Request (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Convert Metadata Text To File (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Metadata Text To File (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Google Drive Save Metadata File (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Session Folder Ensure Request (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Google Drive Create Session Folder (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets Save Session Sheet (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Finalize Session Assets Package (Worker)",
             "type": "main",
             "index": 0
           }
