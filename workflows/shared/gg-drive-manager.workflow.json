@@ -58,7 +58,7 @@
         80
       ],
       "parameters": {
-        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nconst rootFolderIdRaw = String(input.rootFolderId ?? '').trim();\nconst rootFolderId = rootFolderIdRaw || 'root';\n\nconst rawPath = String(input.folderPath ?? '').trim();\nconst normalizedPath = rawPath\n  .replace(/^\\/+|\\/+$/g, '')\n  .replace(/\\/+/g, '/');\n\nconst segments = normalizedPath ? normalizedPath.split('/').filter(Boolean) : [];\nconst currentSegment = segments[0] || '';\nconst remainingPath = segments.length > 1 ? segments.slice(1).join('/') : '';\n\nconst explicitBinaryField = String(input.binaryFieldName ?? '').trim();\nconst availableBinaryFields = Object.keys(binary);\nconst binaryFieldName = explicitBinaryField && binary[explicitBinaryField]\n  ? explicitBinaryField\n  : (availableBinaryFields[0] || '');\n\nconst binaryFile = binaryFieldName ? binary[binaryFieldName] : null;\nconst binaryFileName = String(binaryFile?.fileName ?? '').trim();\nconst targetFileName = String(input.fileName ?? binaryFileName ?? '').trim() || 'uploaded-file.bin';\n\nconst rawAction = String(input.action ?? 'upsert').trim().toLowerCase();\nconst action = rawAction === 'get'\n  ? 'get'\n  : (rawAction === 'delete'\n      ? 'delete'\n      : (rawAction === 'list' ? 'list' : 'upsert'));\n\nconst requestedFolderPath = String(input.requestedFolderPath ?? normalizedPath);\nconst targetFolderId = String(input.targetFolderId ?? '');\n\nreturn [{\n  json: {\n    ...input,\n    action,\n    rootFolderId,\n    requestedFolderPath,\n    folderPath: normalizedPath,\n    currentSegment,\n    remainingPath,\n    baseFolderId: rootFolderId,\n    targetFolderId,\n    binaryFieldName,\n    hasBinaryFile: Boolean(binaryFile),\n    targetFileName\n  }\n}];"
+        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nconst rootFolderIdRaw = String(input.rootFolderId ?? '').trim();\nconst rootFolderId = rootFolderIdRaw || 'root';\n\nconst rawPath = String(input.folderPath ?? '').trim();\nconst normalizedPath = rawPath\n  .replace(/^\\/+|\\/+$/g, '')\n  .replace(/\\/+/g, '/');\n\nconst segments = normalizedPath ? normalizedPath.split('/').filter(Boolean) : [];\nconst currentSegment = segments[0] || '';\nconst remainingPath = segments.length > 1 ? segments.slice(1).join('/') : '';\n\nconst explicitBinaryField = String(input.binaryFieldName ?? '').trim();\nconst availableBinaryFields = Object.keys(binary);\nconst binaryFieldName = explicitBinaryField && binary[explicitBinaryField]\n  ? explicitBinaryField\n  : (availableBinaryFields[0] || '');\n\nconst binaryFile = binaryFieldName ? binary[binaryFieldName] : null;\nconst binaryFileName = String(binaryFile?.fileName ?? '').trim();\nconst targetFileName = String(input.fileName ?? binaryFileName ?? '').trim() || 'uploaded-file.bin';\n\nconst rawAction = String(input.action ?? 'upsert').trim().toLowerCase();\nconst action = rawAction === 'get'\n  ? 'get'\n  : (rawAction === 'delete'\n      ? 'delete'\n      : (rawAction === 'list'\n          ? 'list'\n          : (rawAction === 'ensurefolder' ? 'ensureFolder' : 'upsert')));\n\nconst requestedFolderPath = String(input.requestedFolderPath ?? normalizedPath);\nconst targetFolderId = String(input.targetFolderId ?? '');\n\nreturn [{\n  json: {\n    ...input,\n    action,\n    rootFolderId,\n    requestedFolderPath,\n    folderPath: normalizedPath,\n    currentSegment,\n    remainingPath,\n    baseFolderId: rootFolderId,\n    targetFolderId,\n    binaryFieldName,\n    hasBinaryFile: Boolean(binaryFile),\n    targetFileName\n  }\n}];"
       }
     },
     {
@@ -635,6 +635,29 @@
                   {
                     "leftValue": "={{ $json.action || 'upsert' }}",
                     "rightValue": "list",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": false,
+              "outputKey": ""
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action || 'upsert' }}",
+                    "rightValue": "ensureFolder",
                     "operator": {
                       "type": "string",
                       "operation": "equals"
@@ -1477,6 +1500,60 @@
         "includeOtherFields": true,
         "options": {}
       }
+    },
+    {
+      "id": "42",
+      "name": "Build Ensure Folder Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1340,
+        920
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "result-ensure-1",
+              "name": "status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "id": "result-ensure-2",
+              "name": "action",
+              "value": "ensureFolder",
+              "type": "string"
+            },
+            {
+              "id": "result-ensure-3",
+              "name": "folderId",
+              "value": "={{ $json.targetFolderId || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "result-ensure-4",
+              "name": "folderUrl",
+              "value": "={{ $json.targetFolderUrl || (\"https://drive.google.com/drive/folders/\" + ($json.targetFolderId || \"\")) }}",
+              "type": "string"
+            },
+            {
+              "id": "result-ensure-5",
+              "name": "resultRootFolderId",
+              "value": "={{ $json.rootFolderId || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "result-ensure-6",
+              "name": "resultFolderPath",
+              "value": "={{ $json.requestedFolderPath || \"\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
     }
   ],
   "connections": {
@@ -1723,6 +1800,13 @@
         [
           {
             "node": "Search Folder Items (List)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Ensure Folder Result",
             "type": "main",
             "index": 0
           }
