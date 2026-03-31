@@ -1,0 +1,1959 @@
+{
+  "name": "GG Drive Mananger",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1520,
+        80
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "2",
+      "name": "Set Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1300,
+        80
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg-1",
+              "name": "gdriveRootFolderId",
+              "value": "={{ $json.gdriveRootFolderId || '__GDRIVE_ROOT_FOLDER_ID__' }}",
+              "type": "string"
+            },
+            {
+              "id": "cfg-2",
+              "name": "gdriveCredentialName",
+              "value": "={{ $json.gdriveCredentialName || '__GDRIVE_CREDENTIAL_NAME__' }}",
+              "type": "string"
+            },
+            {
+              "id": "cfg-3",
+              "name": "selfWorkflowPath",
+              "value": "={{ $json.selfWorkflowPath || 'workflows/shared/gg-drive-manager.workflow.json' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "3",
+      "name": "Normalize Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1080,
+        80
+      ],
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nconst rootFolderIdRaw = String(input.rootFolderId ?? '').trim();\nconst rootFolderId = rootFolderIdRaw || 'root';\n\nconst rawPath = String(input.folderPath ?? '').trim();\nconst normalizedPath = rawPath\n  .replace(/^\\/+|\\/+$/g, '')\n  .replace(/\\/+/g, '/');\n\nconst segments = normalizedPath ? normalizedPath.split('/').filter(Boolean) : [];\nconst currentSegment = segments[0] || '';\nconst remainingPath = segments.length > 1 ? segments.slice(1).join('/') : '';\n\nconst explicitBinaryField = String(input.binaryFieldName ?? '').trim();\nconst availableBinaryFields = Object.keys(binary);\nconst binaryFieldName = explicitBinaryField && binary[explicitBinaryField]\n  ? explicitBinaryField\n  : (availableBinaryFields[0] || '');\n\nconst binaryFile = binaryFieldName ? binary[binaryFieldName] : null;\nconst binaryFileName = String(binaryFile?.fileName ?? '').trim();\nconst targetFileName = String(input.fileName ?? binaryFileName ?? '').trim() || 'uploaded-file.bin';\n\nconst rawAction = String(input.action ?? 'upsert').trim().toLowerCase();\nconst action = rawAction === 'get'\n  ? 'get'\n  : (rawAction === 'delete'\n      ? 'delete'\n      : (rawAction === 'list' ? 'list' : 'upsert'));\n\nconst requestedFolderPath = String(input.requestedFolderPath ?? normalizedPath);\nconst targetFolderId = String(input.targetFolderId ?? '');\n\nreturn [{\n  json: {\n    ...input,\n    action,\n    rootFolderId,\n    requestedFolderPath,\n    folderPath: normalizedPath,\n    currentSegment,\n    remainingPath,\n    baseFolderId: rootFolderId,\n    targetFolderId,\n    binaryFieldName,\n    hasBinaryFile: Boolean(binaryFile),\n    targetFileName\n  }\n}];"
+      }
+    },
+    {
+      "id": "4",
+      "name": "If Has Segment",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -860,
+        80
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ String($json.currentSegment || '').trim().length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "5",
+      "name": "Search Current Folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -640,
+        -80
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "fileFolder",
+        "operation": "search",
+        "searchMethod": "query",
+        "queryString": "={{ (() => { const escapeQuery = (value) => String(value ?? '').replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\"); const segmentName = escapeQuery($json.currentSegment || ''); const parentId = String($json.baseFolderId || 'root').trim() || 'root'; return \"name = '\" + segmentName + \"' and mimeType = 'application/vnd.google-apps.folder' and trashed = false and '\" + parentId + \"' in parents\"; })() }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "parents",
+            "webViewLink"
+          ]
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "id": "6",
+      "name": "Merge Folder Search Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -420,
+        -80
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput1",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "7",
+      "name": "If Folder Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -200,
+        -80
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ String($json.id || '').trim().length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "8",
+      "name": "Set Existing Folder Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        20,
+        -180
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "folder-existing-1",
+              "name": "targetFolderId",
+              "value": "={{ $json.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "folder-existing-2",
+              "name": "targetFolderName",
+              "value": "={{ $json.name || $json.currentSegment || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "folder-existing-3",
+              "name": "targetFolderUrl",
+              "value": "={{ $json.webViewLink || ('https://drive.google.com/drive/folders/' + ($json.id || '')) }}",
+              "type": "string"
+            },
+            {
+              "id": "folder-existing-4",
+              "name": "folderStatus",
+              "value": "existing",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "38",
+      "name": "If Can Create Missing Folder",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        20,
+        -20
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ ($json.action || 'upsert') === 'upsert' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "39",
+      "name": "Build Folder Not Found Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        -140
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "folder-notfound-1",
+              "name": "status",
+              "value": "notFound",
+              "type": "string"
+            },
+            {
+              "id": "folder-notfound-2",
+              "name": "action",
+              "value": "={{ $json.action || 'get' }}",
+              "type": "string"
+            },
+            {
+              "id": "folder-notfound-3",
+              "name": "errorCode",
+              "value": "folderNotFound",
+              "type": "string"
+            },
+            {
+              "id": "folder-notfound-4",
+              "name": "errorMessage",
+              "value": "Target folder path was not found from rootFolderId.",
+              "type": "string"
+            },
+            {
+              "id": "folder-notfound-5",
+              "name": "folderId",
+              "value": "={{ $json.baseFolderId || $json.rootFolderId || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "folder-notfound-6",
+              "name": "folderUrl",
+              "value": "={{ 'https://drive.google.com/drive/folders/' + ($json.baseFolderId || $json.rootFolderId || '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "9",
+      "name": "Create Missing Folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        20,
+        20
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "folder",
+        "operation": "create",
+        "name": "={{ $json.currentSegment || '' }}",
+        "folderId": "={{ $json.baseFolderId || 'root' }}"
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "id": "10",
+      "name": "Merge Created Folder Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        240,
+        20
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": false,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput1",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "11",
+      "name": "Set Created Folder Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        460,
+        20
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "folder-created-1",
+              "name": "targetFolderId",
+              "value": "={{ $json.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "folder-created-2",
+              "name": "targetFolderName",
+              "value": "={{ $json.name || $json.currentSegment || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "folder-created-3",
+              "name": "targetFolderUrl",
+              "value": "={{ $json.webViewLink || ('https://drive.google.com/drive/folders/' + ($json.id || '')) }}",
+              "type": "string"
+            },
+            {
+              "id": "folder-created-4",
+              "name": "folderStatus",
+              "value": "created",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "12",
+      "name": "If Has Remaining Path",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        680,
+        -80
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ String($json.remainingPath || '').trim().length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "13",
+      "name": "Prepare Recursive Request",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        900,
+        -220
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "rec-1",
+              "name": "rootFolderId",
+              "value": "={{ $json.targetFolderId || $json.baseFolderId || 'root' }}",
+              "type": "string"
+            },
+            {
+              "id": "rec-2",
+              "name": "folderPath",
+              "value": "={{ $json.remainingPath || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "rec-3",
+              "name": "requestedFolderPath",
+              "value": "={{ $json.requestedFolderPath || $json.folderPath || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "14",
+      "name": "Execute Recursive Workflow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [
+        1120,
+        -220
+      ],
+      "parameters": {
+        "source": "localFile",
+        "workflowPath": "={{ $json.selfWorkflowPath || 'workflows/shared/gg-drive-manager.workflow.json' }}",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "15",
+      "name": "Set Target Folder Root",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -640,
+        240
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "root-target-1",
+              "name": "targetFolderId",
+              "value": "={{ $json.baseFolderId || 'root' }}",
+              "type": "string"
+            },
+            {
+              "id": "root-target-2",
+              "name": "targetFolderName",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "root-target-3",
+              "name": "targetFolderUrl",
+              "value": "={{ 'https://drive.google.com/drive/folders/' + ($json.baseFolderId || 'root') }}",
+              "type": "string"
+            },
+            {
+              "id": "root-target-4",
+              "name": "folderStatus",
+              "value": "root",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "16",
+      "name": "Finalize Target Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        900,
+        80
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "target-final-1",
+              "name": "targetFolderId",
+              "value": "={{ $json.targetFolderId || $json.baseFolderId || $json.rootFolderId || 'root' }}",
+              "type": "string"
+            },
+            {
+              "id": "target-final-2",
+              "name": "targetFolderUrl",
+              "value": "={{ $json.targetFolderUrl || ('https://drive.google.com/drive/folders/' + ($json.targetFolderId || $json.baseFolderId || $json.rootFolderId || 'root')) }}",
+              "type": "string"
+            },
+            {
+              "id": "target-final-3",
+              "name": "requestedFolderPath",
+              "value": "={{ $json.requestedFolderPath || $json.folderPath || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "28",
+      "name": "Switch Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1120,
+        80
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action || 'upsert' }}",
+                    "rightValue": "get",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": false,
+              "outputKey": ""
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action || 'upsert' }}",
+                    "rightValue": "delete",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": false,
+              "outputKey": ""
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action || 'upsert' }}",
+                    "rightValue": "list",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": false,
+              "outputKey": ""
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "upsert",
+          "allMatchingOutputs": false
+        }
+      }
+    },
+    {
+      "id": "29",
+      "name": "Search Existing File (Get/Delete)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1340,
+        340
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "fileFolder",
+        "operation": "search",
+        "searchMethod": "query",
+        "queryString": "={{ (() => { const escapeQuery = (value) => String(value ?? '').replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\"); const fileName = escapeQuery($json.targetFileName || ''); const folderId = String($json.targetFolderId || 'root').trim() || 'root'; return \"name = '\" + fileName + \"' and mimeType != 'application/vnd.google-apps.folder' and trashed = false and '\" + folderId + \"' in parents\"; })() }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "webViewLink"
+          ]
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "id": "30",
+      "name": "Merge File Search Context (Get/Delete)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1560,
+        340
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput1",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "31",
+      "name": "If File Exists (Get/Delete)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1780,
+        340
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ String($json.id || '').trim().length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "32",
+      "name": "If Delete Action",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2000,
+        340
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ ($json.action || 'upsert') === 'delete' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "33",
+      "name": "Delete Existing File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2220,
+        260
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "deleteFile",
+        "fileId": "={{ $json.id }}"
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "id": "34",
+      "name": "Build Get File Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2220,
+        420
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "result-get-1",
+              "name": "status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "id": "result-get-2",
+              "name": "action",
+              "value": "get",
+              "type": "string"
+            },
+            {
+              "id": "result-get-3",
+              "name": "fileId",
+              "value": "={{ $json.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-get-4",
+              "name": "fileName",
+              "value": "={{ $json.name || $json.targetFileName || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-get-5",
+              "name": "fileUrl",
+              "value": "={{ $json.webViewLink || ('https://drive.google.com/file/d/' + ($json.id || '') + '/view') }}",
+              "type": "string"
+            },
+            {
+              "id": "result-get-6",
+              "name": "folderId",
+              "value": "={{ $json.targetFolderId || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-get-7",
+              "name": "folderUrl",
+              "value": "={{ $json.targetFolderUrl || ('https://drive.google.com/drive/folders/' + ($json.targetFolderId || '')) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "35",
+      "name": "Build Delete Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2660,
+        260
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "result-delete-1",
+              "name": "status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "id": "result-delete-2",
+              "name": "action",
+              "value": "delete",
+              "type": "string"
+            },
+            {
+              "id": "result-delete-3",
+              "name": "fileId",
+              "value": "={{ $json.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-delete-4",
+              "name": "folderId",
+              "value": "={{ $json.targetFolderId || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-delete-5",
+              "name": "folderUrl",
+              "value": "={{ $json.targetFolderUrl || ('https://drive.google.com/drive/folders/' + ($json.targetFolderId || '')) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "36",
+      "name": "Build File Not Found Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2000,
+        520
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "result-notfound-1",
+              "name": "status",
+              "value": "notFound",
+              "type": "string"
+            },
+            {
+              "id": "result-notfound-2",
+              "name": "action",
+              "value": "={{ $json.action || 'get' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-notfound-3",
+              "name": "errorCode",
+              "value": "fileNotFound",
+              "type": "string"
+            },
+            {
+              "id": "result-notfound-4",
+              "name": "errorMessage",
+              "value": "No file found with the given name in target folder.",
+              "type": "string"
+            },
+            {
+              "id": "result-notfound-5",
+              "name": "folderId",
+              "value": "={{ $json.targetFolderId || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-notfound-6",
+              "name": "folderUrl",
+              "value": "={{ $json.targetFolderUrl || ('https://drive.google.com/drive/folders/' + ($json.targetFolderId || '')) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "37",
+      "name": "Merge Deleted File Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2440,
+        260
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": false,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput1",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "40",
+      "name": "Search Folder Items (List)",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1340,
+        700
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "fileFolder",
+        "operation": "search",
+        "searchMethod": "query",
+        "queryString": "={{ (() => { const customQuery = String($json.listQuery || '').trim(); if (customQuery) return customQuery; const folderId = String($json.targetFolderId || 'root').trim() || 'root'; return \"'\" + folderId + \"' in parents and trashed = false\"; })() }}",
+        "returnAll": "={{ $json.listReturnAll !== false }}",
+        "limit": "={{ Number($json.listLimit || 200) }}",
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "parents",
+            "webViewLink"
+          ]
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "id": "41",
+      "name": "Build List Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        700
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const context = $('Finalize Target Context').first().json || {};\nconst inputItems = $input.all();\n\nconst toFileUrl = (row) => {\n  const id = String(row.id || '');\n  if (!id) return '';\n  const mimeType = String(row.mimeType || '');\n  if (mimeType === 'application/vnd.google-apps.folder') {\n    return row.webViewLink || ('https://drive.google.com/drive/folders/' + id);\n  }\n  return row.webViewLink || ('https://drive.google.com/file/d/' + id + '/view');\n};\n\nconst items = inputItems\n  .map((entry) => entry.json || {})\n  .filter((row) => String(row.id || '').trim().length > 0)\n  .map((row) => ({\n    id: String(row.id || ''),\n    name: String(row.name || ''),\n    mimeType: String(row.mimeType || ''),\n    size: String(row.size || ''),\n    webViewLink: String(row.webViewLink || ''),\n    url: toFileUrl(row),\n    isFolder: String(row.mimeType || '') === 'application/vnd.google-apps.folder'\n  }));\n\nreturn [{\n  json: {\n    status: 'success',\n    action: 'list',\n    folderId: String(context.targetFolderId || ''),\n    folderUrl: String(context.targetFolderUrl || ('https://drive.google.com/drive/folders/' + (context.targetFolderId || ''))),\n    itemCount: items.length,\n    items\n  }\n}];"
+      }
+    },
+    {
+      "id": "17",
+      "name": "If Has File Binary",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        80
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.hasBinaryFile === true && String($json.binaryFieldName || '').trim().length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "18",
+      "name": "Search Existing File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1340,
+        -60
+      ],
+      "alwaysOutputData": true,
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "fileFolder",
+        "operation": "search",
+        "searchMethod": "query",
+        "queryString": "={{ (() => { const escapeQuery = (value) => String(value ?? '').replace(/\\\\/g, '\\\\\\\\').replace(/'/g, \"\\\\'\"); const fileName = escapeQuery($json.targetFileName || ''); const folderId = String($json.targetFolderId || 'root').trim() || 'root'; return \"name = '\" + fileName + \"' and mimeType != 'application/vnd.google-apps.folder' and trashed = false and '\" + folderId + \"' in parents\"; })() }}",
+        "returnAll": false,
+        "limit": 1,
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "webViewLink"
+          ]
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "id": "19",
+      "name": "Merge File Search Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1560,
+        -60
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput1",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "20",
+      "name": "If File Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1780,
+        -60
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ String($json.id || '').trim().length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "21",
+      "name": "Update Existing File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2000,
+        -180
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "update",
+        "fileId": "={{ $json.id }}",
+        "changeFileContent": true,
+        "inputDataFieldName": "={{ $json.binaryFieldName || 'data' }}",
+        "newUpdatedFileName": "={{ $json.targetFileName || '' }}",
+        "options": {
+          "fields": [
+            "id",
+            "name",
+            "mimeType",
+            "size",
+            "webViewLink"
+          ]
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "id": "22",
+      "name": "Merge Updated File Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2220,
+        -180
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": false,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput1",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "23",
+      "name": "Build Updated Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2440,
+        -180
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "result-updated-1",
+              "name": "status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "id": "result-updated-2",
+              "name": "action",
+              "value": "updated",
+              "type": "string"
+            },
+            {
+              "id": "result-updated-3",
+              "name": "fileId",
+              "value": "={{ $json.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-updated-4",
+              "name": "fileName",
+              "value": "={{ $json.name || $json.targetFileName || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-updated-5",
+              "name": "fileUrl",
+              "value": "={{ $json.webViewLink || ('https://drive.google.com/file/d/' + ($json.id || '') + '/view') }}",
+              "type": "string"
+            },
+            {
+              "id": "result-updated-6a",
+              "name": "folderId",
+              "value": "={{ $json.targetFolderId || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-updated-6b",
+              "name": "folderUrl",
+              "value": "={{ $json.targetFolderUrl || ('https://drive.google.com/drive/folders/' + ($json.targetFolderId || '')) }}",
+              "type": "string"
+            },
+            {
+              "id": "result-updated-6",
+              "name": "resultRootFolderId",
+              "value": "={{ $json.rootFolderId || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-updated-7",
+              "name": "resultFolderPath",
+              "value": "={{ $json.requestedFolderPath || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "24",
+      "name": "Upload New File",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2000,
+        60
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "operation": "upload",
+        "inputDataFieldName": "={{ $json.binaryFieldName || 'data' }}",
+        "name": "={{ $json.targetFileName || '' }}",
+        "folderId": "={{ $json.targetFolderId || 'root' }}",
+        "options": {
+          "simplifyOutput": false
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "__GDRIVE_CREDENTIAL_ID__",
+          "name": "__GDRIVE_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "id": "25",
+      "name": "Merge Uploaded File Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2220,
+        60
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": false,
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput1",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "26",
+      "name": "Build Created Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2440,
+        60
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "result-created-1",
+              "name": "status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "id": "result-created-2",
+              "name": "action",
+              "value": "created",
+              "type": "string"
+            },
+            {
+              "id": "result-created-3",
+              "name": "fileId",
+              "value": "={{ $json.id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-created-4",
+              "name": "fileName",
+              "value": "={{ $json.name || $json.targetFileName || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-created-5",
+              "name": "fileUrl",
+              "value": "={{ $json.webViewLink || ('https://drive.google.com/file/d/' + ($json.id || '') + '/view') }}",
+              "type": "string"
+            },
+            {
+              "id": "result-created-6a",
+              "name": "folderId",
+              "value": "={{ $json.targetFolderId || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-created-6b",
+              "name": "folderUrl",
+              "value": "={{ $json.targetFolderUrl || ('https://drive.google.com/drive/folders/' + ($json.targetFolderId || '')) }}",
+              "type": "string"
+            },
+            {
+              "id": "result-created-6",
+              "name": "resultRootFolderId",
+              "value": "={{ $json.rootFolderId || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-created-7",
+              "name": "resultFolderPath",
+              "value": "={{ $json.requestedFolderPath || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "27",
+      "name": "Build Missing File Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1340,
+        240
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "result-missing-1",
+              "name": "status",
+              "value": "error",
+              "type": "string"
+            },
+            {
+              "id": "result-missing-2",
+              "name": "action",
+              "value": "none",
+              "type": "string"
+            },
+            {
+              "id": "result-missing-3",
+              "name": "errorCode",
+              "value": "missingFileBinary",
+              "type": "string"
+            },
+            {
+              "id": "result-missing-4",
+              "name": "errorMessage",
+              "value": "Missing binary file input. Please pass a binary file field (for example: file) or set binaryFieldName.",
+              "type": "string"
+            },
+            {
+              "id": "result-missing-5",
+              "name": "resultRootFolderId",
+              "value": "={{ $json.rootFolderId || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-missing-6",
+              "name": "resultFolderPath",
+              "value": "={{ $json.requestedFolderPath || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-missing-7",
+              "name": "folderId",
+              "value": "={{ $json.targetFolderId || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "result-missing-8",
+              "name": "folderUrl",
+              "value": "={{ $json.targetFolderUrl || ('https://drive.google.com/drive/folders/' + ($json.targetFolderId || '')) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Set Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Config": {
+      "main": [
+        [
+          {
+            "node": "Normalize Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Request": {
+      "main": [
+        [
+          {
+            "node": "If Has Segment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has Segment": {
+      "main": [
+        [
+          {
+            "node": "Search Current Folder",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Folder Search Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Target Folder Root",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Current Folder": {
+      "main": [
+        [
+          {
+            "node": "Merge Folder Search Context",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Folder Search Context": {
+      "main": [
+        [
+          {
+            "node": "If Folder Exists",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Created Folder Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Folder Exists": {
+      "main": [
+        [
+          {
+            "node": "Set Existing Folder Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Can Create Missing Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Can Create Missing Folder": {
+      "main": [
+        [
+          {
+            "node": "Create Missing Folder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Folder Not Found Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Missing Folder": {
+      "main": [
+        [
+          {
+            "node": "Merge Created Folder Context",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Created Folder Context": {
+      "main": [
+        [
+          {
+            "node": "Set Created Folder Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Existing Folder Context": {
+      "main": [
+        [
+          {
+            "node": "If Has Remaining Path",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Created Folder Context": {
+      "main": [
+        [
+          {
+            "node": "If Has Remaining Path",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has Remaining Path": {
+      "main": [
+        [
+          {
+            "node": "Prepare Recursive Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Finalize Target Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Recursive Request": {
+      "main": [
+        [
+          {
+            "node": "Execute Recursive Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Target Folder Root": {
+      "main": [
+        [
+          {
+            "node": "Finalize Target Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Target Context": {
+      "main": [
+        [
+          {
+            "node": "Switch Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Action": {
+      "main": [
+        [
+          {
+            "node": "Search Existing File (Get/Delete)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge File Search Context (Get/Delete)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Search Existing File (Get/Delete)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge File Search Context (Get/Delete)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Search Folder Items (List)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Has File Binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Folder Items (List)": {
+      "main": [
+        [
+          {
+            "node": "Build List Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Existing File (Get/Delete)": {
+      "main": [
+        [
+          {
+            "node": "Merge File Search Context (Get/Delete)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge File Search Context (Get/Delete)": {
+      "main": [
+        [
+          {
+            "node": "If File Exists (Get/Delete)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Deleted File Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If File Exists (Get/Delete)": {
+      "main": [
+        [
+          {
+            "node": "If Delete Action",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build File Not Found Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Delete Action": {
+      "main": [
+        [
+          {
+            "node": "Delete Existing File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Get File Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Existing File": {
+      "main": [
+        [
+          {
+            "node": "Merge Deleted File Context",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Deleted File Context": {
+      "main": [
+        [
+          {
+            "node": "Build Delete Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has File Binary": {
+      "main": [
+        [
+          {
+            "node": "Search Existing File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge File Search Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Missing File Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Existing File": {
+      "main": [
+        [
+          {
+            "node": "Merge File Search Context",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge File Search Context": {
+      "main": [
+        [
+          {
+            "node": "If File Exists",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Updated File Context",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Uploaded File Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If File Exists": {
+      "main": [
+        [
+          {
+            "node": "Update Existing File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Upload New File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Existing File": {
+      "main": [
+        [
+          {
+            "node": "Merge Updated File Context",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Updated File Context": {
+      "main": [
+        [
+          {
+            "node": "Build Updated Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload New File": {
+      "main": [
+        [
+          {
+            "node": "Merge Uploaded File Context",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Uploaded File Context": {
+      "main": [
+        [
+          {
+            "node": "Build Created Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "executionOrder": "v1",
+    "binaryMode": "default"
+  }
+}

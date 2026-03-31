@@ -518,6 +518,8 @@ payload="$(jq \
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="tts_voice_id") | .value) = $ttsVoiceId
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="gdrive_root_folder_id") | .value) = $gdriveRootFolderId
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="gdrive_credential_name") | .value) = $gdriveCredentialName
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="gdriveRootFolderId") | .value) = $gdriveRootFolderId
+  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="gdriveCredentialName") | .value) = $gdriveCredentialName
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="text_to_images_workflow_path") | .value) = $textToImagesWorkflowPath
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="text_to_videos_workflow_path") | .value) = $textToVideosWorkflowPath
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="tts_workflow_path") | .value) = $ttsWorkflowPath

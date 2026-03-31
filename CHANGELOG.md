@@ -3,6 +3,17 @@
 Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automation scripts).
 
 ## 2026-03-31
+- Them workflow reusable Google Drive manager:
+  - Tao template moi `workflows/shared/gg-drive-manager.workflow.json` (name: `GG Drive Mananger`).
+  - Input contract camelCase: `rootFolderId`, `folderPath`, `action`, `file` (binary), ho tro de quy theo `folderPath` nhieu cap.
+  - Ho tro `action`: `upsert` (default, create/update file), `get`, `delete`, `list`.
+  - Neu thieu `rootFolderId`, workflow mac dinh ve `root` (My Drive).
+  - Chuan hoa contract workflow moi theo camelCase thuần (khong giu backward-compat snake_case/getFile).
+  - `get/delete/list` khong tu tao folder neu `folderPath` khong ton tai; tra `folderNotFound`.
+  - Output bo sung truong link/ID de tai su dung: `folderId`, `folderUrl`, `fileId`, `fileUrl`.
+  - Them wrapper import: `scripts/workflows/import/import-gg-drive-manager-workflow.sh`.
+  - Cap nhat docs: `README.md`, `scripts/README.md`.
+
 - Them wrapper import tong cho toan bo workflow:
   - Tao script moi `scripts/workflows/import/import-all-workflows.sh`.
   - Script all importer doi sang co che tu dong quet wrapper `import-*.sh` (bo qua `import-all-workflows.sh` va `import-workflow.sh`), uu tien thu tu `shared-notification-router` -> `gemini-demo` -> `openai-demo` -> `book-review`, sau do chay wrapper moi theo alphabet.

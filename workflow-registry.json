@@ -34,6 +34,11 @@
       "id": "nZGQkU7QJ4diuMko",
       "template": "workflows/book-review/text-to-videos-veo3.workflow.json",
       "lastSyncedAt": "2026-03-31T02:49:39Z"
+    },
+    "GG Drive Mananger": {
+      "id": "QpcIxaHiYXDqjw4p",
+      "template": "workflows/shared/gg-drive-manager.workflow.json",
+      "lastSyncedAt": "2026-03-31T08:58:56Z"
     }
   }
 }

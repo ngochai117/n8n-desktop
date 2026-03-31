@@ -191,6 +191,7 @@ curl -sS -H "Authorization: Bearer $PROXY_API_KEY" "$PROXY_BASE_URL/v1/models" \
 ## Workflow demo Gemini + OpenAI + Book Review Chat
 Template workflows:
 - `workflows/shared/shared-notification-router.workflow.json`
+- `workflows/shared/gg-drive-manager.workflow.json`
 - `workflows/demo/gemini-proxy-demo.workflow.json`
 - `workflows/demo/openai-proxy-demo.workflow.json`
 - `workflows/book-review/book-review.workflow.json`
@@ -216,8 +217,17 @@ workflows/
     gemini-proxy-demo.workflow.json
     openai-proxy-demo.workflow.json
   shared/
+    gg-drive-manager.workflow.json
     shared-notification-router.workflow.json
 ```
+
+`GG Drive Mananger` reusable workflow:
+- Input chinh: `rootFolderId`, `folderPath`, `action`, `file` (binary)
+- Input them: `fileName` (optional), `binaryFieldName` (optional)
+- Neu khong truyen `rootFolderId` thi workflow tu mac dinh `root` (My Drive).
+- `action` ho tro: `upsert` (default), `get`, `delete`, `list`
+- `upsert` se tao folder thieu theo `folderPath`; `get/delete/list` chi doc/xoa/liet ke, khong tao folder moi.
+- Output co san `folderId`, `folderUrl`, `fileId`, `fileUrl`
 
 Pipeline:
 - `Manual Trigger`
@@ -317,6 +327,7 @@ Import thu cong neu can:
 ```bash
 bash scripts/workflows/import/import-workflow.sh
 bash scripts/workflows/import/import-all-workflows.sh
+bash scripts/workflows/import/import-gg-drive-manager-workflow.sh
 bash scripts/workflows/import/import-shared-notification-router-workflow.sh
 bash scripts/workflows/import/import-gemini-demo-workflow.sh
 bash scripts/workflows/import/import-openai-demo-workflow.sh
@@ -403,6 +414,7 @@ bash scripts/workflows/tests/check-book-review-debug-table.sh env.n8n.local book
 - `scripts/proxy/setup-proxy.sh`: setup A-Z cho proxy local (runtime hien tai: 9router)
 - `scripts/workflows/import/import-workflow.sh`: core importer upsert workflow template vao n8n
 - `scripts/workflows/import/import-all-workflows.sh`: wrapper import toan bo workflow, tu dong quet `import-*.sh` (bo qua `import-all-workflows.sh` va `import-workflow.sh`), uu tien thu tu `shared` -> `gemini` -> `openai` -> `book-review`, sau do chay cac wrapper moi theo alphabet
+- `scripts/workflows/import/import-gg-drive-manager-workflow.sh`: import workflow reusable `GG Drive Mananger`
 - `scripts/workflows/import/import-gemini-demo-workflow.sh`: wrapper import workflow Gemini demo vao n8n
 - `scripts/workflows/import/import-shared-notification-router-workflow.sh`: import workflow notify router da kenh dung chung
 - `scripts/workflows/import/import-openai-demo-workflow.sh`: import workflow OpenAI demo vao n8n
@@ -420,6 +432,7 @@ bash scripts/workflows/tests/check-book-review-debug-table.sh env.n8n.local book
 - `workflows/book-review/text-to-images.workflow.json`: workflow reusable tao nhieu anh tu text chunks
 - `workflows/book-review/text-to-videos-veo3.workflow.json`: workflow reusable tao video theo scene (mock + VEO3 contract)
 - `workflows/book-review/tts.workflow.json`: workflow reusable tao TTS tu text chunks
+- `workflows/shared/gg-drive-manager.workflow.json`: workflow reusable quan ly file Google Drive theo `rootFolderId/folderPath/action`
 - `workflows/shared/shared-notification-router.workflow.json`: workflow notify router da kenh (telegram/ggchat)
 - `workflows/book-review/prompts/book-review-scene-outline-prompt.txt`: prompt pass 1 xac dinh angle + scene_count + muc tieu tung scene
 - `workflows/book-review/prompts/book-review-scene-expand-prompt.txt`: prompt pass 2 sinh `review_manifest` day du theo scene
