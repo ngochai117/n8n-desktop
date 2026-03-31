@@ -326,13 +326,19 @@ bash scripts/workflows/sync/sync-workflows-from-n8n.sh --id eKVjShNKmbjf4T8a --a
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --id eKVjShNKmbjf4T8a --id x62qzfGcBeqrfueM --apply
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --id eKVjShNKmbjf4T8a,x62qzfGcBeqrfueM --apply
 
+# Override khi can fallback theo ten workflow path (A/B/C)
+bash scripts/workflows/sync/sync-workflows-from-n8n.sh --allow-folder-fallback --apply
+
 # Apply nhung khong ghi changelog
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply --no-log
 ```
 - Script se sanitize truong nhay cam (`proxy_base_url`, `proxy_api_key`, `n8n_api_url`, `n8n_api_key`, `image_api_key`, `gdrive_root_folder_id`, `gdrive_credential_name`) va workflow placeholders (`Notify via Shared Workflow`, `text_to_images_workflow_id`, `text_to_videos_workflow_id`, `tts_workflow_id`, `gg_drive_manager_workflow_path`, `gg_sheet_manager_workflow_path`) truoc khi ghi file.
 - Script auto upsert `workflow-registry.json`, tu tao `template` path cho workflow moi, va tu tao wrapper import `scripts/workflows/import/import-*.sh` neu workflow chua co wrapper.
-- Template path workflow moi uu tien theo folder metadata tu n8n UI (neu API co tra ve). Neu khong co metadata, script fallback theo ten workflow dang path (`Folder/Subfolder/Workflow`).
+- Strict folder mode mac dinh: workflow moi bat buoc co folder metadata tu n8n UI API; neu thieu thi script fail va KHONG fallback.
+- Neu can fallback theo ten workflow dang path (`Folder/Subfolder/Workflow`), dung `--allow-folder-fallback`.
 - Co che conflict-safe: uu tien map theo `id`; neu trung `name` nhung khac `id` thi tao key/path/wrapper moi de tranh dup.
+- Khi chay `--apply`, script tu dong ghi wrapper path vao `workflow-registry.json` qua field `templateImport` (khong ghi field `wrapper` nua).
+- Co che dedupe wrapper: sync se uu tien giu 1 wrapper hop le va prune wrapper trung theo cung `workflow id` hoac cung `template` (khac ten file) de tranh sinh file doi sau khi move folder/doi template.
 - `workflow-registry.json` nen luu `template` dang duong dan tuong doi (vi du: `workflows/book-review/book-review.workflow.json`) de tranh vo path khi doi ten folder project.
 - Khi chay `--apply`, script se auto append log vao `CHANGELOG.md` (tru khi dung `--no-log`).
 

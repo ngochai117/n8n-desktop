@@ -29,7 +29,7 @@ Muc tieu: tach script theo domain de de quan ly khi so luong workflow tang.
   - `import-book-review-ai-agent-workflow.sh`: wrapper import workflow `Book Review AI Agent`
 
 - `scripts/workflows/sync/`
-  - `sync-workflows-from-n8n.sh`: sync workflow state tu n8n UI ve file JSON template + auto upsert registry + auto tao wrapper import cho workflow moi (uu tien layout theo folder UI neu API co metadata)
+  - `sync-workflows-from-n8n.sh`: sync workflow state tu n8n UI ve file JSON template + auto upsert registry + auto tao/cap nhat wrapper import; folder mapping uu tien DB n8n (`workflow_entity.parentFolderId`) va co dedupe wrapper theo ID/template
 
 - `scripts/workflows/tests/`
   - `test-book-review-checklist.sh`: runner checklist automation
@@ -82,6 +82,7 @@ bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --id eKVjShNKmbjf4T8a --apply
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --id eKVjShNKmbjf4T8a --id x62qzfGcBeqrfueM --apply
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --id eKVjShNKmbjf4T8a,x62qzfGcBeqrfueM --apply
+bash scripts/workflows/sync/sync-workflows-from-n8n.sh --allow-folder-fallback --apply
 
 bash scripts/workflows/tests/test-book-review-checklist.sh
 bash scripts/workflows/tests/run-book-review-e2e.sh

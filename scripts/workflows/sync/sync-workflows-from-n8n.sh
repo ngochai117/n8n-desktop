@@ -8,7 +8,9 @@ CHANGELOG_FILE="${CHANGELOG_FILE:-$ROOT_DIR/CHANGELOG.md}"
 IMPORT_WRAPPER_DIR="${IMPORT_WRAPPER_DIR:-$ROOT_DIR/scripts/workflows/import}"
 AUTO_TEMPLATE_DIR="${AUTO_TEMPLATE_DIR:-workflows/ui-synced}"
 N8N_WORKFLOW_LIST_LIMIT="${N8N_WORKFLOW_LIST_LIMIT:-250}"
-FOLDER_FROM_NAME_FALLBACK="${FOLDER_FROM_NAME_FALLBACK:-true}"
+N8N_SQLITE_DB_PATH="${N8N_SQLITE_DB_PATH:-$HOME/.n8n/database.sqlite}"
+FOLDER_FROM_NAME_FALLBACK="${FOLDER_FROM_NAME_FALLBACK:-false}"
+REQUIRE_UI_FOLDER_FOR_NEW_WORKFLOWS="${REQUIRE_UI_FOLDER_FOR_NEW_WORKFLOWS:-true}"
 
 APPLY="false"
 ONLY_NAME=""
@@ -19,6 +21,8 @@ API_LAST_HTTP_CODE=""
 API_LAST_BODY=""
 WRAPPER_RESULT_STATUS=""
 WRAPPER_RESULT_PATH=""
+WRAPPER_RESULT_UPDATED="false"
+WRAPPER_RESULT_PRUNED=0
 
 log() {
   printf '[sync-workflows] %s\n' "$1"
@@ -32,6 +36,26 @@ require_cmd() {
   }
 }
 
+file_has_regex() {
+  local pattern="$1"
+  local file="$2"
+  if command -v rg >/dev/null 2>&1; then
+    rg -q -- "$pattern" "$file"
+  else
+    grep -Eq -- "$pattern" "$file"
+  fi
+}
+
+file_has_fixed() {
+  local text="$1"
+  local file="$2"
+  if command -v rg >/dev/null 2>&1; then
+    rg -q --fixed-strings -- "$text" "$file"
+  else
+    grep -Fq -- "$text" "$file"
+  fi
+}
+
 usage() {
   cat <<USAGE
 Usage: bash scripts/workflows/sync/sync-workflows-from-n8n.sh [options]
@@ -40,14 +64,18 @@ Options:
   --apply               Write changes to workflow JSON files and workflow-registry.json.
   --name <workflow>     Sync one workflow by exact workflow name on n8n UI.
   --id <workflow-id>    Sync by n8n ID. Repeatable or comma-separated.
+  --allow-folder-fallback
+                        Allow fallback from workflow name path when UI folder metadata is missing.
   --no-log              Do not append entries to CHANGELOG.md.
   -h, --help            Show this help.
 
 Notes:
   - Default scope is ALL non-archived workflows from n8n UI.
+  - Folder mapping reads from local n8n SQLite DB (workflow_entity.parentFolderId -> folder path).
   - Script auto upserts workflow-registry.json and creates template JSON path for new workflows.
   - Script auto creates import wrapper script (import-*.sh) for workflows missing a wrapper.
-  - New workflow path uses UI folder metadata when available; fallback from workflow name path (A/B/C -> folder A/B).
+  - New workflow path uses DB folder path first, then API metadata, then optional name fallback.
+  - Strict mode is ON by default: if new workflow has no UI folder metadata, sync fails (no fallback).
   - Conflict-safe behavior: existing registry ID mapping has highest priority; name conflicts create a new key/path.
   - Default mode is preview only (no file writes).
 USAGE
@@ -107,6 +135,11 @@ parse_args() {
         add_ids_from_arg "$2"
         shift 2
         ;;
+      --allow-folder-fallback)
+        FOLDER_FROM_NAME_FALLBACK="true"
+        REQUIRE_UI_FOLDER_FOR_NEW_WORKFLOWS="false"
+        shift
+        ;;
       --no-log)
         WRITE_LOG="false"
         shift
@@ -138,6 +171,15 @@ resolve_template_path() {
   fi
 }
 
+resolve_repo_path() {
+  local repo_path="$1"
+  if [[ "$repo_path" == /* ]]; then
+    printf '%s\n' "$repo_path"
+  else
+    printf '%s\n' "$ROOT_DIR/$repo_path"
+  fi
+}
+
 normalize_registry_template_path() {
   local template_path="$1"
   if [ -z "$template_path" ] || [ "$template_path" = "null" ]; then
@@ -163,7 +205,7 @@ sanitize_path_segment() {
   local sanitized
 
   sanitized="$(trim_spaces "$value")"
-  sanitized="$(printf '%s' "$sanitized" | sed -E 's|[\\/]|-|g; s|[\x00-\x1F]+||g')"
+  sanitized="$(printf '%s' "$sanitized" | tr -d '[:cntrl:]' | sed -E 's|[\\/]|-|g')"
   sanitized="$(trim_spaces "$sanitized")"
   printf '%s\n' "$sanitized"
 }
@@ -240,6 +282,47 @@ workflow_folder_from_ui_payload() {
   normalize_folder_path "$raw_folder"
 }
 
+load_workflow_folder_map_from_db() {
+  local out_file="$1"
+  local sql
+
+  if [ ! -f "$N8N_SQLITE_DB_PATH" ]; then
+    return 1
+  fi
+
+  sql="
+WITH RECURSIVE folder_tree(id, name, parentFolderId, path) AS (
+  SELECT id, name, parentFolderId, name
+  FROM folder
+  WHERE parentFolderId IS NULL
+  UNION ALL
+  SELECT f.id, f.name, f.parentFolderId, folder_tree.path || '/' || f.name
+  FROM folder f
+  JOIN folder_tree ON f.parentFolderId = folder_tree.id
+)
+SELECT w.id, COALESCE(folder_tree.path, '')
+FROM workflow_entity w
+LEFT JOIN folder_tree ON w.parentFolderId = folder_tree.id
+WHERE COALESCE(w.isArchived, 0) = 0;
+"
+
+  sqlite3 -noheader -separator $'\t' "$N8N_SQLITE_DB_PATH" "$sql" > "$out_file"
+}
+
+workflow_folder_from_db_map() {
+  local map_file="$1"
+  local wf_id="$2"
+  local path=""
+
+  if [ ! -s "$map_file" ]; then
+    printf '%s\n' ""
+    return
+  fi
+
+  path="$(awk -F '\t' -v wf_id="$wf_id" '$1 == wf_id { print $2; exit }' "$map_file")"
+  normalize_folder_path "$path"
+}
+
 to_repo_relative_path() {
   local input_path="$1"
   if [[ "$input_path" == "$ROOT_DIR/"* ]]; then
@@ -269,9 +352,130 @@ wrapper_template_from_file() {
     "$wrapper_path" | head -n 1
 }
 
+wrapper_is_simple_template_wrapper() {
+  local wrapper_path="$1"
+  if ! file_has_regex '^[[:space:]]*WORKFLOW_TEMPLATE="\$\{3:-' "$wrapper_path"; then
+    return 1
+  fi
+  if ! file_has_fixed 'scripts/workflows/import/import-workflow.sh' "$wrapper_path"; then
+    return 1
+  fi
+  if file_has_regex '^[[:space:]]*[A-Z0-9_]+WORKFLOW_TEMPLATE="\$\{[0-9]:-' "$wrapper_path"; then
+    return 1
+  fi
+  return 0
+}
+
+wrapper_has_workflow_id_marker() {
+  local wrapper_path="$1"
+  local wf_id="$2"
+  file_has_regex "^# SYNC_WORKFLOW_ID=$wf_id$" "$wrapper_path"
+}
+
+wrapper_set_workflow_id_marker() {
+  local wrapper_path="$1"
+  local wf_id="$2"
+  local tmp_file
+
+  if wrapper_has_workflow_id_marker "$wrapper_path" "$wf_id"; then
+    return
+  fi
+
+  tmp_file="$(mktemp)"
+  awk -v wf_id="$wf_id" '
+    NR==1 { print; next }
+    NR==2 && $0 == "set -euo pipefail" {
+      print
+      print "# SYNC_MANAGED_WRAPPER=1"
+      print "# SYNC_WORKFLOW_ID=" wf_id
+      next
+    }
+    { print }
+  ' "$wrapper_path" > "$tmp_file"
+  mv "$tmp_file" "$wrapper_path"
+}
+
+update_simple_wrapper_template_line() {
+  local wrapper_path="$1"
+  local template_path="$2"
+  local tmp_file template_line
+
+  if [[ "$template_path" == /* ]]; then
+    template_line="WORKFLOW_TEMPLATE=\"\${3:-$template_path}\""
+  else
+    template_line="WORKFLOW_TEMPLATE=\"\${3:-\$ROOT_DIR/$template_path}\""
+  fi
+
+  tmp_file="$(mktemp)"
+  awk -v template_line="$template_line" '
+    BEGIN { replaced=0 }
+    {
+      if (!replaced && $0 ~ /^[[:space:]]*WORKFLOW_TEMPLATE="\$\{3:-/) {
+        print template_line
+        replaced=1
+      } else {
+        print
+      }
+    }
+  ' "$wrapper_path" > "$tmp_file"
+  mv "$tmp_file" "$wrapper_path"
+}
+
 wrapper_name_has_id_suffix() {
   local wrapper_name="$1"
   [[ "$wrapper_name" =~ ^import-.*-[A-Za-z0-9]{8}(-[0-9]+)?-workflow\.sh$ ]]
+}
+
+list_wrappers_by_workflow_id() {
+  local wf_id="$1"
+  local id_short wrapper_path wrapper_name
+
+  id_short="${wf_id:0:8}"
+
+  shopt -s nullglob
+  for wrapper_path in "$IMPORT_WRAPPER_DIR"/import-*.sh; do
+    wrapper_name="$(basename "$wrapper_path")"
+    case "$wrapper_name" in
+      import-all-workflows.sh|import-workflow.sh)
+        continue
+        ;;
+    esac
+
+    if wrapper_has_workflow_id_marker "$wrapper_path" "$wf_id"; then
+      printf '%s\n' "$wrapper_path"
+      continue
+    fi
+
+    if [[ "$wrapper_name" =~ -$id_short(-[0-9]+)?-workflow\.sh$ ]]; then
+      printf '%s\n' "$wrapper_path"
+      continue
+    fi
+  done
+  shopt -u nullglob
+}
+
+list_simple_wrappers_by_template() {
+  local template_path="$1"
+  local wrapper_path wrapper_name
+
+  shopt -s nullglob
+  for wrapper_path in "$IMPORT_WRAPPER_DIR"/import-*.sh; do
+    wrapper_name="$(basename "$wrapper_path")"
+    case "$wrapper_name" in
+      import-all-workflows.sh|import-workflow.sh)
+        continue
+        ;;
+    esac
+
+    if ! wrapper_is_simple_template_wrapper "$wrapper_path"; then
+      continue
+    fi
+
+    if wrapper_references_template "$wrapper_path" "$template_path"; then
+      printf '%s\n' "$wrapper_path"
+    fi
+  done
+  shopt -u nullglob
 }
 
 wrapper_references_template() {
@@ -282,11 +486,11 @@ wrapper_references_template() {
   rel_path="$(to_repo_relative_path "$template_path")"
   abs_path="$(resolve_template_path "$template_path")"
 
-  if rg -q --fixed-strings "$rel_path" "$wrapper_path"; then
+  if file_has_fixed "$rel_path" "$wrapper_path"; then
     return 0
   fi
 
-  if rg -q --fixed-strings "$abs_path" "$wrapper_path"; then
+  if file_has_fixed "$abs_path" "$wrapper_path"; then
     return 0
   fi
 
@@ -392,6 +596,7 @@ generate_unique_wrapper_script_path() {
 create_wrapper_script_file() {
   local wrapper_path="$1"
   local template_path="$2"
+  local wf_id="$3"
   local template_default_expr
 
   if [[ "$template_path" == /* ]]; then
@@ -401,9 +606,11 @@ create_wrapper_script_file() {
   fi
 
   mkdir -p "$(dirname "$wrapper_path")"
-  cat > "$wrapper_path" <<EOF
+cat > "$wrapper_path" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
+# SYNC_MANAGED_WRAPPER=1
+# SYNC_WORKFLOW_ID=$wf_id
 
 ROOT_DIR="\$(cd "\$(dirname "\$0")/../../.." && pwd)"
 N8N_ENV_FILE="\${1:-\$ROOT_DIR/env.n8n.local}"
@@ -422,26 +629,101 @@ ensure_wrapper_for_template() {
   local wf_name="$1"
   local wf_id="$2"
   local wf_template_raw="$3"
-  local wrapper_path wrapper_rel existing_wrapper
+  local wrapper_hint="$4"
+  local wrapper_path wrapper_rel existing_wrapper id_wrappers template_wrappers prune_candidates
+  local keep_wrapper keep_wrapper_rel pruned_count=0
 
   WRAPPER_RESULT_STATUS=""
   WRAPPER_RESULT_PATH=""
+  WRAPPER_RESULT_UPDATED="false"
+  WRAPPER_RESULT_PRUNED=0
+
+  keep_wrapper=""
+  if [ -n "$wrapper_hint" ] && [ -f "$wrapper_hint" ]; then
+    keep_wrapper="$wrapper_hint"
+  fi
 
   existing_wrapper="$(find_wrapper_by_template "$wf_template_raw" || true)"
   if [ -n "$existing_wrapper" ]; then
+    if [ -z "$keep_wrapper" ]; then
+      keep_wrapper="$existing_wrapper"
+    else
+      local keep_wrapper_name
+      keep_wrapper_name="$(basename "$keep_wrapper")"
+      if wrapper_name_has_id_suffix "$keep_wrapper_name"; then
+        keep_wrapper="$existing_wrapper"
+      fi
+    fi
+  fi
+
+  local name_wrapper_candidate
+  name_wrapper_candidate="$IMPORT_WRAPPER_DIR/import-$(slugify_name "$wf_name")-workflow.sh"
+  if [ -f "$name_wrapper_candidate" ] && wrapper_is_simple_template_wrapper "$name_wrapper_candidate"; then
+    if [ -z "$keep_wrapper" ]; then
+      keep_wrapper="$name_wrapper_candidate"
+    else
+      local keep_wrapper_name
+      keep_wrapper_name="$(basename "$keep_wrapper")"
+      if wrapper_name_has_id_suffix "$keep_wrapper_name"; then
+        keep_wrapper="$name_wrapper_candidate"
+      fi
+    fi
+  fi
+
+  if [ -z "$keep_wrapper" ]; then
+    id_wrappers="$(list_wrappers_by_workflow_id "$wf_id" | sort -u || true)"
+    keep_wrapper="$(printf '%s\n' "$id_wrappers" | head -n 1)"
+  fi
+
+  if [ -n "$keep_wrapper" ]; then
+    if [ "$APPLY" = "true" ] && wrapper_is_simple_template_wrapper "$keep_wrapper"; then
+      if ! wrapper_references_template "$keep_wrapper" "$wf_template_raw"; then
+        update_simple_wrapper_template_line "$keep_wrapper" "$wf_template_raw"
+        WRAPPER_RESULT_UPDATED="true"
+      fi
+      wrapper_set_workflow_id_marker "$keep_wrapper" "$wf_id"
+    fi
+
+    id_wrappers="$(list_wrappers_by_workflow_id "$wf_id" | sort -u || true)"
+    template_wrappers="$(list_simple_wrappers_by_template "$wf_template_raw" | sort -u || true)"
+    prune_candidates="$(printf '%s\n%s\n' "$id_wrappers" "$template_wrappers" | awk 'NF' | sort -u)"
+
+    if [ -n "$prune_candidates" ]; then
+      while IFS= read -r wrapper_path; do
+        [ -n "$wrapper_path" ] || continue
+        if [ "$wrapper_path" = "$keep_wrapper" ]; then
+          continue
+        fi
+        if [ "$APPLY" = "true" ]; then
+          rm -f "$wrapper_path"
+          pruned_count=$((pruned_count + 1))
+          log "WRAPPER PRUNED $wf_name ($wf_id) -> $(to_repo_relative_path "$wrapper_path")"
+        else
+          pruned_count=$((pruned_count + 1))
+          log "WRAPPER DUPLICATE $wf_name ($wf_id) -> $(to_repo_relative_path "$wrapper_path") (preview only, use --apply to prune)"
+        fi
+      done <<< "$prune_candidates"
+    fi
+
+    WRAPPER_RESULT_PATH="$keep_wrapper"
+    WRAPPER_RESULT_PRUNED="$pruned_count"
+    keep_wrapper_rel="$(to_repo_relative_path "$keep_wrapper")"
     WRAPPER_RESULT_STATUS="exists"
-    WRAPPER_RESULT_PATH="$existing_wrapper"
-    wrapper_rel="$(to_repo_relative_path "$existing_wrapper")"
-    log "WRAPPER OK $wf_name ($wf_id) -> $wrapper_rel"
+    if [ "$WRAPPER_RESULT_UPDATED" = "true" ]; then
+      log "WRAPPER UPDATED $wf_name ($wf_id) -> $keep_wrapper_rel"
+    else
+      log "WRAPPER OK $wf_name ($wf_id) -> $keep_wrapper_rel"
+    fi
     return
   fi
 
   wrapper_path="$(generate_unique_wrapper_script_path "$wf_name" "$wf_id" "$wf_template_raw")"
   wrapper_rel="$(to_repo_relative_path "$wrapper_path")"
   WRAPPER_RESULT_PATH="$wrapper_path"
+  WRAPPER_RESULT_PRUNED=0
 
   if [ "$APPLY" = "true" ]; then
-    create_wrapper_script_file "$wrapper_path" "$wf_template_raw"
+    create_wrapper_script_file "$wrapper_path" "$wf_template_raw" "$wf_id"
     WRAPPER_RESULT_STATUS="created"
     log "WRAPPER CREATED $wf_name ($wf_id) -> $wrapper_rel"
   else
@@ -501,7 +783,7 @@ registry_entry_by_id_tsv() {
   jq -r --arg wf_id "$wf_id" '
     .workflows = (.workflows // {})
     | ((.workflows | to_entries | map(select((.value.id // "") == $wf_id)) | .[0]) // null) as $entry
-    | if $entry == null then "" else [$entry.key, ($entry.value.id // ""), ($entry.value.template // ""), ($entry.value.lastSyncedAt // "")] | @tsv end
+    | if $entry == null then "" else [$entry.key, ($entry.value.id // ""), ($entry.value.template // ""), ($entry.value.templateImport // $entry.value.wrapper // ""), ($entry.value.lastSyncedAt // "")] | @tsv end
   ' "$registry_file"
 }
 
@@ -512,7 +794,7 @@ registry_entry_by_name_tsv() {
   jq -r --arg wf_name "$wf_name" '
     .workflows = (.workflows // {})
     | ((.workflows | to_entries | map(select(.key == $wf_name)) | .[0]) // null) as $entry
-    | if $entry == null then "" else [$entry.key, ($entry.value.id // ""), ($entry.value.template // ""), ($entry.value.lastSyncedAt // "")] | @tsv end
+    | if $entry == null then "" else [$entry.key, ($entry.value.id // ""), ($entry.value.template // ""), ($entry.value.templateImport // $entry.value.wrapper // ""), ($entry.value.lastSyncedAt // "")] | @tsv end
   ' "$registry_file"
 }
 
@@ -641,7 +923,8 @@ set_registry_entry() {
   local wf_key="$2"
   local wf_id="$3"
   local wf_template="$4"
-  local touch_last_synced_at="$5"
+  local wf_wrapper="$5"
+  local touch_last_synced_at="$6"
   local tmp_file
 
   tmp_file="$(mktemp)"
@@ -649,9 +932,10 @@ set_registry_entry() {
     --arg wf_key "$wf_key" \
     --arg wf_id "$wf_id" \
     --arg wf_template "$wf_template" \
+    --arg wf_wrapper "$wf_wrapper" \
     --arg touch_last_synced_at "$touch_last_synced_at" '
     .workflows = (.workflows // {})
-    | .workflows[$wf_key] = {
+    | .workflows[$wf_key] = (.workflows[$wf_key] // {}) + {
         id: $wf_id,
         template: $wf_template,
         lastSyncedAt: (
@@ -662,6 +946,12 @@ set_registry_entry() {
           end
         )
       }
+    | if $wf_wrapper != "" then
+        .workflows[$wf_key].templateImport = $wf_wrapper
+      else
+        .
+      end
+    | .workflows[$wf_key] |= del(.wrapper)
   ' "$registry_file" > "$tmp_file"
   mv "$tmp_file" "$registry_file"
 }
@@ -684,7 +974,7 @@ fetch_selected_workflows_json() {
       fi
 
       selected_item="$(echo "$API_LAST_BODY" | jq -c '
-        if (.archived // false) then
+        if (.archived // .isArchived // false) then
           null
         else
           {
@@ -731,7 +1021,7 @@ fetch_selected_workflows_json() {
   selected_json="$(echo "$API_LAST_BODY" | jq -c '
     [
       (.data // [])[]
-      | select((.archived // false) | not)
+      | select((.archived // .isArchived // false) | not)
       | {
           id: (.id | tostring),
           name: ((.name // "") | if . == "" then ("Workflow " + (.id | tostring)) else . end)
@@ -765,6 +1055,7 @@ sanitize_and_shape_workflow() {
       connections: .connections,
       settings: (.settings // {})
     }
+    | (.nodes[]? |= del(.issues))
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "proxy_base_url") | .value) = "__PROXY_BASE_URL__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "proxy_api_key") | .value) = "__PROXY_API_KEY__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "n8n_api_url") | .value) = "__N8N_API_URL__"
@@ -834,6 +1125,7 @@ main() {
   require_cmd diff
   require_cmd sed
   require_cmd tr
+  require_cmd sqlite3
 
   if [ ! -f "$N8N_ENV_FILE" ]; then
     echo "Missing file: $N8N_ENV_FILE" >&2
@@ -857,6 +1149,17 @@ main() {
   selected_json="$(fetch_selected_workflows_json)"
   selected_lines="$(echo "$selected_json" | jq -c '.[]')"
 
+  local folder_db_map_file folder_db_loaded
+  folder_db_map_file="$(mktemp)"
+  folder_db_loaded="false"
+  if load_workflow_folder_map_from_db "$folder_db_map_file"; then
+    folder_db_loaded="true"
+    log "Loaded workflow folder map from DB: $N8N_SQLITE_DB_PATH"
+  else
+    : > "$folder_db_map_file"
+    log "WARN cannot load folder map from DB: $N8N_SQLITE_DB_PATH"
+  fi
+
   local registry_original_exists registry_runtime_file
   registry_original_exists="false"
   if [ -f "$WORKFLOW_REGISTRY_FILE" ]; then
@@ -878,12 +1181,16 @@ main() {
   local changed=0
   local unchanged=0
   local failed=0
+  local missing_ui_folder=0
   local registry_new=0
   local registry_updated=0
   local registry_conflict=0
   local wrapper_new=0
   local wrapper_preview_new=0
   local wrapper_existing=0
+  local wrapper_updated=0
+  local wrapper_pruned=0
+  local wrapper_preview_pruned=0
   local changed_names=""
 
   while IFS= read -r listed_entry; do
@@ -914,8 +1221,15 @@ main() {
       wf_name="$listed_name"
     fi
 
-    local wf_folder_ui wf_folder_by_name wf_folder_target
+    local wf_folder_ui wf_folder_db wf_folder_by_name wf_folder_target
     wf_folder_ui="$(workflow_folder_from_ui_payload "$raw")"
+    wf_folder_db=""
+    if [ "$folder_db_loaded" = "true" ]; then
+      wf_folder_db="$(workflow_folder_from_db_map "$folder_db_map_file" "$wf_id")"
+    fi
+    if [ -z "$wf_folder_ui" ] && [ -n "$wf_folder_db" ]; then
+      wf_folder_ui="$wf_folder_db"
+    fi
     wf_folder_by_name=""
     if [ -z "$wf_folder_ui" ] && [ "$FOLDER_FROM_NAME_FALLBACK" = "true" ]; then
       wf_folder_by_name="$(workflow_folder_from_name_path "$wf_name")"
@@ -926,19 +1240,19 @@ main() {
     fi
 
     local by_id_tsv by_name_tsv
-    local key="" old_id="" old_template="" old_last_synced=""
+    local key="" old_id="" old_template="" old_wrapper="" old_last_synced=""
     local wf_key wf_template_raw strategy_note
 
     by_id_tsv="$(registry_entry_by_id_tsv "$registry_runtime_file" "$wf_id")"
     if [ -n "$by_id_tsv" ]; then
-      IFS=$'\t' read -r key old_id old_template old_last_synced <<< "$by_id_tsv"
+      IFS=$'\t' read -r key old_id old_template old_wrapper old_last_synced <<< "$by_id_tsv"
       wf_key="$key"
       wf_template_raw="$(normalize_registry_template_path "$old_template")"
       strategy_note="id-match"
     else
       by_name_tsv="$(registry_entry_by_name_tsv "$registry_runtime_file" "$wf_name")"
       if [ -n "$by_name_tsv" ]; then
-        IFS=$'\t' read -r key old_id old_template old_last_synced <<< "$by_name_tsv"
+        IFS=$'\t' read -r key old_id old_template old_wrapper old_last_synced <<< "$by_name_tsv"
         if [ -z "$old_id" ] || [ "$old_id" = "$wf_id" ]; then
           wf_key="$key"
           wf_template_raw="$(normalize_registry_template_path "$old_template")"
@@ -958,18 +1272,28 @@ main() {
     fi
 
     if [ -z "$wf_template_raw" ]; then
+      if [ -z "$wf_folder_target" ] && [ "$REQUIRE_UI_FOLDER_FOR_NEW_WORKFLOWS" = "true" ]; then
+        log "FAIL $wf_name ($wf_id) missing UI folder metadata; strict folder mode forbids fallback. Use --allow-folder-fallback to override."
+        failed=$((failed + 1))
+        missing_ui_folder=$((missing_ui_folder + 1))
+        continue
+      fi
       wf_template_raw="$(generate_unique_template_path "$registry_runtime_file" "$wf_name" "$wf_id" "$wf_folder_target")"
       wf_template_raw="$(normalize_registry_template_path "$wf_template_raw")"
     fi
 
-    local existing_entry_tsv existing_entry_exists existing_id existing_template
+    local existing_entry_tsv existing_entry_exists existing_id existing_template existing_wrapper
     existing_entry_tsv="$(registry_entry_by_name_tsv "$registry_runtime_file" "$wf_key")"
     existing_entry_exists="false"
     existing_id=""
     existing_template=""
+    existing_wrapper=""
     if [ -n "$existing_entry_tsv" ]; then
       existing_entry_exists="true"
-      IFS=$'\t' read -r key existing_id existing_template old_last_synced <<< "$existing_entry_tsv"
+      IFS=$'\t' read -r key existing_id existing_template existing_wrapper old_last_synced <<< "$existing_entry_tsv"
+      if [ -n "$existing_wrapper" ]; then
+        existing_wrapper="$(to_repo_relative_path "$existing_wrapper")"
+      fi
     fi
 
     local mapping_changed
@@ -1018,18 +1342,54 @@ main() {
       fi
     fi
 
+    local wrapper_hint
+    wrapper_hint="$existing_wrapper"
+    if [ -z "$wrapper_hint" ]; then
+      wrapper_hint="$old_wrapper"
+    fi
+    if [ -n "$wrapper_hint" ]; then
+      wrapper_hint="$(resolve_repo_path "$wrapper_hint" 2>/dev/null || printf '%s\n' "$wrapper_hint")"
+      if [ ! -f "$wrapper_hint" ]; then
+        wrapper_hint=""
+      fi
+    fi
+
+    ensure_wrapper_for_template "$wf_name" "$wf_id" "$wf_template_raw" "$wrapper_hint"
+
+    local wrapper_path_raw wrapper_path_norm
+    wrapper_path_raw=""
+    wrapper_path_norm=""
+    if [ -n "$WRAPPER_RESULT_PATH" ]; then
+      wrapper_path_raw="$WRAPPER_RESULT_PATH"
+      wrapper_path_norm="$(to_repo_relative_path "$wrapper_path_raw")"
+    fi
+
+    if [ "$mapping_changed" = "false" ] && [ "$wrapper_path_norm" != "" ] && [ "$wrapper_path_norm" != "$existing_wrapper" ]; then
+      mapping_changed="true"
+      registry_updated=$((registry_updated + 1))
+    fi
+
     local should_touch_last_synced
     should_touch_last_synced=""
-    if [ "$APPLY" = "true" ] && { [ "$mapping_changed" = "true" ] || [ "$file_changed" = "true" ]; }; then
+    if [ "$APPLY" = "true" ] && { [ "$mapping_changed" = "true" ] || [ "$file_changed" = "true" ] || [ "$WRAPPER_RESULT_UPDATED" = "true" ] || [ "$WRAPPER_RESULT_PRUNED" -gt 0 ]; }; then
       should_touch_last_synced="$run_synced_at"
     fi
 
-    set_registry_entry "$registry_runtime_file" "$wf_key" "$wf_id" "$wf_template_raw" "$should_touch_last_synced"
+    set_registry_entry "$registry_runtime_file" "$wf_key" "$wf_id" "$wf_template_raw" "$wrapper_path_norm" "$should_touch_last_synced"
 
-    ensure_wrapper_for_template "$wf_name" "$wf_id" "$wf_template_raw"
     case "$WRAPPER_RESULT_STATUS" in
       exists)
         wrapper_existing=$((wrapper_existing + 1))
+        if [ "$WRAPPER_RESULT_UPDATED" = "true" ]; then
+          wrapper_updated=$((wrapper_updated + 1))
+        fi
+        if [ "$WRAPPER_RESULT_PRUNED" -gt 0 ]; then
+          if [ "$APPLY" = "true" ]; then
+            wrapper_pruned=$((wrapper_pruned + WRAPPER_RESULT_PRUNED))
+          else
+            wrapper_preview_pruned=$((wrapper_preview_pruned + WRAPPER_RESULT_PRUNED))
+          fi
+        fi
         ;;
       created)
         wrapper_new=$((wrapper_new + 1))
@@ -1055,7 +1415,7 @@ main() {
     fi
   fi
 
-  log "Summary total=$total changed=$changed unchanged=$unchanged failed=$failed registry_new=$registry_new registry_updated=$registry_updated conflicts=$registry_conflict wrapper_new=$wrapper_new wrapper_preview_new=$wrapper_preview_new wrapper_existing=$wrapper_existing mode=$( [ "$APPLY" = "true" ] && echo apply || echo preview )"
+  log "Summary total=$total changed=$changed unchanged=$unchanged failed=$failed missing_ui_folder=$missing_ui_folder registry_new=$registry_new registry_updated=$registry_updated conflicts=$registry_conflict wrapper_new=$wrapper_new wrapper_updated=$wrapper_updated wrapper_pruned=$wrapper_pruned wrapper_preview_new=$wrapper_preview_new wrapper_preview_pruned=$wrapper_preview_pruned wrapper_existing=$wrapper_existing mode=$( [ "$APPLY" = "true" ] && echo apply || echo preview )"
 
   if [ "$APPLY" = "true" ] && [ "$WRITE_LOG" = "true" ]; then
     local summary details
@@ -1063,10 +1423,10 @@ main() {
     if [ "$changed" -eq 0 ] && [ "$registry_file_changed" = "false" ] && [ "$wrapper_new" -eq 0 ]; then
       summary="Workflow sync (UI -> JSON) completed with no file, registry, or wrapper changes."
     else
-      summary="Workflow sync (UI -> JSON) processed $total workflow(s): changed=$changed, registry_new=$registry_new, registry_updated=$registry_updated, conflicts=$registry_conflict, wrapper_new=$wrapper_new."
+      summary="Workflow sync (UI -> JSON) processed $total workflow(s): changed=$changed, missing_ui_folder=$missing_ui_folder, registry_new=$registry_new, registry_updated=$registry_updated, conflicts=$registry_conflict, wrapper_new=$wrapper_new, wrapper_updated=$wrapper_updated, wrapper_pruned=$wrapper_pruned."
     fi
 
-    details="Run mode=apply, total=$total, changed=$changed, unchanged=$unchanged, failed=$failed, registry_changed=$registry_file_changed, wrapper_new=$wrapper_new."
+    details="Run mode=apply, total=$total, changed=$changed, unchanged=$unchanged, failed=$failed, missing_ui_folder=$missing_ui_folder, registry_changed=$registry_file_changed, wrapper_new=$wrapper_new, wrapper_updated=$wrapper_updated, wrapper_pruned=$wrapper_pruned."
     if [ -n "$changed_names" ]; then
       details="$details Changed workflows: $changed_names."
     fi
@@ -1078,6 +1438,7 @@ main() {
   fi
 
   rm -f "$registry_runtime_file"
+  rm -f "$folder_db_map_file"
 
   if [ "$failed" -gt 0 ]; then
     exit 1

@@ -542,3 +542,19 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 ## 2026-03-31T18:28:51Z
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=10, registry_new=10, registry_updated=0, conflicts=0, wrapper_new=9.
 - Run mode=apply, total=11, changed=10, unchanged=1, failed=0, registry_changed=true, wrapper_new=9. Changed workflows: TTS, Shared Notification Router, Book Review AI Agent, GG Sheet Manager, GG Drive Mananger, Test AI Agent Tools, Demo Gemini via Proxy API, Text To Videos VEO3, Text To Images, Demo OpenAI via Proxy API.
+
+## 2026-03-31T18:51:46Z
+- Workflow sync (UI -> JSON) processed 11 workflow(s): changed=0, missing_ui_folder=0, registry_new=0, registry_updated=11, conflicts=0, wrapper_new=11, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=11, changed=0, unchanged=11, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=11, wrapper_updated=0, wrapper_pruned=0.
+
+## 2026-03-31T19:01:40Z
+- Workflow sync (UI -> JSON) processed 11 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=11, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=11, changed=1, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: GG Drive Mananger.
+
+## 2026-03-31T19:04:43Z
+- Workflow sync (UI -> JSON) completed with no file, registry, or wrapper changes.
+- Run mode=apply, total=11, changed=0, unchanged=11, failed=0, missing_ui_folder=0, registry_changed=false, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+
+## 2026-03-31T19:06:37Z
+- Workflow sync (UI -> JSON) completed with no file, registry, or wrapper changes.
+- Run mode=apply, total=11, changed=0, unchanged=11, failed=0, missing_ui_folder=0, registry_changed=false, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.

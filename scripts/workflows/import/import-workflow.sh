@@ -501,6 +501,7 @@ payload="$(jq \
   --arg qcModelExpr "={{ \$json.qc_model || \"$QC_MODEL_DEFAULT\" }}" \
   '
   (.name | tostring | test("gemini"; "i")) as $isGeminiWorkflow
+  | (.nodes[]? |= del(.issues))
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="content_model") | .value) = (if $isGeminiWorkflow then $geminiContentModel else $contentModel end)
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="fallback_model") | .value) = $fallbackModel
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="qc_model") | .value) = $qcModel

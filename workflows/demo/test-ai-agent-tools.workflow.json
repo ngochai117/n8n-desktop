@@ -40,7 +40,6 @@
         "builtInTools": {},
         "options": {}
       },
-      "issues": {},
       "credentials": {
         "openAiApi": {
           "id": "nmpOof7gCtDCf1BD",
@@ -70,7 +69,6 @@
         "builtInTools": {},
         "options": {}
       },
-      "issues": {},
       "credentials": {
         "openAiApi": {
           "id": "nmpOof7gCtDCf1BD",
@@ -134,7 +132,6 @@
         "builtInTools": {},
         "options": {}
       },
-      "issues": {},
       "credentials": {
         "openAiApi": {
           "id": "nmpOof7gCtDCf1BD",
@@ -181,7 +178,6 @@
         "builtInTools": {},
         "options": {}
       },
-      "issues": {},
       "credentials": {
         "openAiApi": {
           "id": "nmpOof7gCtDCf1BD",
@@ -229,7 +225,6 @@
         }
       },
       "webhookId": "d9eecb25-9e92-4c11-b112-7b4a72a12dab",
-      "issues": {},
       "credentials": {
         "telegramApi": {
           "id": "UkrPHyACfAUpSkv8",
@@ -255,8 +250,7 @@
         "options": {
           "systemMessage": ""
         }
-      },
-      "issues": {}
+      }
     },
     {
       "type": "n8n-nodes-base.telegramTool",
@@ -283,7 +277,6 @@
         "additionalFields": {}
       },
       "webhookId": "34d4b044-76aa-40fa-9f91-9ea53b682098",
-      "issues": {},
       "credentials": {
         "telegramApi": {
           "id": "UkrPHyACfAUpSkv8",
@@ -307,8 +300,7 @@
         "hasOutputParser": false,
         "needsFallback": false,
         "options": {}
-      },
-      "issues": {}
+      }
     },
     {
       "type": "@n8n/n8n-nodes-langchain.agentTool",
@@ -326,8 +318,7 @@
         "hasOutputParser": false,
         "needsFallback": false,
         "options": {}
-      },
-      "issues": {}
+      }
     },
     {
       "type": "@n8n/n8n-nodes-langchain.agentTool",
@@ -348,8 +339,7 @@
         "options": {
           "systemMessage": ""
         }
-      },
-      "issues": {}
+      }
     },
     {
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
@@ -373,7 +363,6 @@
         "builtInTools": {},
         "options": {}
       },
-      "issues": {},
       "credentials": {
         "openAiApi": {
           "id": "nmpOof7gCtDCf1BD",
@@ -446,8 +435,7 @@
       ],
       "id": "10547bfd-7b2d-438e-916d-c0f122c102b1",
       "name": "Book Review AI Agent",
-      "retryOnFail": true,
-      "issues": {}
+      "retryOnFail": true
     },
     {
       "id": "d3d42124-4ad9-4917-90bd-3d6db9ef0a14",
@@ -632,6 +620,7 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "callerPolicy": "workflowsFromSameOwner"
   }
 }
