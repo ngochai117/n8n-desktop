@@ -21,7 +21,7 @@
     "Book Review AI Agent": {
       "id": "901WvOJHn6O2Hbze",
       "template": "workflows/book-review/book-review-ai-agent.workflow.json",
-      "lastSyncedAt": "2026-04-01T12:42:26Z",
+      "lastSyncedAt": "2026-04-01T12:45:49Z",
       "templateImport": "scripts/workflows/import/import-book-review-ai-agent-workflow.sh"
     },
     "GG Sheet Manager": {

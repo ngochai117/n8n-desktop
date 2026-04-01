@@ -404,7 +404,7 @@
       "parameters": {
         "operation": "toText",
         "sourceProperty": "manifestJSONString",
-        "binaryPropertyName": "=file",
+        "binaryPropertyName": "file",
         "options": {
           "fileName": "Manifest.json"
         }
