@@ -727,3 +727,19 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 ## 2026-04-01T14:54:27Z
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=11, changed=1, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: GG Drive Manager.
+
+## 2026-04-01T15:47:43Z
+- Workflow sync (UI -> JSON) processed 11 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=1, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=11, changed=1, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Book Review AI Agent.
+
+## 2026-04-01T15:49:02Z
+- Workflow sync (UI -> JSON) processed 11 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=11, changed=1, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Book Review AI Agent.
+
+## 2026-04-01T16:40:43Z
+- Workflow sync (UI -> JSON) processed 11 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=11, changed=1, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Book Review AI Agent.
+
+## 2026-04-01T16:41:01Z
+- Workflow sync (UI -> JSON) completed with no file, registry, or wrapper changes.
+- Run mode=apply, total=11, changed=0, unchanged=11, failed=0, missing_ui_folder=0, registry_changed=false, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.

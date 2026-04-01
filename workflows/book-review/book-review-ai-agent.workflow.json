@@ -16,7 +16,7 @@
       "typeVersion": 1.3,
       "position": [
         -1808,
-        736
+        752
       ],
       "id": "94bdf134-0a4e-46d3-a158-efe3c7361b30",
       "name": "OpenAI Chat Model",
@@ -42,7 +42,7 @@
       "typeVersion": 1.3,
       "position": [
         -1456,
-        880
+        896
       ],
       "id": "5dd9ac93-398b-46be-8933-1ef63b6ae740",
       "name": "OpenAI Chat Model3",
@@ -70,32 +70,6 @@
         -1104,
         1040
       ],
-      "id": "d8166212-904b-4e6f-9497-92558c664892",
-      "name": "OpenAI Chat Model4",
-      "credentials": {
-        "openAiApi": {
-          "id": "nmpOof7gCtDCf1BD",
-          "name": "Local OpenAI Proxy"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "cx/gpt-5.4",
-          "mode": "list",
-          "cachedResultName": "cx/gpt-5.4"
-        },
-        "responsesApiEnabled": false,
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.3,
-      "position": [
-        -752,
-        1184
-      ],
       "id": "0db38b4f-8aff-4d21-8539-7be3572a3b96",
       "name": "OpenAI Chat Model5",
       "credentials": {
@@ -108,7 +82,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $('Config Main').item.json.chatInput }}{{ $json.output }}",
+        "text": "={{ $('Config Main').item.json.chatInput }}{{ JSON.stringify($json.output) }}",
         "hasOutputParser": true,
         "options": {
           "systemMessage": "={{ $('Config Main').item.json.master_prompt }}\nPROMPT QC: THE CRITICAL SOUL EDITOR (V4)\n\nROLE:\n- Bạn là một biên tập viên QC gắt gao cho các nội dung kể chuyện review sách dài.\n\nMISSION:\n- Đánh giá chất lượng khách quan và độ khớp với phong cách Soulful Narrator.\n\nSTYLE KERNEL REFERENCE (INJECTED FROM MASTER):\n__BOOK_REVIEW_STYLE_KERNEL__\n\nEVALUATION LAYERS:\n1) Objective layer:\n- Sức mạnh của Hook.\n- Sự mạch lạc của dòng tự sự.\n- Độ nguyên bản (Originality).\n- Tính ứng dụng của Bridge vào thực tế đời sống.\n\n2) Style-fit layer:\n- Sự nhất quán của giọng kể.\n- Mạch trôi tự nhiên (tránh meta labeling).\n- Chiều sâu cảm xúc và các ẩn dụ đời thường.\n\nSCORING & FEEDBACK:\n- Thang điểm từ 0 đến 10 cho: Hook, Clarity, Originality, Practical.\n- Trừ điểm nặng nếu dính meta-label lặp đi lặp lại hoặc hô hào giáo điều.\n- Feedback phải thẳng thắn, ưu tiên các lỗi cần sửa ngay, nhưng giữ cho sự sáng tạo của người kể chuyện còn sống.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"hook\": 0,\n  \"clarity\": 0,\n  \"originality\": 0,\n  \"practical\": 0,\n  \"risk\": \"low|med|high\",\n  \"feedback\": \"string\",\n  \"qc_issues\": [\"string\"]\n}\n\n"
@@ -117,30 +91,11 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -752,
-        960
-      ],
-      "id": "4de0adc6-2877-4954-81b4-cd25e0807235",
-      "name": "QC AI Agent",
-      "retryOnFail": true
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "={{ $('Config Main').item.json.chatInput }}{{ $json.output }}",
-        "hasOutputParser": true,
-        "options": {
-          "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\nPROMPT METADATA: THE ATTENTION ARCHITECT (V4)\n\nROLE:\n- Bạn là một Chuyên gia Chiến lược Nội dung chuyên về tâm lý học hành vi cho các kênh như Better Version hay Web5ngay.\n\nMỤC TIÊU:\n- Biến \"linh hồn\" bản thảo thành Metadata có sức hút mãnh liệt, đánh vào sự tò mò trí tuệ và nỗi đau thực tế của khán giả.\n\nVOICE & STYLE:\n- Kế thừa giọng văn từ STYLE KERNEL: THE SOULFUL NARRATOR & CULTURAL ANALYST (V4).\n- Ngôn từ sắc sảo, triết lý, không giật tít rẻ tiền.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- Language: Vietnamese.\n- Caption dưới 150 chữ.\n- Hashtags: 5-7 tag, viết thường, không dấu.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"title\": \"string\",\n  \"caption\": \"string\",\n  \"thumbnail_text\": \"string\",\n  \"hashtags\": [\"#tag\"]\n}\n\nQUALITY RULES:\n1. Title:\n   - Phải chứa một \"Mâu thuẫn\" (Tension) hoặc một \"Câu hỏi tử huyệt\" chạm đến nỗi đau/khao khát của con người hiện đại.\n   - TRÁNH: \"Review sách: [Tên sách]\".\n   - NÊN: \"Tại sao bạn vẫn mãi thất bại dù đã cố gắng?\".\n\n2. Caption:\n   - Dưới 150 chữ, tiếng Việt.\n   - Cấu trúc: 1 Câu hỏi khơi gợi nỗi đau (Emotional Hook) + 1 Giá trị cốt lõi từ sách + 1 Lời hứa về sự thay đổi (Practical Takeaway).\n   - Văn phong: Tâm tình như bạn thân.\n\n3. Thumbnail Text:\n   - Cực ngắn (dưới 6 từ), clear và curiosity-driven.\n   - Phải là một lời cảnh báo hoặc một lời mời gọi mang tính quyết định, không lặp lại Title.\n\n4. Hashtags:\n   - 5-7 tags, viết thường, không dấu.\n   - Bao gồm tên sách, tên tác giả, ngách nội dung (self-help, triết lý).\n"
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 3.1,
-      "position": [
         -1104,
         816
       ],
-      "id": "d4ad4afe-c71a-4f5d-ac74-e655f1f83af8",
-      "name": "Metadata AI Agent",
+      "id": "4de0adc6-2877-4954-81b4-cd25e0807235",
+      "name": "QC AI Agent",
       "retryOnFail": true
     },
     {
@@ -156,7 +111,7 @@
       "typeVersion": 3.1,
       "position": [
         -1808,
-        512
+        528
       ],
       "id": "3bf17144-d8d7-44a0-a352-dd195585b8ef",
       "name": "Outline AI Agent",
@@ -173,7 +128,7 @@
       "typeVersion": 1.2,
       "position": [
         -2480,
-        608
+        624
       ],
       "id": "945f4306-8695-48ae-893a-91925fe087cb",
       "name": "Telegram Trigger",
@@ -194,7 +149,7 @@
       "typeVersion": 1.4,
       "position": [
         -2480,
-        416
+        432
       ],
       "id": "190f4d23-2d0c-4ccf-aa02-0ecab8231409",
       "name": "When chat message received",
@@ -238,7 +193,7 @@
       "typeVersion": 3.4,
       "position": [
         -2256,
-        512
+        528
       ],
       "id": "80d18528-92a0-4365-859a-480a30658ac7",
       "name": "Config Main"
@@ -255,60 +210,12 @@
       "typeVersion": 1.2,
       "position": [
         -2032,
-        512
+        528
       ],
       "id": "f9ec94b5-f4b9-4476-ae38-e876d0bd5429",
       "name": "Send Creating Outline Message",
       "webhookId": "5d1921ba-59cc-4e43-b3a6-c2a30eee5a98",
       "notesInFlow": false,
-      "credentials": {
-        "telegramApi": {
-          "id": "__TELEGRAM_CREDENTIAL_ID__",
-          "name": "__TELEGRAM_CREDENTIAL_NAME__"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "editMessageText",
-        "chatId": "={{ $('Send Creating Outline Message').item.json.result.chat.id }}",
-        "messageId": "={{ $('Send Creating Outline Message').item.json.result.message_id }}",
-        "text": "Đang tạo Metadata...",
-        "additionalFields": {}
-      },
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        -1040,
-        512
-      ],
-      "id": "db626457-ea62-4ef1-a13e-21290c660b3a",
-      "name": "Send Creating Metadata Message",
-      "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
-      "credentials": {
-        "telegramApi": {
-          "id": "__TELEGRAM_CREDENTIAL_ID__",
-          "name": "__TELEGRAM_CREDENTIAL_NAME__"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "editMessageText",
-        "chatId": "={{ $('Send Creating Outline Message').item.json.result.chat.id }}",
-        "messageId": "={{ $('Send Creating Outline Message').item.json.result.message_id }}",
-        "text": "Đang tạo nội dung...",
-        "additionalFields": {}
-      },
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        -1392,
-        368
-      ],
-      "id": "c37296a4-050c-4c12-bf2a-f34017203d7f",
-      "name": "Send Creating Content Message",
-      "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
       "credentials": {
         "telegramApi": {
           "id": "__TELEGRAM_CREDENTIAL_ID__",
@@ -324,55 +231,23 @@
       "typeVersion": 1.3,
       "position": [
         -1680,
-        736
+        752
       ],
       "id": "c38027f9-eb12-4bac-85ce-c26433d0395d",
       "name": "Structured Outline Output Parser"
     },
     {
       "parameters": {
-        "jsonSchemaExample": "{\n  \"book\": {\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"style_keywords\": [\"string\"]\n  },\n  \"video\": {\n    \"aspect_ratio\": \"16:9\",\n    \"target_duration_min_sec\": 900,\n    \"target_duration_max_sec\": 1200,\n    \"estimated_total_duration_sec\": 0\n  },\n  \"scenes\": [\n    {\n      \"scene_id\": \"scene_01\",\n      \"order\": 1,\n      \"scene_title\": \"string\",\n      \"scene_role\": \"hook|core|outro\",\n      \"narration_text\": \"string\",\n      \"image_prompt_en\": \"string\",\n      \"highlight_quote_vi\": \"string\",\n      \"estimated_duration_sec\": 0,\n      \"transition\": \"cut\"\n    }\n  ]\n}\n"
+        "jsonSchemaExample": "{\n  \"book\": {\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"style_keywords\": [\"string\"]\n  },\n  \"video\": {\n    \"aspect_ratio\": \"16:9\",\n    \"target_duration_min_sec\": 900,\n    \"target_duration_max_sec\": 1200,\n    \"estimated_total_duration_sec\": 0\n  },\n  \"metadata\":{\n    \"title\": \"string\",\n    \"caption\": \"string\",\n    \"thumbnail_text\": \"string\",\n    \"hashtags\": [\"#tag\"]\n  },\n  \"scenes\": [\n    {\n      \"scene_id\": \"scene_01\",\n      \"order\": 1,\n      \"scene_title\": \"string\",\n      \"scene_role\": \"hook|core|outro\",\n      \"narration_text\": \"string\",\n      \"image_prompt_en\": \"string\",\n      \"highlight_quote_vi\": \"string\",\n      \"estimated_duration_sec\": 0,\n      \"transition\": \"cut\"\n    }\n  ]\n}"
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
         -1328,
-        880
+        896
       ],
       "id": "164722d2-496b-44ab-b98a-026859132277",
       "name": "Structured Expand Output Parser"
-    },
-    {
-      "parameters": {
-        "jsonSchemaExample": "{\n  \"title\": \"string\",\n  \"caption\": \"string\",\n  \"thumbnail_text\": \"string\",\n  \"hashtags\": [\"#tag\"]\n}"
-      },
-      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
-      "typeVersion": 1.3,
-      "position": [
-        -976,
-        1040
-      ],
-      "id": "304378d5-3835-43db-808d-cfb36366db1b",
-      "name": "Structured Metadata Output Parser"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "={{ $('Config Main').item.json.chatInput }}{{ $json.output }}",
-        "hasOutputParser": true,
-        "options": {
-          "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\nPROMPT SCENE EXPAND: THE SCRIPTWRITER (V4)\n\nROLE:\n- Bạn là người viết kịch bản kể chuyện cho video review sách dài.\n\nTASK:\n- Mở rộng dàn ý thành một review_manifest sẵn sàng sản xuất.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- Giữ đúng số lượng cảnh từ dàn ý.\n- Tổng narration_text: 15.000 - 20.000 ký tự tiếng Việt.\n- Hook/Outro: 45-75 giây mỗi cảnh.\n- Core scenes: 75-120 giây mỗi cảnh, tối thiểu 45 giây.\n- scene_01 là hook, scene cuối là outro.\n- image_prompt_en: viết bằng tiếng Anh và không để trống.\n- highlight_quote_vi: tùy chọn, không có thì để chuỗi rỗng.\n- transition mặc định \"cut\".\n\nANTI-RIGID CONSTRAINTS:\n- Tuyệt đối không dùng các mẫu câu lặp đi lặp lại giữa các cảnh.\n- Không biến narration thành danh sách liệt kê tóm tắt.\n- Giữ sự cân bằng giữa chiều sâu cảm xúc và tính ứng dụng thực tế.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"book\": {\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"style_keywords\": [\"string\"]\n  },\n  \"video\": {\n    \"aspect_ratio\": \"16:9\",\n    \"target_duration_min_sec\": 900,\n    \"target_duration_max_sec\": 1200,\n    \"estimated_total_duration_sec\": 0\n  },\n  \"scenes\": [\n    {\n      \"scene_id\": \"scene_01\",\n      \"order\": 1,\n      \"scene_title\": \"string\",\n      \"scene_role\": \"hook|core|outro\",\n      \"narration_text\": \"string\",\n      \"image_prompt_en\": \"string\",\n      \"highlight_quote_vi\": \"string\",\n      \"estimated_duration_sec\": 0,\n      \"transition\": \"cut\"\n    }\n  ]\n}\n"
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 3.1,
-      "position": [
-        -1456,
-        656
-      ],
-      "id": "99a2c42e-85b1-43c3-b056-af39d4e59bf0",
-      "name": "Content AI Agent",
-      "retryOnFail": true
     },
     {
       "parameters": {
@@ -381,21 +256,21 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        -624,
-        1184
+        -976,
+        1040
       ],
       "id": "619e23b4-2945-4ed1-a567-3f6377836719",
       "name": "Structured Output Parser"
     },
     {
       "parameters": {
-        "jsCode": "function createSessionToken() {\n  return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction slugifyBookName(value) {\n  const normalized = String(value ?? '')\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '')\n    .toLowerCase()\n    .replace(/[^a-z0-9]+/g, '-')\n    .replace(/^-+|-+$/g, '');\n\n  if (!normalized) {\n    return 'book';\n  }\n\n  return normalized.slice(0, 80) || 'book';\n}\n\n\nconst content = asObject($('Content AI Agent').first().json.output);\nconst metadata = asObject($('Metadata AI Agent').first().json.output);\nconst qc = asObject($('QC AI Agent').first().json.output);\n\nif (Object.keys(content).length === 0) {\n  throw new Error('Content output is missing from merged payload.');\n}\n\nif (Object.keys(metadata).length === 0) {\n  throw new Error('Metadata output is missing from merged payload.');\n}\n\nif (Object.keys(qc).length === 0) {\n  throw new Error('QC output is missing from merged payload.');\n}\n\nconst manifest = {\n  ...content,\n  metadata: {\n    ...metadata,\n    title: normalizeText(metadata.title),\n    caption: normalizeText(metadata.caption),\n    thumbnail_text: normalizeText(metadata.thumbnail_text),\n    hashtags: asArray(metadata.hashtags),\n  },\n  scenes: asArray(content.scenes).map((s, i) => ({\n    ...asObject(s),\n    scene_id: String(s?.scene_id ??       'scene_' + String(i + 1).padStart(2, '0')),\n    narration_text: normalizeText(s?.narration_text),\n  })),\n};\nconst sessionToken = safeText(createSessionToken(), 'session');\nconst safeToken = sessionToken\n  .replace(/[^a-zA-Z0-9_-]+/g, '-')\n  .replace(/^-+|-+$/g, '') || 'session';\nconst safeBookName = slugifyBookName(safeText(content.book.title +\"-\"+content.book.author, 'book'));\n\n\nreturn {\n  ...content,\n  manifest,\n  manifestJSONString: JSON.stringify(manifest, null, 2),\n  qc,\n  ggDriveFolderName:safeBookName+ \"-\"+safeToken,\n};\n"
+        "jsCode": "function createSessionToken() {\n  return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0) {\n  const num = Number(value);\n  return Number.isFinite(num) ? Math.floor(num) : fallback;\n}\n\nfunction slugifyBookName(value) {\n  const normalized = String(value ?? '')\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '')\n    .toLowerCase()\n    .replace(/[^a-z0-9]+/g, '-')\n    .replace(/^-+|-+$/g, '');\n\n  if (!normalized) {\n    return 'book';\n  }\n\n  return normalized.slice(0, 80) || 'book';\n}\n\nfunction buildReadableContent(manifest) {\n  const book = asObject(manifest.book);\n  const video = asObject(manifest.video);\n  const metadata = asObject(manifest.metadata);\n  const scenes = asArray(manifest.scenes).sort((a, b) => asInt(a.order) - asInt(b.order));\n\n  const lines = [];\n\n  lines.push(`# ${safeText(book.title, 'Sach chua ro ten')}`);\n\n  if (safeText(book.author)) {\n    lines.push(`Tac gia: ${safeText(book.author)}`);\n  }\n\n  const styleKeywords = asArray(book.style_keywords).map((item) => safeText(item)).filter(Boolean);\n  if (styleKeywords.length) {\n    lines.push(`Style keywords: ${styleKeywords.join(', ')}`);\n  }\n\n  const aspectRatio = safeText(video.aspect_ratio, '16:9');\n  const minSec = asInt(video.target_duration_min_sec);\n  const maxSec = asInt(video.target_duration_max_sec);\n  const estSec = asInt(video.estimated_total_duration_sec);\n\n  lines.push(`Video: ${aspectRatio} | ${minSec}-${maxSec}s | est ${estSec}s`);\n\n  lines.push('');\n  lines.push('## Metadata');\n  lines.push(`Title: ${safeText(metadata.title)}`);\n\n  if (safeText(metadata.thumbnail_text)) {\n    lines.push(`Thumbnail: ${safeText(metadata.thumbnail_text)}`);\n  }\n\n  if (safeText(metadata.caption)) {\n    lines.push('');\n    lines.push('Caption:');\n    lines.push(normalizeText(metadata.caption));\n  }\n\n  const hashtags = asArray(metadata.hashtags).map((item) => safeText(item)).filter(Boolean);\n  if (hashtags.length) {\n    lines.push('');\n    lines.push(`Hashtags: ${hashtags.join(' ')}`);\n  }\n\n  for (const scene of scenes) {\n    const sceneId = safeText(scene.scene_id, 'scene');\n    const sceneTitle = safeText(scene.scene_title, sceneId);\n    const sceneRole = safeText(scene.scene_role, 'core');\n    const duration = asInt(scene.estimated_duration_sec);\n    const narration = normalizeText(scene.narration_text);\n    const quote = safeText(scene.highlight_quote_vi);\n\n    lines.push('');\n    lines.push(`## ${sceneId} - ${sceneTitle}`);\n    lines.push(`Role: ${sceneRole} | Order: ${asInt(scene.order)} | Duration: ${duration}s`);\n\n    if (quote) {\n      lines.push(`Highlight quote: \"${quote}\"`);\n    }\n\n    if (narration) {\n      lines.push('');\n      lines.push(narration);\n    }\n  }\n\n  return lines.join('\\n').replace(/\\n{3,}/g, '\\n\\n').trim();\n}\n\nconst manifestRaw = asObject($('Manifest AI Agent').first().json.output);\nconst qc = asObject($('QC AI Agent').first().json.output);\n\nif (Object.keys(manifestRaw).length === 0) {\n  throw new Error('Manifest output is missing from merged payload.');\n}\n\nif (Object.keys(qc).length === 0) {\n  throw new Error('QC output is missing from merged payload.');\n}\n\nconst bookRaw = asObject(manifestRaw.book);\nconst videoRaw = asObject(manifestRaw.video);\nconst metadataRaw = asObject(manifestRaw.metadata);\n\nconst manifest = {\n  ...manifestRaw,\n  book: {\n    title: normalizeText(bookRaw.title),\n    author: normalizeText(bookRaw.author),\n    style_keywords: asArray(bookRaw.style_keywords).map((item) => safeText(item)).filter(Boolean),\n  },\n  video: {\n    aspect_ratio: safeText(videoRaw.aspect_ratio, '16:9'),\n    target_duration_min_sec: asInt(videoRaw.target_duration_min_sec, 900),\n    target_duration_max_sec: asInt(videoRaw.target_duration_max_sec, 1200),\n    estimated_total_duration_sec: asInt(videoRaw.estimated_total_duration_sec, 0),\n  },\n  metadata: {\n    ...metadataRaw,\n    title: normalizeText(metadataRaw.title),\n    caption: normalizeText(metadataRaw.caption),\n    thumbnail_text: normalizeText(metadataRaw.thumbnail_text),\n    hashtags: asArray(metadataRaw.hashtags).map((item) => safeText(item)).filter(Boolean),\n  },\n  scenes: asArray(manifestRaw.scenes)\n    .map((scene, index) => {\n      const s = asObject(scene);\n      return {\n        ...s,\n        scene_id: safeText(s.scene_id, 'scene_' + String(index + 1).padStart(2, '0')),\n        order: asInt(s.order, index + 1),\n        scene_title: normalizeText(s.scene_title),\n        scene_role: safeText(s.scene_role, index === 0 ? 'hook' : 'core'),\n        narration_text: normalizeText(s.narration_text),\n        image_prompt_en: normalizeText(s.image_prompt_en),\n        highlight_quote_vi: normalizeText(s.highlight_quote_vi),\n        estimated_duration_sec: asInt(s.estimated_duration_sec, 0),\n        transition: safeText(s.transition, 'cut'),\n      };\n    })\n    .sort((a, b) => a.order - b.order),\n};\n\nconst contentReadable = buildReadableContent(manifest);\n\nconst sessionToken = safeText(createSessionToken(), 'session');\nconst safeToken = sessionToken.replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'session';\n\nconst safeBookName = slugifyBookName(\n  safeText(`${manifest.book.title}-${manifest.book.author}`, 'book')\n);\n\nreturn {\n  manifest,\n  manifestJSONString: JSON.stringify(manifest, null, 2),\n  contentReadable,\n  qc,\n  ggDriveFolderName: `${safeBookName}-${safeToken}`,\n};\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -400,
-        960
+        -752,
+        816
       ],
       "id": "c2b300de-18cc-462e-992e-2b733b185e98",
       "name": "Prepare Manifest"
@@ -412,8 +287,8 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        -176,
-        960
+        -528,
+        720
       ],
       "id": "4def4593-b0b9-402a-a113-3ef54e465324",
       "name": "Convert Manifest to File"
@@ -499,8 +374,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        48,
-        960
+        -304,
+        720
       ],
       "id": "2aaf9012-301a-479f-8519-a9b42b5587be",
       "name": "GG Drive Manager Save Manifest"
@@ -508,7 +383,7 @@
     {
       "parameters": {
         "operation": "editMessageText",
-        "chatId": "={{ $('Send Creating Outline Message').item.json.result.chat.id }}",
+        "chatId": "={{ $('Config Main').item.json.telegramChatId }}",
         "messageId": "={{ $('Send Creating Outline Message').item.json.result.message_id }}",
         "text": "QC đang Review...",
         "additionalFields": {}
@@ -516,8 +391,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -688,
-        656
+        -1040,
+        528
       ],
       "id": "0d875b16-e41c-4b19-8443-229576ede7e6",
       "name": "Send QC is Reviewing Message",
@@ -528,6 +403,223 @@
           "name": "__TELEGRAM_CREDENTIAL_NAME__"
         }
       }
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Config Main').item.json.telegramChatId }}",
+        "messageId": "={{ $('Send Creating Outline Message').item.json.result.message_id }}",
+        "text": "Đang tạo nội dung...",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1392,
+        368
+      ],
+      "id": "c37296a4-050c-4c12-bf2a-f34017203d7f",
+      "name": "Send Creating Manifest Message",
+      "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "__TELEGRAM_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Config Main').item.json.chatInput }}{{ JSON.stringify($json.output) }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\nPROMPT SCENE EXPAND: THE SCRIPTWRITER (V4)\n\nROLE:\n- Bạn là người viết kịch bản kể chuyện cho video review sách dài.\n\nTASK:\n- Mở rộng dàn ý thành một review_manifest sẵn sàng sản xuất.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- Giữ đúng số lượng cảnh từ dàn ý.\n- Tổng narration_text: 15.000 - 20.000 ký tự tiếng Việt.\n- Hook/Outro: 45-75 giây mỗi cảnh.\n- Core scenes: 75-120 giây mỗi cảnh, tối thiểu 45 giây.\n- scene_01 là hook, scene cuối là outro.\n- image_prompt_en: viết bằng tiếng Anh và không để trống.\n- highlight_quote_vi: tùy chọn, không có thì để chuỗi rỗng.\n- transition mặc định \"cut\".\n- metadata.title: Phải chứa một \"Mâu thuẫn\" (Tension) hoặc một \"Câu hỏi tử huyệt\" chạm đến nỗi đau/khao khát của con người hiện đại. TRÁNH: \"Review sách: [Tên sách]\". NÊN \"Tại sao bạn vẫn mãi thất bại dù đã cố gắng?\".\n- metadata.caption: Dưới 150 chữ, tiếng Việt. Cấu trúc: 1 Câu hỏi khơi gợi nỗi đau (Emotional Hook) + 1 Giá trị cốt lõi từ sách + 1 Lời hứa về sự thay đổi (Practical Takeaway).\n- metadata.thumbnail_text: Cực ngắn (dưới 6 từ), clear và curiosity-driven. Phải là một lời cảnh báo hoặc một lời mời gọi mang tính quyết định, không lặp lại Title.\n- metadata.hashtags: 5-7 tags, viết thường, không dấu. Bao gồm tên sách, tên tác giả, ngách nội dung (self-help, triết lý).\n\nANTI-RIGID CONSTRAINTS:\n- Tuyệt đối không dùng các mẫu câu lặp đi lặp lại giữa các cảnh.\n- Không biến narration thành danh sách liệt kê tóm tắt.\n- Giữ sự cân bằng giữa chiều sâu cảm xúc và tính ứng dụng thực tế.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"book\": {\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"style_keywords\": [\"string\"]\n  },\n  \"video\": {\n    \"aspect_ratio\": \"16:9\",\n    \"target_duration_min_sec\": 900,\n    \"target_duration_max_sec\": 1200,\n    \"estimated_total_duration_sec\": 0\n  },\n  \"metadata\": {\n    \"title\": \"string\",\n    \"caption\": \"string\",\n    \"thumbnail_text\": \"string\",\n    \"hashtags\": [\"#tag\"]\n  },\n  \"scenes\": [\n    {\n      \"scene_id\": \"scene_01\",\n      \"order\": 1,\n      \"scene_title\": \"string\",\n      \"scene_role\": \"hook|core|outro\",\n      \"narration_text\": \"string\",\n      \"image_prompt_en\": \"string\",\n      \"highlight_quote_vi\": \"string\",\n      \"estimated_duration_sec\": 0,\n      \"transition\": \"cut\"\n    }\n  ]\n}\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1456,
+        672
+      ],
+      "id": "99a2c42e-85b1-43c3-b056-af39d4e59bf0",
+      "name": "Manifest AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "deleteMessage",
+        "chatId": "={{ $('Config Main').item.json.telegramChatId }}",
+        "messageId": "={{ $('Send Creating Outline Message').item.json.result.message_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        720
+      ],
+      "id": "a9fec56a-588f-4942-a9cb-f4b539305030",
+      "name": "Delete Loading Message",
+      "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "__TELEGRAM_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Config Main').item.json.telegramChatId }}",
+        "text": "=conent: {{ $('GG Drive Manager Save Content Readable').item.json.fileUrl }}\nmanifest: {{ $('GG Drive Manager Save Manifest').item.json.fileUrl }}\nfolderUrl: {{ $json.folderUrl }}\n------------------\nhook: {{ $('Prepare Manifest').item.json.qc.hook }}, clarity: {{ $('Prepare Manifest').item.json.qc.clarity }}, originality: {{ $('Prepare Manifest').item.json.qc.originality }}, practical: {{ $('Prepare Manifest').item.json.qc.practical }}, risk: {{ $('Prepare Manifest').item.json.qc.risk }}\n------------------\n{{ $('Prepare Manifest').item.json.qc.feedback }}\n------------------\n{{ $('Prepare Manifest').item.json.qc.qc_issues.join('\\n') }}",
+        "replyMarkup": "=none",
+        "forceReply": {},
+        "replyKeyboardOptions": {},
+        "replyKeyboardRemove": {},
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        912
+      ],
+      "id": "db77dd13-287c-407d-8198-7f8e0a4a7638",
+      "name": "Send Review Message",
+      "webhookId": "5d1921ba-59cc-4e43-b3a6-c2a30eee5a98",
+      "notesInFlow": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "__TELEGRAM_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "contentReadable",
+        "binaryPropertyName": "file",
+        "options": {
+          "fileName": "ContentReadable.txt"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -528,
+        912
+      ],
+      "id": "551444f5-9b96-4349-ae96-5090b12af886",
+      "name": "Convert Content Readable to File"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true
+        }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -80,
+        816
+      ],
+      "id": "65108b1d-22c1-4e8e-a57f-3a2c0dc104ef",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "QpcIxaHiYXDqjw4p",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/QpcIxaHiYXDqjw4p",
+          "cachedResultName": "GG Drive Manager"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "upsert",
+            "fileName": "ContentReadable.txt",
+            "binaryFieldName": "file",
+            "rootFolderId": "={{ $('Config Main').item.json.ggDriveRootFolderId }}",
+            "folderPath": "={{ $('Prepare Manifest').item.json.ggDriveFolderName }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "rootFolderId",
+              "displayName": "rootFolderId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "folderPath",
+              "displayName": "folderPath",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "fileName",
+              "displayName": "fileName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "binaryFieldName",
+              "displayName": "binaryFieldName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -304,
+        912
+      ],
+      "id": "3e3a0347-622a-4452-866e-ac536815218a",
+      "name": "GG Drive Manager Save Content Readable"
     }
   ],
   "connections": {
@@ -546,18 +638,7 @@
       "ai_languageModel": [
         [
           {
-            "node": "Content AI Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenAI Chat Model4": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Metadata AI Agent",
+            "node": "Manifest AI Agent",
             "type": "ai_languageModel",
             "index": 0
           }
@@ -579,12 +660,12 @@
       "main": [
         [
           {
-            "node": "Send Creating Content Message",
+            "node": "Send Creating Manifest Message",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Content AI Agent",
+            "node": "Manifest AI Agent",
             "type": "main",
             "index": 0
           }
@@ -607,22 +688,6 @@
         [
           {
             "node": "Config Main",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Metadata AI Agent": {
-      "main": [
-        [
-          {
-            "node": "Send QC is Reviewing Message",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "QC AI Agent",
             "type": "main",
             "index": 0
           }
@@ -677,35 +742,8 @@
       "ai_outputParser": [
         [
           {
-            "node": "Content AI Agent",
+            "node": "Manifest AI Agent",
             "type": "ai_outputParser",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Structured Metadata Output Parser": {
-      "ai_outputParser": [
-        [
-          {
-            "node": "Metadata AI Agent",
-            "type": "ai_outputParser",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Content AI Agent": {
-      "main": [
-        [
-          {
-            "node": "Send Creating Metadata Message",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Metadata AI Agent",
-            "type": "main",
             "index": 0
           }
         ]
@@ -729,6 +767,11 @@
             "node": "Convert Manifest to File",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Convert Content Readable to File",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -746,22 +789,77 @@
     },
     "GG Drive Manager Save Manifest": {
       "main": [
-        []
-      ]
-    },
-    "Send Creating Metadata Message": {
-      "main": [
-        []
-      ]
-    },
-    "Send Creating Content Message": {
-      "main": [
-        []
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Send QC is Reviewing Message": {
       "main": [
         []
+      ]
+    },
+    "Send Creating Manifest Message": {
+      "main": [
+        []
+      ]
+    },
+    "Manifest AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send QC is Reviewing Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "QC AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Content Readable to File": {
+      "main": [
+        [
+          {
+            "node": "GG Drive Manager Save Content Readable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Delete Loading Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Review Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GG Drive Manager Save Content Readable": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
       ]
     }
   },

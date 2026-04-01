@@ -19,6 +19,10 @@ HARD CONSTRAINTS:
 - image_prompt_en: viết bằng tiếng Anh và không để trống.
 - highlight_quote_vi: tùy chọn, không có thì để chuỗi rỗng.
 - transition mặc định "cut".
+- metadata.title: Phải chứa một "Mâu thuẫn" (Tension) hoặc một "Câu hỏi tử huyệt" chạm đến nỗi đau/khao khát của con người hiện đại. TRÁNH: "Review sách: [Tên sách]". NÊN "Tại sao bạn vẫn mãi thất bại dù đã cố gắng?".
+- metadata.caption: Dưới 150 chữ, tiếng Việt. Cấu trúc: 1 Câu hỏi khơi gợi nỗi đau (Emotional Hook) + 1 Giá trị cốt lõi từ sách + 1 Lời hứa về sự thay đổi (Practical Takeaway).
+- metadata.thumbnail_text: Cực ngắn (dưới 6 từ), clear và curiosity-driven. Phải là một lời cảnh báo hoặc một lời mời gọi mang tính quyết định, không lặp lại Title.
+- metadata.hashtags: 5-7 tags, viết thường, không dấu. Bao gồm tên sách, tên tác giả, ngách nội dung (self-help, triết lý).
 
 ANTI-RIGID CONSTRAINTS:
 - Tuyệt đối không dùng các mẫu câu lặp đi lặp lại giữa các cảnh.
@@ -37,6 +41,12 @@ REQUIRED OUTPUT SCHEMA (EXACT KEYS):
     "target_duration_min_sec": 900,
     "target_duration_max_sec": 1200,
     "estimated_total_duration_sec": 0
+  },
+  "metadata": {
+    "title": "string",
+    "caption": "string",
+    "thumbnail_text": "string",
+    "hashtags": ["#tag"]
   },
   "scenes": [
     {
