@@ -3,28 +3,22 @@
   "nodes": [
     {
       "parameters": {
-        "inputSource": "workflowInputs",
         "workflowInputs": {
           "values": [
             {
-              "name": "action",
-              "type": "string"
+              "name": "action"
             },
             {
-              "name": "rootFolderId",
-              "type": "string"
+              "name": "rootFolderId"
             },
             {
-              "name": "folderPath",
-              "type": "string"
+              "name": "folderPath"
             },
             {
-              "name": "fileName",
-              "type": "string"
+              "name": "fileName"
             },
             {
-              "name": "binaryFieldName",
-              "type": "string"
+              "name": "binaryFieldName"
             }
           ]
         }
@@ -99,8 +93,7 @@
             "parents",
             "webViewLink"
           ]
-        },
-        "authentication": "oAuth2"
+        }
       },
       "id": "5",
       "name": "Search Current Folder",
@@ -292,7 +285,6 @@
             }
           ]
         },
-        "includeOtherFields": false,
         "options": {}
       },
       "id": "39",
@@ -314,8 +306,7 @@
           "value": "My Drive"
         },
         "folderId": "={{ $json.baseFolderId || 'root' }}",
-        "options": {},
-        "authentication": "oAuth2"
+        "options": {}
       },
       "id": "9",
       "name": "Create Missing Folder",
@@ -339,7 +330,7 @@
         "options": {
           "clashHandling": {
             "values": {
-              "resolveClash": "preferInput1",
+              "resolveClash": "preferInput2",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
@@ -649,8 +640,7 @@
             "size",
             "webViewLink"
           ]
-        },
-        "authentication": "oAuth2"
+        }
       },
       "id": "29",
       "name": "Search Existing File (Get/Delete)",
@@ -675,7 +665,7 @@
         "options": {
           "clashHandling": {
             "values": {
-              "resolveClash": "preferInput1",
+              "resolveClash": "preferInput2",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
@@ -703,7 +693,7 @@
           },
           "conditions": [
             {
-              "leftValue": "={{ String($json.id || '').trim().length > 0 }}",
+              "leftValue": "={{ String($json.id || '').trim().length > 0 && String($json.mimeType || '') !== 'application/vnd.google-apps.folder' }}",
               "rightValue": "",
               "operator": {
                 "type": "boolean",
@@ -762,8 +752,7 @@
       "parameters": {
         "operation": "deleteFile",
         "fileId": "={{ $json.id }}",
-        "options": {},
-        "authentication": "oAuth2"
+        "options": {}
       },
       "id": "33",
       "name": "Delete Existing File",
@@ -828,7 +817,6 @@
             }
           ]
         },
-        "includeOtherFields": false,
         "options": {}
       },
       "id": "34",
@@ -876,7 +864,6 @@
             }
           ]
         },
-        "includeOtherFields": false,
         "options": {}
       },
       "id": "35",
@@ -930,7 +917,6 @@
             }
           ]
         },
-        "includeOtherFields": false,
         "options": {}
       },
       "id": "36",
@@ -983,8 +969,7 @@
             "parents",
             "webViewLink"
           ]
-        },
-        "authentication": "oAuth2"
+        }
       },
       "id": "40",
       "name": "Search Folder Items (List)",
@@ -1063,8 +1048,7 @@
             "size",
             "webViewLink"
           ]
-        },
-        "authentication": "oAuth2"
+        }
       },
       "id": "18",
       "name": "Search Existing File",
@@ -1089,7 +1073,7 @@
         "options": {
           "clashHandling": {
             "values": {
-              "resolveClash": "preferInput1",
+              "resolveClash": "preferInput2",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
@@ -1117,7 +1101,7 @@
           },
           "conditions": [
             {
-              "leftValue": "={{ String($json.id || '').trim().length > 0 }}",
+              "leftValue": "={{ String($json.id || '').trim().length > 0 && String($json.mimeType || '') !== 'application/vnd.google-apps.folder' }}",
               "rightValue": "",
               "operator": {
                 "type": "boolean",
@@ -1154,8 +1138,7 @@
             "size",
             "webViewLink"
           ]
-        },
-        "authentication": "oAuth2"
+        }
       },
       "id": "21",
       "name": "Update Existing File",
@@ -1179,7 +1162,7 @@
         "options": {
           "clashHandling": {
             "values": {
-              "resolveClash": "preferInput1",
+              "resolveClash": "preferInput2",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
@@ -1244,7 +1227,6 @@
             }
           ]
         },
-        "includeOtherFields": false,
         "options": {}
       },
       "id": "23",
@@ -1268,8 +1250,7 @@
         "folderId": "={{ $json.targetFolderId || 'root' }}",
         "options": {
           "simplifyOutput": false
-        },
-        "authentication": "oAuth2"
+        }
       },
       "id": "24",
       "name": "Upload New File",
@@ -1293,7 +1274,7 @@
         "options": {
           "clashHandling": {
             "values": {
-              "resolveClash": "preferInput1",
+              "resolveClash": "preferInput2",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
@@ -1358,7 +1339,6 @@
             }
           ]
         },
-        "includeOtherFields": false,
         "options": {}
       },
       "id": "26",
@@ -1412,7 +1392,6 @@
             }
           ]
         },
-        "includeOtherFields": false,
         "options": {}
       },
       "id": "27",
@@ -1442,7 +1421,7 @@
     },
     {
       "parameters": {
-        "content": "## STAGE 1: RESOLVE TARGET FOLDER\n\nNodes:\n- Normalize Request\n- If Has Segment\n- Search Current Folder / Create Missing Folder\n- Execute Recursive Workflow\n- Finalize Target Context\n\nGoal: convert `rootFolderId + folderPath` into stable folder context (`folderId`, `folderUrl`) before action routing.\n\nNote: no direct folder-id override input. If you already have exact folder ID, pass it via `rootFolderId` and set `folderPath` to empty string.",
+        "content": "## STAGE 1: RESOLVE TARGET FOLDER\n\nNodes:\n- Normalize Request\n- If Has Segment\n- Search Current Folder / Create Missing Folder\n- Execute Recursive Workflow\n- Finalize Target Context\n\nGoal: convert `rootFolderId + folderPath` into stable folder context (`folderId`, `folderUrl`) before action routing.\n\nNote: no direct folder-id override input. If you already have exact folder ID, pass it via `rootFolderId` and set `folderPath` to empty string.\n\nStage safety:\n- `Merge Created Folder Context` only receives data from the active create branch to avoid empty terminal outputs.",
         "height": 460,
         "width": 720,
         "color": 5
@@ -1474,7 +1453,7 @@
     },
     {
       "parameters": {
-        "content": "## BRANCH: GET / DELETE\n\nFlow:\n- Search Existing File (Get/Delete)\n- If File Exists (Get/Delete)\n- If Delete Action\n- Delete Existing File OR Build Get File Result\n- Build Delete Result / Build File Not Found Result\n\nPurpose: non-upload read/delete operations with explicit not-found handling.",
+        "content": "## BRANCH: GET / DELETE\n\nFlow:\n- Search Existing File (Get/Delete)\n- If File Exists (Get/Delete)\n- If Delete Action\n- Delete Existing File OR Build Get File Result\n- Build Delete Result / Build File Not Found Result\n\nPurpose: non-upload read/delete operations with explicit not-found handling.\n\nFolder safety:\n- File existence checks ignore folder mimeType to prevent accidental folder delete/get.",
         "height": 360,
         "width": 620,
         "color": 4
@@ -1506,7 +1485,7 @@
     },
     {
       "parameters": {
-        "content": "## BRANCH: UPSERT (UPLOAD/UPDATE)\n\nFlow:\n- If Has File Binary\n- Search Existing File\n- If File Exists\n- Update Existing File OR Upload New File\n- Build Updated Result / Build Created Result\n- Build Missing File Result\n\nPurpose: idempotent file write path with clear outcomes (`updated` vs `created`).",
+        "content": "## BRANCH: UPSERT (UPLOAD/UPDATE)\n\nFlow:\n- If Has File Binary\n- Search Existing File\n- If File Exists\n- Update Existing File OR Upload New File\n- Build Updated Result / Build Created Result\n- Build Missing File Result\n\nPurpose: idempotent file write path with clear outcomes (`updated` vs `created`).\n\nBranch safety:\n- Merge context nodes are fed from active `If` branches only, so inactive paths do not emit empty terminal outputs.\n- ID precedence: file-search/update/upload outputs override folder-context IDs in merge nodes.",
         "height": 360,
         "width": 640,
         "color": 2
@@ -1585,11 +1564,6 @@
             "node": "If Folder Exists",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Merge Created Folder Context",
-            "type": "main",
-            "index": 0
           }
         ]
       ]
@@ -1617,6 +1591,11 @@
         [
           {
             "node": "Create Missing Folder",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Created Folder Context",
             "type": "main",
             "index": 0
           }
@@ -1796,11 +1775,6 @@
             "node": "If File Exists (Get/Delete)",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Merge Deleted File Context",
-            "type": "main",
-            "index": 0
           }
         ]
       ]
@@ -1828,6 +1802,11 @@
         [
           {
             "node": "Delete Existing File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Deleted File Context",
             "type": "main",
             "index": 0
           }
@@ -1904,16 +1883,6 @@
             "node": "If File Exists",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Merge Updated File Context",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge Uploaded File Context",
-            "type": "main",
-            "index": 0
           }
         ]
       ]
@@ -1925,11 +1894,21 @@
             "node": "Update Existing File",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Merge Updated File Context",
+            "type": "main",
+            "index": 0
           }
         ],
         [
           {
             "node": "Upload New File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Uploaded File Context",
             "type": "main",
             "index": 0
           }

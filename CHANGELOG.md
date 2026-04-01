@@ -4,6 +4,38 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 
 ## 2026-04-01
 
+- Fix bug nham `folderId` thanh `fileId` trong `GG Drive Manager` khi `folderPath` co gia tri:
+  - Trieu chung: nhanh `upsert` co the coi folder target la file ton tai, dan toi update/doi ten folder thanh `Manifest.json`.
+  - Nguyen nhan: merge context cua nhanh file-search uu tien `Input 1` (folder context), trong khi query file co the tra item rong (`id=null`) khi chua co file.
+  - `workflows/google/gg-drive-manager.workflow.json`:
+    - Chuyen `resolveClash=preferInput2` cho cac merge file context:
+      - `Merge File Search Context`
+      - `Merge File Search Context (Get/Delete)`
+      - `Merge Updated File Context`
+      - `Merge Uploaded File Context`
+    - Giu `Merge Deleted File Context` la `preferInput1` de bao toan `fileId` da tim thay truoc khi delete.
+    - Them guard cho `If File Exists` + `If File Exists (Get/Delete)` de loai tru mimeType folder.
+    - Cap nhat sticky notes branch safety (`UPSERT`, `GET/DELETE`).
+  - Da import lai `GG Drive Manager` (`QpcIxaHiYXDqjw4p`).
+
+- Fix tiep case `GG Drive Manager` van tra `0 output` do nhanh resolve-folder:
+  - Trieu chung: subworkflow co `Build Updated Result=1 item` nhung parent van nhan `[]`; `lastNodeExecuted` la `Merge Created Folder Context`.
+  - Nguyen nhan: `Merge Folder Search Context` van feed truc tiep sang `Merge Created Folder Context`, tao nhanh rong (0 item) du branch create folder khong chay.
+  - `workflows/google/gg-drive-manager.workflow.json`:
+    - Bo feed truc tiep `Merge Folder Search Context -> Merge Created Folder Context`.
+    - Them feed `If Can Create Missing Folder (true) -> Merge Created Folder Context` de chi chay khi branch create duoc chon.
+    - Dat `Merge Created Folder Context` `resolveClash=preferInput2` de uu tien du lieu folder moi tao.
+    - Cap nhat sticky note `NOTE::GGDRIVE::STAGE_FOLDER_RESOLUTION` voi ghi chu stage safety.
+  - Da import lai `GG Drive Manager` (`QpcIxaHiYXDqjw4p`).
+
+- Fix `GG Drive Manager` tra output rong khi goi qua `Execute Workflow`:
+  - Nguyen nhan: o nhanh `upsert/get/delete`, cac node `Merge ... Context` cua nhanh khong duoc chon van bi trigger voi `0 item`; node rong nay tro thanh `lastNodeExecuted`, nen parent workflow nhan `[]` du subworkflow da build result thanh cong.
+  - `workflows/google/gg-drive-manager.workflow.json`:
+    - Doi wiring de `Merge Updated File Context` / `Merge Uploaded File Context` chi nhan input context tu nhanh active cua `If File Exists`.
+    - Doi wiring de `Merge Deleted File Context` chi nhan input context tu nhanh `true` cua `If Delete Action`.
+    - Cap nhat sticky note `NOTE::GGDRIVE::BRANCH_UPSERT` bo sung ghi chu branch-safety.
+  - Da import lai `GG Drive Manager` (`QpcIxaHiYXDqjw4p`).
+
 - Simplify contract cua `GG Sheet Manager` va bo naming ad-hoc:
   - `workflows/google/gg-sheet-manager.workflow.json`:
     - Chuan hoa input camelCase: `action`, `spreadsheetId`, `spreadsheetName`, `sheetName`, `folderId`, `rows`, `range`, `valueInputOption`.
@@ -683,3 +715,15 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 ## 2026-04-01T12:45:49Z
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=11, changed=1, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Book Review AI Agent.
+
+## 2026-04-01T13:38:41Z
+- Workflow sync (UI -> JSON) processed 11 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=11, changed=1, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Book Review AI Agent.
+
+## 2026-04-01T14:09:51Z
+- Workflow sync (UI -> JSON) completed with no file, registry, or wrapper changes.
+- Run mode=apply, total=11, changed=0, unchanged=11, failed=0, missing_ui_folder=0, registry_changed=false, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+
+## 2026-04-01T14:54:27Z
+- Workflow sync (UI -> JSON) processed 11 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=11, changed=1, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: GG Drive Manager.
