@@ -1,15 +1,49 @@
 {
-  "name": "GG Drive Mananger",
+  "name": "GG Drive Manager",
   "nodes": [
     {
-      "parameters": {},
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "action",
+              "type": "string"
+            },
+            {
+              "name": "rootFolderId",
+              "type": "string"
+            },
+            {
+              "name": "folderPath",
+              "type": "string"
+            },
+            {
+              "name": "requestedFolderPath",
+              "type": "string"
+            },
+            {
+              "name": "targetFolderId",
+              "type": "string"
+            },
+            {
+              "name": "fileName",
+              "type": "string"
+            },
+            {
+              "name": "binaryFieldName",
+              "type": "string"
+            }
+          ]
+        }
+      },
       "id": "1",
       "name": "When Executed by Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         -1520,
-        472
+        480
       ]
     },
     {
@@ -45,7 +79,7 @@
       "typeVersion": 3.4,
       "position": [
         -1296,
-        472
+        480
       ]
     },
     {
@@ -58,7 +92,7 @@
       "typeVersion": 2,
       "position": [
         -1072,
-        472
+        480
       ]
     },
     {
@@ -91,7 +125,7 @@
       "typeVersion": 2.2,
       "position": [
         -848,
-        472
+        480
       ]
     },
     {
@@ -117,7 +151,7 @@
       "typeVersion": 3,
       "position": [
         -624,
-        472
+        480
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -181,7 +215,7 @@
       "typeVersion": 2.2,
       "position": [
         -176,
-        184
+        192
       ]
     },
     {
@@ -361,7 +395,7 @@
       "typeVersion": 3.2,
       "position": [
         496,
-        424
+        432
       ]
     },
     {
@@ -403,7 +437,7 @@
       "typeVersion": 3.4,
       "position": [
         720,
-        424
+        432
       ]
     },
     {
@@ -677,7 +711,7 @@
       "typeVersion": 3,
       "position": [
         1616,
-        664
+        672
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -741,7 +775,7 @@
       "typeVersion": 2.2,
       "position": [
         2064,
-        664
+        672
       ]
     },
     {
@@ -774,7 +808,7 @@
       "typeVersion": 2.2,
       "position": [
         2288,
-        568
+        576
       ]
     },
     {
@@ -789,7 +823,7 @@
       "typeVersion": 3,
       "position": [
         2512,
-        472
+        480
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -855,7 +889,7 @@
       "typeVersion": 3.4,
       "position": [
         2512,
-        664
+        672
       ]
     },
     {
@@ -957,7 +991,7 @@
       "typeVersion": 3.4,
       "position": [
         2288,
-        760
+        768
       ]
     },
     {
@@ -1009,7 +1043,7 @@
       "typeVersion": 3,
       "position": [
         1616,
-        856
+        864
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -1029,7 +1063,7 @@
       "typeVersion": 2,
       "position": [
         1840,
-        856
+        864
       ]
     },
     {
@@ -1062,7 +1096,7 @@
       "typeVersion": 2.2,
       "position": [
         1616,
-        104
+        112
       ]
     },
     {
@@ -1119,7 +1153,7 @@
       "typeVersion": 3.2,
       "position": [
         2064,
-        -8
+        -16
       ]
     },
     {
@@ -1152,7 +1186,7 @@
       "typeVersion": 2.2,
       "position": [
         2288,
-        -56
+        -64
       ]
     },
     {
@@ -1178,7 +1212,7 @@
       "typeVersion": 3,
       "position": [
         2512,
-        -152
+        -160
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -1303,7 +1337,7 @@
       "typeVersion": 3,
       "position": [
         2512,
-        88
+        96
       ],
       "credentials": {
         "googleDriveOAuth2Api": {

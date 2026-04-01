@@ -2,9 +2,17 @@
 
 Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automation scripts).
 
+## 2026-04-01
+
+- Governance update cho subworkflow trigger input schema:
+  - Them rule moi trong `AGENT_RULES_PROJECT.md` (muc 15) bat buoc `Execute Workflow Trigger` phai co schema input hop le (`inputSource=workflowInputs`, `workflowInputs.values[]` co `name` + `type`, khong de `[{}]`).
+  - Them playbook `Skill K` trong `RULES_AND_SKILLS.md` de chuan hoa quy trinh sync -> patch schema -> import lai cho cac workflow manager/media.
+  - Cap nhat `README.md` (muc quy tac import/update) de ghi ro convention trigger schema cho subworkflow.
+
 ## 2026-03-31
+
 - Them workflow reusable Google Drive manager:
-  - Tao template moi `workflows/shared/gg-drive-manager.workflow.json` (name: `GG Drive Mananger`).
+  - Tao template moi `workflows/shared/gg-drive-manager.workflow.json` (name: `GG Drive Manager`).
   - Input contract camelCase: `rootFolderId`, `folderPath`, `action`, `file` (binary), ho tro de quy theo `folderPath` nhieu cap.
   - Ho tro `action`: `upsert` (default, create/update file), `get`, `delete`, `list`.
   - Neu thieu `rootFolderId`, workflow mac dinh ve `root` (My Drive).
@@ -19,8 +27,8 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
   - Script all importer doi sang co che tu dong quet wrapper `import-*.sh` (bo qua `import-all-workflows.sh` va `import-workflow.sh`), uu tien thu tu `shared-notification-router` -> `gemini-demo` -> `openai-demo` -> `book-review`, sau do chay wrapper moi theo alphabet.
   - Cap nhat huong dan lenh + naming convention trong `README.md` va `scripts/README.md`.
 
-- Ap dung `GG Drive Mananger` vao `book-review` workflow:
-  - `workflows/book-review/book-review.workflow.json` doi 2 node luu file Drive (`review_readable.txt`, `review_manifest.json`) sang `Execute Workflow` goi workflow reusable `GG Drive Mananger`.
+- Ap dung `GG Drive Manager` vao `book-review` workflow:
+  - `workflows/book-review/book-review.workflow.json` doi 2 node luu file Drive (`review_readable.txt`, `review_manifest.json`) sang `Execute Workflow` goi workflow reusable `GG Drive Manager`.
   - Them nhom node moi cho moi file: `Prepare ... Upsert Request` -> `Convert ... Text To File` -> `Execute Workflow` de dam bao du lieu binary hop le cho action `upsert`.
   - Them config `gg_drive_manager_workflow_path` trong `Set Config (Main/Worker)` de quan ly duong dan workflow dung chung.
   - `scripts/workflows/import/import-workflow.sh` bo sung env/arg `GG_DRIVE_MANAGER_WORKFLOW_PATH` va inject assignment `gg_drive_manager_workflow_path` (snake_case + camelCase).
@@ -33,10 +41,10 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
   - Routing media giu nguyen contract output folder (`image/video/tts`) nhung khong can tao subfolder truoc.
   - Da import lai workflow va verify checklist `book-review` pass `9/9`.
 
-- Bo sung `ensureFolder` cho `GG Drive Mananger` va ap dung vao `book-review`:
+- Bo sung `ensureFolder` cho `GG Drive Manager` va ap dung vao `book-review`:
   - `workflows/shared/gg-drive-manager.workflow.json`: them action `ensureFolder` trong `Switch Action` + node `Build Ensure Folder Result` (tra `folderId/folderUrl` ma khong can binary file).
-  - `workflows/book-review/book-review.workflow.json`: node `Google Drive Create Session Folder (Worker)` doi sang `Execute Workflow` goi `GG Drive Mananger` voi `action=ensureFolder` qua node moi `Prepare Session Folder Ensure Request (Worker)`.
-  - Da import lai `GG Drive Mananger` + `Book Review`; checklist automation van PASS `9/9`.
+  - `workflows/book-review/book-review.workflow.json`: node `Google Drive Create Session Folder (Worker)` doi sang `Execute Workflow` goi `GG Drive Manager` voi `action=ensureFolder` qua node moi `Prepare Session Folder Ensure Request (Worker)`.
+  - Da import lai `GG Drive Manager` + `Book Review`; checklist automation van PASS `9/9`.
 
 - Sync workflow moi `Book Review AI Agent` tu n8n UI:
   - Them registry entry: `Book Review AI Agent` -> `901WvOJHn6O2Hbze` -> `workflows/book-review/book-review-ai-agent.workflow.json`.
@@ -56,6 +64,7 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
   - Cap nhat docs `README.md` va `scripts/README.md`.
 
 ## 2026-03-30
+
 - Prompt maintainability refactor (master-style single source):
   - `book-review-master-prompt.txt` doi sang format co marker `STYLE KERNEL START ... STYLE KERNEL END`.
   - Prompt con (`scene-outline`, `scene-expand`, `metadata`, `qc`, `review-edit`) giu role/task rieng va dung placeholder `__BOOK_REVIEW_STYLE_KERNEL__`.
@@ -139,6 +148,7 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
   - Checklist automation pass `9/9`.
 
 ## Historical Entries Migrated from README Update Log (deduped)
+
 - 2026-03-24: Khoi tao README living doc + bo script bootstrap/verify/full-mode + plan.md. Ly do: trien khai setup n8n local + MCP + skills tu dau.
 - 2026-03-25: Them CLIProxyAPI OAuth stack (Gemini + Codex), script setup A-Z + workflow demo Gemini + import script. Ly do: dung auth flow thay provider API key va tao demo workflow su dung Gemini.
 - 2026-03-25: Them workflow demo OpenAI qua CLIProxyAPI + script import rieng, va setup script import ca Gemini/OpenAI. Ly do: can demo tuong tu cho luong OpenAI.
@@ -166,6 +176,7 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 - 2026-03-26: Fix workflow book-review: tra chat response truc tiep tu `Reviewer Orchestrator`, gom QC ve 1 nguon logic trong orchestrator (node AI QC giu pass-through), va sanitize `workflowPath` ve placeholder trong templates/sync script. Ly do: tranh mat metadata o response, tranh drift QC, va bo absolute path theo may local.
 
 ## 2026-03-29
+
 - Cleanup naming/runtime contract theo huong `proxy` thuần (khong giu backward compatibility):
   - Xoa wrapper scripts cu (`scripts/9router/setup-9router.sh`, `scripts/cliproxy/setup-cliproxy-oauth.sh`) va loai bo env aliases `ROUTER_*`/`CLIPROXY_*`.
   - Doi ten demo templates thanh `workflows/demo/gemini-proxy-demo.workflow.json` + `workflows/demo/openai-proxy-demo.workflow.json`; cap nhat wrappers import + registry.
@@ -262,6 +273,7 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
     - Cap nhat tooling/test docs theo flow moi: `run-book-review-full-e2e.sh` chuyen sang 2 buoc (`start -> media_continue`) va README/testing incidents dong bo mo ta.
 
 ## 2026-03-27
+
 - Them ghi chu moi truong agent trong `README.md`: neu shell khong co `node`/`npm` thi uu tien patch bang `jq` + `apply_patch`, va check `command -v node` truoc khi chay checklist `.mjs`.
 - Chuan hoa ghi chu moi truong agent: truong hop `nvm` khien shell agent khong thay `node`, can verify/chay checklist qua shell interactive `zsh -lic` truoc khi ket luan thieu Node.
 - Refactor media branch book-review sang topology node-based: `Process Media Assets (chunk+gate) -> Generate Image Assets + Generate TTS Assets (parallel) -> Merge Media Results -> Finalize Media Assets -> Build Notify Payload`.
@@ -343,6 +355,7 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 - Cap nhat rules project: bo sung policy clean UI grouping + routing nodes phai giu full data.
 
 ## 2026-03-28
+
 - Tinh chinh workflow `Book Review` theo huong node-first + Telegram progress UX:
   - Bo node `Return Chat Response` khoi luong chinh (khong con chat-response branch).
   - Them node `Finalize Step Progress Messages (Worker)` de xoa cac message tien trinh Telegram sau khi step/media hoan tat.
@@ -384,58 +397,70 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 - Checklist automation cap nhat theo topology moi (`Persist -> Route Final Persist -> Build Notify`) va pass `17/17`.
 
 ## 2026-03-25T03:13:45Z
+
 - Workflow sync (UI -> JSON) completed with no file changes.
 - Run mode=apply, total=3, changed=0, unchanged=3, failed=0.
 
 ## 2026-03-25T05:00:00Z
+
 - Added shared workflow `Shared Desktop Notify` for OS-level notifications via `Execute Command`.
 - Updated demo workflows (Gemini/OpenAI/Book Review) to always call shared notify workflow with dynamic success/failed payloads.
 - Updated import scripts to auto-bind `Notify via Shared Workflow.workflowPath` (source `localFile`) at import time.
 - Added project rule requiring each workflow to include shared notify at the end.
 
 ## 2026-03-25T05:15:00Z
+
 - Renamed import wrapper to `scripts/workflows/import/import-shared-desktop-notify-workflow.sh` for naming consistency.
 - Extended `Shared Desktop Notify` to send Telegram notifications in parallel with desktop notifications.
 - Telegram branch is optional and auto-skips when `TELEGRAM_BOT_TOKEN` or `TELEGRAM_CHAT_ID` is missing.
 
 ## 2026-03-25T05:40:00Z
+
 - Refactored shared notify workflow to `Shared Notification Router` with multi-channel routing by `notify_targets`.
 - Added Google Chat support via webhook (`GGCHAT_WEBHOOK_URL`) and kept Telegram/Desktop support.
 - Added `Set Notify Targets` node in each main workflow to control destinations per workflow without editing router logic.
 - Renamed canonical import wrapper to `scripts/workflows/import/import-shared-notification-router-workflow.sh` and kept old script names as deprecated aliases.
 
 ## 2026-03-25T05:55:00Z
+
 - Removed deprecated import aliases `import-shared-desktop-notify-workflow.sh` and `import-shared-notify-workflow.sh`.
 - Updated rules/docs to reference only `Shared Notification Router` and canonical import script.
 - Deleted legacy workflow `Shared Desktop Notify` from n8n (`z3jShmBEcC7nQ246`).
 
 ## 2026-03-25T17:18:23Z
+
 - Workflow sync (UI -> JSON) updated 1 workflow(s).
 - Changed: Book Review Gemini via CLIProxyAPI. Run mode=apply, total=1, unchanged=0, failed=0.
 
 ## 2026-03-25T18:43:49Z
+
 - Workflow sync (UI -> JSON) completed with no file changes.
 - Run mode=apply, total=1, changed=0, unchanged=1, failed=0.
 
 ## 2026-03-26T00:00:00Z
+
 - Added a sub-agent delegation playbook for feature work in `RULES_AND_SKILLS.md` (Skill H).
 - Documented the recommended split of `explorer` / `worker` (script) / `worker` (test) and when not to parallelize around shared workflow JSON.
 - Updated `README.md` to point agents to the new playbook so delegation strategy is visible from the main runbook.
 
 ## 2026-03-26
+
 - Simplified `book-review-gemini` topology by removing pass-through node `AI QC + Internal Scoring`; `Parse Review Sections` now connects directly to `Set Notify Targets`.
 - Updated automation checks to match new topology (`test-book-review-checklist.mjs`, `run-book-review-e2e.sh`) and enforced direct connection assertion.
 - Updated workflow documentation to reflect the 9-node flow.
 
 ## 2026-03-26T11:00:24Z
+
 - Workflow sync (UI -> JSON) completed with no file changes.
 - Run mode=apply, total=4, changed=0, unchanged=4, failed=0.
 
 ## 2026-03-26T11:01:14Z
+
 - Workflow sync (UI -> JSON) updated 1 workflow(s).
 - Changed: Book Review Gemini via CLIProxyAPI. Run mode=apply, total=4, unchanged=3, failed=0.
 
 ## 2026-03-26T13:17:20Z
+
 - Re-architected book-review reviewer flow from monolithic orchestrator to event-driven 3-workflow topology:
   - `Book Review Gemini via CLIProxyAPI` (main ACK async + session dispatch)
   - `Book Review Reviewer Router` (Telegram callback/message + scheduler timeout routing)
@@ -449,6 +474,7 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 - Updated `README.md` to document the new async contract and 3-workflow architecture.
 
 ## 2026-03-28T05:54:10Z
+
 - Refactor workflow naming + split architecture theo chuan moi:
   - `Book Review` (`workflows/book-review/book-review.workflow.json`)
   - `Text To Images` (`workflows/book-review/text-to-images.workflow.json`)
@@ -502,6 +528,7 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
   - Verify runtime (execution `1465`): `voice_folder_id` tach rieng voi `session_folder_id` va co URL folder `voice` dung.
 
 ## 2026-03-29
+
 - Migrate runtime tu CLI Proxy sang 9router:
   - Them script moi `scripts/9router/setup-9router.sh` (install/start/verify/import workflow).
   - Doi default env cua cac script `run/import/tests` sang `env.9router.local` + fallback tuong thich nguoc `env.cliproxy.local`.
@@ -516,53 +543,78 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
   - Cap nhat docs van hanh (`README.md`, `scripts/README.md`, `docs/testing-runtime-incidents.md`) theo naming `proxy`.
 
 ## 2026-03-31T12:28:45Z
+
 - Workflow sync (UI -> JSON) updated 1 workflow(s).
 - Changed: Book Review AI Agent. Run mode=apply, total=1, unchanged=0, failed=0.
 
 ## 2026-03-31T15:24:47Z
+
 - Workflow sync (UI -> JSON) updated 7 workflow(s).
-- Changed: Demo OpenAI via Proxy API, Text To Images, TTS, Book Review, Text To Videos VEO3, GG Drive Mananger, Book Review AI Agent. Run mode=apply, total=9, unchanged=2, failed=0.
+- Changed: Demo OpenAI via Proxy API, Text To Images, TTS, Book Review, Text To Videos VEO3, GG Drive Manager, Book Review AI Agent. Run mode=apply, total=9, unchanged=2, failed=0.
 
 ## 2026-03-31T15:24:58Z
+
 - Workflow sync (UI -> JSON) completed with no file changes.
 - Run mode=apply, total=9, changed=0, unchanged=9, failed=0.
 
 ## 2026-03-31T18:17:34Z
+
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=4, registry_new=1, registry_updated=0, conflicts=0, wrapper_new=5.
 - Run mode=apply, total=11, changed=4, unchanged=7, failed=0, registry_changed=true, wrapper_new=5. Changed workflows: Book Review, Book Review AI Agent, GG Sheet Manager, Test AI Agent Tools.
 
 ## 2026-03-31T18:22:26Z
+
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=1, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0.
 - Run mode=apply, total=11, changed=1, unchanged=10, failed=0, registry_changed=true, wrapper_new=0. Changed workflows: Test AI Agent Tools.
 
 ## 2026-03-31T18:27:41Z
+
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=4.
 - Run mode=apply, total=11, changed=0, unchanged=11, failed=0, registry_changed=false, wrapper_new=4.
 
 ## 2026-03-31T18:28:51Z
+
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=10, registry_new=10, registry_updated=0, conflicts=0, wrapper_new=9.
-- Run mode=apply, total=11, changed=10, unchanged=1, failed=0, registry_changed=true, wrapper_new=9. Changed workflows: TTS, Shared Notification Router, Book Review AI Agent, GG Sheet Manager, GG Drive Mananger, Test AI Agent Tools, Demo Gemini via Proxy API, Text To Videos VEO3, Text To Images, Demo OpenAI via Proxy API.
+- Run mode=apply, total=11, changed=10, unchanged=1, failed=0, registry_changed=true, wrapper_new=9. Changed workflows: TTS, Shared Notification Router, Book Review AI Agent, GG Sheet Manager, GG Drive Manager, Test AI Agent Tools, Demo Gemini via Proxy API, Text To Videos VEO3, Text To Images, Demo OpenAI via Proxy API.
 
 ## 2026-03-31T18:51:46Z
+
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=0, missing_ui_folder=0, registry_new=0, registry_updated=11, conflicts=0, wrapper_new=11, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=11, changed=0, unchanged=11, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=11, wrapper_updated=0, wrapper_pruned=0.
 
 ## 2026-03-31T19:01:40Z
+
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=11, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
-- Run mode=apply, total=11, changed=1, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: GG Drive Mananger.
+- Run mode=apply, total=11, changed=1, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: GG Drive Manager.
 
 ## 2026-03-31T19:04:43Z
+
 - Workflow sync (UI -> JSON) completed with no file, registry, or wrapper changes.
 - Run mode=apply, total=11, changed=0, unchanged=11, failed=0, missing_ui_folder=0, registry_changed=false, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 
 ## 2026-03-31T19:06:37Z
+
 - Workflow sync (UI -> JSON) completed with no file, registry, or wrapper changes.
 - Run mode=apply, total=11, changed=0, unchanged=11, failed=0, missing_ui_folder=0, registry_changed=false, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 
 ## 2026-03-31T19:37:05Z
+
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=11, changed=1, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Book Review AI Agent.
 
 ## 2026-04-01T02:30:43Z
+
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=5, missing_ui_folder=0, registry_new=0, registry_updated=5, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
-- Run mode=apply, total=11, changed=5, unchanged=6, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: TTS, Shared Notification Router, GG Sheet Manager, GG Drive Mananger, Text To Images.
+- Run mode=apply, total=11, changed=5, unchanged=6, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: TTS, Shared Notification Router, GG Sheet Manager, GG Drive Manager, Text To Images.
+
+## 2026-04-01T08:56:37Z
+- Workflow sync (UI -> JSON) processed 1 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=1, changed=1, unchanged=0, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: GG Drive Manager.
+
+## 2026-04-01T08:57:36Z
+- Workflow sync (UI -> JSON) processed 1 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=1, changed=1, unchanged=0, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: GG Sheet Manager.
+
+## 2026-04-01T09:01:18Z
+- Workflow sync (UI -> JSON) processed 1 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=1, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=1, changed=1, unchanged=0, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: GG Sheet Manager.

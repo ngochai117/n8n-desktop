@@ -3,27 +3,35 @@
 Muc tieu cua project: chay n8n local, dung MCP + skills de build workflow, va tich hop proxy runtime (hien tai la 9router) de goi Gemini/Codex qua OpenAI-compatible endpoint (khong dung provider API key truc tiep trong workflow JSON).
 
 ## Living Document Rule
+
 - Moi thay doi script, cau hinh, quy trinh van hanh: bat buoc cap nhat file nay.
 - Moi thay doi quan trong: ghi vao `CHANGELOG.md` de theo doi lich su.
 
 ## Git hygiene
+
 - Local-only files khong commit: `.mcp.json`, `env.*.local`, `.vendor/`, `.DS_Store`, editor temp files.
 - Dung `env.n8n.local.example` va `env.proxy.local.example` lam mau de tao env local tren tung may.
 - `workflow-registry.json`, scripts, workflows, docs va file `.example` la thanh phan cua repo va nen duoc version control.
 
 ## Agent Environment Note
+
 - Tren mot so may local, shell agent mac dinh khong load `nvm`, nen `command -v node` co the fail du Node.js van ton tai.
 - Truoc khi ket luan thieu Node, luon verify bang shell interactive:
+
 ```bash
 zsh -lic 'command -v node && node -v && npm -v'
 ```
+
 - Khi chay script test `.mjs`, uu tien mode interactive:
+
 ```bash
 zsh -lic 'bash scripts/workflows/tests/test-book-review-checklist.sh'
 ```
+
 - Chi fallback sang patch `jq` + `apply_patch` neu ca shell interactive van khong tim thay `node`.
 
 ## Sub-agent playbook
+
 - Roster chuan:
   - `Conductor` (main owner)
   - `Planner` (PM)
@@ -32,59 +40,79 @@ zsh -lic 'bash scripts/workflows/tests/test-book-review-checklist.sh'
   - `Runner` (ops/e2e)
   - `Gatekeeper` (QC)
 - So do phoi hop nhanh:
+
 ```text
 Conductor -> Planner -> (FlowBuilder + Builder) -> Runner -> Gatekeeper -> Conductor -> User
                                               (fail) <--------------------/
 ```
+
 - Governance chi tiet + gate `G0..G4`: `AGENT_RULES_GLOBAL.md` (muc 6).
 - Skill pack thuc thi: `RULES_AND_SKILLS.md` (Skill H).
 
 ## Quick Start
+
 1. Chay n8n local:
+
 ```bash
 bash scripts/run/run-n8n.sh
 ```
+
 2. Chay n8n bang Docker (tach rieng):
+
 ```bash
 bash scripts/run/run-n8n-docker.sh
 ```
+
 3. Chay Cloudflared tunnel (qua Docker):
+
 ```bash
 bash scripts/run/run-cloudflared-tunnel.sh <your-token>
 ```
+
 4. Mo UI:
+
 ```text
 http://localhost:5678
 ```
+
 5. Verify local stack:
+
 ```bash
 bash scripts/bootstrap/verify-local.sh
 ```
 
 ### Script n8n local
+
 - Script nay giu dung flow gon: load env -> chay `n8n start`.
 - Co the truyen tham so n8n truc tiep:
+
 ```bash
 bash scripts/run/run-n8n.sh --tunnel
 ```
 
 ### Script n8n docker
+
 - Script nay chi chay 1 lenh docker n8n local (khong gom flow build/deploy).
 - Dung truc tiep:
+
 ```bash
 bash scripts/run/run-n8n-docker.sh
 ```
 
 ### Script cloudflared
+
 - Dung dung command cloudflared qua docker nhu ban dang dung:
+
 ```bash
 bash scripts/run/run-cloudflared-tunnel.sh <token>
 ```
+
 - Neu da dat `CLOUDFLARED_TUNNEL_TOKEN` trong `env.n8n.local` thi khong can truyen token tren command line.
 
 ## n8n API setup (cho MCP)
+
 1. Tao API key trong n8n UI:
-`Settings -> n8n API -> Create an API key`
+   `Settings -> n8n API -> Create an API key`
 2. Dien vao `env.n8n.local`:
    - `N8N_API_URL`
    - `N8N_API_KEY`
@@ -92,14 +120,18 @@ bash scripts/run/run-cloudflared-tunnel.sh <token>
    - `N8N_EDITOR_BASE_URL` (URL mo UI editor; co the trung domain voi `WEBHOOK_URL`, va co the dung `http` neu ban truy cap local qua Cloudflare edge)
    - `CLOUDFLARED_TUNNEL_TOKEN` (optional; dung cho script `run-cloudflared-tunnel.sh`)
 3. Bat full MCP mode:
+
 ```bash
 bash scripts/bootstrap/enable-full-mcp.sh
 bash scripts/bootstrap/verify-local.sh
 ```
 
 ## Proxy local setup (Gemini + Codex, runtime hien tai: 9router)
+
 ### Env contract
+
 Su dung file `env.proxy.local` (neu chua co, script se tu tao):
+
 - `PROXY_BASE_URL` (mac dinh: `http://127.0.0.1:20128`)
 - `PROXY_API_KEY` (API key copy tu Dashboard cua 9router)
 - `TELEGRAM_BOT_TOKEN` (optional; dung cho workflow notify Telegram)
@@ -119,10 +151,13 @@ Su dung file `env.proxy.local` (neu chua co, script se tu tao):
 Mau file: `env.proxy.local.example`
 
 ### One-command setup
+
 ```bash
 bash scripts/proxy/setup-proxy.sh
 ```
+
 Script se:
+
 - Kiem tra `curl`, `jq`
 - Cai `9router` qua npm global neu chua co
 - Start 9router local (background) neu chua chay
@@ -130,6 +165,7 @@ Script se:
 - Tu dong import workflow demo Gemini + OpenAI vao n8n (neu co `env.n8n.local`)
 
 ### Optional flags
+
 ```bash
 bash scripts/proxy/setup-proxy.sh --skip-install
 bash scripts/proxy/setup-proxy.sh --skip-start
@@ -139,14 +175,18 @@ bash scripts/proxy/setup-proxy.sh --env-file /path/to/env.file
 ```
 
 ### Dashboard + API key
+
 Dashboard:
+
 ```text
 http://127.0.0.1:20128/dashboard
 ```
+
 - Vao tab providers de ket noi account/provider.
 - Copy API key trong dashboard roi dien vao `PROXY_API_KEY` trong `env.proxy.local`.
 
 Model duoc cau hinh tap trung trong `env.proxy.local`:
+
 - `CONTENT_MODEL` (Book Review content + OpenAI demo)
 - `FALLBACK_MODEL` (fallback khi content model gap capacity)
 - `QC_MODEL` (model cho luong QC)
@@ -154,25 +194,30 @@ Model duoc cau hinh tap trung trong `env.proxy.local`:
 - `IMAGE_MODEL` (model tao anh)
 
 ## Xem model nhanh (command line)
+
 Liet ke toan bo model:
+
 ```bash
 source env.proxy.local
 curl -sS -H "Authorization: Bearer $PROXY_API_KEY" "$PROXY_BASE_URL/v1/models" | jq -r '.data[].id' | sort
 ```
 
 Chi xem model Gemini:
+
 ```bash
 source env.proxy.local
 curl -sS -H "Authorization: Bearer $PROXY_API_KEY" "$PROXY_BASE_URL/v1/models" | jq -r '.data[].id' | rg '^gemini' | sort
 ```
 
 Chi xem model OpenAI:
+
 ```bash
 source env.proxy.local
 curl -sS -H "Authorization: Bearer $PROXY_API_KEY" "$PROXY_BASE_URL/v1/models" | jq -r '.data[].id' | rg '^(cx/)?gpt' | sort
 ```
 
 Fetch model moi nhat + goi y model moi nhat (khong vao menu):
+
 ```bash
 source env.proxy.local
 curl -sS -H "Authorization: Bearer $PROXY_API_KEY" "$PROXY_BASE_URL/v1/models" \
@@ -189,7 +234,9 @@ curl -sS -H "Authorization: Bearer $PROXY_API_KEY" "$PROXY_BASE_URL/v1/models" \
 ```
 
 ## Workflow demo Gemini + OpenAI + Book Review Chat
+
 Template workflows:
+
 - `workflows/shared/shared-notification-router.workflow.json`
 - `workflows/shared/gg-drive-manager.workflow.json`
 - `workflows/demo/gemini-proxy-demo.workflow.json`
@@ -201,6 +248,7 @@ Template workflows:
 - `workflows/book-review/tts.workflow.json`
 
 Workflow folder structure:
+
 ```text
 workflows/
   book-review/
@@ -223,7 +271,8 @@ workflows/
     shared-notification-router.workflow.json
 ```
 
-`GG Drive Mananger` reusable workflow:
+`GG Drive Manager` reusable workflow:
+
 - Input chinh: `rootFolderId`, `folderPath`, `action`, `file` (binary)
 - Input them: `fileName` (optional), `binaryFieldName` (optional)
 - Neu khong truyen `rootFolderId` thi workflow tu mac dinh `root` (My Drive).
@@ -233,6 +282,7 @@ workflows/
 - Output co san `folderId`, `folderUrl`, `fileId`, `fileUrl`
 
 Pipeline:
+
 - `Manual Trigger`
 - `Set Config`
 - `HTTP Request` -> `POST {PROXY_BASE_URL}/v1/chat/completions`
@@ -243,6 +293,7 @@ Pipeline:
 - `Shared Notification Router` route notify theo `notify_targets`, ho tro Telegram + Google Chat
 
 Book review chat pipeline:
+
 - Kien truc tach thanh 3 workflow:
   - `book-review.workflow.json` (main): scene-outline -> scene-manifest -> reviewer gate -> media orchestration.
   - `text-to-images.workflow.json`: workflow reusable tao anh.
@@ -258,7 +309,7 @@ Book review chat pipeline:
 - Main output song song:
   - `review_manifest` (JSON source-of-truth)
   - `review_readable` (ban doc cho reviewer)
-  - persist file Drive: `review_readable.txt` + `review_manifest.json` (goi workflow reusable `GG Drive Mananger` theo `action=upsert`).
+  - persist file Drive: `review_readable.txt` + `review_manifest.json` (goi workflow reusable `GG Drive Manager` theo `action=upsert`).
 - Callback data router su dung format ngan <=64 bytes: `brv:media:c:<token>` (Tao Media), `brv:media:s:<token>` (Dung).
 - Khong con nhanh scheduler timeout; router xu ly truc tiep callback/message event.
 - Notify hub cho workflow review sach da chuan hoa theo pattern:
@@ -302,6 +353,7 @@ Book review chat pipeline:
 - Workflow hop nhat ket thuc moi nhanh bang notify hub: `Build Notify Payload (Worker) -> Notify via Shared Workflow (Main)`; payload worker mac dinh `notify_targets=none` de tranh spam `n8n INFO`.
 
 Quy tac import/update:
+
 - Script import da la **UPSERT**:
   - Co workflow ID trong `workflow-registry.json` (match theo `name` hoac `template`) -> `PUT` update theo ID
   - Neu ID dang tro vao workflow da `archived`/khong con ton tai -> bo qua ID cu
@@ -309,6 +361,7 @@ Quy tac import/update:
   - Khong tim thay -> `POST` tao moi
 
 Sync tu UI ve JSON template (khuyen nghi truoc khi nho AI sua workflow):
+
 ```bash
 # Preview thay doi, khong ghi file (mac dinh sync ALL workflow non-archived tren n8n UI)
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh
@@ -332,6 +385,7 @@ bash scripts/workflows/sync/sync-workflows-from-n8n.sh --allow-folder-fallback -
 # Apply nhung khong ghi changelog
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply --no-log
 ```
+
 - Script se sanitize truong nhay cam (`proxy_base_url`, `proxy_api_key`, `n8n_api_url`, `n8n_api_key`, `image_api_key`, `gdrive_root_folder_id`, `gdrive_credential_name`) va workflow placeholders (`Notify via Shared Workflow`, `text_to_images_workflow_id`, `text_to_videos_workflow_id`, `tts_workflow_id`, `gg_drive_manager_workflow_path`, `gg_sheet_manager_workflow_path`) truoc khi ghi file.
 - Script auto upsert `workflow-registry.json`, tu tao `template` path cho workflow moi, va tu tao wrapper import `scripts/workflows/import/import-*.sh` neu workflow chua co wrapper.
 - Strict folder mode mac dinh: workflow moi bat buoc co folder metadata tu n8n UI API; neu thieu thi script fail va KHONG fallback.
@@ -341,8 +395,13 @@ bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply --no-log
 - Co che dedupe wrapper: sync se uu tien giu 1 wrapper hop le va prune wrapper trung theo cung `workflow id` hoac cung `template` (khac ten file) de tranh sinh file doi sau khi move folder/doi template.
 - `workflow-registry.json` nen luu `template` dang duong dan tuong doi (vi du: `workflows/book-review/book-review.workflow.json`) de tranh vo path khi doi ten folder project.
 - Khi chay `--apply`, script se auto append log vao `CHANGELOG.md` (tru khi dung `--no-log`).
+- Quy uoc trigger cho subworkflow (bat buoc):
+  - Node `When Executed by Another Workflow` phai dung `typeVersion=1.1`, `inputSource=workflowInputs`.
+  - `workflowInputs.values` khong duoc de rong dang `[{}]`; moi item phai co day du `name` + `type`.
+  - Neu sync tu UI lam schema reset/rong, can patch lai schema theo contract input thuc te va import lai workflow wrapper truoc khi test caller flow.
 
 Import thu cong neu can:
+
 ```bash
 bash scripts/workflows/import/import-workflow.sh
 bash scripts/workflows/import/import-all-workflows.sh
@@ -367,45 +426,53 @@ bash scripts/workflows/import/import-book-review-workflow.sh \
   workflows/book-review/prompts/book-review-metadata-prompt.txt \
   workflows/book-review/prompts/book-review-qc-prompt.txt \
   workflows/book-review/prompts/book-review-review-edit-prompt.txt
-# optional override workflow path for GG Drive Mananger:
+# optional override workflow path for GG Drive Manager:
 # GG_DRIVE_MANAGER_WORKFLOW_PATH=/abs/path/to/workflows/shared/gg-drive-manager.workflow.json \
 #   bash scripts/workflows/import/import-book-review-workflow.sh
 # optional override workflow path for GG Sheet Manager:
 # GG_SHEET_MANAGER_WORKFLOW_PATH=/abs/path/to/workflows/shared/gg-sheet-manager.workflow.json \
 #   bash scripts/workflows/import/import-book-review-workflow.sh
 ```
+
 - `import-all-workflows.sh` tu dong quet tat ca wrapper `scripts/workflows/import/import-*.sh` (bo qua `import-all-workflows.sh` va `import-workflow.sh`).
 - De workflow moi tu dong duoc gom vao lenh all, chi can them wrapper theo naming convention `import-*.sh`.
 
 Automation checklist test (book review workflow):
+
 ```bash
 bash scripts/workflows/tests/test-book-review-checklist.sh
 ```
+
 - Chay checklist topology + contract cho workflow chinh (`book-review`) va subworkflow media (`text-to-images`, `tts`), bao gom regression generate/parse + media merge.
 - Neu bat mode video, import them `text-to-videos-veo3.workflow.json` de kiem tra contract video path.
 
 E2E nhanh cho book review (khong can tu tim webhook path):
+
 ```bash
 bash scripts/workflows/tests/run-book-review-e2e.sh
 # custom message:
 bash scripts/workflows/tests/run-book-review-e2e.sh env.n8n.local env.proxy.local "Sách Đắc Nhân Tâm của Dale Carnegie"
 ```
+
 - Script se tu patch `Telegram Trigger` sang webhook test (`book-review-e2e-codex/webhook`), simulate Telegram update (co secret header), in execution summary, sau do restore workflow ve template goc.
 - Script in them `payload_update_id` va mac dinh chi chap nhan execution co `update_id` khop payload vua gui (tranh bat nham execution cu).
 - Neu can fallback sang behavior cu khi debug nhanh: `BOOK_REVIEW_E2E_STRICT_UPDATE_ID=false bash scripts/workflows/tests/run-book-review-e2e.sh`.
 
 Full E2E cho book review (start -> media_continue + check session assets):
+
 ```bash
 bash scripts/workflows/tests/run-book-review-full-e2e.sh
 # custom message:
 bash scripts/workflows/tests/run-book-review-full-e2e.sh env.n8n.local env.proxy.local "Sách Đắc Nhân Tâm của Dale Carnegie"
 ```
+
 - Script se patch webhook test, goi 2 buoc reviewer event (`start -> media_continue`), verify `media_pipeline_status`, va check link session assets (folder, files, sheet), sau do auto restore workflow template.
 - Neu `session_sheet_url` rong va node `Create Session Sheet (Worker)` tra loi `>=400`, script se fail voi thong diep chi tiet tu Google API.
 - Dieu kien bat buoc de pass full E2E co session sheet: trong Google Cloud project cua OAuth credential phai bat `Google Sheets API` (`sheets.googleapis.com`).
 - Checklist preflight + cac issue runtime chung: `docs/testing-runtime-incidents.md`.
 
 Kiem tra chat luong data media tren execution gan nhat (khong doan):
+
 ```bash
 bash scripts/workflows/tests/check-book-review-media-output.sh
 # override execution id:
@@ -413,12 +480,14 @@ bash scripts/workflows/tests/check-book-review-media-output.sh env.n8n.local 744
 # chi lay execution final-success co media branch chay that:
 BOOK_REVIEW_MEDIA_FINAL_ONLY=true bash scripts/workflows/tests/check-book-review-media-output.sh
 ```
+
 - Script in ro `media_pipeline_status`, so luong `media_assets`, thong ke generated/failed/skipped, check schema contract, va top `error_reason`.
 - Neu `env.n8n.local` co `N8N_EDITOR_BASE_URL`, script se in `execution_ui_url` de mo thang execution tren UI.
 - `BOOK_REVIEW_MEDIA_FINAL_ONLY=true` chi lay execution final-success theo pipeline media moi (`Persist Media Debug` co checkpoint `prepared/finalized`); neu chua co execution phu hop script se bao loi de tranh nham voi execution cu.
 - Neu can gate nghiem ngat (co fail la fail script): `BOOK_REVIEW_MEDIA_STRICT=true bash scripts/workflows/tests/check-book-review-media-output.sh`.
 - Tren n8n UI, mo execution va click node `Persist Media Debug (Worker)` de xem `media_debug_phase`, `media_pipeline_status`, `media_debug_store_status`, `media_debug_store_table_name`, `media_debug_store_key`.
 - Kiem tra nhanh Data Table debug:
+
 ```bash
 bash scripts/workflows/tests/check-book-review-debug-table.sh
 # loc theo session token:
@@ -426,6 +495,7 @@ bash scripts/workflows/tests/check-book-review-debug-table.sh env.n8n.local book
 ```
 
 ## Cac file quan trong
+
 - `plan.md`: kien truc va roadmap
 - `AGENTS.md`: entrypoint chuan cho AI agents
 - `AGENT_RULES_GLOBAL.md`: rules dung chung (global)
@@ -441,7 +511,7 @@ bash scripts/workflows/tests/check-book-review-debug-table.sh env.n8n.local book
 - `scripts/proxy/setup-proxy.sh`: setup A-Z cho proxy local (runtime hien tai: 9router)
 - `scripts/workflows/import/import-workflow.sh`: core importer upsert workflow template vao n8n
 - `scripts/workflows/import/import-all-workflows.sh`: wrapper import toan bo workflow, tu dong quet `import-*.sh` (bo qua `import-all-workflows.sh` va `import-workflow.sh`), uu tien thu tu `shared` -> `gemini` -> `openai` -> `book-review`, sau do chay cac wrapper moi theo alphabet
-- `scripts/workflows/import/import-gg-drive-manager-workflow.sh`: import workflow reusable `GG Drive Mananger`
+- `scripts/workflows/import/import-gg-drive-manager-workflow.sh`: import workflow reusable `GG Drive Manager`
 - `scripts/workflows/import/import-gg-sheet-manager-workflow.sh`: import workflow reusable `GG Sheet Manager`
 - `scripts/workflows/import/import-gemini-demo-workflow.sh`: wrapper import workflow Gemini demo vao n8n
 - `scripts/workflows/import/import-shared-notification-router-workflow.sh`: import workflow notify router da kenh dung chung
@@ -472,5 +542,6 @@ bash scripts/workflows/tests/check-book-review-debug-table.sh env.n8n.local book
 - `workflows/book-review/prompts/book-review-review-edit-prompt.txt`: prompt revise ban review theo instruction reviewer
 
 ## Troubleshooting nhanh
+
 - Da chuyen toan bo troubleshooting/preflight/runtime incidents sang:
   - `docs/testing-runtime-incidents.md`

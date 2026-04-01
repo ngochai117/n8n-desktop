@@ -108,6 +108,31 @@ bash scripts/workflows/tests/test-book-review-checklist.sh
   - Update idempotent theo prefix `NOTE::<WORKFLOW_TAG>::` (khong duplicate note sau moi lan patch/import).
   - Sau khi cap nhat note, bat buoc import lai workflow wrapper tuong ung.
 
+### Skill K: Chuan hoa `Execute Workflow Trigger` input schema (bat buoc cho subworkflow)
+- Trigger:
+  - Dung khi sua/cap nhat workflow co node `When Executed by Another Workflow`.
+- Muc tieu:
+  - Caller `Execute Workflow` map duoc input fields truc tiep trong UI, khong phu thuoc schema rong.
+- Checklist:
+  - Sync workflow tu UI ve JSON template.
+  - Kiem tra trigger dang `typeVersion=1.1`, `inputSource=workflowInputs`.
+  - Kiem tra `workflowInputs.values` khong duoc la `[{}]`.
+  - Moi field bat buoc co `name` + `type` (`any|string|number|boolean|array|object`).
+  - Neu schema rong/reset, patch lai theo contract input duoc workflow su dung thuc te (Code/Set/HTTP params).
+  - Import lai wrapper workflow tuong ung de publish state moi.
+- Lenh goi y:
+```bash
+bash scripts/workflows/sync/sync-workflows-from-n8n.sh --name "GG Drive Manager" --apply
+bash scripts/workflows/sync/sync-workflows-from-n8n.sh --name "GG Sheet Manager" --apply
+bash scripts/workflows/sync/sync-workflows-from-n8n.sh --name "TTS" --apply
+bash scripts/workflows/sync/sync-workflows-from-n8n.sh --name "Text To Images" --apply
+
+bash scripts/workflows/import/import-gg-drive-manager-workflow.sh
+bash scripts/workflows/import/import-gg-sheet-manager-workflow.sh
+bash scripts/workflows/import/import-tts-workflow.sh
+bash scripts/workflows/import/import-text-to-images-workflow.sh
+```
+
 ## Files tham chieu nhanh
 - `AGENTS.md`
 - `AGENT_RULES_GLOBAL.md`

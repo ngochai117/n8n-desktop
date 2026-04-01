@@ -2,11 +2,165 @@
   "name": "TTS",
   "nodes": [
     {
-      "parameters": {},
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "request_id",
+              "type": "string"
+            },
+            {
+              "name": "input_mode",
+              "type": "string"
+            },
+            {
+              "name": "output_mode",
+              "type": "string"
+            },
+            {
+              "name": "drive_file_url",
+              "type": "string"
+            },
+            {
+              "name": "drive_output_folder_url",
+              "type": "string"
+            },
+            {
+              "name": "drive_output_folder_id",
+              "type": "string"
+            },
+            {
+              "name": "gdrive_root_folder_id",
+              "type": "string"
+            },
+            {
+              "name": "gdrive_root_folder_id_default",
+              "type": "string"
+            },
+            {
+              "name": "gdrive_credential_name",
+              "type": "string"
+            },
+            {
+              "name": "workflow",
+              "type": "string"
+            },
+            {
+              "name": "input_text",
+              "type": "string"
+            },
+            {
+              "name": "text",
+              "type": "string"
+            },
+            {
+              "name": "content",
+              "type": "string"
+            },
+            {
+              "name": "media_chunks",
+              "type": "array"
+            },
+            {
+              "name": "chunk_manifest",
+              "type": "array"
+            },
+            {
+              "name": "review_manifest",
+              "type": "object"
+            },
+            {
+              "name": "image_prompt_fixed",
+              "type": "string"
+            },
+            {
+              "name": "tts_api_base_url",
+              "type": "string"
+            },
+            {
+              "name": "tts_voice_id",
+              "type": "string"
+            },
+            {
+              "name": "tts_temperature",
+              "type": "number"
+            },
+            {
+              "name": "tts_top_k",
+              "type": "number"
+            },
+            {
+              "name": "tts_max_chars",
+              "type": "number"
+            },
+            {
+              "name": "tts_silence_p",
+              "type": "number"
+            },
+            {
+              "name": "tts_crossfade_p",
+              "type": "number"
+            },
+            {
+              "name": "tts_timeout_ms",
+              "type": "number"
+            },
+            {
+              "name": "tts_parallelism",
+              "type": "number"
+            },
+            {
+              "name": "tts_poll_interval_seconds",
+              "type": "number"
+            },
+            {
+              "name": "tts_poll_max_attempts",
+              "type": "number"
+            },
+            {
+              "name": "tts_status_url",
+              "type": "string"
+            },
+            {
+              "name": "tts_progress_message_id",
+              "type": "number"
+            },
+            {
+              "name": "tts_progress_started_at_ms",
+              "type": "number"
+            },
+            {
+              "name": "tts_progress_estimated_minutes",
+              "type": "number"
+            },
+            {
+              "name": "tts_progress_total_files",
+              "type": "number"
+            },
+            {
+              "name": "voice_binary_key",
+              "type": "string"
+            },
+            {
+              "name": "export_file_name",
+              "type": "string"
+            },
+            {
+              "name": "telegram_bot_token",
+              "type": "string"
+            },
+            {
+              "name": "telegram_chat_id",
+              "type": "string"
+            }
+          ]
+        }
+      },
       "id": "1",
       "name": "When Executed by Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         -976,
         384

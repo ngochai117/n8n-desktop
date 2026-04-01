@@ -2,17 +2,6 @@
   "name": "GG Sheet Manager",
   "nodes": [
     {
-      "parameters": {},
-      "id": "1",
-      "name": "When Executed by Another Workflow",
-      "type": "n8n-nodes-base.executeWorkflowTrigger",
-      "typeVersion": 1,
-      "position": [
-        -1120,
-        320
-      ]
-    },
-    {
       "parameters": {
         "assignments": {
           "assignments": [
@@ -32,7 +21,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -896,
+        -832,
         320
       ]
     },
@@ -46,7 +35,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -672,
+        -608,
         320
       ]
     },
@@ -79,7 +68,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -448,
+        -384,
         320
       ]
     },
@@ -116,7 +105,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -224,
+        -160,
         224
       ],
       "credentials": {
@@ -136,7 +125,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -224,
+        -160,
         416
       ]
     },
@@ -150,7 +139,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        0,
+        64,
         320
       ]
     },
@@ -183,7 +172,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        224,
+        288,
         320
       ]
     },
@@ -196,14 +185,15 @@
           "mode": "list",
           "value": "My Drive"
         },
-        "folderId": "={{ $json.targetFolderId }}"
+        "folderId": "={{ $json.targetFolderId }}",
+        "authentication": "oAuth2"
       },
       "id": "9",
       "name": "Move Sheet To Folder",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        448,
+        512,
         224
       ],
       "credentials": {
@@ -223,7 +213,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        672,
+        736,
         224
       ]
     },
@@ -237,7 +227,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        672,
+        736,
         416
       ]
     },
@@ -270,7 +260,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        896,
+        960,
         320
       ]
     },
@@ -307,7 +297,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        1120,
+        1184,
         224
       ],
       "credentials": {
@@ -327,7 +317,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1344,
+        1408,
         224
       ]
     },
@@ -341,7 +331,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1344,
+        1408,
         416
       ]
     },
@@ -355,7 +345,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1568,
+        1632,
         320
       ]
     },
@@ -454,20 +444,66 @@
         1600,
         -336
       ]
+    },
+    {
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "action",
+              "type": "string"
+            },
+            {
+              "name": "session_sheet_id",
+              "type": "string"
+            },
+            {
+              "name": "sheetId",
+              "type": "string"
+            },
+            {
+              "name": "session_sheet_name",
+              "type": "string"
+            },
+            {
+              "name": "sheetName",
+              "type": "string"
+            },
+            {
+              "name": "sheetTabName",
+              "type": "string"
+            },
+            {
+              "name": "session_folder_id",
+              "type": "string"
+            },
+            {
+              "name": "targetFolderId",
+              "type": "string"
+            },
+            {
+              "name": "session_sheet_rows",
+              "type": "array"
+            },
+            {
+              "name": "sheetRows",
+              "type": "array"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1056,
+        320
+      ],
+      "id": "9d8e4d45-0e54-41b9-9553-cd90e8a3467c",
+      "name": "When Executed by Another Workflow"
     }
   ],
   "connections": {
-    "When Executed by Another Workflow": {
-      "main": [
-        [
-          {
-            "node": "Set Config",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Set Config": {
       "main": [
         [
@@ -637,6 +673,17 @@
         [
           {
             "node": "Build Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Set Config",
             "type": "main",
             "index": 0
           }

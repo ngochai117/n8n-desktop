@@ -20,7 +20,7 @@ Muc tieu: tach script theo domain de de quan ly khi so luong workflow tang.
 - `scripts/workflows/import/`
   - `import-all-workflows.sh`: wrapper import toan bo workflow, tu dong quet `import-*.sh` (bo qua `import-all-workflows.sh` va `import-workflow.sh`), uu tien thu tu `shared` -> `gemini` -> `openai` -> `book-review`, sau do chay cac wrapper moi theo alphabet
   - `import-workflow.sh`: import/upsert generic workflow template (core importer)
-  - `import-gg-drive-manager-workflow.sh`: wrapper import workflow reusable `GG Drive Mananger`
+  - `import-gg-drive-manager-workflow.sh`: wrapper import workflow reusable `GG Drive Manager`
   - `import-gg-sheet-manager-workflow.sh`: wrapper import workflow reusable `GG Sheet Manager`
   - `import-gemini-demo-workflow.sh`: wrapper import workflow Gemini demo
   - `import-shared-notification-router-workflow.sh`: wrapper import workflow notify router da kenh dung chung

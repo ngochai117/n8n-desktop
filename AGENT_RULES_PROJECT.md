@@ -104,3 +104,11 @@ Project: `n8n-desktop`
   - update/replace theo prefix cung workflow tag,
   - tranh tao duplicate note moi lan sync/import.
 - Sau khi sua note trong workflow JSON, bat buoc chay lai import wrapper workflow tuong ung truoc khi ket luan xong task.
+
+## 15) Execute Workflow Trigger input schema policy (bat buoc)
+- Ap dung cho moi subworkflow dung node `When Executed by Another Workflow` (`n8n-nodes-base.executeWorkflowTrigger`, `typeVersion=1.1`).
+- Khong duoc de schema rong dang `workflowInputs.values: [{}]`.
+- Bat buoc khai bao `inputSource=workflowInputs` va moi input field phai co day du `name` + `type` (`any|string|number|boolean|array|object`).
+- Neu sync tu UI lam schema bi reset/rong, agent phai map lai input schema theo contract thuc te cua workflow (cac key duoc doc boi Code/Set/HTTP nodes), sau do import lai workflow.
+- Truoc khi ket luan task co lien quan subworkflow, bat buoc import lai wrapper tuong ung de publish state moi tren n8n (`GG Drive Manager`, `GG Sheet Manager`, `TTS`, `Text To Images` khi co lien quan).
+- Neu workflow dang ho tro nhieu contract goi, uu tien giu alias backward-compatible trong input schema (vi du `sheetId` + `session_sheet_id`).
