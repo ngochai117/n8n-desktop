@@ -462,7 +462,8 @@
       "parameters": {
         "operation": "download",
         "fileId": "={{ $json.drive_file_id }}",
-        "options": {}
+        "options": {},
+        "authentication": "oAuth2"
       },
       "id": "6",
       "name": "Google Drive Download Source",
@@ -625,7 +626,8 @@
           "value": "My Drive"
         },
         "folderId": "={{ $json.drive_output_folder_id || $json.gdrive_root_folder_id || \"\" }}",
-        "options": {}
+        "options": {},
+        "authentication": "oAuth2"
       },
       "id": "13",
       "name": "Google Drive Upload Export",

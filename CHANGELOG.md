@@ -618,3 +618,7 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 ## 2026-04-01T09:01:18Z
 - Workflow sync (UI -> JSON) processed 1 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=1, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=1, changed=1, unchanged=0, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: GG Sheet Manager.
+
+## 2026-04-01T09:16:56Z
+- Workflow sync (UI -> JSON) processed 11 workflow(s): changed=5, missing_ui_folder=0, registry_new=0, registry_updated=5, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=11, changed=5, unchanged=6, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: TTS, Book Review, Book Review AI Agent, GG Drive Manager, Text To Images.

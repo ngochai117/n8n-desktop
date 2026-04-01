@@ -143,7 +143,8 @@
             "parents",
             "webViewLink"
           ]
-        }
+        },
+        "authentication": "oAuth2"
       },
       "id": "5",
       "name": "Search Current Folder",
@@ -357,7 +358,8 @@
           "value": "My Drive"
         },
         "folderId": "={{ $json.baseFolderId || 'root' }}",
-        "options": {}
+        "options": {},
+        "authentication": "oAuth2"
       },
       "id": "9",
       "name": "Create Missing Folder",
@@ -703,7 +705,8 @@
             "size",
             "webViewLink"
           ]
-        }
+        },
+        "authentication": "oAuth2"
       },
       "id": "29",
       "name": "Search Existing File (Get/Delete)",
@@ -815,7 +818,8 @@
       "parameters": {
         "operation": "deleteFile",
         "fileId": "={{ $json.id }}",
-        "options": {}
+        "options": {},
+        "authentication": "oAuth2"
       },
       "id": "33",
       "name": "Delete Existing File",
@@ -1035,7 +1039,8 @@
             "parents",
             "webViewLink"
           ]
-        }
+        },
+        "authentication": "oAuth2"
       },
       "id": "40",
       "name": "Search Folder Items (List)",
@@ -1114,7 +1119,8 @@
             "size",
             "webViewLink"
           ]
-        }
+        },
+        "authentication": "oAuth2"
       },
       "id": "18",
       "name": "Search Existing File",
@@ -1204,7 +1210,8 @@
             "size",
             "webViewLink"
           ]
-        }
+        },
+        "authentication": "oAuth2"
       },
       "id": "21",
       "name": "Update Existing File",
@@ -1329,7 +1336,8 @@
         "folderId": "={{ $json.targetFolderId || 'root' }}",
         "options": {
           "simplifyOutput": false
-        }
+        },
+        "authentication": "oAuth2"
       },
       "id": "24",
       "name": "Upload New File",

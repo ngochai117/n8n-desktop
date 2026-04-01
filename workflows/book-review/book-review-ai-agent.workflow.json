@@ -14,7 +14,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
-      "position": [-1808, 1040],
+      "position": [
+        -1808,
+        1264
+      ],
       "id": "94bdf134-0a4e-46d3-a158-efe3c7361b30",
       "name": "OpenAI Chat Model",
       "credentials": {
@@ -37,7 +40,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
-      "position": [-1456, 1184],
+      "position": [
+        -1456,
+        1408
+      ],
       "id": "5dd9ac93-398b-46be-8933-1ef63b6ae740",
       "name": "OpenAI Chat Model3",
       "credentials": {
@@ -60,7 +66,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
-      "position": [-1104, 704],
+      "position": [
+        -1104,
+        928
+      ],
       "id": "d8166212-904b-4e6f-9497-92558c664892",
       "name": "OpenAI Chat Model4",
       "credentials": {
@@ -83,7 +92,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
-      "position": [-1104, 1504],
+      "position": [
+        -1104,
+        1728
+      ],
       "id": "0db38b4f-8aff-4d21-8539-7be3572a3b96",
       "name": "OpenAI Chat Model5",
       "credentials": {
@@ -104,7 +116,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
-      "position": [-1104, 1280],
+      "position": [
+        -1104,
+        1504
+      ],
       "id": "4de0adc6-2877-4954-81b4-cd25e0807235",
       "name": "QC AI Agent",
       "retryOnFail": true
@@ -120,7 +135,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
-      "position": [-1104, 480],
+      "position": [
+        -1104,
+        704
+      ],
       "id": "d4ad4afe-c71a-4f5d-ac74-e655f1f83af8",
       "name": "Metadata AI Agent",
       "retryOnFail": true
@@ -136,19 +154,27 @@
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
-      "position": [-1808, 816],
+      "position": [
+        -1808,
+        1040
+      ],
       "id": "3bf17144-d8d7-44a0-a352-dd195585b8ef",
       "name": "Outline AI Agent",
       "retryOnFail": true
     },
     {
       "parameters": {
-        "updates": ["message"],
+        "updates": [
+          "message"
+        ],
         "additionalFields": {}
       },
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
-      "position": [-2480, 912],
+      "position": [
+        -2480,
+        1136
+      ],
       "id": "945f4306-8695-48ae-893a-91925fe087cb",
       "name": "Telegram Trigger",
       "webhookId": "33f37b05-be97-457e-87dd-2f45f840f5b2",
@@ -166,7 +192,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.4,
-      "position": [-2480, 720],
+      "position": [
+        -2480,
+        944
+      ],
       "id": "190f4d23-2d0c-4ccf-aa02-0ecab8231409",
       "name": "When chat message received",
       "webhookId": "eff41ce5-03b3-456c-b32a-3f18639aee27",
@@ -176,7 +205,10 @@
       "parameters": {},
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [-1808, 1600],
+      "position": [
+        -1808,
+        2048
+      ],
       "id": "08f1f975-fdca-4ce0-9af8-aacffe45f1b2",
       "name": "Merge"
     },
@@ -187,7 +219,7 @@
           "value": "QpcIxaHiYXDqjw4p",
           "mode": "list",
           "cachedResultUrl": "/workflow/QpcIxaHiYXDqjw4p",
-          "cachedResultName": "GG Drive Manager"
+          "cachedResultName": "GG Drive Mananger"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
@@ -203,9 +235,12 @@
       },
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
-      "position": [-2032, 1600],
+      "position": [
+        -2032,
+        2048
+      ],
       "id": "2d3c5ee1-4209-4140-9498-6dbdd118adb5",
-      "name": "Call 'GG Drive Manager'"
+      "name": "Call 'GG Drive Mananger'"
     },
     {
       "parameters": {
@@ -242,7 +277,10 @@
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [-2256, 816],
+      "position": [
+        -2256,
+        1040
+      ],
       "id": "80d18528-92a0-4365-859a-480a30658ac7",
       "name": "Config Main"
     },
@@ -256,7 +294,10 @@
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [-2032, 816],
+      "position": [
+        -2032,
+        1040
+      ],
       "id": "f9ec94b5-f4b9-4476-ae38-e876d0bd5429",
       "name": "Send Creating Outline Message",
       "webhookId": "5d1921ba-59cc-4e43-b3a6-c2a30eee5a98",
@@ -270,11 +311,17 @@
     },
     {
       "parameters": {
-        "numberInputs": 3
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {}
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
-      "position": [-752, 960],
+      "position": [
+        -752,
+        1360
+      ],
       "id": "d341eeef-c3dc-4581-afa3-25395d7f6531",
       "name": "Merge Manifest"
     },
@@ -284,7 +331,10 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-2480, 1600],
+      "position": [
+        -2480,
+        2048
+      ],
       "id": "3b2a99a7-8143-43a4-8b00-2c12243a4625",
       "name": "Prepare Metadata File Link"
     },
@@ -296,7 +346,10 @@
       },
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
-      "position": [-2256, 1600],
+      "position": [
+        -2256,
+        2048
+      ],
       "id": "d3168df3-006f-463a-83dc-a5851417d311",
       "name": "Convert Manifest To File"
     },
@@ -310,7 +363,10 @@
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [-1040, 880],
+      "position": [
+        -1040,
+        1104
+      ],
       "id": "db626457-ea62-4ef1-a13e-21290c660b3a",
       "name": "Send Creating Metadata Message",
       "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
@@ -331,7 +387,10 @@
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [-1392, 656],
+      "position": [
+        -1392,
+        880
+      ],
       "id": "c37296a4-050c-4c12-bf2a-f34017203d7f",
       "name": "Send Creating Content Message",
       "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
@@ -352,7 +411,10 @@
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [-1584, 1600],
+      "position": [
+        -1584,
+        2048
+      ],
       "id": "7fab4b38-a287-4234-890c-b5526c30afc0",
       "name": "Send Require Review Metadata",
       "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
@@ -369,7 +431,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
-      "position": [-1680, 1040],
+      "position": [
+        -1680,
+        1264
+      ],
       "id": "c38027f9-eb12-4bac-85ce-c26433d0395d",
       "name": "Structured Outline Output Parser"
     },
@@ -379,7 +444,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
-      "position": [-1328, 1184],
+      "position": [
+        -1328,
+        1408
+      ],
       "id": "164722d2-496b-44ab-b98a-026859132277",
       "name": "Structured Expand Output Parser"
     },
@@ -389,7 +457,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
-      "position": [-976, 704],
+      "position": [
+        -976,
+        928
+      ],
       "id": "304378d5-3835-43db-808d-cfb36366db1b",
       "name": "Structured Metadata Output Parser"
     },
@@ -404,7 +475,10 @@
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
-      "position": [-1456, 960],
+      "position": [
+        -1456,
+        1184
+      ],
       "id": "99a2c42e-85b1-43c3-b056-af39d4e59bf0",
       "name": "Content AI Agent",
       "retryOnFail": true
@@ -415,9 +489,149 @@
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
-      "position": [-976, 1504],
+      "position": [
+        -976,
+        1728
+      ],
       "id": "619e23b4-2945-4ed1-a567-3f6377836719",
       "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "jsCode": "function normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nconst content = asObject($('Content AI Agent').first()?.json?.output);\nconst metadata = asObject($('Metadata AI Agent').first()?.json?.output);\nconst qc = asObject($('QC AI Agent').first()?.json?.output);\n\nconst manifest = {\n  ...content,\n  metadata: {\n    ...metadata,\n    title: normalizeText(metadata.title),\n    caption: normalizeText(metadata.caption),\n    thumbnail_text: normalizeText(metadata.thumbnail_text),\n    hashtags: asArray(metadata.hashtags),\n  },\n  scenes: asArray(content.scenes).map((s, i) => ({\n    ...asObject(s),\n    scene_id: String(s?.scene_id ?? `scene_${String(i + 1).padStart(2, '0')}`),\n    narration_text: normalizeText(s?.narration_text),\n  })),\n};\n\nreturn {\n  manifest,\n  manifestJSONString: JSON.stringify(manifest, null, 2),\n  qc,\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -528,
+        1376
+      ],
+      "id": "c2b300de-18cc-462e-992e-2b733b185e98",
+      "name": "Prepare Manifest"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "={\n  ...$('Content AI Agent').first().json,\n  metadata: $('Metadata AI Agent').first().json.output,\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -2480,
+        1824
+      ],
+      "id": "c462bc17-aa5b-4cf1-914f-a0ac75285225",
+      "name": "Convert Content Review to Text File"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "manifestJSONString",
+        "binaryPropertyName": "=file",
+        "options": {
+          "fileName": "Manifest.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -304,
+        1376
+      ],
+      "id": "4def4593-b0b9-402a-a113-3ef54e465324",
+      "name": "Convert Manifest to File"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "QpcIxaHiYXDqjw4p",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/QpcIxaHiYXDqjw4p",
+          "cachedResultName": "GG Drive Manager"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "rootFolderId",
+              "displayName": "rootFolderId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "folderPath",
+              "displayName": "folderPath",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "targetFolderId",
+              "displayName": "targetFolderId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "fileName",
+              "displayName": "fileName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "binaryFieldName",
+              "displayName": "binaryFieldName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -96,
+        1376
+      ],
+      "id": "2aaf9012-301a-479f-8519-a9b42b5587be",
+      "name": "GG Drive Manager Save Manifest"
     }
   ],
   "connections": {
@@ -525,7 +739,7 @@
         ]
       ]
     },
-    "Call 'GG Drive Manager'": {
+    "Call 'GG Drive Mananger'": {
       "main": [
         [
           {
@@ -559,7 +773,15 @@
       ]
     },
     "Merge Manifest": {
-      "main": [[]]
+      "main": [
+        [
+          {
+            "node": "Prepare Manifest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Prepare Metadata File Link": {
       "main": [
@@ -576,7 +798,7 @@
       "main": [
         [
           {
-            "node": "Call 'GG Drive Manager'",
+            "node": "Call 'GG Drive Mananger'",
             "type": "main",
             "index": 0
           }
@@ -662,6 +884,33 @@
             "index": 0
           }
         ]
+      ]
+    },
+    "Prepare Manifest": {
+      "main": [
+        [
+          {
+            "node": "Convert Manifest to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Manifest to File": {
+      "main": [
+        [
+          {
+            "node": "GG Drive Manager Save Manifest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GG Drive Manager Save Manifest": {
+      "main": [
+        []
       ]
     }
   },
