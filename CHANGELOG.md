@@ -30,6 +30,29 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
     - `GG Drive Manager` (`QpcIxaHiYXDqjw4p`)
     - `Book Review AI Agent` (`901WvOJHn6O2Hbze`)
 
+- Fix bug mat binary trong `GG Drive Manager` branch `upsert`:
+  - `workflows/google/gg-drive-manager.workflow.json` node `Normalize Request` truoc day `return` chi co `json`, lam roi binary sau khi da detect `hasBinaryFile=true`.
+  - Da cap nhat node nay de `return` kem `binary`, giu du lieu file cho cac node upload/update phia sau.
+  - Da import lai `GG Drive Manager` (`QpcIxaHiYXDqjw4p`).
+
+- Hardening nhanh `upsert` cho `GG Drive Manager` de tranh loi `Update Existing File` (Google Drive 502):
+  - `workflows/google/gg-drive-manager.workflow.json` node `Search Existing File` da bo sung filter query, loai tru cac MIME native Google Apps (`document/spreadsheet/presentation/drawing/form/script/site/shortcut`).
+  - Muc tieu: chi update file binary-compatible, tranh case trung ten voi file native Google khong the update content binary.
+  - Da import lai `GG Drive Manager` (`QpcIxaHiYXDqjw4p`).
+
+- Fix race condition o `Book Review AI Agent` branch merge manifest:
+  - `workflows/book-review/book-review-ai-agent.workflow.json` node `Merge Manifest` dat `options.includeUnpaired=false` de cho du 3 nhanh (`content`, `metadata`, `qc`) moi di tiep.
+  - `Prepare Manifest` them guard bat buoc co du output tu `Content AI Agent`, `Metadata AI Agent`, `QC AI Agent`; neu thieu thi fail ro thong diep thay vi di tiep xuong Drive.
+  - Da import lai `Book Review AI Agent` (`901WvOJHn6O2Hbze`).
+
+- Chuan hoa cach doc du lieu sau merge trong `Book Review AI Agent` (bo phu thuoc `$('Node').first()`):
+  - Them 3 node map truoc merge:
+    - `Prepare Content Output (Merge)` -> `contentOutput`
+    - `Prepare Metadata Output (Merge)` -> `metadataOutput`
+    - `Prepare QC Output (Merge)` -> `qcOutput`
+  - `Prepare Manifest` chuyen sang doc tu `$json.contentOutput/$json.metadataOutput/$json.qcOutput` (du lieu item da merge), giup luong du lieu ro rang va an toan hon khi chay song song.
+  - Da import lai `Book Review AI Agent` (`901WvOJHn6O2Hbze`).
+
 - Governance update cho subworkflow trigger input schema:
   - Them rule moi trong `AGENT_RULES_PROJECT.md` (muc 15) bat buoc `Execute Workflow Trigger` phai co schema input hop le (`inputSource=workflowInputs`, `workflowInputs.values[]` co `name` + `type`, khong de `[{}]`).
   - Them playbook `Skill K` trong `RULES_AND_SKILLS.md` de chuan hoa quy trinh sync -> patch schema -> import lai cho cac workflow manager/media.
@@ -648,3 +671,11 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 ## 2026-04-01T09:16:56Z
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=5, missing_ui_folder=0, registry_new=0, registry_updated=5, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=11, changed=5, unchanged=6, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: TTS, Book Review, Book Review AI Agent, GG Drive Manager, Text To Images.
+
+## 2026-04-01T10:15:40Z
+- Workflow sync (UI -> JSON) processed 1 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=1, changed=1, unchanged=0, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Book Review AI Agent.
+
+## 2026-04-01T12:42:26Z
+- Workflow sync (UI -> JSON) processed 11 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=1, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=11, changed=1, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Book Review AI Agent.

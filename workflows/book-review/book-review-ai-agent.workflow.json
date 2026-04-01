@@ -16,7 +16,7 @@
       "typeVersion": 1.3,
       "position": [
         -1808,
-        1264
+        736
       ],
       "id": "94bdf134-0a4e-46d3-a158-efe3c7361b30",
       "name": "OpenAI Chat Model",
@@ -42,7 +42,7 @@
       "typeVersion": 1.3,
       "position": [
         -1456,
-        1408
+        880
       ],
       "id": "5dd9ac93-398b-46be-8933-1ef63b6ae740",
       "name": "OpenAI Chat Model3",
@@ -68,7 +68,7 @@
       "typeVersion": 1.3,
       "position": [
         -1104,
-        928
+        1040
       ],
       "id": "d8166212-904b-4e6f-9497-92558c664892",
       "name": "OpenAI Chat Model4",
@@ -93,8 +93,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        -1104,
-        1728
+        -752,
+        1184
       ],
       "id": "0db38b4f-8aff-4d21-8539-7be3572a3b96",
       "name": "OpenAI Chat Model5",
@@ -108,7 +108,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $('Config Main').item.json.chatInput }}{{ JSON.stringify($json.output) }}",
+        "text": "={{ $('Config Main').item.json.chatInput }}{{ $json.output }}",
         "hasOutputParser": true,
         "options": {
           "systemMessage": "={{ $('Config Main').item.json.master_prompt }}\nPROMPT QC: THE CRITICAL SOUL EDITOR (V4)\n\nROLE:\n- Bạn là một biên tập viên QC gắt gao cho các nội dung kể chuyện review sách dài.\n\nMISSION:\n- Đánh giá chất lượng khách quan và độ khớp với phong cách Soulful Narrator.\n\nSTYLE KERNEL REFERENCE (INJECTED FROM MASTER):\n__BOOK_REVIEW_STYLE_KERNEL__\n\nEVALUATION LAYERS:\n1) Objective layer:\n- Sức mạnh của Hook.\n- Sự mạch lạc của dòng tự sự.\n- Độ nguyên bản (Originality).\n- Tính ứng dụng của Bridge vào thực tế đời sống.\n\n2) Style-fit layer:\n- Sự nhất quán của giọng kể.\n- Mạch trôi tự nhiên (tránh meta labeling).\n- Chiều sâu cảm xúc và các ẩn dụ đời thường.\n\nSCORING & FEEDBACK:\n- Thang điểm từ 0 đến 10 cho: Hook, Clarity, Originality, Practical.\n- Trừ điểm nặng nếu dính meta-label lặp đi lặp lại hoặc hô hào giáo điều.\n- Feedback phải thẳng thắn, ưu tiên các lỗi cần sửa ngay, nhưng giữ cho sự sáng tạo của người kể chuyện còn sống.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"hook\": 0,\n  \"clarity\": 0,\n  \"originality\": 0,\n  \"practical\": 0,\n  \"risk\": \"low|med|high\",\n  \"feedback\": \"string\",\n  \"qc_issues\": [\"string\"]\n}\n\n"
@@ -117,8 +117,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -1104,
-        1504
+        -752,
+        960
       ],
       "id": "4de0adc6-2877-4954-81b4-cd25e0807235",
       "name": "QC AI Agent",
@@ -127,7 +127,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $('Config Main').item.json.chatInput }}{{ JSON.stringify($json.output) }}",
+        "text": "={{ $('Config Main').item.json.chatInput }}{{ $json.output }}",
         "hasOutputParser": true,
         "options": {
           "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\nPROMPT METADATA: THE ATTENTION ARCHITECT (V4)\n\nROLE:\n- Bạn là một Chuyên gia Chiến lược Nội dung chuyên về tâm lý học hành vi cho các kênh như Better Version hay Web5ngay.\n\nMỤC TIÊU:\n- Biến \"linh hồn\" bản thảo thành Metadata có sức hút mãnh liệt, đánh vào sự tò mò trí tuệ và nỗi đau thực tế của khán giả.\n\nVOICE & STYLE:\n- Kế thừa giọng văn từ STYLE KERNEL: THE SOULFUL NARRATOR & CULTURAL ANALYST (V4).\n- Ngôn từ sắc sảo, triết lý, không giật tít rẻ tiền.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- Language: Vietnamese.\n- Caption dưới 150 chữ.\n- Hashtags: 5-7 tag, viết thường, không dấu.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"title\": \"string\",\n  \"caption\": \"string\",\n  \"thumbnail_text\": \"string\",\n  \"hashtags\": [\"#tag\"]\n}\n\nQUALITY RULES:\n1. Title:\n   - Phải chứa một \"Mâu thuẫn\" (Tension) hoặc một \"Câu hỏi tử huyệt\" chạm đến nỗi đau/khao khát của con người hiện đại.\n   - TRÁNH: \"Review sách: [Tên sách]\".\n   - NÊN: \"Tại sao bạn vẫn mãi thất bại dù đã cố gắng?\".\n\n2. Caption:\n   - Dưới 150 chữ, tiếng Việt.\n   - Cấu trúc: 1 Câu hỏi khơi gợi nỗi đau (Emotional Hook) + 1 Giá trị cốt lõi từ sách + 1 Lời hứa về sự thay đổi (Practical Takeaway).\n   - Văn phong: Tâm tình như bạn thân.\n\n3. Thumbnail Text:\n   - Cực ngắn (dưới 6 từ), clear và curiosity-driven.\n   - Phải là một lời cảnh báo hoặc một lời mời gọi mang tính quyết định, không lặp lại Title.\n\n4. Hashtags:\n   - 5-7 tags, viết thường, không dấu.\n   - Bao gồm tên sách, tên tác giả, ngách nội dung (self-help, triết lý).\n"
@@ -137,7 +137,7 @@
       "typeVersion": 3.1,
       "position": [
         -1104,
-        704
+        816
       ],
       "id": "d4ad4afe-c71a-4f5d-ac74-e655f1f83af8",
       "name": "Metadata AI Agent",
@@ -149,14 +149,14 @@
         "text": "={{ $('Config Main').item.json.chatInput }}",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "=MASTER PROMPT: THE SOULFUL NARRATOR & CULTURAL ANALYST (V4)\n\nROLE:\n- Bạn là một storyteller: thấu cảm, đời thường, nhưng đủ sắc bén để đánh thức người nghe.\n- Giọng kể phải tự nhiên như người thật đang tâm sự, không giáo điều, không khẩu hiệu rỗng.\n\nCORE DIRECTIVES:\n1. HOOK THỨC TỈNH:\n- Mở đầu bằng một câu hỏi hoặc tình huống chạm vào nỗi đau/cột mốc mà ai cũng từng gặp.\n- Ưu tiên không nêu tên sách ngay trong câu mở đầu.\n\n2. TRIỆT TIÊU META LABEL:\n- Không viết kiểu \"Phần 1\", \"Tóm tắt\", \"Bài học\" trong narration.\n- Mạch kể phải liền, trôi tự nhiên như một cuộc đối thoại.\n\n3. THE BRIDGE (CẦU NỐI TÂM LÝ):\n- Mỗi luận điểm từ sách cần có câu nối kéo về đời thực ngay sau đó.\n- Bridge phải cụ thể: công việc, gia đình, áp lực, sai lầm, thói quen.\n- Phải giải mã được cơ chế tâm lý đằng sau hành động của nhân vật thay vì chỉ nêu ví dụ.\n\n4. ẨN DỤ ĐỜI THƯỜNG:\n- Dùng hình ảnh gần gũi để giải thích ý khó.\n- Tránh định kiến giới, tránh tâm linh hóa, tránh ví dụ cực đoan.\n\n5. XƯNG HÔ:\n- Ưu tiên \"mình/tôi\" và \"bạn\" (có thể \"bạn thân mến\" khi phù hợp).\n- Giữ cảm giác gần gũi như hai người bạn đang ngồi nói chuyện.\n\n6. NGÔN NGỮ CHIÊM NGHIỆM:\n- Lời văn đời thường, mềm mại, giàu cảm xúc nhưng rõ nghĩa.\n- Tuyệt đối tránh các từ AI cửa miệng như \"Tóm lại\", \"Nhìn chung\", \"Trong bối cảnh\".\n\nLOGIC THEO THỂ LOẠI (ADAPTIVE LENS):\n- Self-help/Tâm lý:\n  Phân tích theo 3 tầng: sinh lý - nhận thức - hành vi.\n  Không hô hào \"hãy tích cực\"; giải thích gốc rễ tiêu cực và sự không hoàn hảo.\n  Thần thái: điềm tĩnh, chữa lành, thấu suốt.\n\n- Tiểu thuyết/Ngụ ngôn:\n  Xem hành trình nhân vật như hành trình tinh thần của người nghe.\n  Biến bối cảnh/vật phẩm thành biểu tượng tâm lý để soi chiếu bản thân.\n  Thần thái: giàu hình ảnh, truyền cảm hứng, có khát vọng.\n\n- Triết học/Khoa học:\n  Dịch ý niệm khô thành câu hỏi nhân sinh và trải nghiệm sống.\n  Biến con số thành ý nghĩa cảm xúc và lựa chọn thực tế.\n\nINVISIBLE FLOW (KHUNG NGẦM):\n1. Gõ cửa tâm hồn: Mở bằng tình huống gia đình hoặc câu hỏi nhức nhối.\n2. Dẫn lối vào sách: Giới thiệu sách như tấm gương/liệu pháp để soi mình.\n3. Phân tích sâu + Đối thoại: Đan xen kể chuyện với \"tâm sự mỏng\" về sai lầm, nỗi sợ, khao khát.\n4. Triển khai các cảnh (Scenes): Đặt tiêu đề cảnh theo phần đúc kết nhắc nhở.\n5. Kết đọng: Kết bằng một khẳng định bao dung hoặc câu hỏi mở để người nghe tự phản tư.\n\n"
+          "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\n\nPROMPT SCENE OUTLINE: THE CONTENT ARCHITECT (V4)\n\nROLE:\n- Bạn là kiến trúc sư xây dựng khung cảnh cho video review sách dài.\n\nTASK:\n- Thiết kế dàn ý cho video 16:9 với tổng thời lượng 15-20 phút.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- scene_count là số nguyên từ 8 đến 14. Nếu không chắc, dùng 10.\n- Cảnh đầu (order=1) bắt buộc scene_role=\"hook\".\n- Cảnh cuối bắt buộc scene_role=\"outro\".\n- Các cảnh cốt lõi phải dày dặn, không viết cảnh siêu nhỏ.\n- Chọn 1 góc nhìn phân tích chính và 1 góc nhìn hỗ trợ (không phân mảng quá nhiều).\n- Mục tiêu từng cảnh phải có ý nghĩa sâu sắc, không chỉ lặp lại nội dung chương sách.\n- Chọn rõ `primary_lens` và `secondary_lens`, không để trống.\n\nLANGUAGE:\n- Tiếng Việt cho các giá trị nội dung (key JSON giữ tiếng Anh theo schema).\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"angle\": \"string\",\n  \"target_audience\": \"string\",\n  \"primary_lens\": \"string\",\n  \"secondary_lens\": \"string\",\n  \"scene_count\": 10,\n  \"estimated_total_duration_sec\": 1020,\n  \"scenes\": [\n    {\n      \"order\": 1,\n      \"scene_role\": \"hook|core|outro\",\n      \"scene_goal\": \"string\",\n      \"key_points\": [\"string\"]\n    }\n  ]\n}\n"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
         -1808,
-        1040
+        512
       ],
       "id": "3bf17144-d8d7-44a0-a352-dd195585b8ef",
       "name": "Outline AI Agent",
@@ -173,7 +173,7 @@
       "typeVersion": 1.2,
       "position": [
         -2480,
-        1136
+        608
       ],
       "id": "945f4306-8695-48ae-893a-91925fe087cb",
       "name": "Telegram Trigger",
@@ -194,53 +194,12 @@
       "typeVersion": 1.4,
       "position": [
         -2480,
-        944
+        416
       ],
       "id": "190f4d23-2d0c-4ccf-aa02-0ecab8231409",
       "name": "When chat message received",
       "webhookId": "eff41ce5-03b3-456c-b32a-3f18639aee27",
       "alwaysOutputData": true
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        -1808,
-        2048
-      ],
-      "id": "08f1f975-fdca-4ce0-9af8-aacffe45f1b2",
-      "name": "Merge"
-    },
-    {
-      "parameters": {
-        "workflowId": {
-          "__rl": true,
-          "value": "QpcIxaHiYXDqjw4p",
-          "mode": "list",
-          "cachedResultUrl": "/workflow/QpcIxaHiYXDqjw4p",
-          "cachedResultName": "GG Drive Mananger"
-        },
-        "workflowInputs": {
-          "mappingMode": "defineBelow",
-          "value": {},
-          "matchingColumns": [],
-          "schema": [],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": true
-        },
-        "options": {
-          "waitForSubWorkflow": true
-        }
-      },
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        -2032,
-        2048
-      ],
-      "id": "2d3c5ee1-4209-4140-9498-6dbdd118adb5",
-      "name": "Call 'GG Drive Mananger'"
     },
     {
       "parameters": {
@@ -267,7 +226,7 @@
             {
               "id": "f17cdce5-1343-4c2c-a2d6-ef10cf68da88",
               "name": "ggDriveRootFolderId",
-              "value": "1ykMeq3i9svSq97_gtA8duJyZvBg_8Fe5",
+              "value": "1u1p_7y5hWKzuQhRHno2OFHjZqM9cG3pa",
               "type": "string"
             }
           ]
@@ -279,7 +238,7 @@
       "typeVersion": 3.4,
       "position": [
         -2256,
-        1040
+        512
       ],
       "id": "80d18528-92a0-4365-859a-480a30658ac7",
       "name": "Config Main"
@@ -296,7 +255,7 @@
       "typeVersion": 1.2,
       "position": [
         -2032,
-        1040
+        512
       ],
       "id": "f9ec94b5-f4b9-4476-ae38-e876d0bd5429",
       "name": "Send Creating Outline Message",
@@ -311,61 +270,17 @@
     },
     {
       "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "numberInputs": 3,
-        "options": {}
-      },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        -752,
-        1360
-      ],
-      "id": "d341eeef-c3dc-4581-afa3-25395d7f6531",
-      "name": "Merge Manifest"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -2480,
-        2048
-      ],
-      "id": "3b2a99a7-8143-43a4-8b00-2c12243a4625",
-      "name": "Prepare Metadata File Link"
-    },
-    {
-      "parameters": {
-        "operation": "toText",
-        "sourceProperty": "data",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.convertToFile",
-      "typeVersion": 1.1,
-      "position": [
-        -2256,
-        2048
-      ],
-      "id": "d3168df3-006f-463a-83dc-a5851417d311",
-      "name": "Convert Manifest To File"
-    },
-    {
-      "parameters": {
         "operation": "editMessageText",
         "chatId": "={{ $('Send Creating Outline Message').item.json.result.chat.id }}",
         "messageId": "={{ $('Send Creating Outline Message').item.json.result.message_id }}",
-        "text": "Đang tạo Metadata and QC Review...",
+        "text": "Đang tạo Metadata...",
         "additionalFields": {}
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
         -1040,
-        1104
+        512
       ],
       "id": "db626457-ea62-4ef1-a13e-21290c660b3a",
       "name": "Send Creating Metadata Message",
@@ -389,34 +304,10 @@
       "typeVersion": 1.2,
       "position": [
         -1392,
-        880
+        368
       ],
       "id": "c37296a4-050c-4c12-bf2a-f34017203d7f",
       "name": "Send Creating Content Message",
-      "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
-      "credentials": {
-        "telegramApi": {
-          "id": "__TELEGRAM_CREDENTIAL_ID__",
-          "name": "__TELEGRAM_CREDENTIAL_NAME__"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "editMessageText",
-        "chatId": "={{ $('Send Creating Outline Message').item.json.result.chat.id }}",
-        "messageId": "={{ $('Send Creating Outline Message').item.json.result.message_id }}",
-        "text": "Scene manifest:",
-        "additionalFields": {}
-      },
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        -1584,
-        2048
-      ],
-      "id": "7fab4b38-a287-4234-890c-b5526c30afc0",
-      "name": "Send Require Review Metadata",
       "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
       "credentials": {
         "telegramApi": {
@@ -433,7 +324,7 @@
       "typeVersion": 1.3,
       "position": [
         -1680,
-        1264
+        736
       ],
       "id": "c38027f9-eb12-4bac-85ce-c26433d0395d",
       "name": "Structured Outline Output Parser"
@@ -446,7 +337,7 @@
       "typeVersion": 1.3,
       "position": [
         -1328,
-        1408
+        880
       ],
       "id": "164722d2-496b-44ab-b98a-026859132277",
       "name": "Structured Expand Output Parser"
@@ -459,7 +350,7 @@
       "typeVersion": 1.3,
       "position": [
         -976,
-        928
+        1040
       ],
       "id": "304378d5-3835-43db-808d-cfb36366db1b",
       "name": "Structured Metadata Output Parser"
@@ -467,7 +358,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $('Config Main').item.json.chatInput }}{{ JSON.stringify($json.output) }}",
+        "text": "={{ $('Config Main').item.json.chatInput }}{{ $json.output }}",
         "hasOutputParser": true,
         "options": {
           "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\nPROMPT SCENE EXPAND: THE SCRIPTWRITER (V4)\n\nROLE:\n- Bạn là người viết kịch bản kể chuyện cho video review sách dài.\n\nTASK:\n- Mở rộng dàn ý thành một review_manifest sẵn sàng sản xuất.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- Giữ đúng số lượng cảnh từ dàn ý.\n- Tổng narration_text: 15.000 - 20.000 ký tự tiếng Việt.\n- Hook/Outro: 45-75 giây mỗi cảnh.\n- Core scenes: 75-120 giây mỗi cảnh, tối thiểu 45 giây.\n- scene_01 là hook, scene cuối là outro.\n- image_prompt_en: viết bằng tiếng Anh và không để trống.\n- highlight_quote_vi: tùy chọn, không có thì để chuỗi rỗng.\n- transition mặc định \"cut\".\n\nANTI-RIGID CONSTRAINTS:\n- Tuyệt đối không dùng các mẫu câu lặp đi lặp lại giữa các cảnh.\n- Không biến narration thành danh sách liệt kê tóm tắt.\n- Giữ sự cân bằng giữa chiều sâu cảm xúc và tính ứng dụng thực tế.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"book\": {\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"style_keywords\": [\"string\"]\n  },\n  \"video\": {\n    \"aspect_ratio\": \"16:9\",\n    \"target_duration_min_sec\": 900,\n    \"target_duration_max_sec\": 1200,\n    \"estimated_total_duration_sec\": 0\n  },\n  \"scenes\": [\n    {\n      \"scene_id\": \"scene_01\",\n      \"order\": 1,\n      \"scene_title\": \"string\",\n      \"scene_role\": \"hook|core|outro\",\n      \"narration_text\": \"string\",\n      \"image_prompt_en\": \"string\",\n      \"highlight_quote_vi\": \"string\",\n      \"estimated_duration_sec\": 0,\n      \"transition\": \"cut\"\n    }\n  ]\n}\n"
@@ -477,7 +368,7 @@
       "typeVersion": 3.1,
       "position": [
         -1456,
-        1184
+        656
       ],
       "id": "99a2c42e-85b1-43c3-b056-af39d4e59bf0",
       "name": "Content AI Agent",
@@ -490,39 +381,24 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        -976,
-        1728
+        -624,
+        1184
       ],
       "id": "619e23b4-2945-4ed1-a567-3f6377836719",
       "name": "Structured Output Parser"
     },
     {
       "parameters": {
-        "jsCode": "function normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nconst content = asObject($('Content AI Agent').first()?.json?.output);\nconst metadata = asObject($('Metadata AI Agent').first()?.json?.output);\nconst qc = asObject($('QC AI Agent').first()?.json?.output);\n\nconst manifest = {\n  ...content,\n  metadata: {\n    ...metadata,\n    title: normalizeText(metadata.title),\n    caption: normalizeText(metadata.caption),\n    thumbnail_text: normalizeText(metadata.thumbnail_text),\n    hashtags: asArray(metadata.hashtags),\n  },\n  scenes: asArray(content.scenes).map((s, i) => ({\n    ...asObject(s),\n    scene_id: String(s?.scene_id ?? `scene_${String(i + 1).padStart(2, '0')}`),\n    narration_text: normalizeText(s?.narration_text),\n  })),\n};\n\nreturn {\n  manifest,\n  manifestJSONString: JSON.stringify(manifest, null, 2),\n  qc,\n};\n"
+        "jsCode": "function normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nconst content = asObject($('Content AI Agent').first().json.output);\nconst metadata = asObject($('Metadata AI Agent').first().json.output);\nconst qc = asObject($('QC AI Agent').first().json.output);\n\nif (Object.keys(content).length === 0) {\n  throw new Error('Content output is missing from merged payload.');\n}\n\nif (Object.keys(metadata).length === 0) {\n  throw new Error('Metadata output is missing from merged payload.');\n}\n\nif (Object.keys(qc).length === 0) {\n  throw new Error('QC output is missing from merged payload.');\n}\n\nconst manifest = {\n  ...content,\n  metadata: {\n    ...metadata,\n    title: normalizeText(metadata.title),\n    caption: normalizeText(metadata.caption),\n    thumbnail_text: normalizeText(metadata.thumbnail_text),\n    hashtags: asArray(metadata.hashtags),\n  },\n  scenes: asArray(content.scenes).map((s, i) => ({\n    ...asObject(s),\n    scene_id: String(s?.scene_id ??       'scene_' + String(i + 1).padStart(2, '0')),\n    narration_text: normalizeText(s?.narration_text),\n  })),\n};\n\nreturn {\n  ...content,\n  manifest,\n  manifestJSONString: JSON.stringify(manifest, null, 2),\n  qc,\n};\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -528,
-        1376
+        -400,
+        960
       ],
       "id": "c2b300de-18cc-462e-992e-2b733b185e98",
       "name": "Prepare Manifest"
-    },
-    {
-      "parameters": {
-        "operation": "toText",
-        "sourceProperty": "={\n  ...$('Content AI Agent').first().json,\n  metadata: $('Metadata AI Agent').first().json.output,\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.convertToFile",
-      "typeVersion": 1.1,
-      "position": [
-        -2480,
-        1824
-      ],
-      "id": "c462bc17-aa5b-4cf1-914f-a0ac75285225",
-      "name": "Convert Content Review to Text File"
     },
     {
       "parameters": {
@@ -536,8 +412,8 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        -304,
-        1376
+        -176,
+        960
       ],
       "id": "4def4593-b0b9-402a-a113-3ef54e465324",
       "name": "Convert Manifest to File"
@@ -553,7 +429,12 @@
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
-          "value": {},
+          "value": {
+            "action": "upsert",
+            "fileName": "Manifest.json",
+            "rootFolderId": "1u1p_7y5hWKzuQhRHno2OFHjZqM9cG3pa",
+            "binaryFieldName": "file"
+          },
           "matchingColumns": [],
           "schema": [
             {
@@ -617,11 +498,35 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        -96,
-        1376
+        48,
+        960
       ],
       "id": "2aaf9012-301a-479f-8519-a9b42b5587be",
       "name": "GG Drive Manager Save Manifest"
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Send Creating Outline Message').item.json.result.chat.id }}",
+        "messageId": "={{ $('Send Creating Outline Message').item.json.result.message_id }}",
+        "text": "QC đang Review...",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -688,
+        656
+      ],
+      "id": "0d875b16-e41c-4b19-8443-229576ede7e6",
+      "name": "Send QC is Reviewing Message",
+      "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "__TELEGRAM_CREDENTIAL_NAME__"
+        }
+      }
     }
   ],
   "connections": {
@@ -711,7 +616,12 @@
       "main": [
         [
           {
-            "node": "Merge Manifest",
+            "node": "Send QC is Reviewing Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "QC AI Agent",
             "type": "main",
             "index": 0
           }
@@ -722,18 +632,7 @@
       "main": [
         [
           {
-            "node": "Merge Manifest",
-            "type": "main",
-            "index": 2
-          }
-        ]
-      ]
-    },
-    "Call 'GG Drive Mananger'": {
-      "main": [
-        [
-          {
-            "node": "Merge",
+            "node": "Prepare Manifest",
             "type": "main",
             "index": 0
           }
@@ -756,50 +655,6 @@
         [
           {
             "node": "Outline AI Agent",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge Manifest": {
-      "main": [
-        [
-          {
-            "node": "Prepare Manifest",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Metadata File Link": {
-      "main": [
-        [
-          {
-            "node": "Convert Manifest To File",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Convert Manifest To File": {
-      "main": [
-        [
-          {
-            "node": "Call 'GG Drive Mananger'",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge": {
-      "main": [
-        [
-          {
-            "node": "Send Require Review Metadata",
             "type": "main",
             "index": 0
           }
@@ -843,24 +698,14 @@
       "main": [
         [
           {
-            "node": "Metadata AI Agent",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "QC AI Agent",
-            "type": "main",
-            "index": 0
-          },
-          {
             "node": "Send Creating Metadata Message",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Merge Manifest",
+            "node": "Metadata AI Agent",
             "type": "main",
-            "index": 1
+            "index": 0
           }
         ]
       ]
@@ -899,6 +744,21 @@
       ]
     },
     "GG Drive Manager Save Manifest": {
+      "main": [
+        []
+      ]
+    },
+    "Send Creating Metadata Message": {
+      "main": [
+        []
+      ]
+    },
+    "Send Creating Content Message": {
+      "main": [
+        []
+      ]
+    },
+    "Send QC is Reviewing Message": {
       "main": [
         []
       ]
