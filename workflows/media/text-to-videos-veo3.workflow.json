@@ -119,12 +119,6 @@
               "type": "string"
             },
             {
-              "id": "cfg-7",
-              "name": "gdrive_credential_name",
-              "value": "__GDRIVE_CREDENTIAL_NAME__",
-              "type": "string"
-            },
-            {
               "id": "cfg-8",
               "name": "image_api_base_url",
               "value": "",
@@ -326,7 +320,7 @@
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
+          "name": "__GDRIVE_CREDENTIAL_LABEL__"
         }
       }
     },
@@ -488,7 +482,7 @@
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
+          "name": "__GDRIVE_CREDENTIAL_LABEL__"
         }
       }
     },

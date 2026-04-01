@@ -19,14 +19,6 @@
               "type": "string"
             },
             {
-              "name": "requestedFolderPath",
-              "type": "string"
-            },
-            {
-              "name": "targetFolderId",
-              "type": "string"
-            },
-            {
               "name": "fileName",
               "type": "string"
             },
@@ -48,43 +40,7 @@
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "cfg-1",
-              "name": "gdriveRootFolderId",
-              "value": "__GDRIVE_ROOT_FOLDER_ID__",
-              "type": "string"
-            },
-            {
-              "id": "cfg-2",
-              "name": "gdriveCredentialName",
-              "value": "__GDRIVE_CREDENTIAL_NAME__",
-              "type": "string"
-            },
-            {
-              "id": "cfg-3",
-              "name": "selfWorkflowPath",
-              "value": "={{ $json.selfWorkflowPath || 'workflows/shared/gg-drive-manager.workflow.json' }}",
-              "type": "string"
-            }
-          ]
-        },
-        "includeOtherFields": true,
-        "options": {}
-      },
-      "id": "2",
-      "name": "Set Config",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -1296,
-        480
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nconst rootFolderIdRaw = String(input.rootFolderId ?? '').trim();\nconst rootFolderId = rootFolderIdRaw || 'root';\n\nconst rawPath = String(input.folderPath ?? '').trim();\nconst normalizedPath = rawPath\n  .replace(/^\\/+|\\/+$/g, '')\n  .replace(/\\/+/g, '/');\n\nconst segments = normalizedPath ? normalizedPath.split('/').filter(Boolean) : [];\nconst currentSegment = segments[0] || '';\nconst remainingPath = segments.length > 1 ? segments.slice(1).join('/') : '';\n\nconst explicitBinaryField = String(input.binaryFieldName ?? '').trim();\nconst availableBinaryFields = Object.keys(binary);\nconst binaryFieldName = explicitBinaryField && binary[explicitBinaryField]\n  ? explicitBinaryField\n  : (availableBinaryFields[0] || '');\n\nconst binaryFile = binaryFieldName ? binary[binaryFieldName] : null;\nconst binaryFileName = String(binaryFile?.fileName ?? '').trim();\nconst targetFileName = String(input.fileName ?? binaryFileName ?? '').trim() || 'uploaded-file.bin';\n\nconst rawAction = String(input.action ?? 'upsert').trim().toLowerCase();\nconst action = rawAction === 'get'\n  ? 'get'\n  : (rawAction === 'delete'\n      ? 'delete'\n      : (rawAction === 'list' ? 'list' : 'upsert'));\n\nconst requestedFolderPath = String(input.requestedFolderPath ?? normalizedPath);\nconst targetFolderId = String(input.targetFolderId ?? '');\n\nreturn [{\n  json: {\n    ...input,\n    action,\n    rootFolderId,\n    requestedFolderPath,\n    folderPath: normalizedPath,\n    currentSegment,\n    remainingPath,\n    baseFolderId: rootFolderId,\n    targetFolderId,\n    binaryFieldName,\n    hasBinaryFile: Boolean(binaryFile),\n    targetFileName\n  }\n}];"
+        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nconst rootFolderIdRaw = String(input.rootFolderId ?? '').trim();\nconst rootFolderId = rootFolderIdRaw || 'root';\n\nconst rawPath = String(input.folderPath ?? '').trim();\nconst normalizedPath = rawPath\n  .replace(/^\\/+|\\/+$/g, '')\n  .replace(/\\/+/g, '/');\n\nconst segments = normalizedPath ? normalizedPath.split('/').filter(Boolean) : [];\nconst currentSegment = segments[0] || '';\nconst remainingPath = segments.length > 1 ? segments.slice(1).join('/') : '';\n\nconst explicitBinaryField = String(input.binaryFieldName ?? '').trim();\nconst availableBinaryFields = Object.keys(binary);\nconst binaryFieldName = explicitBinaryField && binary[explicitBinaryField]\n  ? explicitBinaryField\n  : (availableBinaryFields[0] || '');\n\nconst binaryFile = binaryFieldName ? binary[binaryFieldName] : null;\nconst binaryFileName = String(binaryFile?.fileName ?? '').trim();\nconst targetFileName = String(input.fileName ?? binaryFileName ?? '').trim() || 'uploaded-file.bin';\n\nconst rawAction = String(input.action ?? 'upsert').trim().toLowerCase();\nconst action = rawAction === 'get'\n  ? 'get'\n  : (rawAction === 'delete'\n      ? 'delete'\n      : (rawAction === 'list' ? 'list' : 'upsert'));\n\nreturn [{\n  json: {\n    ...input,\n    action,\n    rootFolderId,\n    folderPath: normalizedPath,\n    currentSegment,\n    remainingPath,\n    baseFolderId: rootFolderId,\n    binaryFieldName,\n    hasBinaryFile: Boolean(binaryFile),\n    targetFileName\n  }\n}];"
       },
       "id": "3",
       "name": "Normalize Request",
@@ -158,7 +114,7 @@
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
+          "name": "__GDRIVE_CREDENTIAL_LABEL__"
         }
       }
     },
@@ -336,7 +292,7 @@
             }
           ]
         },
-        "includeOtherFields": true,
+        "includeOtherFields": false,
         "options": {}
       },
       "id": "39",
@@ -372,7 +328,7 @@
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
+          "name": "__GDRIVE_CREDENTIAL_LABEL__"
         }
       }
     },
@@ -490,12 +446,6 @@
               "name": "folderPath",
               "value": "={{ $json.remainingPath || '' }}",
               "type": "string"
-            },
-            {
-              "id": "rec-3",
-              "name": "requestedFolderPath",
-              "value": "={{ $json.requestedFolderPath || $json.folderPath || '' }}",
-              "type": "string"
             }
           ]
         },
@@ -514,7 +464,7 @@
     {
       "parameters": {
         "source": "localFile",
-        "workflowPath": "={{ $json.selfWorkflowPath || 'workflows/shared/gg-drive-manager.workflow.json' }}",
+        "workflowPath": "={{ $json.selfWorkflowPath || 'workflows/google/gg-drive-manager.workflow.json' }}",
         "options": {
           "waitForSubWorkflow": true
         }
@@ -584,12 +534,6 @@
               "id": "target-final-2",
               "name": "targetFolderUrl",
               "value": "={{ $json.targetFolderUrl || ('https://drive.google.com/drive/folders/' + ($json.targetFolderId || $json.baseFolderId || $json.rootFolderId || 'root')) }}",
-              "type": "string"
-            },
-            {
-              "id": "target-final-3",
-              "name": "requestedFolderPath",
-              "value": "={{ $json.requestedFolderPath || $json.folderPath || '' }}",
               "type": "string"
             }
           ]
@@ -720,7 +664,7 @@
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
+          "name": "__GDRIVE_CREDENTIAL_LABEL__"
         }
       }
     },
@@ -832,7 +776,7 @@
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
+          "name": "__GDRIVE_CREDENTIAL_LABEL__"
         }
       }
     },
@@ -884,7 +828,7 @@
             }
           ]
         },
-        "includeOtherFields": true,
+        "includeOtherFields": false,
         "options": {}
       },
       "id": "34",
@@ -932,7 +876,7 @@
             }
           ]
         },
-        "includeOtherFields": true,
+        "includeOtherFields": false,
         "options": {}
       },
       "id": "35",
@@ -986,7 +930,7 @@
             }
           ]
         },
-        "includeOtherFields": true,
+        "includeOtherFields": false,
         "options": {}
       },
       "id": "36",
@@ -1054,7 +998,7 @@
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
+          "name": "__GDRIVE_CREDENTIAL_LABEL__"
         }
       }
     },
@@ -1134,7 +1078,7 @@
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
+          "name": "__GDRIVE_CREDENTIAL_LABEL__"
         }
       }
     },
@@ -1224,7 +1168,7 @@
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
+          "name": "__GDRIVE_CREDENTIAL_LABEL__"
         }
       }
     },
@@ -1297,22 +1241,10 @@
               "name": "folderUrl",
               "value": "={{ $json.targetFolderUrl || ('https://drive.google.com/drive/folders/' + ($json.targetFolderId || '')) }}",
               "type": "string"
-            },
-            {
-              "id": "result-updated-6",
-              "name": "resultRootFolderId",
-              "value": "={{ $json.rootFolderId || '' }}",
-              "type": "string"
-            },
-            {
-              "id": "result-updated-7",
-              "name": "resultFolderPath",
-              "value": "={{ $json.requestedFolderPath || '' }}",
-              "type": "string"
             }
           ]
         },
-        "includeOtherFields": true,
+        "includeOtherFields": false,
         "options": {}
       },
       "id": "23",
@@ -1350,7 +1282,7 @@
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
+          "name": "__GDRIVE_CREDENTIAL_LABEL__"
         }
       }
     },
@@ -1423,22 +1355,10 @@
               "name": "folderUrl",
               "value": "={{ $json.targetFolderUrl || ('https://drive.google.com/drive/folders/' + ($json.targetFolderId || '')) }}",
               "type": "string"
-            },
-            {
-              "id": "result-created-6",
-              "name": "resultRootFolderId",
-              "value": "={{ $json.rootFolderId || '' }}",
-              "type": "string"
-            },
-            {
-              "id": "result-created-7",
-              "name": "resultFolderPath",
-              "value": "={{ $json.requestedFolderPath || '' }}",
-              "type": "string"
             }
           ]
         },
-        "includeOtherFields": true,
+        "includeOtherFields": false,
         "options": {}
       },
       "id": "26",
@@ -1479,18 +1399,6 @@
               "type": "string"
             },
             {
-              "id": "result-missing-5",
-              "name": "resultRootFolderId",
-              "value": "={{ $json.rootFolderId || '' }}",
-              "type": "string"
-            },
-            {
-              "id": "result-missing-6",
-              "name": "resultFolderPath",
-              "value": "={{ $json.requestedFolderPath || '' }}",
-              "type": "string"
-            },
-            {
               "id": "result-missing-7",
               "name": "folderId",
               "value": "={{ $json.targetFolderId || '' }}",
@@ -1504,7 +1412,7 @@
             }
           ]
         },
-        "includeOtherFields": true,
+        "includeOtherFields": false,
         "options": {}
       },
       "id": "27",
@@ -1518,8 +1426,8 @@
     },
     {
       "parameters": {
-        "content": "## INPUT CONTRACT (Execute Workflow Trigger)\n\n`action` (string): `upsert|get|delete|list` (default `upsert`)\n`rootFolderId` (string): start folder ID (default `root`)\n`folderPath` (string): nested path under root, ex: `books/2026/april`\n`targetFolderId` (string, optional): direct target folder ID override\n`requestedFolderPath` (string, optional): path echoed in final result\n`fileName` (string): file name for `upsert/get/delete`\n`binaryFieldName` (string): binary key to upload/update (default first key in `$binary`)\n`listLimit` (number): max list items when `listReturnAll=false` (default `200`)\n`listReturnAll` (boolean): list all or use limit (default `true`)\n`listQuery` (string, optional): custom Google Drive query for list action\n`selfWorkflowPath` (string): workflow path used for recursive folder traversal\n\n### Result shape\nCommon keys: `status`, `action`, folder context (`folderId`, `folderUrl`)\nSuccess branches also return file/list details (`fileId`, `fileUrl`, `items`, etc.).",
-        "height": 860,
+        "content": "## INPUT CONTRACT (Execute Workflow Trigger)\n\n`action` (string): `upsert|get|delete|list` (default `upsert`)\n`rootFolderId` (string): start folder ID (default `root`)\n`folderPath` (string): nested path under root, ex: `books/2026/april`\n- Set `folderPath` to empty string (``) to work directly in `rootFolderId`\n`fileName` (string): file name for `upsert/get/delete`\n`binaryFieldName` (string): binary key to upload/update (default first key in `$binary`)\n`listLimit` (number): max list items when `listReturnAll=false` (default `200`)\n`listReturnAll` (boolean): list all or use limit (default `true`)\n`listQuery` (string, optional): custom Google Drive query for list action\n`selfWorkflowPath` (string): workflow path used for recursive folder traversal\n\n### Result shape\nCommon keys: `status`, `action`, folder context (`folderId`, `folderUrl`)\nSuccess branches also return file/list details (`fileId`, `fileUrl`, `items`, etc.).",
+        "height": 760,
         "width": 760,
         "color": 7
       },
@@ -1529,14 +1437,14 @@
       "typeVersion": 1,
       "position": [
         -1936,
-        -528
+        -496
       ]
     },
     {
       "parameters": {
-        "content": "## STAGE 1: RESOLVE TARGET FOLDER\n\nNodes:\n- Normalize Request\n- If Has Segment\n- Search Current Folder / Create Missing Folder\n- Execute Recursive Workflow\n- Finalize Target Context\n\nGoal: convert `rootFolderId + folderPath` into a stable `targetFolderId` and `targetFolderUrl` before action routing.",
-        "height": 420,
-        "width": 700,
+        "content": "## STAGE 1: RESOLVE TARGET FOLDER\n\nNodes:\n- Normalize Request\n- If Has Segment\n- Search Current Folder / Create Missing Folder\n- Execute Recursive Workflow\n- Finalize Target Context\n\nGoal: convert `rootFolderId + folderPath` into stable folder context (`folderId`, `folderUrl`) before action routing.\n\nNote: no direct folder-id override input. If you already have exact folder ID, pass it via `rootFolderId` and set `folderPath` to empty string.",
+        "height": 460,
+        "width": 720,
         "color": 5
       },
       "id": "9002",
@@ -1544,7 +1452,7 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1024,
+        -1040,
         -496
       ]
     },
@@ -1582,8 +1490,8 @@
     },
     {
       "parameters": {
-        "content": "## BRANCH: LIST\n\nFlow:\n- Search Folder Items (List)\n- Build List Result\n\nSupports:\n- default query by `targetFolderId`\n- optional custom `listQuery`\n- pagination behavior via `listReturnAll` + `listLimit`.",
-        "height": 280,
+        "content": "## BRANCH: LIST\n\nFlow:\n- Search Folder Items (List)\n- Build List Result\n\nSupports:\n- default query by resolved `folderId`\n- optional custom `listQuery`\n- pagination behavior via `listReturnAll` + `listLimit`.",
+        "height": 300,
         "width": 560,
         "color": 3
       },
@@ -1593,7 +1501,7 @@
       "typeVersion": 1,
       "position": [
         1568,
-        992
+        976
       ]
     },
     {
@@ -1615,17 +1523,6 @@
   ],
   "connections": {
     "When Executed by Another Workflow": {
-      "main": [
-        [
-          {
-            "node": "Set Config",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Set Config": {
       "main": [
         [
           {

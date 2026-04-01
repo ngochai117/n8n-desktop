@@ -587,16 +587,6 @@
               "removed": false
             },
             {
-              "id": "targetFolderId",
-              "displayName": "targetFolderId",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "string",
-              "removed": false
-            },
-            {
               "id": "fileName",
               "displayName": "fileName",
               "required": false,

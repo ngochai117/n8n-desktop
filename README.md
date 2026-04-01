@@ -146,7 +146,6 @@ Su dung file `env.proxy.local` (neu chua co, script se tu tao):
 - `TTS_API_BASE_URL` (optional; mac dinh `http://127.0.0.1:8001`)
 - `TTS_VOICE_ID` (optional; mac dinh `ngochuyen`)
 - `GDRIVE_ROOT_FOLDER_ID` (optional; root folder Google Drive cho media pipeline)
-- `GDRIVE_CREDENTIAL_NAME` (optional; ten credential Google Drive trong n8n de mapping config)
 
 Mau file: `env.proxy.local.example`
 
@@ -386,7 +385,7 @@ bash scripts/workflows/sync/sync-workflows-from-n8n.sh --allow-folder-fallback -
 bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply --no-log
 ```
 
-- Script se sanitize truong nhay cam (`proxy_base_url`, `proxy_api_key`, `n8n_api_url`, `n8n_api_key`, `image_api_key`, `gdrive_root_folder_id`, `gdrive_credential_name`) va workflow placeholders (`Notify via Shared Workflow`, `text_to_images_workflow_id`, `text_to_videos_workflow_id`, `tts_workflow_id`, `gg_drive_manager_workflow_path`, `gg_sheet_manager_workflow_path`) truoc khi ghi file.
+- Script se sanitize truong nhay cam (`proxy_base_url`, `proxy_api_key`, `n8n_api_url`, `n8n_api_key`, `image_api_key`, `gdrive_root_folder_id`) va workflow placeholders (`Notify via Shared Workflow`, `text_to_images_workflow_id`, `text_to_videos_workflow_id`, `tts_workflow_id`, `gg_drive_manager_workflow_path`, `gg_sheet_manager_workflow_path`) truoc khi ghi file.
 - Script auto upsert `workflow-registry.json`, tu tao `template` path cho workflow moi, va tu tao wrapper import `scripts/workflows/import/import-*.sh` neu workflow chua co wrapper.
 - Strict folder mode mac dinh: workflow moi bat buoc co folder metadata tu n8n UI API; neu thieu thi script fail va KHONG fallback.
 - Neu can fallback theo ten workflow dang path (`Folder/Subfolder/Workflow`), dung `--allow-folder-fallback`.

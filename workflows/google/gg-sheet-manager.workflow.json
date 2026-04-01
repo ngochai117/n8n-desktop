@@ -3,32 +3,8 @@
   "nodes": [
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "cfg-1",
-              "name": "gdriveCredentialName",
-              "value": "__GDRIVE_CREDENTIAL_NAME__",
-              "type": "string"
-            }
-          ]
-        },
-        "includeOtherFields": true,
-        "options": {}
-      },
-      "id": "2",
-      "name": "Set Config",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -832,
-        320
-      ]
-    },
-    {
-      "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst rawAction = safeText(input.action, 'ensureAndWrite').toLowerCase();\nconst action = rawAction === 'ensuresheet'\n  ? 'ensureSheet'\n  : (rawAction === 'writerows' ? 'writeRows' : 'ensureAndWrite');\n\nconst sessionSheetId = safeText(input.session_sheet_id, safeText(input.sheetId));\nconst sessionSheetName = safeText(input.session_sheet_name, safeText(input.sheetName, 'book-review-assets'));\nconst sheetTabName = safeText(input.sheetTabName, 'assets');\nconst targetFolderId = safeText(input.session_folder_id, safeText(input.targetFolderId));\nconst sheetRows = Array.isArray(input.session_sheet_rows)\n  ? input.session_sheet_rows\n  : (Array.isArray(input.sheetRows) ? input.sheetRows : []);\n\nconst shouldEnsure = action === 'ensureAndWrite' || action === 'ensureSheet';\nconst shouldWrite = action === 'ensureAndWrite' || action === 'writeRows';\nconst shouldMove = shouldEnsure && targetFolderId !== '';\nconst shouldCreateSheet = shouldEnsure && sessionSheetId === '';\nconst missingSheetIdForWrite = action === 'writeRows' && sessionSheetId === '';\nconst shouldCallWriteApi = shouldWrite && !missingSheetIdForWrite;\n\nreturn {\n  ...input,\n  action,\n  sheetId: sessionSheetId,\n  sheetName: sessionSheetName,\n  sheetTabName,\n  targetFolderId,\n  sheetRows,\n  shouldEnsure,\n  shouldWrite,\n  shouldMove,\n  shouldCreateSheet,\n  missingSheetIdForWrite,\n  shouldCallWriteApi,\n};"
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst rawAction = safeText(input.action, 'ensureAndWrite').toLowerCase();\nconst action = rawAction === 'ensuresheet'\n  ? 'ensureSheet'\n  : (rawAction === 'writerows' ? 'writeRows' : 'ensureAndWrite');\n\nconst spreadsheetId = safeText(input.spreadsheetId);\nconst spreadsheetName = safeText(input.spreadsheetName, 'untitled-sheet');\nconst sheetName = safeText(input.sheetName, 'Sheet1');\nconst folderId = safeText(input.folderId);\nconst rows = Array.isArray(input.rows) ? input.rows : [];\nconst writeRange = safeText(input.range, sheetName + '!A1');\n\nconst normalizedValueInputOption = safeText(input.valueInputOption, 'RAW').toUpperCase();\nconst valueInputOption = normalizedValueInputOption === 'USER_ENTERED'\n  ? 'USER_ENTERED'\n  : 'RAW';\n\nconst shouldEnsure = action === 'ensureAndWrite' || action === 'ensureSheet';\nconst shouldWrite = action === 'ensureAndWrite' || action === 'writeRows';\nconst shouldMove = shouldEnsure && folderId !== '';\nconst shouldCreateSheet = shouldEnsure && spreadsheetId === '';\nconst missingSpreadsheetIdForWrite = action === 'writeRows' && spreadsheetId === '';\nconst shouldCallWriteApi = shouldWrite && !missingSpreadsheetIdForWrite;\n\nreturn {\n  ...input,\n  action,\n  spreadsheetId,\n  spreadsheetName,\n  sheetName,\n  folderId,\n  rows,\n  writeRange,\n  valueInputOption,\n  shouldEnsure,\n  shouldWrite,\n  shouldMove,\n  shouldCreateSheet,\n  missingSpreadsheetIdForWrite,\n  shouldCallWriteApi,\n};"
       },
       "id": "3",
       "name": "Normalize Request",
@@ -89,7 +65,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { properties: { title: $json.sheetName || \"book-review-assets\" }, sheets: [{ properties: { title: $json.sheetTabName || \"assets\" } }] } }}",
+        "jsonBody": "={{ { properties: { title: $json.spreadsheetName || \"untitled-sheet\" }, sheets: [{ properties: { title: $json.sheetName || \"Sheet1\" } }] } }}",
         "options": {
           "response": {
             "response": {
@@ -111,14 +87,14 @@
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
+          "name": "__GDRIVE_CREDENTIAL_LABEL__"
         }
       }
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst sheetId = safeText(input.sheetId);\nconst sheetUrl = sheetId ? 'https://docs.google.com/spreadsheets/d/' + sheetId : '';\n\nreturn {\n  ...input,\n  statusCode: sheetId ? 200 : 404,\n  body: {\n    spreadsheetId: sheetId,\n    spreadsheetUrl: sheetUrl,\n  },\n};"
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst spreadsheetId = safeText(input.spreadsheetId);\nconst spreadsheetUrl = spreadsheetId ? 'https://docs.google.com/spreadsheets/d/' + spreadsheetId : '';\n\nreturn {\n  ...input,\n  statusCode: spreadsheetId ? 200 : 404,\n  body: {\n    spreadsheetId,\n    spreadsheetUrl,\n  },\n};"
       },
       "id": "6",
       "name": "Use Existing Sheet",
@@ -132,7 +108,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst body = input.body && typeof input.body === 'object' ? input.body : {};\nconst sheetId = safeText(body.spreadsheetId, safeText(input.sheetId, safeText(input.session_sheet_id)));\nconst sheetUrl = safeText(\n  body.spreadsheetUrl,\n  safeText(input.sheetUrl, sheetId ? 'https://docs.google.com/spreadsheets/d/' + sheetId : ''),\n);\n\nconst createStatusCode = Number(input.statusCode ?? 0);\n\nreturn {\n  ...input,\n  session_sheet_id: sheetId,\n  session_sheet_url: sheetUrl,\n  session_sheet_create_status_code: Number.isFinite(createStatusCode) ? createStatusCode : 0,\n};"
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst body = input.body && typeof input.body === 'object' ? input.body : {};\nconst spreadsheetId = safeText(body.spreadsheetId, safeText(input.spreadsheetId));\nconst spreadsheetUrl = safeText(\n  body.spreadsheetUrl,\n  safeText(input.spreadsheetUrl, spreadsheetId ? 'https://docs.google.com/spreadsheets/d/' + spreadsheetId : ''),\n);\n\nconst createStatusCodeRaw = Number(input.statusCode ?? 0);\nconst createStatusCode = Number.isFinite(createStatusCodeRaw) ? createStatusCodeRaw : 0;\n\nreturn {\n  ...input,\n  spreadsheetId,\n  spreadsheetUrl,\n  createStatusCode,\n};"
       },
       "id": "7",
       "name": "Prepare Sheet Meta",
@@ -154,7 +130,7 @@
           },
           "conditions": [
             {
-              "leftValue": "={{ $json.shouldMove === true && String($json.session_sheet_id || \"\").trim() !== \"\" }}",
+              "leftValue": "={{ $json.shouldMove === true && String($json.spreadsheetId || \"\").trim() !== \"\" }}",
               "rightValue": "",
               "operator": {
                 "type": "boolean",
@@ -179,13 +155,13 @@
     {
       "parameters": {
         "operation": "move",
-        "fileId": "={{ $json.session_sheet_id }}",
+        "fileId": "={{ $json.spreadsheetId }}",
         "driveId": {
           "__rl": true,
           "mode": "list",
           "value": "My Drive"
         },
-        "folderId": "={{ $json.targetFolderId }}",
+        "folderId": "={{ $json.folderId }}",
         "authentication": "oAuth2"
       },
       "id": "9",
@@ -199,14 +175,14 @@
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
+          "name": "__GDRIVE_CREDENTIAL_LABEL__"
         }
       }
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nreturn {\n  ...input,\n  session_sheet_move_status: 'success',\n};"
+        "jsCode": "const input = $json ?? {};\nreturn {\n  ...input,\n  moveStatus: 'success',\n};"
       },
       "id": "10",
       "name": "Prepare Move Context",
@@ -220,7 +196,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nreturn {\n  ...input,\n  session_sheet_move_status: 'skipped',\n};"
+        "jsCode": "const input = $json ?? {};\nreturn {\n  ...input,\n  moveStatus: 'skipped',\n};"
       },
       "id": "11",
       "name": "Prepare Move Skipped",
@@ -267,7 +243,7 @@
     {
       "parameters": {
         "method": "PUT",
-        "url": "={{ \"https://sheets.googleapis.com/v4/spreadsheets/\" + encodeURIComponent($json.session_sheet_id || \"\") + \"/values/\" + encodeURIComponent(($json.sheetTabName || \"assets\") + \"!A1\") + \"?valueInputOption=RAW\" }}",
+        "url": "={{ \"https://sheets.googleapis.com/v4/spreadsheets/\" + encodeURIComponent($json.spreadsheetId || \"\") + \"/values/\" + encodeURIComponent($json.writeRange || (($json.sheetName || \"Sheet1\") + \"!A1\")) + \"?valueInputOption=\" + encodeURIComponent($json.valueInputOption || \"RAW\") }}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "googleDriveOAuth2Api",
         "sendHeaders": true,
@@ -281,7 +257,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { values: Array.isArray($json.sheetRows) ? $json.sheetRows : [] } }}",
+        "jsonBody": "={{ { values: Array.isArray($json.rows) ? $json.rows : [] } }}",
         "options": {
           "response": {
             "response": {
@@ -303,14 +279,14 @@
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_NAME__"
+          "name": "__GDRIVE_CREDENTIAL_LABEL__"
         }
       }
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst statusCode = Number(input.statusCode ?? 0);\nreturn {\n  ...input,\n  session_sheet_update_status_code: Number.isFinite(statusCode) ? statusCode : 0,\n};"
+        "jsCode": "const input = $json ?? {};\nconst writeStatusCodeRaw = Number(input.statusCode ?? 0);\nreturn {\n  ...input,\n  writeStatusCode: Number.isFinite(writeStatusCodeRaw) ? writeStatusCodeRaw : 0,\n};"
       },
       "id": "14",
       "name": "Prepare Write Result",
@@ -324,7 +300,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nreturn {\n  ...input,\n  session_sheet_update_status_code: 0,\n};"
+        "jsCode": "const input = $json ?? {};\nreturn {\n  ...input,\n  writeStatusCode: 0,\n};"
       },
       "id": "15",
       "name": "Prepare Write Skipped",
@@ -338,7 +314,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst sheetId = safeText(input.session_sheet_id);\nconst sheetUrl = safeText(input.session_sheet_url, sheetId ? 'https://docs.google.com/spreadsheets/d/' + sheetId : '');\n\nconst writeStatusCodeRaw = Number(input.session_sheet_update_status_code ?? 0);\nconst writeStatusCode = Number.isFinite(writeStatusCodeRaw) ? writeStatusCodeRaw : 0;\nconst writeOk = input.shouldWrite !== true\n  ? true\n  : (input.missingSheetIdForWrite === true\n      ? false\n      : (writeStatusCode >= 200 && writeStatusCode < 300));\nconst ensureOk = input.shouldEnsure !== true || sheetId !== '';\n\nreturn {\n  ...input,\n  status: ensureOk && writeOk ? 'success' : 'partial',\n  sheetId,\n  sheetUrl,\n  session_sheet_id: sheetId,\n  session_sheet_url: sheetUrl,\n  session_sheet_create_status_code: Number(input.session_sheet_create_status_code ?? 0),\n  session_sheet_update_status_code: writeStatusCode,\n};"
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst spreadsheetId = safeText(input.spreadsheetId);\nconst spreadsheetUrl = safeText(input.spreadsheetUrl, spreadsheetId ? 'https://docs.google.com/spreadsheets/d/' + spreadsheetId : '');\n\nconst createStatusCodeRaw = Number(input.createStatusCode ?? 0);\nconst createStatusCode = Number.isFinite(createStatusCodeRaw) ? createStatusCodeRaw : 0;\n\nconst writeStatusCodeRaw = Number(input.writeStatusCode ?? 0);\nconst writeStatusCode = Number.isFinite(writeStatusCodeRaw) ? writeStatusCodeRaw : 0;\n\nconst writeOk = input.shouldWrite !== true\n  ? true\n  : (input.missingSpreadsheetIdForWrite === true\n      ? false\n      : (writeStatusCode >= 200 && writeStatusCode < 300));\nconst ensureOk = input.shouldEnsure !== true || spreadsheetId !== '';\n\nconst moveStatus = safeText(input.moveStatus, input.shouldMove === true ? 'failed' : 'skipped');\n\nreturn {\n  ...input,\n  status: ensureOk && writeOk ? 'success' : 'partial',\n  spreadsheetId,\n  spreadsheetUrl,\n  createStatusCode,\n  writeStatusCode,\n  writeRange: safeText(input.writeRange),\n  moveStatus,\n};"
       },
       "id": "16",
       "name": "Build Result",
@@ -351,7 +327,7 @@
     },
     {
       "parameters": {
-        "content": "## INPUT CONTRACT (Execute Workflow Trigger)\n\n`action` (string): `ensureAndWrite|ensureSheet|writeRows` (default `ensureAndWrite`)\n`session_sheet_id` or `sheetId` (string): existing sheet ID\n`session_sheet_name` or `sheetName` (string): sheet title when creating (default `book-review-assets`)\n`sheetTabName` (string): tab name (default `assets`)\n`session_folder_id` or `targetFolderId` (string): Drive folder to move sheet into\n`session_sheet_rows` or `sheetRows` (2D array): data rows to write at `A1`\n\n### Behavior flags (auto by Normalize Request)\n- `shouldEnsure`, `shouldWrite`, `shouldMove`\n- `shouldCreateSheet`, `shouldCallWriteApi`\n- `missingSheetIdForWrite`\n\n### Result keys\n`status`, `sheetId`, `sheetUrl`, `session_sheet_id`, `session_sheet_url`, `session_sheet_create_status_code`, `session_sheet_update_status_code`.",
+        "content": "## INPUT CONTRACT (Execute Workflow Trigger)\n\n`action` (string): `ensureAndWrite|ensureSheet|writeRows` (default `ensureAndWrite`)\n`spreadsheetId` (string): existing spreadsheet ID (optional)\n`spreadsheetName` (string): spreadsheet title when creating (default `untitled-sheet`)\n`sheetName` (string): tab name (default `Sheet1`)\n`folderId` (string): Drive folder ID de move spreadsheet (optional)\n`rows` (2D array): data rows de ghi vao range\n`range` (string): range ghi du lieu (default `${sheetName}!A1`)\n`valueInputOption` (string): `RAW|USER_ENTERED` (default `RAW`)\n\n### Behavior flags (auto by Normalize Request)\n- `shouldEnsure`, `shouldWrite`, `shouldMove`\n- `shouldCreateSheet`, `shouldCallWriteApi`\n- `missingSpreadsheetIdForWrite`\n\n### Result keys\n`status`, `spreadsheetId`, `spreadsheetUrl`, `createStatusCode`, `writeStatusCode`, `writeRange`, `moveStatus`.",
         "height": 820,
         "width": 760,
         "color": 7
@@ -367,7 +343,7 @@
     },
     {
       "parameters": {
-        "content": "## STAGE 1: NORMALIZE + ROUTE FLAGS\n\nNodes:\n- Set Config\n- Normalize Request\n\nPurpose:\n- chuẩn hóa input aliases (`session_sheet_id` vs `sheetId`)\n- set action hợp lệ\n- dựng flags điều hướng cho các stage sau.",
+        "content": "## STAGE 1: NORMALIZE + ROUTE FLAGS\n\nNodes:\n- When Executed by Another Workflow\n- Normalize Request\n\nPurpose:\n- chuan hoa input camelCase\n- validate action + defaults\n- dung flags dieu huong cho ensure/move/write.",
         "height": 340,
         "width": 640,
         "color": 5
@@ -383,7 +359,7 @@
     },
     {
       "parameters": {
-        "content": "## STAGE 2: ENSURE SHEET\n\nFlow:\n- If Need Create Sheet\n- Create Sheet OR Use Existing Sheet\n- Prepare Sheet Meta\n\nKết quả:\n- luôn cố gắng trả về `session_sheet_id` + `session_sheet_url` để dùng cho bước move/write.",
+        "content": "## STAGE 2: ENSURE SPREADSHEET\n\nFlow:\n- If Need Create Sheet\n- Create Sheet OR Use Existing Sheet\n- Prepare Sheet Meta\n\nKet qua:\n- luon tra `spreadsheetId` + `spreadsheetUrl` de dung cho move/write.",
         "height": 360,
         "width": 620,
         "color": 6
@@ -399,7 +375,7 @@
     },
     {
       "parameters": {
-        "content": "## STAGE 3: MOVE TO FOLDER (OPTIONAL)\n\nFlow:\n- If Should Move Sheet\n- Move Sheet To Folder\n- Prepare Move Context / Prepare Move Skipped\n\nChỉ chạy khi có `targetFolderId` và có `session_sheet_id`.",
+        "content": "## STAGE 3: MOVE TO FOLDER (OPTIONAL)\n\nFlow:\n- If Should Move Sheet\n- Move Sheet To Folder\n- Prepare Move Context / Prepare Move Skipped\n\nChi chay khi co `folderId` va co `spreadsheetId`.",
         "height": 320,
         "width": 620,
         "color": 4
@@ -415,7 +391,7 @@
     },
     {
       "parameters": {
-        "content": "## STAGE 4: WRITE ROWS (OPTIONAL)\n\nFlow:\n- If Should Write Rows\n- Write Sheet Rows\n- Prepare Write Result / Prepare Write Skipped\n\nWrite target: `${sheetTabName}!A1` với payload `values` từ `sheetRows`.",
+        "content": "## STAGE 4: WRITE ROWS (OPTIONAL)\n\nFlow:\n- If Should Write Rows\n- Write Sheet Rows\n- Prepare Write Result / Prepare Write Skipped\n\nWrite target: `writeRange` voi payload `values` tu `rows`.",
         "height": 320,
         "width": 620,
         "color": 3
@@ -431,7 +407,7 @@
     },
     {
       "parameters": {
-        "content": "## STAGE 5: FINAL RESULT\n\nNode: Build Result\n\nRule:\n- `status=success` khi ensure/write pass theo logic flags\n- `status=partial` khi thiếu sheet ID cho write hoặc write API không 2xx\n\nOutput giữ đầy đủ context để workflow cha dùng tiếp.",
+        "content": "## STAGE 5: FINAL RESULT\n\nNode: Build Result\n\nRule:\n- `status=success` khi ensure/write pass theo logic flags\n- `status=partial` khi thieu spreadsheet ID cho write hoac write API khong 2xx\n\nOutput tra keys generic, khong gan context book-review.",
         "height": 300,
         "width": 560,
         "color": 2
@@ -455,15 +431,11 @@
               "type": "string"
             },
             {
-              "name": "session_sheet_id",
+              "name": "spreadsheetId",
               "type": "string"
             },
             {
-              "name": "sheetId",
-              "type": "string"
-            },
-            {
-              "name": "session_sheet_name",
+              "name": "spreadsheetName",
               "type": "string"
             },
             {
@@ -471,24 +443,20 @@
               "type": "string"
             },
             {
-              "name": "sheetTabName",
+              "name": "folderId",
               "type": "string"
             },
             {
-              "name": "session_folder_id",
-              "type": "string"
-            },
-            {
-              "name": "targetFolderId",
-              "type": "string"
-            },
-            {
-              "name": "session_sheet_rows",
+              "name": "rows",
               "type": "array"
             },
             {
-              "name": "sheetRows",
-              "type": "array"
+              "name": "range",
+              "type": "string"
+            },
+            {
+              "name": "valueInputOption",
+              "type": "string"
             }
           ]
         }
@@ -504,17 +472,6 @@
     }
   ],
   "connections": {
-    "Set Config": {
-      "main": [
-        [
-          {
-            "node": "Normalize Request",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Normalize Request": {
       "main": [
         [
@@ -683,7 +640,7 @@
       "main": [
         [
           {
-            "node": "Set Config",
+            "node": "Normalize Request",
             "type": "main",
             "index": 0
           }

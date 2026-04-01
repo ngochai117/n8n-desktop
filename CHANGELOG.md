@@ -4,6 +4,32 @@ Nhat ky thay doi chi tiet cua du an (dac biet cho workflow sync/import va automa
 
 ## 2026-04-01
 
+- Simplify contract cua `GG Sheet Manager` va bo naming ad-hoc:
+  - `workflows/google/gg-sheet-manager.workflow.json`:
+    - Chuan hoa input camelCase: `action`, `spreadsheetId`, `spreadsheetName`, `sheetName`, `folderId`, `rows`, `range`, `valueInputOption`.
+    - Chuan hoa output generic: `status`, `spreadsheetId`, `spreadsheetUrl`, `createStatusCode`, `writeStatusCode`, `writeRange`, `moveStatus`.
+    - Bo aliases `session_*`, `targetFolderId`, `sheetRows`, `sheetTabName` khoi trigger schema + stage logic.
+    - Cap nhat sticky notes de phan anh contract moi.
+  - `workflows/book-review/book-review.workflow.json`:
+    - Them node `Prepare GG Sheet Manager Request (Worker)` de map tu `session_*` sang contract moi truoc khi goi subworkflow.
+    - Them node `Map GG Sheet Manager Result (Worker)` de map nguoc ket qua ve `session_sheet_*` cho flow book-review hien tai.
+    - Cap nhat `Finalize Session Assets Package (Worker)` de uu tien doc field generic (`spreadsheetId`, `spreadsheetUrl`, `writeStatusCode`) khi can.
+  - Da import lai workflows:
+    - `GG Sheet Manager` (`Dhguhje1kdEgdj9I`)
+    - `Book Review` (`4g3N5urBBIuo9HcJ`)
+
+- Simplify input contract cho `GG Drive Manager` (bo `targetFolderId` + `requestedFolderPath`):
+  - `workflows/google/gg-drive-manager.workflow.json`:
+    - Execute Workflow Trigger chi con input: `action`, `rootFolderId`, `folderPath`, `fileName`, `binaryFieldName`.
+    - Chuan hoa output branch result: bo passthrough internal fields (`includeOtherFields=false`) de khong con lo `targetFolderId/requestedFolderPath` trong ket qua.
+    - Bo cac field output cu `resultRootFolderId`, `resultFolderPath`.
+    - Cap nhat default recursive path sang `workflows/google/gg-drive-manager.workflow.json`.
+    - Cap nhat sticky notes contract + stage/list note, dong thoi canh lai vi tri/kich thuoc note cho de doc.
+  - `workflows/book-review/book-review-ai-agent.workflow.json`: cap nhat schema node `GG Drive Manager Save Manifest`, bo `targetFolderId`.
+  - Da import lai workflows:
+    - `GG Drive Manager` (`QpcIxaHiYXDqjw4p`)
+    - `Book Review AI Agent` (`901WvOJHn6O2Hbze`)
+
 - Governance update cho subworkflow trigger input schema:
   - Them rule moi trong `AGENT_RULES_PROJECT.md` (muc 15) bat buoc `Execute Workflow Trigger` phai co schema input hop le (`inputSource=workflowInputs`, `workflowInputs.values[]` co `name` + `type`, khong de `[{}]`).
   - Them playbook `Skill K` trong `RULES_AND_SKILLS.md` de chuan hoa quy trinh sync -> patch schema -> import lai cho cac workflow manager/media.

@@ -1065,9 +1065,7 @@ sanitize_and_shape_workflow() {
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "ggchat_webhook_url") | .value) = "__GG_CHAT_WEBHOOK__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "image_api_key") | .value) = ""
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "gdrive_root_folder_id") | .value) = "__GDRIVE_ROOT_FOLDER_ID__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "gdrive_credential_name") | .value) = "__GDRIVE_CREDENTIAL_NAME__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "gdriveRootFolderId") | .value) = "__GDRIVE_ROOT_FOLDER_ID__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "gdriveCredentialName") | .value) = "__GDRIVE_CREDENTIAL_NAME__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "text_to_images_workflow_id") | .value) = "__TEXT_TO_IMAGES_WORKFLOW_ID__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "text_to_videos_workflow_id") | .value) = "__TEXT_TO_VIDEOS_WORKFLOW_ID__"
     | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "tts_workflow_id") | .value) = "__TTS_WORKFLOW_ID__"
@@ -1104,11 +1102,11 @@ sanitize_and_shape_workflow() {
     | (.nodes[]? | select(.name == "Generate TTS Assets (Worker)") | .parameters) |= del(.workflowPath)
     | (.nodes[]? | select(.credentials.googleApi != null) | .credentials.googleApi) = {
         id: "__GDRIVE_CREDENTIAL_ID__",
-        name: "__GDRIVE_CREDENTIAL_NAME__"
+        name: "__GDRIVE_CREDENTIAL_LABEL__"
       }
     | (.nodes[]? | select(.credentials.googleDriveOAuth2Api != null) | .credentials.googleDriveOAuth2Api) = {
         id: "__GDRIVE_CREDENTIAL_ID__",
-        name: "__GDRIVE_CREDENTIAL_NAME__"
+        name: "__GDRIVE_CREDENTIAL_LABEL__"
       }
     | (.nodes[]? | select(.type == "n8n-nodes-base.telegram" or .type == "n8n-nodes-base.telegramTrigger") | .credentials.telegramApi) = {
         id: "__TELEGRAM_CREDENTIAL_ID__",

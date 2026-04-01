@@ -100,7 +100,6 @@ IMAGE_API_KEY_DEFAULT="${IMAGE_API_KEY:-}"
 TTS_API_BASE_URL_DEFAULT="${TTS_API_BASE_URL:-http://127.0.0.1:8001}"
 TTS_VOICE_ID_DEFAULT="${TTS_VOICE_ID:-ngochuyen}"
 GDRIVE_ROOT_FOLDER_ID_DEFAULT="${GDRIVE_ROOT_FOLDER_ID_DEFAULT:-${GDRIVE_ROOT_FOLDER_ID:-}}"
-GDRIVE_CREDENTIAL_NAME_DEFAULT="${GDRIVE_CREDENTIAL_NAME:-}"
 CONTENT_MODEL_DEFAULT="${CONTENT_MODEL:-cx/gpt-5.4}"
 FALLBACK_MODEL_DEFAULT="${FALLBACK_MODEL:-cx/gpt-5.2}"
 QC_MODEL_DEFAULT="${QC_MODEL:-$CONTENT_MODEL_DEFAULT}"
@@ -291,7 +290,7 @@ find_telegram_credential_id_by_name() {
 }
 
 find_gdrive_credential_binding() {
-  local credential_name="$1"
+  local credential_name="${1:-}"
 
   api_request GET "$N8N_API_URL/api/v1/credentials?limit=$N8N_WORKFLOW_LIST_LIMIT"
   if [ "$API_LAST_HTTP_CODE" != "200" ]; then
@@ -412,17 +411,13 @@ ensure_gdrive_credential_binding() {
   fi
 
   local binding
-  binding="$(find_gdrive_credential_binding "$GDRIVE_CREDENTIAL_NAME_DEFAULT")"
+  binding="$(find_gdrive_credential_binding)"
   if [ -n "$binding" ]; then
     printf '%s\n' "$binding"
     return
   fi
 
-  if [ -n "$GDRIVE_CREDENTIAL_NAME_DEFAULT" ]; then
-    echo "Cannot find Google Drive credential named '$GDRIVE_CREDENTIAL_NAME_DEFAULT' (supported types: googleDriveOAuth2Api, googleApi)." >&2
-  else
-    echo "Cannot find any Google Drive credential (supported types: googleDriveOAuth2Api, googleApi)." >&2
-  fi
+  echo "Cannot find any Google Drive credential (supported types: googleDriveOAuth2Api, googleApi)." >&2
 
   api_request GET "$N8N_API_URL/api/v1/credentials?limit=$N8N_WORKFLOW_LIST_LIMIT"
   if [ "$API_LAST_HTTP_CODE" = "200" ]; then
@@ -435,7 +430,7 @@ ensure_gdrive_credential_binding() {
     ' >&2 || true
   fi
 
-  echo "Create/connect a Google Drive OAuth2 credential in n8n and set GDRIVE_CREDENTIAL_NAME in env.n8n.local to that credential name." >&2
+  echo "Create/connect a Google Drive OAuth2 credential in n8n, then select it on workflow nodes in UI." >&2
   exit 1
 }
 
@@ -451,10 +446,10 @@ has_google_drive_nodes="$(
 
 gdrive_binding="$(ensure_gdrive_credential_binding "$has_google_drive_nodes")"
 gdrive_credential_id=""
-gdrive_credential_name="$GDRIVE_CREDENTIAL_NAME_DEFAULT"
+gdrive_credential_label=""
 gdrive_credential_type=""
 if [ -n "$gdrive_binding" ]; then
-  IFS=$'\t' read -r gdrive_credential_id gdrive_credential_name gdrive_credential_type <<< "$gdrive_binding"
+  IFS=$'\t' read -r gdrive_credential_id gdrive_credential_label gdrive_credential_type <<< "$gdrive_binding"
 fi
 
 resolve_media_subworkflow_ids
@@ -477,9 +472,8 @@ payload="$(jq \
   --arg ttsApiBaseUrl "$TTS_API_BASE_URL_DEFAULT" \
   --arg ttsVoiceId "$TTS_VOICE_ID_DEFAULT" \
   --arg gdriveRootFolderId "$GDRIVE_ROOT_FOLDER_ID_DEFAULT" \
-  --arg gdriveCredentialName "$gdrive_credential_name" \
   --arg gdriveCredentialId "$gdrive_credential_id" \
-  --arg gdriveCredentialResolvedName "$gdrive_credential_name" \
+  --arg gdriveCredentialResolvedName "$gdrive_credential_label" \
   --arg gdriveCredentialType "$gdrive_credential_type" \
   --arg textToImagesWorkflowPath "$TEXT_TO_IMAGES_WORKFLOW_PATH" \
   --arg textToVideosWorkflowPath "$TEXT_TO_VIDEOS_WORKFLOW_PATH" \
@@ -524,9 +518,7 @@ payload="$(jq \
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="tts_api_base_url") | .value) = $ttsApiBaseUrl
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="tts_voice_id") | .value) = $ttsVoiceId
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="gdrive_root_folder_id") | .value) = $gdriveRootFolderId
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="gdrive_credential_name") | .value) = $gdriveCredentialName
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="gdriveRootFolderId") | .value) = $gdriveRootFolderId
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="gdriveCredentialName") | .value) = $gdriveCredentialName
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="text_to_images_workflow_path") | .value) = $textToImagesWorkflowPath
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="text_to_videos_workflow_path") | .value) = $textToVideosWorkflowPath
   | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="tts_workflow_path") | .value) = $ttsWorkflowPath

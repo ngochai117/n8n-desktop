@@ -96,12 +96,6 @@
               "type": "string"
             },
             {
-              "id": "media-gdrive_credential_name-main",
-              "name": "gdrive_credential_name",
-              "value": "__GDRIVE_CREDENTIAL_NAME__",
-              "type": "string"
-            },
-            {
               "id": "media-image_api_base_url",
               "name": "image_api_base_url",
               "value": "",
@@ -576,12 +570,6 @@
               "id": "media-gdrive_root_folder_id-worker",
               "name": "gdrive_root_folder_id",
               "value": "__GDRIVE_ROOT_FOLDER_ID__",
-              "type": "string"
-            },
-            {
-              "id": "media-gdrive_credential_name-worker",
-              "name": "gdrive_credential_name",
-              "value": "__GDRIVE_CREDENTIAL_NAME__",
               "type": "string"
             },
             {
@@ -1426,14 +1414,14 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1,
       "position": [
-        7728,
+        7952,
         -1120
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst sheetUpdateStatusCode = Number(input.statusCode ?? input.session_sheet_update_status_code ?? 0);\nconst sheetWriteOk = Number.isFinite(sheetUpdateStatusCode)\n  ? (sheetUpdateStatusCode >= 200 && sheetUpdateStatusCode < 300)\n  : false;\nconst shouldPersistReview = input.session_should_persist_review_file === true;\nconst shouldPersistMetadata = input.session_should_persist_metadata_file === true;\nconst shouldPersistManifest = input.session_should_persist_manifest_file === true;\nconst shouldPersistSheet = input.session_should_persist_sheet === true;\n\nconst reviewFileId = safeText(input.session_review_file_id);\nconst metadataFileId = safeText(input.session_metadata_file_id);\nconst manifestFileId = safeText(input.session_manifest_file_id);\nconst sheetId = safeText(input.session_sheet_id);\n\nlet packageStatus = 'persisted';\nif (shouldPersistReview && !reviewFileId) {\n  packageStatus = 'partial';\n}\nif (shouldPersistMetadata && !metadataFileId) {\n  packageStatus = 'partial';\n}\nif (shouldPersistManifest && !manifestFileId) {\n  packageStatus = 'partial';\n}\nif (shouldPersistSheet) {\n  if (!sheetId || !sheetWriteOk) {\n    packageStatus = 'partial';\n  }\n}\n\nconst sheetWriteStatus = shouldPersistSheet\n  ? (sheetWriteOk ? 'success' : 'failed_or_skipped')\n  : 'skipped_not_required';\n\nconst videoFolderId = safeText(input.session_video_folder_id, safeText(input.session_image_folder_id));\nconst videoFolderUrl = safeText(input.session_video_folder_url, safeText(input.session_image_folder_url));\n\nconst sessionPackageSummary = {\n  session_folder_id: safeText(input.session_folder_id),\n  session_folder_url: safeText(input.session_folder_url),\n  voice_folder_id: safeText(input.session_voice_folder_id),\n  voice_folder_url: safeText(input.session_voice_folder_url),\n  image_folder_id: safeText(input.session_image_folder_id),\n  image_folder_url: safeText(input.session_image_folder_url),\n  video_folder_id: videoFolderId,\n  video_folder_url: videoFolderUrl,\n  review_file_id: reviewFileId,\n  review_file_url: safeText(input.session_review_file_url),\n  metadata_file_id: metadataFileId,\n  metadata_file_url: safeText(input.session_metadata_file_url),\n  manifest_file_id: manifestFileId,\n  manifest_file_url: safeText(input.session_manifest_file_url),\n  sheet_id: sheetId,\n  sheet_url: safeText(input.session_sheet_url),\n  sheet_write_status: sheetWriteStatus,\n  persist_review: shouldPersistReview,\n  persist_metadata: shouldPersistMetadata,\n  persist_manifest: shouldPersistManifest,\n  persist_sheet: shouldPersistSheet,\n};\n\nreturn {\n  ...input,\n  session_assets_package_status: packageStatus,\n  session_assets_package_summary: sessionPackageSummary,\n  session_sheet_update_status_code: sheetUpdateStatusCode,\n};\n\n"
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst sheetUpdateStatusCode = Number(input.statusCode ?? input.session_sheet_update_status_code ?? input.writeStatusCode ?? 0);\nconst sheetWriteOk = Number.isFinite(sheetUpdateStatusCode)\n  ? (sheetUpdateStatusCode >= 200 && sheetUpdateStatusCode < 300)\n  : false;\nconst shouldPersistReview = input.session_should_persist_review_file === true;\nconst shouldPersistMetadata = input.session_should_persist_metadata_file === true;\nconst shouldPersistManifest = input.session_should_persist_manifest_file === true;\nconst shouldPersistSheet = input.session_should_persist_sheet === true;\n\nconst reviewFileId = safeText(input.session_review_file_id);\nconst metadataFileId = safeText(input.session_metadata_file_id);\nconst manifestFileId = safeText(input.session_manifest_file_id);\nconst sheetId = safeText(input.session_sheet_id, safeText(input.spreadsheetId));\n\nlet packageStatus = 'persisted';\nif (shouldPersistReview && !reviewFileId) {\n  packageStatus = 'partial';\n}\nif (shouldPersistMetadata && !metadataFileId) {\n  packageStatus = 'partial';\n}\nif (shouldPersistManifest && !manifestFileId) {\n  packageStatus = 'partial';\n}\nif (shouldPersistSheet) {\n  if (!sheetId || !sheetWriteOk) {\n    packageStatus = 'partial';\n  }\n}\n\nconst sheetWriteStatus = shouldPersistSheet\n  ? (sheetWriteOk ? 'success' : 'failed_or_skipped')\n  : 'skipped_not_required';\n\nconst videoFolderId = safeText(input.session_video_folder_id, safeText(input.session_image_folder_id));\nconst videoFolderUrl = safeText(input.session_video_folder_url, safeText(input.session_image_folder_url));\n\nconst sessionPackageSummary = {\n  session_folder_id: safeText(input.session_folder_id),\n  session_folder_url: safeText(input.session_folder_url),\n  voice_folder_id: safeText(input.session_voice_folder_id),\n  voice_folder_url: safeText(input.session_voice_folder_url),\n  image_folder_id: safeText(input.session_image_folder_id),\n  image_folder_url: safeText(input.session_image_folder_url),\n  video_folder_id: videoFolderId,\n  video_folder_url: videoFolderUrl,\n  review_file_id: reviewFileId,\n  review_file_url: safeText(input.session_review_file_url),\n  metadata_file_id: metadataFileId,\n  metadata_file_url: safeText(input.session_metadata_file_url),\n  manifest_file_id: manifestFileId,\n  manifest_file_url: safeText(input.session_manifest_file_url),\n  sheet_id: sheetId,\n  sheet_url: safeText(input.session_sheet_url, safeText(input.spreadsheetUrl)),\n  sheet_write_status: sheetWriteStatus,\n  persist_review: shouldPersistReview,\n  persist_metadata: shouldPersistMetadata,\n  persist_manifest: shouldPersistManifest,\n  persist_sheet: shouldPersistSheet,\n};\n\nreturn {\n  ...input,\n  session_assets_package_status: packageStatus,\n  session_assets_package_summary: sessionPackageSummary,\n  session_sheet_update_status_code: sheetUpdateStatusCode,\n};\n\n"
       },
       "id": "73b2e757-ee87-407b-9e97-4ed6b0c9df7d",
       "name": "Finalize Session Assets Package (Worker)",
@@ -1748,6 +1736,120 @@
         2128,
         -1136
       ]
+    },
+    {
+      "parameters": {
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "br-sheet-request-action",
+              "name": "action",
+              "value": "={{ String($json.session_sheet_id ?? \"\").trim() ? \"writeRows\" : \"ensureAndWrite\" }}",
+              "type": "string"
+            },
+            {
+              "id": "br-sheet-request-spreadsheet-id",
+              "name": "spreadsheetId",
+              "value": "={{ String($json.session_sheet_id ?? \"\").trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "br-sheet-request-spreadsheet-name",
+              "name": "spreadsheetName",
+              "value": "={{ String($json.session_sheet_name ?? \"book-review-assets\").trim() || \"book-review-assets\" }}",
+              "type": "string"
+            },
+            {
+              "id": "br-sheet-request-sheet-name",
+              "name": "sheetName",
+              "value": "assets",
+              "type": "string"
+            },
+            {
+              "id": "br-sheet-request-folder-id",
+              "name": "folderId",
+              "value": "={{ String($json.session_folder_id ?? \"\").trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "br-sheet-request-rows",
+              "name": "rows",
+              "value": "={{ Array.isArray($json.session_sheet_rows) ? $json.session_sheet_rows : [] }}",
+              "type": "array"
+            },
+            {
+              "id": "br-sheet-request-range",
+              "name": "range",
+              "value": "assets!A1",
+              "type": "string"
+            },
+            {
+              "id": "br-sheet-request-value-input-option",
+              "name": "valueInputOption",
+              "value": "RAW",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "br-set-gg-sheet-manager-request",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        7728,
+        -1120
+      ],
+      "name": "Prepare GG Sheet Manager Request (Worker)"
+    },
+    {
+      "parameters": {
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "br-sheet-result-session-id",
+              "name": "session_sheet_id",
+              "value": "={{ String($json.spreadsheetId ?? \"\").trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "br-sheet-result-session-url",
+              "name": "session_sheet_url",
+              "value": "={{ String($json.spreadsheetUrl ?? \"\").trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "br-sheet-result-create-status",
+              "name": "session_sheet_create_status_code",
+              "value": "={{ Number.isFinite(Number($json.createStatusCode)) ? Number($json.createStatusCode) : 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "br-sheet-result-update-status",
+              "name": "session_sheet_update_status_code",
+              "value": "={{ Number.isFinite(Number($json.writeStatusCode)) ? Number($json.writeStatusCode) : 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "br-sheet-result-move-status",
+              "name": "session_sheet_move_status",
+              "value": "={{ String($json.moveStatus ?? \"\").trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "br-set-gg-sheet-manager-result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        8176,
+        -1120
+      ],
+      "name": "Map GG Sheet Manager Result (Worker)"
     }
   ],
   "connections": {
@@ -2267,7 +2369,7 @@
       "main": [
         [
           {
-            "node": "Google Sheets Save Session Sheet (Worker)",
+            "node": "Prepare GG Sheet Manager Request (Worker)",
             "type": "main",
             "index": 0
           }
@@ -2381,6 +2483,28 @@
       ]
     },
     "Google Sheets Save Session Sheet (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Map GG Sheet Manager Result (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare GG Sheet Manager Request (Worker)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets Save Session Sheet (Worker)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map GG Sheet Manager Result (Worker)": {
       "main": [
         [
           {
