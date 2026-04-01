@@ -90,3 +90,17 @@ Project: `n8n-desktop`
 - Voi xu ly theo tung item/chunk, uu tien `Loop Over Items`/`Split Out` + `Merge`/`Aggregate` de gom ket qua.
 - Code node chi duoc dung cho normalize/parse nho khi node built-in khong bieu dien duoc ro rang.
 - Neu logic dai, phai tach thanh nhieu node nho theo tung buoc, khong gom monolithic script kho theo doi.
+
+## 14) Workflow sticky-note maintenance policy (bat buoc)
+- Neu workflow da co `stickyNote`, moi lan sua logic (node/add/remove/sua branch/sua input-output contract) bat buoc cap nhat note de phan anh dung luong xu ly moi.
+- Khong duoc de note stale/khong con dung voi flow thuc te sau khi da sua workflow.
+- Convention dat ten note:
+  - Prefix bat buoc: `NOTE::<WORKFLOW_TAG>::...` (vi du: `NOTE::TTS::...`, `NOTE::IMG::...`, `NOTE::SHARED_NOTIFY::...`).
+  - Bo note toi thieu:
+    1) `INPUT_FIELDS`: liet ke contract input + default quan trong + output chinh.
+    2) `STAGE_*`: mo ta tung stage xu ly chinh (normalize/router/poll/finalize...).
+    3) `BRANCH_*`: mo ta nhanh dieu kien quan trong (notify channels, drive export, realtime sheet...).
+- Khi cap nhat note, uu tien idempotent:
+  - update/replace theo prefix cung workflow tag,
+  - tranh tao duplicate note moi lan sync/import.
+- Sau khi sua note trong workflow JSON, bat buoc chay lai import wrapper workflow tuong ung truoc khi ket luan xong task.

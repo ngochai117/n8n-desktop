@@ -2,35 +2,25 @@
   "name": "TTS",
   "nodes": [
     {
+      "parameters": {},
       "id": "1",
       "name": "When Executed by Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
       "position": [
-        -980,
-        -200
-      ],
-      "parameters": {}
+        -976,
+        384
+      ]
     },
     {
-      "id": "2",
-      "name": "Form Trigger",
-      "type": "n8n-nodes-base.formTrigger",
-      "typeVersion": 2.2,
-      "position": [
-        -980,
-        20
-      ],
       "parameters": {
-        "path": "tts-form",
         "formTitle": "TTS",
         "formDescription": "input_mode=form_upload thi upload file/text. input_mode=drive_url thi cung cap full Google Drive URL.",
         "formFields": {
           "values": [
             {
               "fieldLabel": "request_id",
-              "placeholder": "req-custom-001",
-              "requiredField": false
+              "placeholder": "req-custom-001"
             },
             {
               "fieldLabel": "input_mode",
@@ -44,41 +34,36 @@
             },
             {
               "fieldLabel": "drive_file_url",
-              "placeholder": "https://drive.google.com/file/d/.../view",
-              "requiredField": false
+              "placeholder": "https://drive.google.com/file/d/.../view"
             },
             {
               "fieldLabel": "drive_output_folder_url",
-              "placeholder": "https://drive.google.com/drive/folders/...",
-              "requiredField": false
+              "placeholder": "https://drive.google.com/drive/folders/..."
             },
             {
               "fieldLabel": "input_text",
-              "placeholder": "Optional plain text input",
-              "requiredField": false
+              "placeholder": "Optional plain text input"
             },
             {
               "fieldLabel": "input_file",
               "fieldType": "file",
-              "requiredField": false,
-              "multipleFiles": false,
-              "acceptFileTypes": ""
+              "multipleFiles": false
             }
           ]
         },
         "options": {}
       },
+      "id": "2",
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -976,
+        576
+      ],
       "webhookId": "tts-form-trigger-webhook"
     },
     {
-      "id": "3",
-      "name": "Set Config",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -760,
-        -90
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -236,31 +221,31 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
+      },
+      "id": "3",
+      "name": "Set Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -752,
+        480
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction safeJsonParse(value, fallback = null) {\n  try {\n    return JSON.parse(String(value ?? ''));\n  } catch (_) {\n    return fallback;\n  }\n}\n\nfunction parseJsonObject(rawText) {\n  const raw = safeText(rawText);\n  if (!raw) return null;\n\n  const direct = safeJsonParse(raw, null);\n  if (direct && typeof direct === 'object') return direct;\n\n  const fence = raw.match(/\\x60\\x60\\x60(?:json)?\\s*([\\s\\S]*?)\\x60\\x60\\x60/i);\n  if (fence) {\n    const parsedFence = safeJsonParse(fence[1], null);\n    if (parsedFence && typeof parsedFence === 'object') return parsedFence;\n  }\n\n  const firstObj = raw.indexOf('{');\n  const lastObj = raw.lastIndexOf('}');\n  if (firstObj >= 0 && lastObj > firstObj) {\n    const parsedObj = safeJsonParse(raw.slice(firstObj, lastObj + 1), null);\n    if (parsedObj && typeof parsedObj === 'object') return parsedObj;\n  }\n\n  return null;\n}\n\nfunction tokenizeSentences(text) {\n  const normalized = normalizeText(text).replace(/\\s+/g, ' ');\n  if (!normalized) return [];\n\n  const matches = normalized.match(/[^.!?…]+(?:[.!?…]+(?:[\"'”’)\\]]+)*)|[^.!?…]+$/g) ?? [];\n  const sentences = matches.map((item) => item.trim()).filter(Boolean);\n  return sentences.length > 0 ? sentences : [normalized];\n}\n\nfunction normalizeSceneItem(item, index) {\n  const source = item && typeof item === 'object' ? item : {};\n  const order = asInt(source.order, index + 1, 1, 10000);\n  const sceneId = safeText(source.scene_id, safeText(source.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n  const narrationText = safeText(source.narration_text, safeText(source.text));\n\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    scene_role: safeText(source.scene_role, order === 1 ? 'hook' : 'core'),\n    narration_text: narrationText,\n    image_prompt_en: safeText(source.image_prompt_en),\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    estimated_duration_sec: asInt(source.estimated_duration_sec, order === 1 ? 60 : 95, 15, 300),\n    transition: safeText(source.transition, 'cut'),\n\n    chunk_key: safeText(source.chunk_key, sceneId),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order, 1, 10000),\n    text: safeText(source.text, narrationText),\n    sentence_count: Math.max(1, tokenizeSentences(narrationText).length),\n    chunk_type: safeText(source.chunk_type, 'scene'),\n  };\n}\n\nfunction normalizeChunkManifest(items) {\n  if (!Array.isArray(items)) return [];\n  return items\n    .map((item, idx) => normalizeSceneItem(item, idx))\n    .filter((item) => safeText(item.narration_text) !== '' || safeText(item.image_prompt_en) !== '');\n}\n\nfunction parseDriveFileIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/d\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  const byUc = text.match(/\\/uc\\?.*?[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byUc) return safeText(byUc[1]);\n\n  return '';\n}\n\nfunction parseDriveFolderIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/folders\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]folder=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  return '';\n}\n\nfunction readFirstBinaryText(binaryMap) {\n  const keys = Object.keys(binaryMap ?? {});\n  if (keys.length === 0) return '';\n\n  const first = binaryMap[keys[0]];\n  const base64 = safeText(first?.data);\n  if (!base64) return '';\n\n  try {\n    return Buffer.from(base64, 'base64').toString('utf8');\n  } catch (_) {\n    return '';\n  }\n}\n\nlet inputMode = safeText(input.input_mode).toLowerCase();\nif (!inputMode) {\n  inputMode = safeText(input.drive_file_url) ? 'drive_url' : 'form_upload';\n}\nif (inputMode !== 'form_upload' && inputMode !== 'drive_url') {\n  inputMode = 'form_upload';\n}\n\nlet outputMode = safeText(input.output_mode, 'inline').toLowerCase();\nif (outputMode !== 'inline' && outputMode !== 'drive_export') {\n  outputMode = 'inline';\n}\n\nconst driveFileUrl = safeText(input.drive_file_url);\nconst driveOutputFolderUrl = safeText(input.drive_output_folder_url);\nconst driveFileId = parseDriveFileIdFromUrl(driveFileUrl);\nconst driveOutputFolderId = safeText(input.drive_output_folder_id)\n  || parseDriveFolderIdFromUrl(driveOutputFolderUrl)\n  || safeText(input.gdrive_root_folder_id)\n  || safeText(input.gdrive_root_folder_id_default);\n\nconst incomingManifest = Array.isArray(input.chunk_manifest) && input.chunk_manifest.length > 0\n  ? input.chunk_manifest\n  : input.media_chunks;\nlet chunks = normalizeChunkManifest(incomingManifest);\n\nif (chunks.length === 0 && input.review_manifest && typeof input.review_manifest === 'object') {\n  chunks = normalizeChunkManifest(input.review_manifest.scenes);\n}\n\nif (chunks.length === 0) {\n  const sourceText = normalizeText(input.input_text ?? input.text ?? input.content ?? readFirstBinaryText(binary));\n  if (sourceText) {\n    const parsed = parseJsonObject(sourceText);\n    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.scenes)) {\n      chunks = normalizeChunkManifest(parsed.scenes);\n    }\n\n    if (chunks.length === 0) {\n      chunks = [normalizeSceneItem({\n        scene_id: 'scene_01',\n        order: 1,\n        scene_title: 'Scene 01',\n        scene_role: 'core',\n        narration_text: sourceText,\n        image_prompt_en: safeText(input.image_prompt_fixed, 'cinematic storytelling illustration, warm light, emotional depth'),\n        highlight_quote_vi: '',\n        estimated_duration_sec: 120,\n        transition: 'cut',\n      }, 0)];\n    }\n  }\n}\n\nconst requestId = safeText(input.request_id, 'req-' + Date.now().toString(36));\nconst needsDriveDownload = inputMode === 'drive_url' && chunks.length === 0 && !!driveFileUrl && !!driveFileId;\nconst driveUrlStatus =\n  inputMode === 'drive_url'\n    ? (driveFileId ? 'parsed' : (driveFileUrl ? 'invalid_url' : 'missing_url'))\n    : 'not_required';\n\nreturn {\n  ...input,\n  workflow: safeText(input.workflow, 'scene-media'),\n  request_id: requestId,\n  input_mode: inputMode,\n  output_mode: outputMode,\n  drive_file_url: driveFileUrl,\n  drive_file_id: driveFileId,\n  drive_output_folder_url: driveOutputFolderUrl,\n  drive_output_folder_id: driveOutputFolderId,\n  drive_url_status: driveUrlStatus,\n  needs_drive_download: needsDriveDownload,\n  media_chunks: chunks,\n  chunk_manifest: chunks,\n  media_should_run: chunks.length > 0,\n};"
+      },
       "id": "4",
       "name": "Normalize Inputs",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -520,
-        -90
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction safeJsonParse(value, fallback = null) {\n  try {\n    return JSON.parse(String(value ?? ''));\n  } catch (_) {\n    return fallback;\n  }\n}\n\nfunction parseJsonObject(rawText) {\n  const raw = safeText(rawText);\n  if (!raw) return null;\n\n  const direct = safeJsonParse(raw, null);\n  if (direct && typeof direct === 'object') return direct;\n\n  const fence = raw.match(/\\x60\\x60\\x60(?:json)?\\s*([\\s\\S]*?)\\x60\\x60\\x60/i);\n  if (fence) {\n    const parsedFence = safeJsonParse(fence[1], null);\n    if (parsedFence && typeof parsedFence === 'object') return parsedFence;\n  }\n\n  const firstObj = raw.indexOf('{');\n  const lastObj = raw.lastIndexOf('}');\n  if (firstObj >= 0 && lastObj > firstObj) {\n    const parsedObj = safeJsonParse(raw.slice(firstObj, lastObj + 1), null);\n    if (parsedObj && typeof parsedObj === 'object') return parsedObj;\n  }\n\n  return null;\n}\n\nfunction tokenizeSentences(text) {\n  const normalized = normalizeText(text).replace(/\\s+/g, ' ');\n  if (!normalized) return [];\n\n  const matches = normalized.match(/[^.!?…]+(?:[.!?…]+(?:[\"'”’)\\]]+)*)|[^.!?…]+$/g) ?? [];\n  const sentences = matches.map((item) => item.trim()).filter(Boolean);\n  return sentences.length > 0 ? sentences : [normalized];\n}\n\nfunction normalizeSceneItem(item, index) {\n  const source = item && typeof item === 'object' ? item : {};\n  const order = asInt(source.order, index + 1, 1, 10000);\n  const sceneId = safeText(source.scene_id, safeText(source.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n  const narrationText = safeText(source.narration_text, safeText(source.text));\n\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    scene_role: safeText(source.scene_role, order === 1 ? 'hook' : 'core'),\n    narration_text: narrationText,\n    image_prompt_en: safeText(source.image_prompt_en),\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    estimated_duration_sec: asInt(source.estimated_duration_sec, order === 1 ? 60 : 95, 15, 300),\n    transition: safeText(source.transition, 'cut'),\n\n    chunk_key: safeText(source.chunk_key, sceneId),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order, 1, 10000),\n    text: safeText(source.text, narrationText),\n    sentence_count: Math.max(1, tokenizeSentences(narrationText).length),\n    chunk_type: safeText(source.chunk_type, 'scene'),\n  };\n}\n\nfunction normalizeChunkManifest(items) {\n  if (!Array.isArray(items)) return [];\n  return items\n    .map((item, idx) => normalizeSceneItem(item, idx))\n    .filter((item) => safeText(item.narration_text) !== '' || safeText(item.image_prompt_en) !== '');\n}\n\nfunction parseDriveFileIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/d\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  const byUc = text.match(/\\/uc\\?.*?[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byUc) return safeText(byUc[1]);\n\n  return '';\n}\n\nfunction parseDriveFolderIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/folders\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]folder=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  return '';\n}\n\nfunction readFirstBinaryText(binaryMap) {\n  const keys = Object.keys(binaryMap ?? {});\n  if (keys.length === 0) return '';\n\n  const first = binaryMap[keys[0]];\n  const base64 = safeText(first?.data);\n  if (!base64) return '';\n\n  try {\n    return Buffer.from(base64, 'base64').toString('utf8');\n  } catch (_) {\n    return '';\n  }\n}\n\nlet inputMode = safeText(input.input_mode).toLowerCase();\nif (!inputMode) {\n  inputMode = safeText(input.drive_file_url) ? 'drive_url' : 'form_upload';\n}\nif (inputMode !== 'form_upload' && inputMode !== 'drive_url') {\n  inputMode = 'form_upload';\n}\n\nlet outputMode = safeText(input.output_mode, 'inline').toLowerCase();\nif (outputMode !== 'inline' && outputMode !== 'drive_export') {\n  outputMode = 'inline';\n}\n\nconst driveFileUrl = safeText(input.drive_file_url);\nconst driveOutputFolderUrl = safeText(input.drive_output_folder_url);\nconst driveFileId = parseDriveFileIdFromUrl(driveFileUrl);\nconst driveOutputFolderId = safeText(input.drive_output_folder_id)\n  || parseDriveFolderIdFromUrl(driveOutputFolderUrl)\n  || safeText(input.gdrive_root_folder_id)\n  || safeText(input.gdrive_root_folder_id_default);\n\nconst incomingManifest = Array.isArray(input.chunk_manifest) && input.chunk_manifest.length > 0\n  ? input.chunk_manifest\n  : input.media_chunks;\nlet chunks = normalizeChunkManifest(incomingManifest);\n\nif (chunks.length === 0 && input.review_manifest && typeof input.review_manifest === 'object') {\n  chunks = normalizeChunkManifest(input.review_manifest.scenes);\n}\n\nif (chunks.length === 0) {\n  const sourceText = normalizeText(input.input_text ?? input.text ?? input.content ?? readFirstBinaryText(binary));\n  if (sourceText) {\n    const parsed = parseJsonObject(sourceText);\n    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.scenes)) {\n      chunks = normalizeChunkManifest(parsed.scenes);\n    }\n\n    if (chunks.length === 0) {\n      chunks = [normalizeSceneItem({\n        scene_id: 'scene_01',\n        order: 1,\n        scene_title: 'Scene 01',\n        scene_role: 'core',\n        narration_text: sourceText,\n        image_prompt_en: safeText(input.image_prompt_fixed, 'cinematic storytelling illustration, warm light, emotional depth'),\n        highlight_quote_vi: '',\n        estimated_duration_sec: 120,\n        transition: 'cut',\n      }, 0)];\n    }\n  }\n}\n\nconst requestId = safeText(input.request_id, 'req-' + Date.now().toString(36));\nconst needsDriveDownload = inputMode === 'drive_url' && chunks.length === 0 && !!driveFileUrl && !!driveFileId;\nconst driveUrlStatus =\n  inputMode === 'drive_url'\n    ? (driveFileId ? 'parsed' : (driveFileUrl ? 'invalid_url' : 'missing_url'))\n    : 'not_required';\n\nreturn {\n  ...input,\n  workflow: safeText(input.workflow, 'scene-media'),\n  request_id: requestId,\n  input_mode: inputMode,\n  output_mode: outputMode,\n  drive_file_url: driveFileUrl,\n  drive_file_id: driveFileId,\n  drive_output_folder_url: driveOutputFolderUrl,\n  drive_output_folder_id: driveOutputFolderId,\n  drive_url_status: driveUrlStatus,\n  needs_drive_download: needsDriveDownload,\n  media_chunks: chunks,\n  chunk_manifest: chunks,\n  media_should_run: chunks.length > 0,\n};"
-      }
+        -528,
+        480
+      ]
     },
     {
-      "id": "5",
-      "name": "If Needs Drive Download",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        -300,
-        -90
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -281,24 +266,32 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "5",
+      "name": "If Needs Drive Download",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -304,
+        480
+      ]
     },
     {
+      "parameters": {
+        "operation": "download",
+        "fileId": "={{ $json.drive_file_id }}",
+        "options": {}
+      },
       "id": "6",
       "name": "Google Drive Download Source",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
         -80,
-        -220
+        408
       ],
-      "parameters": {
-        "resource": "file",
-        "operation": "download",
-        "fileId": "={{ $json.drive_file_id }}",
-        "authentication": "oAuth2"
-      },
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
@@ -307,28 +300,20 @@
       }
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction safeJsonParse(value, fallback = null) {\n  try {\n    return JSON.parse(String(value ?? ''));\n  } catch (_) {\n    return fallback;\n  }\n}\n\nfunction parseJsonObject(rawText) {\n  const raw = safeText(rawText);\n  if (!raw) return null;\n\n  const direct = safeJsonParse(raw, null);\n  if (direct && typeof direct === 'object') return direct;\n\n  const fence = raw.match(/\\x60\\x60\\x60(?:json)?\\s*([\\s\\S]*?)\\x60\\x60\\x60/i);\n  if (fence) {\n    const parsedFence = safeJsonParse(fence[1], null);\n    if (parsedFence && typeof parsedFence === 'object') return parsedFence;\n  }\n\n  const firstObj = raw.indexOf('{');\n  const lastObj = raw.lastIndexOf('}');\n  if (firstObj >= 0 && lastObj > firstObj) {\n    const parsedObj = safeJsonParse(raw.slice(firstObj, lastObj + 1), null);\n    if (parsedObj && typeof parsedObj === 'object') return parsedObj;\n  }\n\n  return null;\n}\n\nfunction tokenizeSentences(text) {\n  const normalized = normalizeText(text).replace(/\\s+/g, ' ');\n  if (!normalized) return [];\n\n  const matches = normalized.match(/[^.!?…]+(?:[.!?…]+(?:[\"'”’)\\]]+)*)|[^.!?…]+$/g) ?? [];\n  const sentences = matches.map((item) => item.trim()).filter(Boolean);\n  return sentences.length > 0 ? sentences : [normalized];\n}\n\nfunction normalizeSceneItem(item, index) {\n  const source = item && typeof item === 'object' ? item : {};\n  const order = asInt(source.order, index + 1, 1, 10000);\n  const sceneId = safeText(source.scene_id, safeText(source.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n  const narrationText = safeText(source.narration_text, safeText(source.text));\n\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    scene_role: safeText(source.scene_role, order === 1 ? 'hook' : 'core'),\n    narration_text: narrationText,\n    image_prompt_en: safeText(source.image_prompt_en),\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    estimated_duration_sec: asInt(source.estimated_duration_sec, order === 1 ? 60 : 95, 15, 300),\n    transition: safeText(source.transition, 'cut'),\n\n    chunk_key: safeText(source.chunk_key, sceneId),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order, 1, 10000),\n    text: safeText(source.text, narrationText),\n    sentence_count: Math.max(1, tokenizeSentences(narrationText).length),\n    chunk_type: safeText(source.chunk_type, 'scene'),\n  };\n}\n\nfunction normalizeChunkManifest(items) {\n  if (!Array.isArray(items)) return [];\n  return items\n    .map((item, idx) => normalizeSceneItem(item, idx))\n    .filter((item) => safeText(item.narration_text) !== '' || safeText(item.image_prompt_en) !== '');\n}\n\nfunction parseDriveFileIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/d\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  const byUc = text.match(/\\/uc\\?.*?[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byUc) return safeText(byUc[1]);\n\n  return '';\n}\n\nfunction parseDriveFolderIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/folders\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]folder=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  return '';\n}\n\nfunction readFirstBinaryText(binaryMap) {\n  const keys = Object.keys(binaryMap ?? {});\n  if (keys.length === 0) return '';\n\n  const first = binaryMap[keys[0]];\n  const base64 = safeText(first?.data);\n  if (!base64) return '';\n\n  try {\n    return Buffer.from(base64, 'base64').toString('utf8');\n  } catch (_) {\n    return '';\n  }\n}\n\nlet inputMode = safeText(input.input_mode).toLowerCase();\nif (!inputMode) {\n  inputMode = safeText(input.drive_file_url) ? 'drive_url' : 'form_upload';\n}\nif (inputMode !== 'form_upload' && inputMode !== 'drive_url') {\n  inputMode = 'form_upload';\n}\n\nlet outputMode = safeText(input.output_mode, 'inline').toLowerCase();\nif (outputMode !== 'inline' && outputMode !== 'drive_export') {\n  outputMode = 'inline';\n}\n\nconst driveFileUrl = safeText(input.drive_file_url);\nconst driveOutputFolderUrl = safeText(input.drive_output_folder_url);\nconst driveFileId = parseDriveFileIdFromUrl(driveFileUrl);\nconst driveOutputFolderId = safeText(input.drive_output_folder_id)\n  || parseDriveFolderIdFromUrl(driveOutputFolderUrl)\n  || safeText(input.gdrive_root_folder_id)\n  || safeText(input.gdrive_root_folder_id_default);\n\nconst incomingManifest = Array.isArray(input.chunk_manifest) && input.chunk_manifest.length > 0\n  ? input.chunk_manifest\n  : input.media_chunks;\nlet chunks = normalizeChunkManifest(incomingManifest);\n\nif (chunks.length === 0 && input.review_manifest && typeof input.review_manifest === 'object') {\n  chunks = normalizeChunkManifest(input.review_manifest.scenes);\n}\n\nif (chunks.length === 0) {\n  const sourceText = normalizeText(input.input_text ?? input.text ?? input.content ?? readFirstBinaryText(binary));\n  if (sourceText) {\n    const parsed = parseJsonObject(sourceText);\n    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.scenes)) {\n      chunks = normalizeChunkManifest(parsed.scenes);\n    }\n\n    if (chunks.length === 0) {\n      chunks = [normalizeSceneItem({\n        scene_id: 'scene_01',\n        order: 1,\n        scene_title: 'Scene 01',\n        scene_role: 'core',\n        narration_text: sourceText,\n        image_prompt_en: safeText(input.image_prompt_fixed, 'cinematic storytelling illustration, warm light, emotional depth'),\n        highlight_quote_vi: '',\n        estimated_duration_sec: 120,\n        transition: 'cut',\n      }, 0)];\n    }\n  }\n}\n\nconst requestId = safeText(input.request_id, 'req-' + Date.now().toString(36));\nconst needsDriveDownload = inputMode === 'drive_url' && chunks.length === 0 && !!driveFileUrl && !!driveFileId;\nconst driveUrlStatus =\n  inputMode === 'drive_url'\n    ? (driveFileId ? 'parsed' : (driveFileUrl ? 'invalid_url' : 'missing_url'))\n    : 'not_required';\n\nreturn {\n  ...input,\n  workflow: safeText(input.workflow, 'scene-media'),\n  request_id: requestId,\n  input_mode: inputMode,\n  output_mode: outputMode,\n  drive_file_url: driveFileUrl,\n  drive_file_id: driveFileId,\n  drive_output_folder_url: driveOutputFolderUrl,\n  drive_output_folder_id: driveOutputFolderId,\n  drive_url_status: driveUrlStatus,\n  needs_drive_download: needsDriveDownload,\n  media_chunks: chunks,\n  chunk_manifest: chunks,\n  media_should_run: chunks.length > 0,\n};"
+      },
       "id": "7",
       "name": "Build Chunks From Drive File",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        160,
-        -220
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction safeJsonParse(value, fallback = null) {\n  try {\n    return JSON.parse(String(value ?? ''));\n  } catch (_) {\n    return fallback;\n  }\n}\n\nfunction parseJsonObject(rawText) {\n  const raw = safeText(rawText);\n  if (!raw) return null;\n\n  const direct = safeJsonParse(raw, null);\n  if (direct && typeof direct === 'object') return direct;\n\n  const fence = raw.match(/\\x60\\x60\\x60(?:json)?\\s*([\\s\\S]*?)\\x60\\x60\\x60/i);\n  if (fence) {\n    const parsedFence = safeJsonParse(fence[1], null);\n    if (parsedFence && typeof parsedFence === 'object') return parsedFence;\n  }\n\n  const firstObj = raw.indexOf('{');\n  const lastObj = raw.lastIndexOf('}');\n  if (firstObj >= 0 && lastObj > firstObj) {\n    const parsedObj = safeJsonParse(raw.slice(firstObj, lastObj + 1), null);\n    if (parsedObj && typeof parsedObj === 'object') return parsedObj;\n  }\n\n  return null;\n}\n\nfunction tokenizeSentences(text) {\n  const normalized = normalizeText(text).replace(/\\s+/g, ' ');\n  if (!normalized) return [];\n\n  const matches = normalized.match(/[^.!?…]+(?:[.!?…]+(?:[\"'”’)\\]]+)*)|[^.!?…]+$/g) ?? [];\n  const sentences = matches.map((item) => item.trim()).filter(Boolean);\n  return sentences.length > 0 ? sentences : [normalized];\n}\n\nfunction normalizeSceneItem(item, index) {\n  const source = item && typeof item === 'object' ? item : {};\n  const order = asInt(source.order, index + 1, 1, 10000);\n  const sceneId = safeText(source.scene_id, safeText(source.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n  const narrationText = safeText(source.narration_text, safeText(source.text));\n\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    scene_role: safeText(source.scene_role, order === 1 ? 'hook' : 'core'),\n    narration_text: narrationText,\n    image_prompt_en: safeText(source.image_prompt_en),\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    estimated_duration_sec: asInt(source.estimated_duration_sec, order === 1 ? 60 : 95, 15, 300),\n    transition: safeText(source.transition, 'cut'),\n\n    chunk_key: safeText(source.chunk_key, sceneId),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order, 1, 10000),\n    text: safeText(source.text, narrationText),\n    sentence_count: Math.max(1, tokenizeSentences(narrationText).length),\n    chunk_type: safeText(source.chunk_type, 'scene'),\n  };\n}\n\nfunction normalizeChunkManifest(items) {\n  if (!Array.isArray(items)) return [];\n  return items\n    .map((item, idx) => normalizeSceneItem(item, idx))\n    .filter((item) => safeText(item.narration_text) !== '' || safeText(item.image_prompt_en) !== '');\n}\n\nfunction parseDriveFileIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/d\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  const byUc = text.match(/\\/uc\\?.*?[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byUc) return safeText(byUc[1]);\n\n  return '';\n}\n\nfunction parseDriveFolderIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/folders\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]folder=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  return '';\n}\n\nfunction readFirstBinaryText(binaryMap) {\n  const keys = Object.keys(binaryMap ?? {});\n  if (keys.length === 0) return '';\n\n  const first = binaryMap[keys[0]];\n  const base64 = safeText(first?.data);\n  if (!base64) return '';\n\n  try {\n    return Buffer.from(base64, 'base64').toString('utf8');\n  } catch (_) {\n    return '';\n  }\n}\n\nlet inputMode = safeText(input.input_mode).toLowerCase();\nif (!inputMode) {\n  inputMode = safeText(input.drive_file_url) ? 'drive_url' : 'form_upload';\n}\nif (inputMode !== 'form_upload' && inputMode !== 'drive_url') {\n  inputMode = 'form_upload';\n}\n\nlet outputMode = safeText(input.output_mode, 'inline').toLowerCase();\nif (outputMode !== 'inline' && outputMode !== 'drive_export') {\n  outputMode = 'inline';\n}\n\nconst driveFileUrl = safeText(input.drive_file_url);\nconst driveOutputFolderUrl = safeText(input.drive_output_folder_url);\nconst driveFileId = parseDriveFileIdFromUrl(driveFileUrl);\nconst driveOutputFolderId = safeText(input.drive_output_folder_id)\n  || parseDriveFolderIdFromUrl(driveOutputFolderUrl)\n  || safeText(input.gdrive_root_folder_id)\n  || safeText(input.gdrive_root_folder_id_default);\n\nconst incomingManifest = Array.isArray(input.chunk_manifest) && input.chunk_manifest.length > 0\n  ? input.chunk_manifest\n  : input.media_chunks;\nlet chunks = normalizeChunkManifest(incomingManifest);\n\nif (chunks.length === 0 && input.review_manifest && typeof input.review_manifest === 'object') {\n  chunks = normalizeChunkManifest(input.review_manifest.scenes);\n}\n\nif (chunks.length === 0) {\n  const sourceText = normalizeText(input.input_text ?? input.text ?? input.content ?? readFirstBinaryText(binary));\n  if (sourceText) {\n    const parsed = parseJsonObject(sourceText);\n    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.scenes)) {\n      chunks = normalizeChunkManifest(parsed.scenes);\n    }\n\n    if (chunks.length === 0) {\n      chunks = [normalizeSceneItem({\n        scene_id: 'scene_01',\n        order: 1,\n        scene_title: 'Scene 01',\n        scene_role: 'core',\n        narration_text: sourceText,\n        image_prompt_en: safeText(input.image_prompt_fixed, 'cinematic storytelling illustration, warm light, emotional depth'),\n        highlight_quote_vi: '',\n        estimated_duration_sec: 120,\n        transition: 'cut',\n      }, 0)];\n    }\n  }\n}\n\nconst requestId = safeText(input.request_id, 'req-' + Date.now().toString(36));\nconst needsDriveDownload = inputMode === 'drive_url' && chunks.length === 0 && !!driveFileUrl && !!driveFileId;\nconst driveUrlStatus =\n  inputMode === 'drive_url'\n    ? (driveFileId ? 'parsed' : (driveFileUrl ? 'invalid_url' : 'missing_url'))\n    : 'not_required';\n\nreturn {\n  ...input,\n  workflow: safeText(input.workflow, 'scene-media'),\n  request_id: requestId,\n  input_mode: inputMode,\n  output_mode: outputMode,\n  drive_file_url: driveFileUrl,\n  drive_file_id: driveFileId,\n  drive_output_folder_url: driveOutputFolderUrl,\n  drive_output_folder_id: driveOutputFolderId,\n  drive_url_status: driveUrlStatus,\n  needs_drive_download: needsDriveDownload,\n  media_chunks: chunks,\n  chunk_manifest: chunks,\n  media_should_run: chunks.length > 0,\n};"
-      }
+        144,
+        408
+      ]
     },
     {
-      "id": "8",
-      "name": "If TTS Should Run",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        150,
-        -20
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -349,49 +334,50 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "8",
+      "name": "If TTS Should Run",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        368,
+        480
+      ]
     },
     {
+      "parameters": {
+        "fieldToSplitOut": "media_chunks",
+        "include": "allOtherFields",
+        "options": {}
+      },
       "id": "16",
       "name": "Split Out Media Chunks",
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        390,
-        -20
-      ],
-      "parameters": {
-        "fieldToSplitOut": "media_chunks",
-        "include": "allOtherFields",
-        "options": {}
-      }
+        592,
+        312
+      ]
     },
     {
-      "id": "17",
-      "name": "Loop Over TTS Chunks",
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        630,
-        -20
-      ],
       "parameters": {
         "batchSize": "={{ (() => { const n = Number($json.tts_parallelism ?? 2); if (!Number.isFinite(n) || n < 1) return 2; return Math.min(20, Math.floor(n)); })() }}",
         "options": {
           "reset": false
         }
-      }
+      },
+      "id": "17",
+      "name": "Loop Over TTS Chunks",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        816,
+        312
+      ]
     },
     {
-      "id": "18",
-      "name": "Create TTS Audio",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        860,
-        -200
-      ],
       "parameters": {
         "method": "POST",
         "url": "={{ (() => { const base = String($json.tts_api_base_url || \"http://127.0.0.1:8001\").trim().replace(/\\/$/, \"\"); return /\\/stream$/i.test(base) ? base : base + \"/stream\"; })() }}",
@@ -418,31 +404,31 @@
           }
         }
       },
+      "id": "18",
+      "name": "Create TTS Audio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1040,
+        -168
+      ],
       "continueOnFail": true
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction clampInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction normalizeNumber(value, fallback = 0) {\n  const number = Number(value);\n  return Number.isFinite(number) ? number : fallback;\n}\n\nfunction safeJsonParse(value, fallback = null) {\n  try {\n    return JSON.parse(String(value ?? ''));\n  } catch (_) {\n    return fallback;\n  }\n}\n\nfunction pickFirstString(candidates) {\n  for (const candidate of candidates) {\n    const text = String(candidate ?? '').trim();\n    if (text) return text;\n  }\n  return '';\n}\n\nfunction resolveChunk(value) {\n  if (value?.media_chunks && typeof value.media_chunks === 'object' && !Array.isArray(value.media_chunks)) {\n    return value.media_chunks;\n  }\n  return value ?? {};\n}\n\nfunction chooseVoiceFileName(fileName, safeChunkKey, preferredExt) {\n  const raw = safeText(fileName);\n  const normalized = raw.toLowerCase();\n  const hasKnownExt = /\\.(wav|mp3|mpeg|ogg|m4a|flac|aac)$/i.test(raw);\n  const generic = ['stream', 'audio', 'file', 'output', 'tts', 'response'].includes(normalized);\n\n  if (!raw || generic || !hasKnownExt) {\n    return 'tts-' + safeChunkKey + preferredExt;\n  }\n\n  return raw;\n}\n\nfunction readBinaryInfo(binaryMap) {\n  const keys = Object.keys(binaryMap ?? {});\n  if (keys.length === 0) {\n    return {\n      key: '',\n      mimeType: '',\n      fileName: '',\n      bytes: 0,\n      hasAudio: false,\n      text: '',\n      isBinaryReference: false,\n    };\n  }\n\n  const key = keys.includes('tts_response') ? 'tts_response' : keys[0];\n  const file = binaryMap[key] ?? {};\n  const mimeType = safeText(file.mimeType);\n  const bytes = clampInt(file.bytes, 0, 0, 1000000000);\n  const contentRef = safeText(file.data);\n  const isBinaryReference = contentRef === 'filesystem-v2' || contentRef.startsWith('filesystem-v2:');\n\n  let text = '';\n  if (!isBinaryReference && contentRef) {\n    try {\n      text = Buffer.from(contentRef, 'base64').toString('utf8');\n    } catch (_) {\n      text = '';\n    }\n  }\n\n  return {\n    key,\n    mimeType,\n    fileName: safeText(file.fileName),\n    bytes,\n    isBinaryReference,\n    hasAudio: Boolean(key) && mimeType.toLowerCase().startsWith('audio/'),\n    text,\n  };\n}\n\nfunction parseResponsePayload(value, binaryInfo) {\n  const candidates = [\n    value?.body,\n    value?.data,\n    value?.payload,\n    value?.result,\n    value?.response,\n    binaryInfo.text,\n  ];\n\n  for (const candidate of candidates) {\n    const text = safeText(candidate);\n    if (!text) continue;\n    if (!text.startsWith('{') && !text.startsWith('[')) continue;\n    const parsed = safeJsonParse(text, null);\n    if (parsed) return parsed;\n  }\n\n  return null;\n}\n\nconst chunk = resolveChunk(input);\nconst binaryInfo = readBinaryInfo(binary);\nconst parsed = parseResponsePayload(input, binaryInfo);\nconst headers = input.headers ?? input.responseHeaders ?? input?.response?.headers ?? {};\nconst statusCode = Number(input.statusCode ?? input.responseCode ?? input?.response?.statusCode ?? 0);\nconst errorMessage = safeText(input.error?.message ?? input.errorMessage ?? input.message ?? '');\nconst contentType = safeText(\n  binaryInfo.mimeType,\n  safeText(headers['content-type'] ?? headers['Content-Type'] ?? headers['content_type']),\n);\n\nconst pollCount = clampInt(input.tts_poll_count, 0, 0, 1000000);\nconst pollMaxAttempts = clampInt(input.tts_poll_max_attempts, 180, 1, 1000000);\nconst pollIntervalSeconds = clampInt(input.tts_poll_interval_seconds, 3, 1, 3600);\n\nfunction buildOutputJson(overrides = {}) {\n  return {\n    ...input,\n    ...chunk,\n    media_chunks: chunk,\n    tts_poll_count: pollCount,\n    tts_poll_max_attempts: pollMaxAttempts,\n    tts_poll_interval_seconds: pollIntervalSeconds,\n    tts_should_poll: false,\n    tts_job_status: safeText(input.tts_job_status),\n    tts_job_id: safeText(input.tts_job_id),\n    tts_status_url: safeText(input.tts_status_url),\n    voice: safeText(input.voice),\n    duration: normalizeNumber(input.duration, 0),\n    voice_mime_type: safeText(input.voice_mime_type),\n    voice_bytes: clampInt(input.voice_bytes, 0, 0, 1000000000),\n    voice_binary_key: safeText(input.voice_binary_key),\n    voice_file_name: safeText(input.voice_file_name),\n    voice_drive_file_id: safeText(input.voice_drive_file_id),\n    voice_drive_url: safeText(input.voice_drive_url),\n    error_reason: input.error_reason ?? null,\n    ...overrides,\n  };\n}\n\nfunction toItem(overrides = {}) {\n  const output = {\n    json: buildOutputJson(overrides),\n  };\n\n  if (binary && typeof binary === 'object' && Object.keys(binary).length > 0) {\n    output.binary = binary;\n  }\n\n  return output;\n}\n\nconst jobId = safeText(parsed?.job_id ?? parsed?.jobId ?? parsed?.id ?? input.tts_job_id);\nconst statusUrl = safeText(\n  parsed?.status_url ?? parsed?.statusUrl ?? parsed?.poll_url ?? parsed?.pollUrl ?? input.tts_status_url,\n);\nconst normalizedStatus = safeText(\n  parsed?.status ?? parsed?.state ?? parsed?.job_status ?? parsed?.jobStatus ?? input.tts_job_status,\n).toLowerCase();\n\nif (errorMessage && !binaryInfo.hasAudio && !parsed) {\n  return toItem({\n    tts_status: 'failed',\n    error_reason: errorMessage.slice(0, 400) || 'tts_request_failed',\n  });\n}\n\nif (binaryInfo.hasAudio || (binaryInfo.key && contentType.toLowerCase().includes('audio/'))) {\n  const normalizedMime = safeText(contentType, binaryInfo.mimeType || 'audio/wav');\n  const lowerMime = normalizedMime.toLowerCase();\n  const preferredExt = (lowerMime.includes('mpeg') || lowerMime.includes('mp3')) ? '.mp3' : '.wav';\n  const partRaw = safeText(chunk?.partName ?? chunk?.part_name ?? String(chunk?.chunk_key ?? '').split(':')[0], 'part');\n  const normalizedPartBase = partRaw.toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '') || 'part';\n  const normalizedPart = normalizedPartBase.replace(/^(part)_?(\\d+)$/i, (_, prefix, digits) => prefix + '_' + String(digits).padStart(3, '0'));\n  const indexRawForName = Number(chunk?.index ?? chunk?.order ?? input.index ?? input.order ?? 1);\n  const indexForName = Number.isFinite(indexRawForName) && indexRawForName > 0 ? Math.floor(indexRawForName) : 1;\n  const derivedFileName = 'tts-' + normalizedPart + '_' + String(indexForName).padStart(3, '0') + preferredExt;\n\n  return toItem({\n    tts_status: 'generated',\n    tts_job_status: normalizedStatus || 'generated',\n    tts_job_id: jobId,\n    tts_status_url: statusUrl,\n    tts_should_poll: false,\n    voice: 'binary:' + binaryInfo.key,\n    voice_binary_key: binaryInfo.key,\n    voice_file_name: derivedFileName,\n    duration: normalizeNumber(parsed?.duration ?? parsed?.duration_sec ?? parsed?.durationSeconds, 0),\n    voice_mime_type: normalizedMime,\n    voice_bytes: clampInt(binaryInfo.bytes, 0, 0, 1000000000),\n    error_reason: null,\n  });\n}\n\nconst pendingStatuses = new Set(['pending', 'queued', 'processing', 'running', 'in_progress', 'waiting']);\nif (pendingStatuses.has(normalizedStatus) || ((jobId || statusUrl) && statusCode >= 200 && statusCode < 300)) {\n  const canPoll = pollCount < pollMaxAttempts && (jobId || statusUrl);\n  return toItem({\n    tts_status: 'poll_required',\n    tts_job_status: normalizedStatus || 'pending',\n    tts_job_id: jobId,\n    tts_status_url: statusUrl,\n    tts_should_poll: Boolean(canPoll),\n    error_reason: canPoll ? null : 'tts_poll_max_attempts_reached',\n  });\n}\n\nconst failureStatuses = new Set(['failed', 'error', 'cancelled', 'canceled']);\nif (failureStatuses.has(normalizedStatus)) {\n  return toItem({\n    tts_status: 'failed',\n    tts_job_status: normalizedStatus,\n    tts_job_id: jobId,\n    tts_status_url: statusUrl,\n    error_reason: pickFirstString([\n      parsed?.error,\n      parsed?.message,\n      parsed?.detail,\n      parsed?.error_reason,\n      errorMessage,\n    ]) || 'tts_job_failed',\n  });\n}\n\nreturn toItem({\n  tts_status: 'failed',\n  tts_job_status: normalizedStatus || 'failed',\n  tts_job_id: jobId,\n  tts_status_url: statusUrl,\n  error_reason: 'tts_response_empty',\n});\n"
+      },
       "id": "19",
       "name": "Normalize TTS Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1080,
-        -200
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction clampInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction normalizeNumber(value, fallback = 0) {\n  const number = Number(value);\n  return Number.isFinite(number) ? number : fallback;\n}\n\nfunction safeJsonParse(value, fallback = null) {\n  try {\n    return JSON.parse(String(value ?? ''));\n  } catch (_) {\n    return fallback;\n  }\n}\n\nfunction pickFirstString(candidates) {\n  for (const candidate of candidates) {\n    const text = String(candidate ?? '').trim();\n    if (text) return text;\n  }\n  return '';\n}\n\nfunction resolveChunk(value) {\n  if (value?.media_chunks && typeof value.media_chunks === 'object' && !Array.isArray(value.media_chunks)) {\n    return value.media_chunks;\n  }\n  return value ?? {};\n}\n\nfunction chooseVoiceFileName(fileName, safeChunkKey, preferredExt) {\n  const raw = safeText(fileName);\n  const normalized = raw.toLowerCase();\n  const hasKnownExt = /\\.(wav|mp3|mpeg|ogg|m4a|flac|aac)$/i.test(raw);\n  const generic = ['stream', 'audio', 'file', 'output', 'tts', 'response'].includes(normalized);\n\n  if (!raw || generic || !hasKnownExt) {\n    return 'tts-' + safeChunkKey + preferredExt;\n  }\n\n  return raw;\n}\n\nfunction readBinaryInfo(binaryMap) {\n  const keys = Object.keys(binaryMap ?? {});\n  if (keys.length === 0) {\n    return {\n      key: '',\n      mimeType: '',\n      fileName: '',\n      bytes: 0,\n      hasAudio: false,\n      text: '',\n      isBinaryReference: false,\n    };\n  }\n\n  const key = keys.includes('tts_response') ? 'tts_response' : keys[0];\n  const file = binaryMap[key] ?? {};\n  const mimeType = safeText(file.mimeType);\n  const bytes = clampInt(file.bytes, 0, 0, 1000000000);\n  const contentRef = safeText(file.data);\n  const isBinaryReference = contentRef === 'filesystem-v2' || contentRef.startsWith('filesystem-v2:');\n\n  let text = '';\n  if (!isBinaryReference && contentRef) {\n    try {\n      text = Buffer.from(contentRef, 'base64').toString('utf8');\n    } catch (_) {\n      text = '';\n    }\n  }\n\n  return {\n    key,\n    mimeType,\n    fileName: safeText(file.fileName),\n    bytes,\n    isBinaryReference,\n    hasAudio: Boolean(key) && mimeType.toLowerCase().startsWith('audio/'),\n    text,\n  };\n}\n\nfunction parseResponsePayload(value, binaryInfo) {\n  const candidates = [\n    value?.body,\n    value?.data,\n    value?.payload,\n    value?.result,\n    value?.response,\n    binaryInfo.text,\n  ];\n\n  for (const candidate of candidates) {\n    const text = safeText(candidate);\n    if (!text) continue;\n    if (!text.startsWith('{') && !text.startsWith('[')) continue;\n    const parsed = safeJsonParse(text, null);\n    if (parsed) return parsed;\n  }\n\n  return null;\n}\n\nconst chunk = resolveChunk(input);\nconst binaryInfo = readBinaryInfo(binary);\nconst parsed = parseResponsePayload(input, binaryInfo);\nconst headers = input.headers ?? input.responseHeaders ?? input?.response?.headers ?? {};\nconst statusCode = Number(input.statusCode ?? input.responseCode ?? input?.response?.statusCode ?? 0);\nconst errorMessage = safeText(input.error?.message ?? input.errorMessage ?? input.message ?? '');\nconst contentType = safeText(\n  binaryInfo.mimeType,\n  safeText(headers['content-type'] ?? headers['Content-Type'] ?? headers['content_type']),\n);\n\nconst pollCount = clampInt(input.tts_poll_count, 0, 0, 1000000);\nconst pollMaxAttempts = clampInt(input.tts_poll_max_attempts, 180, 1, 1000000);\nconst pollIntervalSeconds = clampInt(input.tts_poll_interval_seconds, 3, 1, 3600);\n\nfunction buildOutputJson(overrides = {}) {\n  return {\n    ...input,\n    ...chunk,\n    media_chunks: chunk,\n    tts_poll_count: pollCount,\n    tts_poll_max_attempts: pollMaxAttempts,\n    tts_poll_interval_seconds: pollIntervalSeconds,\n    tts_should_poll: false,\n    tts_job_status: safeText(input.tts_job_status),\n    tts_job_id: safeText(input.tts_job_id),\n    tts_status_url: safeText(input.tts_status_url),\n    voice: safeText(input.voice),\n    duration: normalizeNumber(input.duration, 0),\n    voice_mime_type: safeText(input.voice_mime_type),\n    voice_bytes: clampInt(input.voice_bytes, 0, 0, 1000000000),\n    voice_binary_key: safeText(input.voice_binary_key),\n    voice_file_name: safeText(input.voice_file_name),\n    voice_drive_file_id: safeText(input.voice_drive_file_id),\n    voice_drive_url: safeText(input.voice_drive_url),\n    error_reason: input.error_reason ?? null,\n    ...overrides,\n  };\n}\n\nfunction toItem(overrides = {}) {\n  const output = {\n    json: buildOutputJson(overrides),\n  };\n\n  if (binary && typeof binary === 'object' && Object.keys(binary).length > 0) {\n    output.binary = binary;\n  }\n\n  return output;\n}\n\nconst jobId = safeText(parsed?.job_id ?? parsed?.jobId ?? parsed?.id ?? input.tts_job_id);\nconst statusUrl = safeText(\n  parsed?.status_url ?? parsed?.statusUrl ?? parsed?.poll_url ?? parsed?.pollUrl ?? input.tts_status_url,\n);\nconst normalizedStatus = safeText(\n  parsed?.status ?? parsed?.state ?? parsed?.job_status ?? parsed?.jobStatus ?? input.tts_job_status,\n).toLowerCase();\n\nif (errorMessage && !binaryInfo.hasAudio && !parsed) {\n  return toItem({\n    tts_status: 'failed',\n    error_reason: errorMessage.slice(0, 400) || 'tts_request_failed',\n  });\n}\n\nif (binaryInfo.hasAudio || (binaryInfo.key && contentType.toLowerCase().includes('audio/'))) {\n  const normalizedMime = safeText(contentType, binaryInfo.mimeType || 'audio/wav');\n  const lowerMime = normalizedMime.toLowerCase();\n  const preferredExt = (lowerMime.includes('mpeg') || lowerMime.includes('mp3')) ? '.mp3' : '.wav';\n  const partRaw = safeText(chunk?.partName ?? chunk?.part_name ?? String(chunk?.chunk_key ?? '').split(':')[0], 'part');\n  const normalizedPartBase = partRaw.toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '') || 'part';\n  const normalizedPart = normalizedPartBase.replace(/^(part)_?(\\d+)$/i, (_, prefix, digits) => prefix + '_' + String(digits).padStart(3, '0'));\n  const indexRawForName = Number(chunk?.index ?? chunk?.order ?? input.index ?? input.order ?? 1);\n  const indexForName = Number.isFinite(indexRawForName) && indexRawForName > 0 ? Math.floor(indexRawForName) : 1;\n  const derivedFileName = 'tts-' + normalizedPart + '_' + String(indexForName).padStart(3, '0') + preferredExt;\n\n  return toItem({\n    tts_status: 'generated',\n    tts_job_status: normalizedStatus || 'generated',\n    tts_job_id: jobId,\n    tts_status_url: statusUrl,\n    tts_should_poll: false,\n    voice: 'binary:' + binaryInfo.key,\n    voice_binary_key: binaryInfo.key,\n    voice_file_name: derivedFileName,\n    duration: normalizeNumber(parsed?.duration ?? parsed?.duration_sec ?? parsed?.durationSeconds, 0),\n    voice_mime_type: normalizedMime,\n    voice_bytes: clampInt(binaryInfo.bytes, 0, 0, 1000000000),\n    error_reason: null,\n  });\n}\n\nconst pendingStatuses = new Set(['pending', 'queued', 'processing', 'running', 'in_progress', 'waiting']);\nif (pendingStatuses.has(normalizedStatus) || ((jobId || statusUrl) && statusCode >= 200 && statusCode < 300)) {\n  const canPoll = pollCount < pollMaxAttempts && (jobId || statusUrl);\n  return toItem({\n    tts_status: 'poll_required',\n    tts_job_status: normalizedStatus || 'pending',\n    tts_job_id: jobId,\n    tts_status_url: statusUrl,\n    tts_should_poll: Boolean(canPoll),\n    error_reason: canPoll ? null : 'tts_poll_max_attempts_reached',\n  });\n}\n\nconst failureStatuses = new Set(['failed', 'error', 'cancelled', 'canceled']);\nif (failureStatuses.has(normalizedStatus)) {\n  return toItem({\n    tts_status: 'failed',\n    tts_job_status: normalizedStatus,\n    tts_job_id: jobId,\n    tts_status_url: statusUrl,\n    error_reason: pickFirstString([\n      parsed?.error,\n      parsed?.message,\n      parsed?.detail,\n      parsed?.error_reason,\n      errorMessage,\n    ]) || 'tts_job_failed',\n  });\n}\n\nreturn toItem({\n  tts_status: 'failed',\n  tts_job_status: normalizedStatus || 'failed',\n  tts_job_id: jobId,\n  tts_status_url: statusUrl,\n  error_reason: 'tts_response_empty',\n});\n"
-      }
+        1488,
+        -96
+      ]
     },
     {
-      "id": "20",
-      "name": "If TTS Poll Required",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1290,
-        -200
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -463,38 +449,33 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "20",
+      "name": "If TTS Poll Required",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1712,
+        -168
+      ]
     },
     {
+      "parameters": {
+        "amount": "={{ $json.tts_poll_interval_seconds || 3 }}"
+      },
       "id": "21",
       "name": "Wait For TTS Poll",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        1510,
-        -340
+        1936,
+        -336
       ],
-      "parameters": {
-        "resume": "timeInterval",
-        "amount": "={{ $json.tts_poll_interval_seconds || 3 }}",
-        "unit": "seconds",
-        "formFields": {
-          "values": []
-        },
-        "options": {}
-      },
       "webhookId": "tts-wait-for-poll"
     },
     {
-      "id": "22",
-      "name": "Prepare TTS Status Poll",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1730,
-        -340
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -508,22 +489,19 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
+      },
+      "id": "22",
+      "name": "Prepare TTS Status Poll",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2160,
+        -336
+      ]
     },
     {
-      "id": "23",
-      "name": "Get TTS Job Status",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        1950,
-        -340
-      ],
       "parameters": {
-        "method": "GET",
         "url": "={{ (() => { const statusUrl = String($json.tts_status_url || \"\").trim(); if (statusUrl) return statusUrl; const base = String($json.tts_api_base_url || \"http://127.0.0.1:8001\").trim().replace(/\\/$/, \"\"); const jobId = String($json.tts_job_id || \"\").trim(); return jobId ? base + \"/jobs/\" + encodeURIComponent(jobId) : base + \"/jobs\"; })() }}",
-        "sendHeaders": false,
-        "sendBody": false,
         "options": {
           "response": {
             "response": {
@@ -535,31 +513,30 @@
           }
         }
       },
+      "id": "23",
+      "name": "Get TTS Job Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2608,
+        -144
+      ],
       "continueOnFail": true
     },
     {
+      "parameters": {
+        "jsCode": "const inputItems = $input.all().map((item) => item.json ?? {});\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction asDuration(value, fallback = 0) {\n  const number = Number(value);\n  if (!Number.isFinite(number) || number < 0) return fallback;\n  return Math.round(number * 1000) / 1000;\n}\n\nfunction normalizeItem(item) {\n  const chunk = item?.media_chunks && typeof item.media_chunks === 'object' && !Array.isArray(item.media_chunks)\n    ? item.media_chunks\n    : item;\n\n  const order = asInt(chunk?.order ?? item?.order, asInt(chunk?.index, 1, 1, 1000000), 1, 1000000);\n  const sceneId = safeText(chunk?.scene_id, safeText(chunk?.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n\n  const voiceUrl = safeText(\n    item?.voice_url,\n    safeText(item?.voice_drive_url, safeText(item?.voice)),\n  );\n\n  const durationSeconds = asDuration(item?.duration_seconds, asDuration(item?.duration, 0));\n\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(chunk?.scene_title),\n    scene_role: safeText(chunk?.scene_role),\n    narration_text: safeText(chunk?.narration_text, safeText(chunk?.text)),\n    image_prompt_en: safeText(chunk?.image_prompt_en),\n    highlight_quote_vi: safeText(chunk?.highlight_quote_vi),\n\n    voice_url: voiceUrl,\n    duration_seconds: durationSeconds,\n    tts_status: safeText(item?.tts_status, 'unknown'),\n    voice_mime_type: safeText(item?.voice_mime_type),\n    voice_bytes: asInt(item?.voice_bytes, 0, 0, 1000000000),\n    voice_binary_key: safeText(item?.voice_binary_key),\n    voice_file_name: safeText(item?.voice_file_name),\n    voice_drive_file_id: safeText(item?.voice_drive_file_id),\n    voice_drive_url: safeText(item?.voice_drive_url, voiceUrl),\n    tts_job_status: safeText(item?.tts_job_status),\n    tts_job_id: safeText(item?.tts_job_id),\n    tts_status_url: safeText(item?.tts_status_url),\n    tts_poll_count: asInt(item?.tts_poll_count, 0, 0, 1000000),\n    error_reason: item?.error_reason ?? null,\n\n    chunk_key: safeText(chunk?.chunk_key, sceneId),\n    partName: safeText(chunk?.partName, sceneId),\n    index: asInt(chunk?.index, order, 1, 1000000),\n    text: safeText(chunk?.text, safeText(chunk?.narration_text)),\n    sentence_count: asInt(chunk?.sentence_count, 1, 1, 10),\n    voice: voiceUrl,\n    duration: durationSeconds,\n  };\n}\n\nconst sortedItems = inputItems\n  .map(normalizeItem)\n  .sort((a, b) => a.order - b.order || a.scene_id.localeCompare(b.scene_id));\n\nconst first = inputItems[0] ?? {};\nconst requestId = safeText(first.request_id, 'req-' + Date.now().toString(36));\nconst generatedCount = sortedItems.filter((item) => item.tts_status === 'generated').length;\nconst failedCount = sortedItems.filter((item) => item.tts_status === 'failed').length;\nconst incompleteCount = sortedItems.filter((item) => !['generated', 'failed'].includes(item.tts_status)).length;\n\nlet status = 'success';\nlet errorReason = null;\n\nif (sortedItems.length === 0) {\n  status = 'failed';\n  errorReason = 'empty_items';\n} else if (failedCount > 0 || incompleteCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n  errorReason = failedCount > 0 ? 'partial_failures' : 'unfinished_items';\n}\n\nreturn [{\n  json: {\n    ...first,\n    workflow: 'tts',\n    request_id: requestId,\n    status,\n    media_should_run: sortedItems.length > 0,\n    media_tts_items: sortedItems,\n    drive_exports: [],\n    error_reason: errorReason,\n  },\n}];"
+      },
       "id": "24",
       "name": "Finalize TTS Results",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        860,
-        140
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const inputItems = $input.all().map((item) => item.json ?? {});\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction asDuration(value, fallback = 0) {\n  const number = Number(value);\n  if (!Number.isFinite(number) || number < 0) return fallback;\n  return Math.round(number * 1000) / 1000;\n}\n\nfunction normalizeItem(item) {\n  const chunk = item?.media_chunks && typeof item.media_chunks === 'object' && !Array.isArray(item.media_chunks)\n    ? item.media_chunks\n    : item;\n\n  const order = asInt(chunk?.order ?? item?.order, asInt(chunk?.index, 1, 1, 1000000), 1, 1000000);\n  const sceneId = safeText(chunk?.scene_id, safeText(chunk?.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n\n  const voiceUrl = safeText(\n    item?.voice_url,\n    safeText(item?.voice_drive_url, safeText(item?.voice)),\n  );\n\n  const durationSeconds = asDuration(item?.duration_seconds, asDuration(item?.duration, 0));\n\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(chunk?.scene_title),\n    scene_role: safeText(chunk?.scene_role),\n    narration_text: safeText(chunk?.narration_text, safeText(chunk?.text)),\n    image_prompt_en: safeText(chunk?.image_prompt_en),\n    highlight_quote_vi: safeText(chunk?.highlight_quote_vi),\n\n    voice_url: voiceUrl,\n    duration_seconds: durationSeconds,\n    tts_status: safeText(item?.tts_status, 'unknown'),\n    voice_mime_type: safeText(item?.voice_mime_type),\n    voice_bytes: asInt(item?.voice_bytes, 0, 0, 1000000000),\n    voice_binary_key: safeText(item?.voice_binary_key),\n    voice_file_name: safeText(item?.voice_file_name),\n    voice_drive_file_id: safeText(item?.voice_drive_file_id),\n    voice_drive_url: safeText(item?.voice_drive_url, voiceUrl),\n    tts_job_status: safeText(item?.tts_job_status),\n    tts_job_id: safeText(item?.tts_job_id),\n    tts_status_url: safeText(item?.tts_status_url),\n    tts_poll_count: asInt(item?.tts_poll_count, 0, 0, 1000000),\n    error_reason: item?.error_reason ?? null,\n\n    chunk_key: safeText(chunk?.chunk_key, sceneId),\n    partName: safeText(chunk?.partName, sceneId),\n    index: asInt(chunk?.index, order, 1, 1000000),\n    text: safeText(chunk?.text, safeText(chunk?.narration_text)),\n    sentence_count: asInt(chunk?.sentence_count, 1, 1, 10),\n    voice: voiceUrl,\n    duration: durationSeconds,\n  };\n}\n\nconst sortedItems = inputItems\n  .map(normalizeItem)\n  .sort((a, b) => a.order - b.order || a.scene_id.localeCompare(b.scene_id));\n\nconst first = inputItems[0] ?? {};\nconst requestId = safeText(first.request_id, 'req-' + Date.now().toString(36));\nconst generatedCount = sortedItems.filter((item) => item.tts_status === 'generated').length;\nconst failedCount = sortedItems.filter((item) => item.tts_status === 'failed').length;\nconst incompleteCount = sortedItems.filter((item) => !['generated', 'failed'].includes(item.tts_status)).length;\n\nlet status = 'success';\nlet errorReason = null;\n\nif (sortedItems.length === 0) {\n  status = 'failed';\n  errorReason = 'empty_items';\n} else if (failedCount > 0 || incompleteCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n  errorReason = failedCount > 0 ? 'partial_failures' : 'unfinished_items';\n}\n\nreturn [{\n  json: {\n    ...first,\n    workflow: 'tts',\n    request_id: requestId,\n    status,\n    media_should_run: sortedItems.length > 0,\n    media_tts_items: sortedItems,\n    drive_exports: [],\n    error_reason: errorReason,\n  },\n}];"
-      }
+        1040,
+        240
+      ]
     },
     {
-      "id": "25",
-      "name": "Finalize Empty TTS Result",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        630,
-        140
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -591,19 +568,18 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
+      },
+      "id": "25",
+      "name": "Finalize Empty TTS Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        816
+      ]
     },
     {
-      "id": "9",
-      "name": "Switch Output Mode",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
-      "position": [
-        400,
-        -20
-      ],
       "parameters": {
-        "mode": "rules",
         "rules": {
           "values": [
             {
@@ -625,9 +601,7 @@
                   }
                 ],
                 "combinator": "and"
-              },
-              "renameOutput": false,
-              "outputKey": ""
+              }
             }
           ]
         },
@@ -636,72 +610,83 @@
           "renameFallbackOutput": "inline",
           "allMatchingOutputs": false
         }
-      }
+      },
+      "id": "9",
+      "name": "Switch Output Mode",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1264,
+        240
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nconst items = Array.isArray(input.media_tts_items) ? input.media_tts_items : [];\n\nconst failedCount = items.filter((item) => String(item?.tts_status ?? '') === 'failed').length;\nconst generatedCount = items.filter((item) => String(item?.tts_status ?? '') === 'generated').length;\n\nlet status = 'success';\nlet errorReason = null;\nif (items.length === 0) {\n  status = 'failed';\n  errorReason = 'empty_items';\n} else if (failedCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n  errorReason = generatedCount > 0 ? 'partial_failures' : 'all_failed';\n}\n\nreturn {\n  ...input,\n  workflow: 'tts',\n  request_id: String(input.request_id ?? ''),\n  status,\n  items,\n  drive_exports: [],\n  error_reason: errorReason,\n};"
+      },
       "id": "10",
       "name": "Prepare Inline Output",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        650,
-        60
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst items = Array.isArray(input.media_tts_items) ? input.media_tts_items : [];\n\nconst failedCount = items.filter((item) => String(item?.tts_status ?? '') === 'failed').length;\nconst generatedCount = items.filter((item) => String(item?.tts_status ?? '') === 'generated').length;\n\nlet status = 'success';\nlet errorReason = null;\nif (items.length === 0) {\n  status = 'failed';\n  errorReason = 'empty_items';\n} else if (failedCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n  errorReason = generatedCount > 0 ? 'partial_failures' : 'all_failed';\n}\n\nreturn {\n  ...input,\n  workflow: 'tts',\n  request_id: String(input.request_id ?? ''),\n  status,\n  items,\n  drive_exports: [],\n  error_reason: errorReason,\n};"
-      }
+        1488,
+        336
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nconst requestId = String(input.request_id ?? 'req-' + Date.now().toString(36));\nconst items = Array.isArray(input.media_tts_items) ? input.media_tts_items : [];\n\nconst failedCount = items.filter((item) => String(item?.tts_status ?? '') === 'failed').length;\nconst generatedCount = items.filter((item) => String(item?.tts_status ?? '') === 'generated').length;\n\nlet status = 'success';\nif (items.length === 0) {\n  status = 'failed';\n} else if (failedCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n}\n\nconst payload = {\n  workflow: 'tts',\n  request_id: requestId,\n  generated_at: new Date().toISOString(),\n  status,\n  items,\n};\n\nreturn {\n  ...input,\n  export_payload_json: JSON.stringify(payload, null, 2),\n  export_file_name: 'tts-' + requestId + '.json',\n};"
+      },
       "id": "11",
       "name": "Build Drive Export Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        650,
-        -170
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst requestId = String(input.request_id ?? 'req-' + Date.now().toString(36));\nconst items = Array.isArray(input.media_tts_items) ? input.media_tts_items : [];\n\nconst failedCount = items.filter((item) => String(item?.tts_status ?? '') === 'failed').length;\nconst generatedCount = items.filter((item) => String(item?.tts_status ?? '') === 'generated').length;\n\nlet status = 'success';\nif (items.length === 0) {\n  status = 'failed';\n} else if (failedCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n}\n\nconst payload = {\n  workflow: 'tts',\n  request_id: requestId,\n  generated_at: new Date().toISOString(),\n  status,\n  items,\n};\n\nreturn {\n  ...input,\n  export_payload_json: JSON.stringify(payload, null, 2),\n  export_file_name: 'tts-' + requestId + '.json',\n};"
-      }
+        592,
+        1032
+      ]
     },
     {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "export_payload_json",
+        "binaryPropertyName": "export_file",
+        "options": {
+          "fileName": "={{ $json.export_file_name }}",
+          "mimeType": "application/json"
+        }
+      },
       "id": "12",
       "name": "Convert Export To File",
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        900,
-        -170
-      ],
-      "parameters": {
-        "operation": "toBinary",
-        "sourceProperty": "export_payload_json",
-        "options": {
-          "fileName": "={{ $json.export_file_name }}",
-          "mimeType": "application/json"
-        },
-        "binaryPropertyName": "export_file"
-      }
+        816,
+        1104
+      ]
     },
     {
+      "parameters": {
+        "inputDataFieldName": "export_file",
+        "name": "={{ $json.export_file_name }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": "={{ $json.drive_output_folder_id || $json.gdrive_root_folder_id || \"\" }}",
+        "options": {}
+      },
       "id": "13",
       "name": "Google Drive Upload Export",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        1140,
-        -170
+        1040,
+        1104
       ],
-      "parameters": {
-        "resource": "file",
-        "operation": "upload",
-        "name": "={{ $json.export_file_name }}",
-        "authentication": "oAuth2",
-        "inputDataFieldName": "export_file",
-        "folderId": "={{ $json.drive_output_folder_id || $json.gdrive_root_folder_id || \"\" }}"
-      },
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
@@ -710,66 +695,66 @@
       }
     },
     {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput1",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          },
+          "includeUnpaired": true
+        }
+      },
       "id": "14",
       "name": "Merge Drive Export Context",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        1340,
-        -170
-      ],
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {
-          "includeUnpaired": true,
-          "clashHandling": {
-            "values": {
-              "resolveClash": "preferInput1",
-              "mergeMode": "shallowMerge",
-              "overrideEmpty": true
-            }
-          }
-        }
-      }
+        1264,
+        1032
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nconst items = Array.isArray(input.media_tts_items) ? input.media_tts_items : [];\n\nconst failedCount = items.filter((item) => String(item?.tts_status ?? '') === 'failed').length;\nconst generatedCount = items.filter((item) => String(item?.tts_status ?? '') === 'generated').length;\n\nconst driveExports = items\n  .map((item) => {\n    const driveFileId = String(item?.voice_drive_file_id ?? '').trim();\n    if (!driveFileId) return null;\n\n    return {\n      chunk_key: String(item?.chunk_key ?? '').trim(),\n      drive_file_id: driveFileId,\n      drive_url: String(item?.voice_drive_url ?? '').trim(),\n      mime_type: String(item?.voice_mime_type ?? 'audio/wav').trim() || 'audio/wav',\n      file_name: String(item?.voice_file_name ?? '').trim(),\n    };\n  })\n  .filter(Boolean);\n\nif (driveExports.length === 0) {\n  const fallbackDriveFileId = String(input.id ?? input.fileId ?? '').trim();\n  if (fallbackDriveFileId) {\n    driveExports.push({\n      chunk_key: '',\n      drive_file_id: fallbackDriveFileId,\n      drive_url: String(input.webViewLink ?? input.drive_url ?? '').trim(),\n      mime_type: String(input.mimeType ?? 'application/json').trim() || 'application/json',\n      file_name: String(input.name ?? input.export_file_name ?? '').trim(),\n    });\n  }\n}\n\nlet status = 'success';\nlet errorReason = null;\n\nif (items.length === 0) {\n  status = 'failed';\n  errorReason = 'empty_items';\n} else if (failedCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n  errorReason = generatedCount > 0 ? 'partial_failures' : 'all_failed';\n}\n\nif (generatedCount > 0 && driveExports.length === 0) {\n  status = status === 'failed' ? 'failed' : 'partial_failed';\n  errorReason = errorReason ?? 'drive_export_missing_files';\n}\n\nreturn {\n  ...input,\n  workflow: 'tts',\n  request_id: String(input.request_id ?? ''),\n  status,\n  items,\n  drive_exports: driveExports,\n  error_reason: errorReason,\n};"
+      },
       "id": "15",
       "name": "Prepare Drive Output",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1560,
-        -170
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst items = Array.isArray(input.media_tts_items) ? input.media_tts_items : [];\n\nconst failedCount = items.filter((item) => String(item?.tts_status ?? '') === 'failed').length;\nconst generatedCount = items.filter((item) => String(item?.tts_status ?? '') === 'generated').length;\n\nconst driveExports = items\n  .map((item) => {\n    const driveFileId = String(item?.voice_drive_file_id ?? '').trim();\n    if (!driveFileId) return null;\n\n    return {\n      chunk_key: String(item?.chunk_key ?? '').trim(),\n      drive_file_id: driveFileId,\n      drive_url: String(item?.voice_drive_url ?? '').trim(),\n      mime_type: String(item?.voice_mime_type ?? 'audio/wav').trim() || 'audio/wav',\n      file_name: String(item?.voice_file_name ?? '').trim(),\n    };\n  })\n  .filter(Boolean);\n\nif (driveExports.length === 0) {\n  const fallbackDriveFileId = String(input.id ?? input.fileId ?? '').trim();\n  if (fallbackDriveFileId) {\n    driveExports.push({\n      chunk_key: '',\n      drive_file_id: fallbackDriveFileId,\n      drive_url: String(input.webViewLink ?? input.drive_url ?? '').trim(),\n      mime_type: String(input.mimeType ?? 'application/json').trim() || 'application/json',\n      file_name: String(input.name ?? input.export_file_name ?? '').trim(),\n    });\n  }\n}\n\nlet status = 'success';\nlet errorReason = null;\n\nif (items.length === 0) {\n  status = 'failed';\n  errorReason = 'empty_items';\n} else if (failedCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n  errorReason = generatedCount > 0 ? 'partial_failures' : 'all_failed';\n}\n\nif (generatedCount > 0 && driveExports.length === 0) {\n  status = status === 'failed' ? 'failed' : 'partial_failed';\n  errorReason = errorReason ?? 'drive_export_missing_files';\n}\n\nreturn {\n  ...input,\n  workflow: 'tts',\n  request_id: String(input.request_id ?? ''),\n  status,\n  items,\n  drive_exports: driveExports,\n  error_reason: errorReason,\n};"
-      }
+        1488,
+        144
+      ]
     },
     {
-      "id": "11.5",
-      "name": "Merge Created TTS Context",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        340,
-        -80
-      ],
       "parameters": {
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {
-          "includeUnpaired": true,
           "clashHandling": {
             "values": {
               "resolveClash": "preferInput1",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
-          }
+          },
+          "includeUnpaired": true
         }
-      }
+      },
+      "id": "11.5",
+      "name": "Merge Created TTS Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1264,
+        -96
+      ]
     },
     {
       "parameters": {
@@ -792,15 +777,16 @@
             }
           ],
           "combinator": "and"
-        }
+        },
+        "options": {}
       },
       "id": "tts-if-drive-export-mode",
       "name": "If Drive Export Mode",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2360,
-        700
+        1936,
+        -24
       ]
     },
     {
@@ -824,33 +810,37 @@
             }
           ],
           "combinator": "and"
-        }
+        },
+        "options": {}
       },
       "id": "tts-if-generated-for-upload",
       "name": "If Generated Voice For Upload",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2580,
-        700
+        2160,
+        -24
       ]
     },
     {
       "parameters": {
-        "resource": "file",
-        "operation": "upload",
-        "name": "={{ $json.voice_file_name || (() => { const partRaw = String($json.partName || $json.media_chunks?.partName || String($json.chunk_key || '').split(':')[0] || 'part').trim(); const normalizedPartBase = partRaw.toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '') || 'part'; const normalizedPart = normalizedPartBase.replace(/^(part)_?(\\d+)$/i, (_, prefix, digits) => prefix + '_' + String(digits).padStart(3, '0')); const indexRaw = Number($json.index ?? $json.media_chunks?.index ?? $json.order ?? $json.media_chunks?.order ?? 1); const index = Number.isFinite(indexRaw) && indexRaw > 0 ? Math.floor(indexRaw) : 1; return 'tts-' + normalizedPart + '_' + String(index).padStart(3, '0') + '.wav'; })() }}",
-        "authentication": "oAuth2",
         "inputDataFieldName": "={{ $json.voice_binary_key || 'tts_response' }}",
-        "folderId": "={{ $json.drive_output_folder_id || $json.gdrive_root_folder_id || '' }}"
+        "name": "={{ $json.voice_file_name || (() => { const partRaw = String($json.partName || $json.media_chunks?.partName || String($json.chunk_key || '').split(':')[0] || 'part').trim(); const normalizedPartBase = partRaw.toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '') || 'part'; const normalizedPart = normalizedPartBase.replace(/^(part)_?(\\d+)$/i, (_, prefix, digits) => prefix + '_' + String(digits).padStart(3, '0')); const indexRaw = Number($json.index ?? $json.media_chunks?.index ?? $json.order ?? $json.media_chunks?.order ?? 1); const index = Number.isFinite(indexRaw) && indexRaw > 0 ? Math.floor(indexRaw) : 1; return 'tts-' + normalizedPart + '_' + String(index).padStart(3, '0') + '.wav'; })() }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": "={{ $json.drive_output_folder_id || $json.gdrive_root_folder_id || '' }}",
+        "options": {}
       },
       "id": "tts-gdrive-upload-voice",
       "name": "Google Drive Upload Voice",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        2820,
-        620
+        2384,
+        -96
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -864,14 +854,14 @@
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {
-          "includeUnpaired": true,
           "clashHandling": {
             "values": {
               "resolveClash": "preferInput1",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
-          }
+          },
+          "includeUnpaired": true
         }
       },
       "id": "tts-merge-uploaded-voice",
@@ -879,8 +869,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        3040,
-        700
+        2608,
+        144
       ]
     },
     {
@@ -893,8 +883,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3260,
-        700
+        2832,
+        144
       ]
     },
     {
@@ -907,8 +897,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3500,
-        700
+        3056,
+        144
       ]
     },
     {
@@ -932,15 +922,16 @@
             }
           ],
           "combinator": "and"
-        }
+        },
+        "options": {}
       },
       "id": "tts-if-session-sheet-realtime-update",
       "name": "If Session Sheet Realtime Update",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3740,
-        700
+        3280,
+        144
       ]
     },
     {
@@ -976,8 +967,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        3980,
-        620
+        3504,
+        144
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -991,14 +982,14 @@
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {
-          "includeUnpaired": true,
           "clashHandling": {
             "values": {
               "resolveClash": "preferInput1",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
-          }
+          },
+          "includeUnpaired": true
         }
       },
       "id": "tts-merge-realtime-sheet-update-context",
@@ -1006,23 +997,119 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        4220,
-        700
+        3728,
+        264
       ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0) {\n  const number = Number(value);\n  if (!Number.isFinite(number)) {\n    return fallback;\n  }\n  return Math.floor(number);\n}\n\nfunction formatElapsedLabel(elapsedSecondsInput = 0) {\n  const elapsedSeconds = Math.max(0, asInt(elapsedSecondsInput, 0));\n  const elapsedMinutes = Math.floor(elapsedSeconds / 60);\n  const remainingSeconds = elapsedSeconds % 60;\n  return elapsedMinutes > 0\n    ? (elapsedMinutes + ' phut ' + String(remainingSeconds).padStart(2, '0') + ' giay')\n    : (remainingSeconds + ' giay');\n}\n\nfunction resolveChunk(source) {\n  if (source?.media_chunks && typeof source.media_chunks === 'object' && !Array.isArray(source.media_chunks)) {\n    return source.media_chunks;\n  }\n  return source ?? {};\n}\n\nconst chunk = resolveChunk(input);\nconst requestHelper =\n  helpers?.httpRequest ??\n  (typeof $helpers !== 'undefined' ? $helpers?.httpRequest : undefined);\n\nconst telegramBotToken = safeText(input.telegram_bot_token);\nconst telegramChatId = safeText(input.telegram_chat_id);\nconst progressMessageId = asInt(input.tts_progress_message_id, 0);\nconst estimateMinutes = Math.max(1, asInt(input.tts_progress_estimated_minutes, 3) || 3);\nconst totalFiles = Math.max(0, asInt(input.tts_progress_total_files, 0));\nconst rawDone = asInt(chunk?.order ?? input.order ?? chunk?.index ?? input.index, 0);\nconst doneFiles = totalFiles > 0\n  ? Math.min(Math.max(rawDone, 0), totalFiles)\n  : Math.max(rawDone, 0);\nconst startedAtMs = asInt(input.tts_progress_started_at_ms, Date.now());\nconst elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000));\n\nconst progressSuffix = totalFiles > 0\n  ? (' | file ' + doneFiles + '/' + totalFiles)\n  : '';\n\nconst progressText = 'Dang tao TTS... (da cho ' + formatElapsedLabel(elapsedSeconds) + ' / du kien ' + estimateMinutes + ' phut)' + progressSuffix;\n\nlet updateStatus = 'skipped';\nlet updateError = null;\nif (telegramBotToken && telegramChatId && progressMessageId > 0 && typeof requestHelper === 'function') {\n  try {\n    await requestHelper({\n      method: 'POST',\n      url: 'https://api.telegram.org/bot' + telegramBotToken + '/editMessageText',\n      body: {\n        chat_id: telegramChatId,\n        message_id: progressMessageId,\n        text: progressText,\n        disable_web_page_preview: true,\n      },\n      json: true,\n      timeout: 20000,\n    });\n    updateStatus = 'sent';\n  } catch (error) {\n    updateStatus = 'failed';\n    updateError = safeText(error?.message, String(error)).slice(0, 280) || 'telegram_edit_failed';\n  }\n}\n\nreturn {\n  ...input,\n  tts_progress_last_text: progressText,\n  tts_progress_files_done: doneFiles,\n  tts_progress_total_files: totalFiles,\n  tts_progress_update_status: updateStatus,\n  tts_progress_update_error: updateError,\n};"
+      },
       "id": "tts-update-progress-poll-tick",
       "name": "Update TTS Progress Poll Tick",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1840,
-        -340
-      ],
+        2384,
+        -336
+      ]
+    },
+    {
       "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0) {\n  const number = Number(value);\n  if (!Number.isFinite(number)) {\n    return fallback;\n  }\n  return Math.floor(number);\n}\n\nfunction formatElapsedLabel(elapsedSecondsInput = 0) {\n  const elapsedSeconds = Math.max(0, asInt(elapsedSecondsInput, 0));\n  const elapsedMinutes = Math.floor(elapsedSeconds / 60);\n  const remainingSeconds = elapsedSeconds % 60;\n  return elapsedMinutes > 0\n    ? (elapsedMinutes + ' phut ' + String(remainingSeconds).padStart(2, '0') + ' giay')\n    : (remainingSeconds + ' giay');\n}\n\nfunction resolveChunk(source) {\n  if (source?.media_chunks && typeof source.media_chunks === 'object' && !Array.isArray(source.media_chunks)) {\n    return source.media_chunks;\n  }\n  return source ?? {};\n}\n\nconst chunk = resolveChunk(input);\nconst requestHelper =\n  helpers?.httpRequest ??\n  (typeof $helpers !== 'undefined' ? $helpers?.httpRequest : undefined);\n\nconst telegramBotToken = safeText(input.telegram_bot_token);\nconst telegramChatId = safeText(input.telegram_chat_id);\nconst progressMessageId = asInt(input.tts_progress_message_id, 0);\nconst estimateMinutes = Math.max(1, asInt(input.tts_progress_estimated_minutes, 3) || 3);\nconst totalFiles = Math.max(0, asInt(input.tts_progress_total_files, 0));\nconst rawDone = asInt(chunk?.order ?? input.order ?? chunk?.index ?? input.index, 0);\nconst doneFiles = totalFiles > 0\n  ? Math.min(Math.max(rawDone, 0), totalFiles)\n  : Math.max(rawDone, 0);\nconst startedAtMs = asInt(input.tts_progress_started_at_ms, Date.now());\nconst elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000));\n\nconst progressSuffix = totalFiles > 0\n  ? (' | file ' + doneFiles + '/' + totalFiles)\n  : '';\n\nconst progressText = 'Dang tao TTS... (da cho ' + formatElapsedLabel(elapsedSeconds) + ' / du kien ' + estimateMinutes + ' phut)' + progressSuffix;\n\nlet updateStatus = 'skipped';\nlet updateError = null;\nif (telegramBotToken && telegramChatId && progressMessageId > 0 && typeof requestHelper === 'function') {\n  try {\n    await requestHelper({\n      method: 'POST',\n      url: 'https://api.telegram.org/bot' + telegramBotToken + '/editMessageText',\n      body: {\n        chat_id: telegramChatId,\n        message_id: progressMessageId,\n        text: progressText,\n        disable_web_page_preview: true,\n      },\n      json: true,\n      timeout: 20000,\n    });\n    updateStatus = 'sent';\n  } catch (error) {\n    updateStatus = 'failed';\n    updateError = safeText(error?.message, String(error)).slice(0, 280) || 'telegram_edit_failed';\n  }\n}\n\nreturn {\n  ...input,\n  tts_progress_last_text: progressText,\n  tts_progress_files_done: doneFiles,\n  tts_progress_total_files: totalFiles,\n  tts_progress_update_status: updateStatus,\n  tts_progress_update_error: updateError,\n};"
-      }
+        "content": "## INPUT CONTRACT\n\nCore input:\n`input_mode` (`form_upload|drive_url`), `output_mode` (`inline|drive_export`)\n`drive_file_url`, `drive_output_folder_url`, `drive_output_folder_id`\n`input_text` / `text` / `content`\n`chunk_manifest` hoặc `media_chunks` hoặc `review_manifest.scenes`\n\nTTS runtime params:\n`tts_api_base_url`, `tts_voice_id`, `tts_temperature`, `tts_top_k`, `tts_max_chars`, `tts_silence_p`, `tts_crossfade_p`, `tts_timeout_ms`, `tts_parallelism`, `tts_poll_interval_seconds`, `tts_poll_max_attempts`\n\nRealtime sheet (optional):\n`session_sheet_id` + chunk `order` để update row theo scene\n\nMain output:\n`status`, `items`, `drive_exports`, `error_reason`",
+        "height": 780,
+        "width": 760,
+        "color": 7
+      },
+      "id": "9301",
+      "name": "NOTE::TTS::INPUT_FIELDS",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2064,
+        -576
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## STAGE 1: NORMALIZE INPUT\n\nNodes:\n- Set Config\n- Normalize Inputs\n- If Needs Drive Download / Build Chunks From Drive File\n\nGoal:\n- gom các nguồn input thành `media_chunks`\n- set flags `media_should_run`, `needs_drive_download`\n- chuẩn hóa `request_id`, `output_mode`, IDs/path Drive.",
+        "height": 420,
+        "width": 680,
+        "color": 5
+      },
+      "id": "9302",
+      "name": "NOTE::TTS::STAGE_NORMALIZE",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1220,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## STAGE 2: GENERATE + POLL LOOP\n\nFlow:\n- Split Out Media Chunks\n- Loop Over TTS Chunks\n- Create TTS Audio\n- Normalize TTS Response\n- If TTS Poll Required -> Wait -> Get TTS Job Status (loop)\n\nMục tiêu: tạo voice per chunk với timeout/poll có giới hạn.",
+        "height": 420,
+        "width": 700,
+        "color": 6
+      },
+      "id": "9303",
+      "name": "NOTE::TTS::STAGE_GENERATE_POLL",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        720,
+        -620
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## STAGE 3: FINALIZE + OUTPUT MODE\n\nNodes:\n- Finalize TTS Results\n- Switch Output Mode\n- Prepare Inline Output / Build Drive Export Payload\n\nKết quả:\n- tổng hợp `media_tts_items`\n- set `status=success|partial_failed|failed`\n- rẽ nhánh output inline hoặc drive_export.",
+        "height": 380,
+        "width": 660,
+        "color": 4
+      },
+      "id": "9304",
+      "name": "NOTE::TTS::STAGE_FINAL_OUTPUT",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        860,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## BRANCH: DRIVE EXPORT\n\nFlow:\n- Convert Export To File\n- Google Drive Upload Export\n- Prepare Drive Output\n\nNgoài ra mỗi voice item có thể upload riêng:\n- If Generated Voice For Upload\n- Google Drive Upload Voice\n- Prepare Uploaded Voice Item\n\nOutput có `drive_exports` + per-item `voice_drive_*`.",
+        "height": 420,
+        "width": 680,
+        "color": 3
+      },
+      "id": "9305",
+      "name": "NOTE::TTS::BRANCH_DRIVE_EXPORT",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        900,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## BRANCH: REALTIME SHEET UPDATE\n\nFlow:\n- Update TTS Progress Message\n- If Session Sheet Realtime Update\n- Write Voice Row To Session Sheet (Realtime)\n\nGhi trực tiếp URL/status/error của từng scene vào tab `assets`.",
+        "height": 320,
+        "width": 620,
+        "color": 2
+      },
+      "id": "9306",
+      "name": "NOTE::TTS::BRANCH_REALTIME_SHEET",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2920,
+        -420
+      ]
     }
   ],
   "connections": {

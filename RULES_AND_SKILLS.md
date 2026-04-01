@@ -96,6 +96,18 @@ bash scripts/workflows/tests/test-book-review-checklist.sh
 - Dung `Loop Over Items`/`Split Out` de xu ly theo chunk, roi `Merge`/`Aggregate` de gom ket qua.
 - Code node chi de normalize/parse nho khi node built-in khong du ro rang.
 
+### Skill J: Workflow sticky-note update convention (bat buoc neu workflow co note)
+- Trigger:
+  - Dung khi workflow da co `stickyNote` va can sua logic/contract.
+- Checklist note toi thieu:
+  - `NOTE::<WORKFLOW_TAG>::INPUT_FIELDS`: input contract + default + output keys.
+  - `NOTE::<WORKFLOW_TAG>::STAGE_*`: cac stage xu ly chinh.
+  - `NOTE::<WORKFLOW_TAG>::BRANCH_*`: cac nhanh dieu kien quan trong.
+- Rules:
+  - Note phai khop flow hien tai, khong de stale.
+  - Update idempotent theo prefix `NOTE::<WORKFLOW_TAG>::` (khong duplicate note sau moi lan patch/import).
+  - Sau khi cap nhat note, bat buoc import lai workflow wrapper tuong ung.
+
 ## Files tham chieu nhanh
 - `AGENTS.md`
 - `AGENT_RULES_GLOBAL.md`

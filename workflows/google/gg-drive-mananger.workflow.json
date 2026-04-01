@@ -109,8 +109,7 @@
             "parents",
             "webViewLink"
           ]
-        },
-        "authentication": "oAuth2"
+        }
       },
       "id": "5",
       "name": "Search Current Folder",
@@ -324,8 +323,7 @@
           "value": "My Drive"
         },
         "folderId": "={{ $json.baseFolderId || 'root' }}",
-        "options": {},
-        "authentication": "oAuth2"
+        "options": {}
       },
       "id": "9",
       "name": "Create Missing Folder",
@@ -671,8 +669,7 @@
             "size",
             "webViewLink"
           ]
-        },
-        "authentication": "oAuth2"
+        }
       },
       "id": "29",
       "name": "Search Existing File (Get/Delete)",
@@ -784,8 +781,7 @@
       "parameters": {
         "operation": "deleteFile",
         "fileId": "={{ $json.id }}",
-        "options": {},
-        "authentication": "oAuth2"
+        "options": {}
       },
       "id": "33",
       "name": "Delete Existing File",
@@ -1005,8 +1001,7 @@
             "parents",
             "webViewLink"
           ]
-        },
-        "authentication": "oAuth2"
+        }
       },
       "id": "40",
       "name": "Search Folder Items (List)",
@@ -1085,8 +1080,7 @@
             "size",
             "webViewLink"
           ]
-        },
-        "authentication": "oAuth2"
+        }
       },
       "id": "18",
       "name": "Search Existing File",
@@ -1176,8 +1170,7 @@
             "size",
             "webViewLink"
           ]
-        },
-        "authentication": "oAuth2"
+        }
       },
       "id": "21",
       "name": "Update Existing File",
@@ -1302,8 +1295,7 @@
         "folderId": "={{ $json.targetFolderId || 'root' }}",
         "options": {
           "simplifyOutput": false
-        },
-        "authentication": "oAuth2"
+        }
       },
       "id": "24",
       "name": "Upload New File",
@@ -1480,6 +1472,102 @@
       "position": [
         1840,
         256
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## INPUT CONTRACT (Execute Workflow Trigger)\n\n`action` (string): `upsert|get|delete|list` (default `upsert`)\n`rootFolderId` (string): start folder ID (default `root`)\n`folderPath` (string): nested path under root, ex: `books/2026/april`\n`targetFolderId` (string, optional): direct target folder ID override\n`requestedFolderPath` (string, optional): path echoed in final result\n`fileName` (string): file name for `upsert/get/delete`\n`binaryFieldName` (string): binary key to upload/update (default first key in `$binary`)\n`listLimit` (number): max list items when `listReturnAll=false` (default `200`)\n`listReturnAll` (boolean): list all or use limit (default `true`)\n`listQuery` (string, optional): custom Google Drive query for list action\n`selfWorkflowPath` (string): workflow path used for recursive folder traversal\n\n### Result shape\nCommon keys: `status`, `action`, folder context (`folderId`, `folderUrl`)\nSuccess branches also return file/list details (`fileId`, `fileUrl`, `items`, etc.).",
+        "height": 860,
+        "width": 760,
+        "color": 7
+      },
+      "id": "9001",
+      "name": "NOTE::GGDRIVE::INPUT_FIELDS",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1936,
+        -528
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## STAGE 1: RESOLVE TARGET FOLDER\n\nNodes:\n- Normalize Request\n- If Has Segment\n- Search Current Folder / Create Missing Folder\n- Execute Recursive Workflow\n- Finalize Target Context\n\nGoal: convert `rootFolderId + folderPath` into a stable `targetFolderId` and `targetFolderUrl` before action routing.",
+        "height": 420,
+        "width": 700,
+        "color": 5
+      },
+      "id": "9002",
+      "name": "NOTE::GGDRIVE::STAGE_FOLDER_RESOLUTION",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1024,
+        -496
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## STAGE 2: ACTION ROUTER\n\nNode: `Switch Action`\n\nRoutes:\n- `get`\n- `delete`\n- `list`\n- fallback => `upsert`\n\nAll branches consume the same resolved target context from Stage 1.",
+        "height": 260,
+        "width": 480,
+        "color": 6
+      },
+      "id": "9003",
+      "name": "NOTE::GGDRIVE::STAGE_ACTION_ROUTER",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1264,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## BRANCH: GET / DELETE\n\nFlow:\n- Search Existing File (Get/Delete)\n- If File Exists (Get/Delete)\n- If Delete Action\n- Delete Existing File OR Build Get File Result\n- Build Delete Result / Build File Not Found Result\n\nPurpose: non-upload read/delete operations with explicit not-found handling.",
+        "height": 360,
+        "width": 620,
+        "color": 4
+      },
+      "id": "9004",
+      "name": "NOTE::GGDRIVE::BRANCH_GET_DELETE",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## BRANCH: LIST\n\nFlow:\n- Search Folder Items (List)\n- Build List Result\n\nSupports:\n- default query by `targetFolderId`\n- optional custom `listQuery`\n- pagination behavior via `listReturnAll` + `listLimit`.",
+        "height": 280,
+        "width": 560,
+        "color": 3
+      },
+      "id": "9005",
+      "name": "NOTE::GGDRIVE::BRANCH_LIST",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        992
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## BRANCH: UPSERT (UPLOAD/UPDATE)\n\nFlow:\n- If Has File Binary\n- Search Existing File\n- If File Exists\n- Update Existing File OR Upload New File\n- Build Updated Result / Build Created Result\n- Build Missing File Result\n\nPurpose: idempotent file write path with clear outcomes (`updated` vs `created`).",
+        "height": 360,
+        "width": 640,
+        "color": 2
+      },
+      "id": "9006",
+      "name": "NOTE::GGDRIVE::BRANCH_UPSERT",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1584,
+        -368
       ]
     }
   ],

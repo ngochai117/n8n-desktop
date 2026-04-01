@@ -71,7 +71,8 @@
             }
           ],
           "combinator": "and"
-        }
+        },
+        "options": {}
       },
       "id": "4",
       "name": "If Need Create Sheet",
@@ -174,7 +175,8 @@
             }
           ],
           "combinator": "and"
-        }
+        },
+        "options": {}
       },
       "id": "8",
       "name": "If Should Move Sheet",
@@ -194,8 +196,7 @@
           "mode": "list",
           "value": "My Drive"
         },
-        "folderId": "={{ $json.targetFolderId }}",
-        "authentication": "oAuth2"
+        "folderId": "={{ $json.targetFolderId }}"
       },
       "id": "9",
       "name": "Move Sheet To Folder",
@@ -236,7 +237,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        448,
+        672,
         416
       ]
     },
@@ -261,7 +262,8 @@
             }
           ],
           "combinator": "and"
-        }
+        },
+        "options": {}
       },
       "id": "12",
       "name": "If Should Write Rows",
@@ -339,7 +341,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1120,
+        1344,
         416
       ]
     },
@@ -355,6 +357,102 @@
       "position": [
         1568,
         320
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## INPUT CONTRACT (Execute Workflow Trigger)\n\n`action` (string): `ensureAndWrite|ensureSheet|writeRows` (default `ensureAndWrite`)\n`session_sheet_id` or `sheetId` (string): existing sheet ID\n`session_sheet_name` or `sheetName` (string): sheet title when creating (default `book-review-assets`)\n`sheetTabName` (string): tab name (default `assets`)\n`session_folder_id` or `targetFolderId` (string): Drive folder to move sheet into\n`session_sheet_rows` or `sheetRows` (2D array): data rows to write at `A1`\n\n### Behavior flags (auto by Normalize Request)\n- `shouldEnsure`, `shouldWrite`, `shouldMove`\n- `shouldCreateSheet`, `shouldCallWriteApi`\n- `missingSheetIdForWrite`\n\n### Result keys\n`status`, `sheetId`, `sheetUrl`, `session_sheet_id`, `session_sheet_url`, `session_sheet_create_status_code`, `session_sheet_update_status_code`.",
+        "height": 820,
+        "width": 760,
+        "color": 7
+      },
+      "id": "9101",
+      "name": "NOTE::GGSHEET::INPUT_FIELDS",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1856,
+        -496
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## STAGE 1: NORMALIZE + ROUTE FLAGS\n\nNodes:\n- Set Config\n- Normalize Request\n\nPurpose:\n- chuẩn hóa input aliases (`session_sheet_id` vs `sheetId`)\n- set action hợp lệ\n- dựng flags điều hướng cho các stage sau.",
+        "height": 340,
+        "width": 640,
+        "color": 5
+      },
+      "id": "9102",
+      "name": "NOTE::GGSHEET::STAGE_NORMALIZE",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1136,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## STAGE 2: ENSURE SHEET\n\nFlow:\n- If Need Create Sheet\n- Create Sheet OR Use Existing Sheet\n- Prepare Sheet Meta\n\nKết quả:\n- luôn cố gắng trả về `session_sheet_id` + `session_sheet_url` để dùng cho bước move/write.",
+        "height": 360,
+        "width": 620,
+        "color": 6
+      },
+      "id": "9103",
+      "name": "NOTE::GGSHEET::STAGE_ENSURE",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        -384
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## STAGE 3: MOVE TO FOLDER (OPTIONAL)\n\nFlow:\n- If Should Move Sheet\n- Move Sheet To Folder\n- Prepare Move Context / Prepare Move Skipped\n\nChỉ chạy khi có `targetFolderId` và có `session_sheet_id`.",
+        "height": 320,
+        "width": 620,
+        "color": 4
+      },
+      "id": "9104",
+      "name": "NOTE::GGSHEET::STAGE_MOVE",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        272,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## STAGE 4: WRITE ROWS (OPTIONAL)\n\nFlow:\n- If Should Write Rows\n- Write Sheet Rows\n- Prepare Write Result / Prepare Write Skipped\n\nWrite target: `${sheetTabName}!A1` với payload `values` từ `sheetRows`.",
+        "height": 320,
+        "width": 620,
+        "color": 3
+      },
+      "id": "9105",
+      "name": "NOTE::GGSHEET::STAGE_WRITE",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        928,
+        -368
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## STAGE 5: FINAL RESULT\n\nNode: Build Result\n\nRule:\n- `status=success` khi ensure/write pass theo logic flags\n- `status=partial` khi thiếu sheet ID cho write hoặc write API không 2xx\n\nOutput giữ đầy đủ context để workflow cha dùng tiếp.",
+        "height": 300,
+        "width": 560,
+        "color": 2
+      },
+      "id": "9106",
+      "name": "NOTE::GGSHEET::STAGE_RESULT",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        -336
       ]
     }
   ],
@@ -548,6 +646,8 @@
   },
   "settings": {
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "executionOrder": "v1",
+    "binaryMode": "separate"
   }
 }

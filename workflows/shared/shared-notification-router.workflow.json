@@ -2,51 +2,43 @@
   "name": "Shared Notification Router",
   "nodes": [
     {
+      "parameters": {},
       "id": "1",
       "name": "When Executed by Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
       "position": [
-        -620,
+        -624,
         0
-      ],
-      "parameters": {}
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\n\nconst rawStatus = String(input.status ?? 'unknown').trim().toLowerCase();\nconst status = rawStatus === 'success' ? 'success' : rawStatus === 'failed' ? 'failed' : rawStatus === 'info' ? 'info' : 'unknown';\nconst sourceWorkflow = String(input.source_workflow ?? 'Unnamed Workflow').trim() || 'Unnamed Workflow';\nconst summary = String(input.summary ?? '').trim();\nconst details = String(input.details ?? '').trim();\nconst message = String(input.message ?? '').trim();\nconst title = 'n8n ' + status.toUpperCase() + ': ' + sourceWorkflow;\nconst body = [summary, details].filter((value) => value.length > 0).join(' | ') || 'Workflow execution finished.';\nconst compactBody = body.replace(/\\s+/g, ' ').trim().slice(0, 1000);\n\nconst hasExplicitTargets = Object.prototype.hasOwnProperty.call(input, 'notify_targets') && input.notify_targets !== null;\nconst rawTargets = hasExplicitTargets ? input.notify_targets : 'telegram';\n\nlet targets = Array.isArray(rawTargets)\n  ? rawTargets\n  : String(rawTargets).split(/[\\s,]+/);\n\ntargets = targets\n  .map((value) => String(value).trim().toLowerCase())\n  .filter((value) => value.length > 0)\n  .map((value) => {\n    if (value === 'googlechat' || value === 'google_chat' || value === 'gg-chat') {\n      return 'ggchat';\n    }\n    return value;\n  });\n\nif (targets.includes('all')) {\n  targets = ['telegram', 'ggchat'];\n}\n\nif (targets.includes('none') || targets.includes('off') || targets.includes('disable')) {\n  targets = [];\n}\n\ntargets = [...new Set(targets.filter((value) => ['telegram', 'ggchat'].includes(value)))];\nif (targets.length === 0 && !hasExplicitTargets) {\n  targets = ['telegram'];\n}\n\nconst telegramBotToken = String(input.telegram_bot_token ?? '').trim();\nconst telegramChatId = String(input.telegram_chat_id ?? '').trim();\nconst ggchatWebhookUrl = String(input.ggchat_webhook_url ?? '').trim();\n\nreturn [{\n  json: {\n    status,\n    source_workflow: sourceWorkflow,\n    summary,\n    details,\n    message,\n    title,\n    body: compactBody,\n    notify_targets: targets,\n    telegram_enabled: targets.includes('telegram'),\n    ggchat_enabled: targets.includes('ggchat'),\n    telegram_bot_token: telegramBotToken,\n    telegram_chat_id: telegramChatId,\n    ggchat_webhook_url: ggchatWebhookUrl\n  }\n}];\n"
+      },
       "id": "2",
       "name": "Normalize Notification Context",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -340,
+        -400,
         0
-      ],
-      "parameters": {
-        "jsCode": "const input = $json ?? {};\n\nconst rawStatus = String(input.status ?? 'unknown').trim().toLowerCase();\nconst status = rawStatus === 'success' ? 'success' : rawStatus === 'failed' ? 'failed' : rawStatus === 'info' ? 'info' : 'unknown';\nconst sourceWorkflow = String(input.source_workflow ?? 'Unnamed Workflow').trim() || 'Unnamed Workflow';\nconst summary = String(input.summary ?? '').trim();\nconst details = String(input.details ?? '').trim();\nconst message = String(input.message ?? '').trim();\nconst title = 'n8n ' + status.toUpperCase() + ': ' + sourceWorkflow;\nconst body = [summary, details].filter((value) => value.length > 0).join(' | ') || 'Workflow execution finished.';\nconst compactBody = body.replace(/\\s+/g, ' ').trim().slice(0, 1000);\n\nconst hasExplicitTargets = Object.prototype.hasOwnProperty.call(input, 'notify_targets') && input.notify_targets !== null;\nconst rawTargets = hasExplicitTargets ? input.notify_targets : 'telegram';\n\nlet targets = Array.isArray(rawTargets)\n  ? rawTargets\n  : String(rawTargets).split(/[\\s,]+/);\n\ntargets = targets\n  .map((value) => String(value).trim().toLowerCase())\n  .filter((value) => value.length > 0)\n  .map((value) => {\n    if (value === 'googlechat' || value === 'google_chat' || value === 'gg-chat') {\n      return 'ggchat';\n    }\n    return value;\n  });\n\nif (targets.includes('all')) {\n  targets = ['telegram', 'ggchat'];\n}\n\nif (targets.includes('none') || targets.includes('off') || targets.includes('disable')) {\n  targets = [];\n}\n\ntargets = [...new Set(targets.filter((value) => ['telegram', 'ggchat'].includes(value)))];\nif (targets.length === 0 && !hasExplicitTargets) {\n  targets = ['telegram'];\n}\n\nconst telegramBotToken = String(input.telegram_bot_token ?? '').trim();\nconst telegramChatId = String(input.telegram_chat_id ?? '').trim();\nconst ggchatWebhookUrl = String(input.ggchat_webhook_url ?? '').trim();\n\nreturn [{\n  json: {\n    status,\n    source_workflow: sourceWorkflow,\n    summary,\n    details,\n    message,\n    title,\n    body: compactBody,\n    notify_targets: targets,\n    telegram_enabled: targets.includes('telegram'),\n    ggchat_enabled: targets.includes('ggchat'),\n    telegram_bot_token: telegramBotToken,\n    telegram_chat_id: telegramChatId,\n    ggchat_webhook_url: ggchatWebhookUrl\n  }\n}];\n"
-      }
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "if ($json.telegram_enabled !== true) {\n  return [];\n}\n\nconst botToken = String($json.telegram_bot_token ?? '').trim();\nconst chatId = String($json.telegram_chat_id ?? '').trim();\nif (!botToken || !chatId) {\n  return [];\n}\n\nconst directMessage = String($json.message ?? '').trim();\nconst fallbackText = [String($json.title ?? ''), String($json.body ?? '')]\n  .filter((value) => value.trim() !== '')\n  .join('\\n');\nconst text = (directMessage || fallbackText).slice(0, 3500);\n\nif (!text) {\n  return [];\n}\n\nreturn [{\n  json: {\n    telegram_url: `https://api.telegram.org/bot${botToken}/sendMessage`,\n    telegram_body: {\n      chat_id: chatId,\n      text,\n      disable_web_page_preview: true\n    }\n  }\n}];\n"
+      },
       "id": "3",
       "name": "Build Telegram Request",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -60,
-        -100
-      ],
-      "parameters": {
-        "jsCode": "if ($json.telegram_enabled !== true) {\n  return [];\n}\n\nconst botToken = String($json.telegram_bot_token ?? '').trim();\nconst chatId = String($json.telegram_chat_id ?? '').trim();\nif (!botToken || !chatId) {\n  return [];\n}\n\nconst directMessage = String($json.message ?? '').trim();\nconst fallbackText = [String($json.title ?? ''), String($json.body ?? '')]\n  .filter((value) => value.trim() !== '')\n  .join('\\n');\nconst text = (directMessage || fallbackText).slice(0, 3500);\n\nif (!text) {\n  return [];\n}\n\nreturn [{\n  json: {\n    telegram_url: `https://api.telegram.org/bot${botToken}/sendMessage`,\n    telegram_body: {\n      chat_id: chatId,\n      text,\n      disable_web_page_preview: true\n    }\n  }\n}];\n"
-      }
+        -176,
+        -96
+      ]
     },
     {
-      "id": "4",
-      "name": "Send Telegram Notification",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        200,
-        -100
-      ],
       "parameters": {
         "method": "POST",
         "url": "={{ $json.telegram_url }}",
@@ -55,30 +47,30 @@
         "jsonBody": "={{ $json.telegram_body }}",
         "options": {}
       },
+      "id": "4",
+      "name": "Send Telegram Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        48,
+        -96
+      ],
       "continueOnFail": true
     },
     {
+      "parameters": {
+        "jsCode": "if ($json.ggchat_enabled !== true) {\n  return [];\n}\n\nconst webhookUrl = String($json.ggchat_webhook_url ?? '').trim();\nif (!webhookUrl) {\n  return [];\n}\n\nconst text = [String($json.title ?? ''), String($json.body ?? '')]\n  .filter((value) => value.trim() !== '')\n  .join('\\n')\n  .slice(0, 3500);\n\nreturn [{\n  json: {\n    ggchat_webhook_url: webhookUrl,\n    ggchat_body: {\n      text\n    }\n  }\n}];"
+      },
       "id": "5",
       "name": "Build GGChat Request",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -60,
-        100
-      ],
-      "parameters": {
-        "jsCode": "if ($json.ggchat_enabled !== true) {\n  return [];\n}\n\nconst webhookUrl = String($json.ggchat_webhook_url ?? '').trim();\nif (!webhookUrl) {\n  return [];\n}\n\nconst text = [String($json.title ?? ''), String($json.body ?? '')]\n  .filter((value) => value.trim() !== '')\n  .join('\\n')\n  .slice(0, 3500);\n\nreturn [{\n  json: {\n    ggchat_webhook_url: webhookUrl,\n    ggchat_body: {\n      text\n    }\n  }\n}];"
-      }
+        -176,
+        96
+      ]
     },
     {
-      "id": "6",
-      "name": "Send GGChat Notification",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        200,
-        100
-      ],
       "parameters": {
         "method": "POST",
         "url": "={{ $json.ggchat_webhook_url }}",
@@ -87,7 +79,79 @@
         "jsonBody": "={{ $json.ggchat_body }}",
         "options": {}
       },
+      "id": "6",
+      "name": "Send GGChat Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        48,
+        96
+      ],
       "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "content": "## INPUT CONTRACT\n\n`status`: `success|failed|info|unknown`\n`source_workflow`: tên workflow nguồn\n`summary`, `details`, `message`: nội dung notify\n`notify_targets`: `telegram|ggchat|all|none` (string/array)\n`telegram_bot_token`, `telegram_chat_id`: Telegram credentials runtime\n`ggchat_webhook_url`: webhook Google Chat\n\nDefault behavior:\n- nếu không truyền `notify_targets` => mặc định gửi Telegram\n- `all` => gửi cả Telegram + GGChat\n- `none/off/disable` => không gửi kênh nào",
+        "height": 620,
+        "width": 700,
+        "color": 7
+      },
+      "id": "9201",
+      "name": "NOTE::SHARED_NOTIFY::INPUT_FIELDS",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1520,
+        -416
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## STAGE 1: NORMALIZE CONTEXT\n\nNode: Normalize Notification Context\n\nChuẩn hóa:\n- status\n- title/body\n- danh sách notify_targets\n- cờ `telegram_enabled`, `ggchat_enabled`\n\nOutput đã sẵn sàng cho từng branch kênh gửi.",
+        "height": 360,
+        "width": 560,
+        "color": 5
+      },
+      "id": "9202",
+      "name": "NOTE::SHARED_NOTIFY::STAGE_NORMALIZE",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -768,
+        -384
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## BRANCH: TELEGRAM\n\nFlow:\n- Build Telegram Request\n- Send Telegram Notification\n\nChỉ gửi khi:\n- `telegram_enabled=true`\n- có đủ `telegram_bot_token` + `telegram_chat_id`.",
+        "height": 300,
+        "width": 520,
+        "color": 3
+      },
+      "id": "9203",
+      "name": "NOTE::SHARED_NOTIFY::BRANCH_TELEGRAM",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -384
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## BRANCH: GGCHAT\n\nFlow:\n- Build GGChat Request\n- Send GGChat Notification\n\nChỉ gửi khi:\n- `ggchat_enabled=true`\n- có `ggchat_webhook_url`.",
+        "height": 280,
+        "width": 500,
+        "color": 4
+      },
+      "id": "9204",
+      "name": "NOTE::SHARED_NOTIFY::BRANCH_GGCHAT",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        320,
+        -384
+      ]
     }
   ],
   "connections": {
@@ -143,6 +207,8 @@
   },
   "settings": {
     "callerPolicy": "workflowsFromSameOwner",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "executionOrder": "v1",
+    "binaryMode": "separate"
   }
 }

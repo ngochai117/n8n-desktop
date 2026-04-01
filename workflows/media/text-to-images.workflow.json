@@ -2,35 +2,25 @@
   "name": "Text To Images",
   "nodes": [
     {
+      "parameters": {},
       "id": "1",
       "name": "When Executed by Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1,
       "position": [
-        -980,
-        -200
-      ],
-      "parameters": {}
+        -976,
+        352
+      ]
     },
     {
-      "id": "2",
-      "name": "Form Trigger",
-      "type": "n8n-nodes-base.formTrigger",
-      "typeVersion": 2.2,
-      "position": [
-        -980,
-        20
-      ],
       "parameters": {
-        "path": "text-to-images-form",
         "formTitle": "Text To Images",
         "formDescription": "input_mode=form_upload thi upload file/text. input_mode=drive_url thi cung cap full Google Drive URL.",
         "formFields": {
           "values": [
             {
               "fieldLabel": "request_id",
-              "placeholder": "req-custom-001",
-              "requiredField": false
+              "placeholder": "req-custom-001"
             },
             {
               "fieldLabel": "input_mode",
@@ -44,41 +34,36 @@
             },
             {
               "fieldLabel": "drive_file_url",
-              "placeholder": "https://drive.google.com/file/d/.../view",
-              "requiredField": false
+              "placeholder": "https://drive.google.com/file/d/.../view"
             },
             {
               "fieldLabel": "drive_output_folder_url",
-              "placeholder": "https://drive.google.com/drive/folders/...",
-              "requiredField": false
+              "placeholder": "https://drive.google.com/drive/folders/..."
             },
             {
               "fieldLabel": "input_text",
-              "placeholder": "Optional plain text input",
-              "requiredField": false
+              "placeholder": "Optional plain text input"
             },
             {
               "fieldLabel": "input_file",
               "fieldType": "file",
-              "requiredField": false,
-              "multipleFiles": false,
-              "acceptFileTypes": ""
+              "multipleFiles": false
             }
           ]
         },
         "options": {}
       },
+      "id": "2",
+      "name": "Form Trigger",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -976,
+        544
+      ],
       "webhookId": "text-to-images-form-trigger-webhook"
     },
     {
-      "id": "3",
-      "name": "Set Config",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -760,
-        -90
-      ],
       "parameters": {
         "assignments": {
           "assignments": [
@@ -242,31 +227,31 @@
         },
         "includeOtherFields": true,
         "options": {}
-      }
+      },
+      "id": "3",
+      "name": "Set Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -752,
+        448
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction safeJsonParse(value, fallback = null) {\n  try {\n    return JSON.parse(String(value ?? ''));\n  } catch (_) {\n    return fallback;\n  }\n}\n\nfunction parseJsonObject(rawText) {\n  const raw = safeText(rawText);\n  if (!raw) return null;\n\n  const direct = safeJsonParse(raw, null);\n  if (direct && typeof direct === 'object') return direct;\n\n  const fence = raw.match(/\\x60\\x60\\x60(?:json)?\\s*([\\s\\S]*?)\\x60\\x60\\x60/i);\n  if (fence) {\n    const parsedFence = safeJsonParse(fence[1], null);\n    if (parsedFence && typeof parsedFence === 'object') return parsedFence;\n  }\n\n  const firstObj = raw.indexOf('{');\n  const lastObj = raw.lastIndexOf('}');\n  if (firstObj >= 0 && lastObj > firstObj) {\n    const parsedObj = safeJsonParse(raw.slice(firstObj, lastObj + 1), null);\n    if (parsedObj && typeof parsedObj === 'object') return parsedObj;\n  }\n\n  return null;\n}\n\nfunction tokenizeSentences(text) {\n  const normalized = normalizeText(text).replace(/\\s+/g, ' ');\n  if (!normalized) return [];\n\n  const matches = normalized.match(/[^.!?…]+(?:[.!?…]+(?:[\"'”’)\\]]+)*)|[^.!?…]+$/g) ?? [];\n  const sentences = matches.map((item) => item.trim()).filter(Boolean);\n  return sentences.length > 0 ? sentences : [normalized];\n}\n\nfunction normalizeSceneItem(item, index) {\n  const source = item && typeof item === 'object' ? item : {};\n  const order = asInt(source.order, index + 1, 1, 10000);\n  const sceneId = safeText(source.scene_id, safeText(source.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n  const narrationText = safeText(source.narration_text, safeText(source.text));\n\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    scene_role: safeText(source.scene_role, order === 1 ? 'hook' : 'core'),\n    narration_text: narrationText,\n    image_prompt_en: safeText(source.image_prompt_en),\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    estimated_duration_sec: asInt(source.estimated_duration_sec, order === 1 ? 60 : 95, 15, 300),\n    transition: safeText(source.transition, 'cut'),\n\n    chunk_key: safeText(source.chunk_key, sceneId),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order, 1, 10000),\n    text: safeText(source.text, narrationText),\n    sentence_count: Math.max(1, tokenizeSentences(narrationText).length),\n    chunk_type: safeText(source.chunk_type, 'scene'),\n  };\n}\n\nfunction normalizeChunkManifest(items) {\n  if (!Array.isArray(items)) return [];\n  return items\n    .map((item, idx) => normalizeSceneItem(item, idx))\n    .filter((item) => safeText(item.narration_text) !== '' || safeText(item.image_prompt_en) !== '');\n}\n\nfunction parseDriveFileIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/d\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  const byUc = text.match(/\\/uc\\?.*?[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byUc) return safeText(byUc[1]);\n\n  return '';\n}\n\nfunction parseDriveFolderIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/folders\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]folder=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  return '';\n}\n\nfunction readFirstBinaryText(binaryMap) {\n  const keys = Object.keys(binaryMap ?? {});\n  if (keys.length === 0) return '';\n\n  const first = binaryMap[keys[0]];\n  const base64 = safeText(first?.data);\n  if (!base64) return '';\n\n  try {\n    return Buffer.from(base64, 'base64').toString('utf8');\n  } catch (_) {\n    return '';\n  }\n}\n\nlet inputMode = safeText(input.input_mode).toLowerCase();\nif (!inputMode) {\n  inputMode = safeText(input.drive_file_url) ? 'drive_url' : 'form_upload';\n}\nif (inputMode !== 'form_upload' && inputMode !== 'drive_url') {\n  inputMode = 'form_upload';\n}\n\nlet outputMode = safeText(input.output_mode, 'inline').toLowerCase();\nif (outputMode !== 'inline' && outputMode !== 'drive_export') {\n  outputMode = 'inline';\n}\n\nconst driveFileUrl = safeText(input.drive_file_url);\nconst driveOutputFolderUrl = safeText(input.drive_output_folder_url);\nconst driveFileId = parseDriveFileIdFromUrl(driveFileUrl);\nconst driveOutputFolderId = safeText(input.drive_output_folder_id)\n  || parseDriveFolderIdFromUrl(driveOutputFolderUrl)\n  || safeText(input.gdrive_root_folder_id)\n  || safeText(input.gdrive_root_folder_id_default);\n\nconst incomingManifest = Array.isArray(input.chunk_manifest) && input.chunk_manifest.length > 0\n  ? input.chunk_manifest\n  : input.media_chunks;\nlet chunks = normalizeChunkManifest(incomingManifest);\n\nif (chunks.length === 0 && input.review_manifest && typeof input.review_manifest === 'object') {\n  chunks = normalizeChunkManifest(input.review_manifest.scenes);\n}\n\nif (chunks.length === 0) {\n  const sourceText = normalizeText(input.input_text ?? input.text ?? input.content ?? readFirstBinaryText(binary));\n  if (sourceText) {\n    const parsed = parseJsonObject(sourceText);\n    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.scenes)) {\n      chunks = normalizeChunkManifest(parsed.scenes);\n    }\n\n    if (chunks.length === 0) {\n      chunks = [normalizeSceneItem({\n        scene_id: 'scene_01',\n        order: 1,\n        scene_title: 'Scene 01',\n        scene_role: 'core',\n        narration_text: sourceText,\n        image_prompt_en: safeText(input.image_prompt_fixed, 'cinematic storytelling illustration, warm light, emotional depth'),\n        highlight_quote_vi: '',\n        estimated_duration_sec: 120,\n        transition: 'cut',\n      }, 0)];\n    }\n  }\n}\n\nconst requestId = safeText(input.request_id, 'req-' + Date.now().toString(36));\nconst needsDriveDownload = inputMode === 'drive_url' && chunks.length === 0 && !!driveFileUrl && !!driveFileId;\nconst driveUrlStatus =\n  inputMode === 'drive_url'\n    ? (driveFileId ? 'parsed' : (driveFileUrl ? 'invalid_url' : 'missing_url'))\n    : 'not_required';\n\nreturn {\n  ...input,\n  workflow: safeText(input.workflow, 'scene-media'),\n  request_id: requestId,\n  input_mode: inputMode,\n  output_mode: outputMode,\n  drive_file_url: driveFileUrl,\n  drive_file_id: driveFileId,\n  drive_output_folder_url: driveOutputFolderUrl,\n  drive_output_folder_id: driveOutputFolderId,\n  drive_url_status: driveUrlStatus,\n  needs_drive_download: needsDriveDownload,\n  media_chunks: chunks,\n  chunk_manifest: chunks,\n  media_should_run: chunks.length > 0,\n};"
+      },
       "id": "4",
       "name": "Normalize Inputs",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -520,
-        -90
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction safeJsonParse(value, fallback = null) {\n  try {\n    return JSON.parse(String(value ?? ''));\n  } catch (_) {\n    return fallback;\n  }\n}\n\nfunction parseJsonObject(rawText) {\n  const raw = safeText(rawText);\n  if (!raw) return null;\n\n  const direct = safeJsonParse(raw, null);\n  if (direct && typeof direct === 'object') return direct;\n\n  const fence = raw.match(/\\x60\\x60\\x60(?:json)?\\s*([\\s\\S]*?)\\x60\\x60\\x60/i);\n  if (fence) {\n    const parsedFence = safeJsonParse(fence[1], null);\n    if (parsedFence && typeof parsedFence === 'object') return parsedFence;\n  }\n\n  const firstObj = raw.indexOf('{');\n  const lastObj = raw.lastIndexOf('}');\n  if (firstObj >= 0 && lastObj > firstObj) {\n    const parsedObj = safeJsonParse(raw.slice(firstObj, lastObj + 1), null);\n    if (parsedObj && typeof parsedObj === 'object') return parsedObj;\n  }\n\n  return null;\n}\n\nfunction tokenizeSentences(text) {\n  const normalized = normalizeText(text).replace(/\\s+/g, ' ');\n  if (!normalized) return [];\n\n  const matches = normalized.match(/[^.!?…]+(?:[.!?…]+(?:[\"'”’)\\]]+)*)|[^.!?…]+$/g) ?? [];\n  const sentences = matches.map((item) => item.trim()).filter(Boolean);\n  return sentences.length > 0 ? sentences : [normalized];\n}\n\nfunction normalizeSceneItem(item, index) {\n  const source = item && typeof item === 'object' ? item : {};\n  const order = asInt(source.order, index + 1, 1, 10000);\n  const sceneId = safeText(source.scene_id, safeText(source.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n  const narrationText = safeText(source.narration_text, safeText(source.text));\n\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    scene_role: safeText(source.scene_role, order === 1 ? 'hook' : 'core'),\n    narration_text: narrationText,\n    image_prompt_en: safeText(source.image_prompt_en),\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    estimated_duration_sec: asInt(source.estimated_duration_sec, order === 1 ? 60 : 95, 15, 300),\n    transition: safeText(source.transition, 'cut'),\n\n    chunk_key: safeText(source.chunk_key, sceneId),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order, 1, 10000),\n    text: safeText(source.text, narrationText),\n    sentence_count: Math.max(1, tokenizeSentences(narrationText).length),\n    chunk_type: safeText(source.chunk_type, 'scene'),\n  };\n}\n\nfunction normalizeChunkManifest(items) {\n  if (!Array.isArray(items)) return [];\n  return items\n    .map((item, idx) => normalizeSceneItem(item, idx))\n    .filter((item) => safeText(item.narration_text) !== '' || safeText(item.image_prompt_en) !== '');\n}\n\nfunction parseDriveFileIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/d\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  const byUc = text.match(/\\/uc\\?.*?[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byUc) return safeText(byUc[1]);\n\n  return '';\n}\n\nfunction parseDriveFolderIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/folders\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]folder=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  return '';\n}\n\nfunction readFirstBinaryText(binaryMap) {\n  const keys = Object.keys(binaryMap ?? {});\n  if (keys.length === 0) return '';\n\n  const first = binaryMap[keys[0]];\n  const base64 = safeText(first?.data);\n  if (!base64) return '';\n\n  try {\n    return Buffer.from(base64, 'base64').toString('utf8');\n  } catch (_) {\n    return '';\n  }\n}\n\nlet inputMode = safeText(input.input_mode).toLowerCase();\nif (!inputMode) {\n  inputMode = safeText(input.drive_file_url) ? 'drive_url' : 'form_upload';\n}\nif (inputMode !== 'form_upload' && inputMode !== 'drive_url') {\n  inputMode = 'form_upload';\n}\n\nlet outputMode = safeText(input.output_mode, 'inline').toLowerCase();\nif (outputMode !== 'inline' && outputMode !== 'drive_export') {\n  outputMode = 'inline';\n}\n\nconst driveFileUrl = safeText(input.drive_file_url);\nconst driveOutputFolderUrl = safeText(input.drive_output_folder_url);\nconst driveFileId = parseDriveFileIdFromUrl(driveFileUrl);\nconst driveOutputFolderId = safeText(input.drive_output_folder_id)\n  || parseDriveFolderIdFromUrl(driveOutputFolderUrl)\n  || safeText(input.gdrive_root_folder_id)\n  || safeText(input.gdrive_root_folder_id_default);\n\nconst incomingManifest = Array.isArray(input.chunk_manifest) && input.chunk_manifest.length > 0\n  ? input.chunk_manifest\n  : input.media_chunks;\nlet chunks = normalizeChunkManifest(incomingManifest);\n\nif (chunks.length === 0 && input.review_manifest && typeof input.review_manifest === 'object') {\n  chunks = normalizeChunkManifest(input.review_manifest.scenes);\n}\n\nif (chunks.length === 0) {\n  const sourceText = normalizeText(input.input_text ?? input.text ?? input.content ?? readFirstBinaryText(binary));\n  if (sourceText) {\n    const parsed = parseJsonObject(sourceText);\n    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.scenes)) {\n      chunks = normalizeChunkManifest(parsed.scenes);\n    }\n\n    if (chunks.length === 0) {\n      chunks = [normalizeSceneItem({\n        scene_id: 'scene_01',\n        order: 1,\n        scene_title: 'Scene 01',\n        scene_role: 'core',\n        narration_text: sourceText,\n        image_prompt_en: safeText(input.image_prompt_fixed, 'cinematic storytelling illustration, warm light, emotional depth'),\n        highlight_quote_vi: '',\n        estimated_duration_sec: 120,\n        transition: 'cut',\n      }, 0)];\n    }\n  }\n}\n\nconst requestId = safeText(input.request_id, 'req-' + Date.now().toString(36));\nconst needsDriveDownload = inputMode === 'drive_url' && chunks.length === 0 && !!driveFileUrl && !!driveFileId;\nconst driveUrlStatus =\n  inputMode === 'drive_url'\n    ? (driveFileId ? 'parsed' : (driveFileUrl ? 'invalid_url' : 'missing_url'))\n    : 'not_required';\n\nreturn {\n  ...input,\n  workflow: safeText(input.workflow, 'scene-media'),\n  request_id: requestId,\n  input_mode: inputMode,\n  output_mode: outputMode,\n  drive_file_url: driveFileUrl,\n  drive_file_id: driveFileId,\n  drive_output_folder_url: driveOutputFolderUrl,\n  drive_output_folder_id: driveOutputFolderId,\n  drive_url_status: driveUrlStatus,\n  needs_drive_download: needsDriveDownload,\n  media_chunks: chunks,\n  chunk_manifest: chunks,\n  media_should_run: chunks.length > 0,\n};"
-      }
+        -528,
+        448
+      ]
     },
     {
-      "id": "5",
-      "name": "Switch Input Mode",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        -300,
-        -90
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -287,24 +272,32 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "5",
+      "name": "Switch Input Mode",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -304,
+        448
+      ]
     },
     {
+      "parameters": {
+        "operation": "download",
+        "fileId": "={{ $json.drive_file_id }}",
+        "options": {}
+      },
       "id": "6",
       "name": "Google Drive Download Source",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        -80,
-        -220
+        -528,
+        640
       ],
-      "parameters": {
-        "resource": "file",
-        "operation": "download",
-        "fileId": "={{ $json.drive_file_id }}",
-        "authentication": "oAuth2"
-      },
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
@@ -313,28 +306,20 @@
       }
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction safeJsonParse(value, fallback = null) {\n  try {\n    return JSON.parse(String(value ?? ''));\n  } catch (_) {\n    return fallback;\n  }\n}\n\nfunction parseJsonObject(rawText) {\n  const raw = safeText(rawText);\n  if (!raw) return null;\n\n  const direct = safeJsonParse(raw, null);\n  if (direct && typeof direct === 'object') return direct;\n\n  const fence = raw.match(/\\x60\\x60\\x60(?:json)?\\s*([\\s\\S]*?)\\x60\\x60\\x60/i);\n  if (fence) {\n    const parsedFence = safeJsonParse(fence[1], null);\n    if (parsedFence && typeof parsedFence === 'object') return parsedFence;\n  }\n\n  const firstObj = raw.indexOf('{');\n  const lastObj = raw.lastIndexOf('}');\n  if (firstObj >= 0 && lastObj > firstObj) {\n    const parsedObj = safeJsonParse(raw.slice(firstObj, lastObj + 1), null);\n    if (parsedObj && typeof parsedObj === 'object') return parsedObj;\n  }\n\n  return null;\n}\n\nfunction tokenizeSentences(text) {\n  const normalized = normalizeText(text).replace(/\\s+/g, ' ');\n  if (!normalized) return [];\n\n  const matches = normalized.match(/[^.!?…]+(?:[.!?…]+(?:[\"'”’)\\]]+)*)|[^.!?…]+$/g) ?? [];\n  const sentences = matches.map((item) => item.trim()).filter(Boolean);\n  return sentences.length > 0 ? sentences : [normalized];\n}\n\nfunction normalizeSceneItem(item, index) {\n  const source = item && typeof item === 'object' ? item : {};\n  const order = asInt(source.order, index + 1, 1, 10000);\n  const sceneId = safeText(source.scene_id, safeText(source.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n  const narrationText = safeText(source.narration_text, safeText(source.text));\n\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    scene_role: safeText(source.scene_role, order === 1 ? 'hook' : 'core'),\n    narration_text: narrationText,\n    image_prompt_en: safeText(source.image_prompt_en),\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    estimated_duration_sec: asInt(source.estimated_duration_sec, order === 1 ? 60 : 95, 15, 300),\n    transition: safeText(source.transition, 'cut'),\n\n    chunk_key: safeText(source.chunk_key, sceneId),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order, 1, 10000),\n    text: safeText(source.text, narrationText),\n    sentence_count: Math.max(1, tokenizeSentences(narrationText).length),\n    chunk_type: safeText(source.chunk_type, 'scene'),\n  };\n}\n\nfunction normalizeChunkManifest(items) {\n  if (!Array.isArray(items)) return [];\n  return items\n    .map((item, idx) => normalizeSceneItem(item, idx))\n    .filter((item) => safeText(item.narration_text) !== '' || safeText(item.image_prompt_en) !== '');\n}\n\nfunction parseDriveFileIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/d\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  const byUc = text.match(/\\/uc\\?.*?[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byUc) return safeText(byUc[1]);\n\n  return '';\n}\n\nfunction parseDriveFolderIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/folders\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]folder=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  return '';\n}\n\nfunction readFirstBinaryText(binaryMap) {\n  const keys = Object.keys(binaryMap ?? {});\n  if (keys.length === 0) return '';\n\n  const first = binaryMap[keys[0]];\n  const base64 = safeText(first?.data);\n  if (!base64) return '';\n\n  try {\n    return Buffer.from(base64, 'base64').toString('utf8');\n  } catch (_) {\n    return '';\n  }\n}\n\nlet inputMode = safeText(input.input_mode).toLowerCase();\nif (!inputMode) {\n  inputMode = safeText(input.drive_file_url) ? 'drive_url' : 'form_upload';\n}\nif (inputMode !== 'form_upload' && inputMode !== 'drive_url') {\n  inputMode = 'form_upload';\n}\n\nlet outputMode = safeText(input.output_mode, 'inline').toLowerCase();\nif (outputMode !== 'inline' && outputMode !== 'drive_export') {\n  outputMode = 'inline';\n}\n\nconst driveFileUrl = safeText(input.drive_file_url);\nconst driveOutputFolderUrl = safeText(input.drive_output_folder_url);\nconst driveFileId = parseDriveFileIdFromUrl(driveFileUrl);\nconst driveOutputFolderId = safeText(input.drive_output_folder_id)\n  || parseDriveFolderIdFromUrl(driveOutputFolderUrl)\n  || safeText(input.gdrive_root_folder_id)\n  || safeText(input.gdrive_root_folder_id_default);\n\nconst incomingManifest = Array.isArray(input.chunk_manifest) && input.chunk_manifest.length > 0\n  ? input.chunk_manifest\n  : input.media_chunks;\nlet chunks = normalizeChunkManifest(incomingManifest);\n\nif (chunks.length === 0 && input.review_manifest && typeof input.review_manifest === 'object') {\n  chunks = normalizeChunkManifest(input.review_manifest.scenes);\n}\n\nif (chunks.length === 0) {\n  const sourceText = normalizeText(input.input_text ?? input.text ?? input.content ?? readFirstBinaryText(binary));\n  if (sourceText) {\n    const parsed = parseJsonObject(sourceText);\n    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.scenes)) {\n      chunks = normalizeChunkManifest(parsed.scenes);\n    }\n\n    if (chunks.length === 0) {\n      chunks = [normalizeSceneItem({\n        scene_id: 'scene_01',\n        order: 1,\n        scene_title: 'Scene 01',\n        scene_role: 'core',\n        narration_text: sourceText,\n        image_prompt_en: safeText(input.image_prompt_fixed, 'cinematic storytelling illustration, warm light, emotional depth'),\n        highlight_quote_vi: '',\n        estimated_duration_sec: 120,\n        transition: 'cut',\n      }, 0)];\n    }\n  }\n}\n\nconst requestId = safeText(input.request_id, 'req-' + Date.now().toString(36));\nconst needsDriveDownload = inputMode === 'drive_url' && chunks.length === 0 && !!driveFileUrl && !!driveFileId;\nconst driveUrlStatus =\n  inputMode === 'drive_url'\n    ? (driveFileId ? 'parsed' : (driveFileUrl ? 'invalid_url' : 'missing_url'))\n    : 'not_required';\n\nreturn {\n  ...input,\n  workflow: safeText(input.workflow, 'scene-media'),\n  request_id: requestId,\n  input_mode: inputMode,\n  output_mode: outputMode,\n  drive_file_url: driveFileUrl,\n  drive_file_id: driveFileId,\n  drive_output_folder_url: driveOutputFolderUrl,\n  drive_output_folder_id: driveOutputFolderId,\n  drive_url_status: driveUrlStatus,\n  needs_drive_download: needsDriveDownload,\n  media_chunks: chunks,\n  chunk_manifest: chunks,\n  media_should_run: chunks.length > 0,\n};"
+      },
       "id": "7",
       "name": "Build Chunks From Drive File",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        160,
-        -220
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction safeJsonParse(value, fallback = null) {\n  try {\n    return JSON.parse(String(value ?? ''));\n  } catch (_) {\n    return fallback;\n  }\n}\n\nfunction parseJsonObject(rawText) {\n  const raw = safeText(rawText);\n  if (!raw) return null;\n\n  const direct = safeJsonParse(raw, null);\n  if (direct && typeof direct === 'object') return direct;\n\n  const fence = raw.match(/\\x60\\x60\\x60(?:json)?\\s*([\\s\\S]*?)\\x60\\x60\\x60/i);\n  if (fence) {\n    const parsedFence = safeJsonParse(fence[1], null);\n    if (parsedFence && typeof parsedFence === 'object') return parsedFence;\n  }\n\n  const firstObj = raw.indexOf('{');\n  const lastObj = raw.lastIndexOf('}');\n  if (firstObj >= 0 && lastObj > firstObj) {\n    const parsedObj = safeJsonParse(raw.slice(firstObj, lastObj + 1), null);\n    if (parsedObj && typeof parsedObj === 'object') return parsedObj;\n  }\n\n  return null;\n}\n\nfunction tokenizeSentences(text) {\n  const normalized = normalizeText(text).replace(/\\s+/g, ' ');\n  if (!normalized) return [];\n\n  const matches = normalized.match(/[^.!?…]+(?:[.!?…]+(?:[\"'”’)\\]]+)*)|[^.!?…]+$/g) ?? [];\n  const sentences = matches.map((item) => item.trim()).filter(Boolean);\n  return sentences.length > 0 ? sentences : [normalized];\n}\n\nfunction normalizeSceneItem(item, index) {\n  const source = item && typeof item === 'object' ? item : {};\n  const order = asInt(source.order, index + 1, 1, 10000);\n  const sceneId = safeText(source.scene_id, safeText(source.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n  const narrationText = safeText(source.narration_text, safeText(source.text));\n\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    scene_role: safeText(source.scene_role, order === 1 ? 'hook' : 'core'),\n    narration_text: narrationText,\n    image_prompt_en: safeText(source.image_prompt_en),\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    estimated_duration_sec: asInt(source.estimated_duration_sec, order === 1 ? 60 : 95, 15, 300),\n    transition: safeText(source.transition, 'cut'),\n\n    chunk_key: safeText(source.chunk_key, sceneId),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order, 1, 10000),\n    text: safeText(source.text, narrationText),\n    sentence_count: Math.max(1, tokenizeSentences(narrationText).length),\n    chunk_type: safeText(source.chunk_type, 'scene'),\n  };\n}\n\nfunction normalizeChunkManifest(items) {\n  if (!Array.isArray(items)) return [];\n  return items\n    .map((item, idx) => normalizeSceneItem(item, idx))\n    .filter((item) => safeText(item.narration_text) !== '' || safeText(item.image_prompt_en) !== '');\n}\n\nfunction parseDriveFileIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/d\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  const byUc = text.match(/\\/uc\\?.*?[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byUc) return safeText(byUc[1]);\n\n  return '';\n}\n\nfunction parseDriveFolderIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/folders\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]folder=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  return '';\n}\n\nfunction readFirstBinaryText(binaryMap) {\n  const keys = Object.keys(binaryMap ?? {});\n  if (keys.length === 0) return '';\n\n  const first = binaryMap[keys[0]];\n  const base64 = safeText(first?.data);\n  if (!base64) return '';\n\n  try {\n    return Buffer.from(base64, 'base64').toString('utf8');\n  } catch (_) {\n    return '';\n  }\n}\n\nlet inputMode = safeText(input.input_mode).toLowerCase();\nif (!inputMode) {\n  inputMode = safeText(input.drive_file_url) ? 'drive_url' : 'form_upload';\n}\nif (inputMode !== 'form_upload' && inputMode !== 'drive_url') {\n  inputMode = 'form_upload';\n}\n\nlet outputMode = safeText(input.output_mode, 'inline').toLowerCase();\nif (outputMode !== 'inline' && outputMode !== 'drive_export') {\n  outputMode = 'inline';\n}\n\nconst driveFileUrl = safeText(input.drive_file_url);\nconst driveOutputFolderUrl = safeText(input.drive_output_folder_url);\nconst driveFileId = parseDriveFileIdFromUrl(driveFileUrl);\nconst driveOutputFolderId = safeText(input.drive_output_folder_id)\n  || parseDriveFolderIdFromUrl(driveOutputFolderUrl)\n  || safeText(input.gdrive_root_folder_id)\n  || safeText(input.gdrive_root_folder_id_default);\n\nconst incomingManifest = Array.isArray(input.chunk_manifest) && input.chunk_manifest.length > 0\n  ? input.chunk_manifest\n  : input.media_chunks;\nlet chunks = normalizeChunkManifest(incomingManifest);\n\nif (chunks.length === 0 && input.review_manifest && typeof input.review_manifest === 'object') {\n  chunks = normalizeChunkManifest(input.review_manifest.scenes);\n}\n\nif (chunks.length === 0) {\n  const sourceText = normalizeText(input.input_text ?? input.text ?? input.content ?? readFirstBinaryText(binary));\n  if (sourceText) {\n    const parsed = parseJsonObject(sourceText);\n    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.scenes)) {\n      chunks = normalizeChunkManifest(parsed.scenes);\n    }\n\n    if (chunks.length === 0) {\n      chunks = [normalizeSceneItem({\n        scene_id: 'scene_01',\n        order: 1,\n        scene_title: 'Scene 01',\n        scene_role: 'core',\n        narration_text: sourceText,\n        image_prompt_en: safeText(input.image_prompt_fixed, 'cinematic storytelling illustration, warm light, emotional depth'),\n        highlight_quote_vi: '',\n        estimated_duration_sec: 120,\n        transition: 'cut',\n      }, 0)];\n    }\n  }\n}\n\nconst requestId = safeText(input.request_id, 'req-' + Date.now().toString(36));\nconst needsDriveDownload = inputMode === 'drive_url' && chunks.length === 0 && !!driveFileUrl && !!driveFileId;\nconst driveUrlStatus =\n  inputMode === 'drive_url'\n    ? (driveFileId ? 'parsed' : (driveFileUrl ? 'invalid_url' : 'missing_url'))\n    : 'not_required';\n\nreturn {\n  ...input,\n  workflow: safeText(input.workflow, 'scene-media'),\n  request_id: requestId,\n  input_mode: inputMode,\n  output_mode: outputMode,\n  drive_file_url: driveFileUrl,\n  drive_file_id: driveFileId,\n  drive_output_folder_url: driveOutputFolderUrl,\n  drive_output_folder_id: driveOutputFolderId,\n  drive_url_status: driveUrlStatus,\n  needs_drive_download: needsDriveDownload,\n  media_chunks: chunks,\n  chunk_manifest: chunks,\n  media_should_run: chunks.length > 0,\n};"
-      }
+        -304,
+        640
+      ]
     },
     {
-      "id": "8",
-      "name": "If Media Should Run?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        160,
-        120
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -355,20 +340,20 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "8",
+      "name": "If Media Should Run?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -80,
+        544
+      ]
     },
     {
-      "id": "9",
-      "name": "Switch Output Mode",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
-      "position": [
-        400,
-        -20
-      ],
       "parameters": {
-        "mode": "rules",
         "rules": {
           "values": [
             {
@@ -390,9 +375,7 @@
                   }
                 ],
                 "combinator": "and"
-              },
-              "renameOutput": false,
-              "outputKey": ""
+              }
             }
           ]
         },
@@ -401,72 +384,83 @@
           "renameFallbackOutput": "inline",
           "allMatchingOutputs": false
         }
-      }
+      },
+      "id": "9",
+      "name": "Switch Output Mode",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        816,
+        400
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nconst items = Array.isArray(input.media_image_items) ? input.media_image_items : [];\n\nconst failedCount = items.filter((item) => String(item?.image_status ?? '') === 'failed').length;\nconst generatedCount = items.filter((item) => String(item?.image_status ?? '') === 'generated').length;\n\nlet status = 'success';\nlet errorReason = null;\nif (items.length === 0) {\n  status = 'failed';\n  errorReason = 'empty_items';\n} else if (failedCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n  errorReason = generatedCount > 0 ? 'partial_failures' : 'all_failed';\n}\n\nreturn {\n  ...input,\n  workflow: 'text-to-images',\n  request_id: String(input.request_id ?? ''),\n  status,\n  items,\n  drive_exports: [],\n  error_reason: errorReason,\n};"
+      },
       "id": "10",
       "name": "Prepare Inline Output",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        650,
-        60
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst items = Array.isArray(input.media_image_items) ? input.media_image_items : [];\n\nconst failedCount = items.filter((item) => String(item?.image_status ?? '') === 'failed').length;\nconst generatedCount = items.filter((item) => String(item?.image_status ?? '') === 'generated').length;\n\nlet status = 'success';\nlet errorReason = null;\nif (items.length === 0) {\n  status = 'failed';\n  errorReason = 'empty_items';\n} else if (failedCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n  errorReason = generatedCount > 0 ? 'partial_failures' : 'all_failed';\n}\n\nreturn {\n  ...input,\n  workflow: 'text-to-images',\n  request_id: String(input.request_id ?? ''),\n  status,\n  items,\n  drive_exports: [],\n  error_reason: errorReason,\n};"
-      }
+        1040,
+        496
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nconst requestId = String(input.request_id ?? 'req-' + Date.now().toString(36));\nconst items = Array.isArray(input.media_image_items) ? input.media_image_items : [];\n\nconst failedCount = items.filter((item) => String(item?.image_status ?? '') === 'failed').length;\nconst generatedCount = items.filter((item) => String(item?.image_status ?? '') === 'generated').length;\n\nlet status = 'success';\nif (items.length === 0) {\n  status = 'failed';\n} else if (failedCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n}\n\nconst payload = {\n  workflow: 'text-to-images',\n  request_id: requestId,\n  generated_at: new Date().toISOString(),\n  status,\n  items,\n};\n\nreturn {\n  ...input,\n  export_payload_json: JSON.stringify(payload, null, 2),\n  export_file_name: 'text-to-images-' + requestId + '.json',\n};"
+      },
       "id": "11",
       "name": "Build Drive Export Payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        650,
-        -170
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst requestId = String(input.request_id ?? 'req-' + Date.now().toString(36));\nconst items = Array.isArray(input.media_image_items) ? input.media_image_items : [];\n\nconst failedCount = items.filter((item) => String(item?.image_status ?? '') === 'failed').length;\nconst generatedCount = items.filter((item) => String(item?.image_status ?? '') === 'generated').length;\n\nlet status = 'success';\nif (items.length === 0) {\n  status = 'failed';\n} else if (failedCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n}\n\nconst payload = {\n  workflow: 'text-to-images',\n  request_id: requestId,\n  generated_at: new Date().toISOString(),\n  status,\n  items,\n};\n\nreturn {\n  ...input,\n  export_payload_json: JSON.stringify(payload, null, 2),\n  export_file_name: 'text-to-images-' + requestId + '.json',\n};"
-      }
+        1040,
+        304
+      ]
     },
     {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "export_payload_json",
+        "binaryPropertyName": "export_file",
+        "options": {
+          "fileName": "={{ $json.export_file_name }}",
+          "mimeType": "application/json"
+        }
+      },
       "id": "12",
       "name": "Convert Export To File",
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        900,
-        -170
-      ],
-      "parameters": {
-        "operation": "toBinary",
-        "sourceProperty": "export_payload_json",
-        "options": {
-          "fileName": "={{ $json.export_file_name }}",
-          "mimeType": "application/json"
-        },
-        "binaryPropertyName": "export_file"
-      }
+        1264,
+        400
+      ]
     },
     {
+      "parameters": {
+        "inputDataFieldName": "export_file",
+        "name": "={{ $json.export_file_name }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": "={{ $json.drive_output_folder_id || $json.gdrive_root_folder_id || \"\" }}",
+        "options": {}
+      },
       "id": "13",
       "name": "Google Drive Upload Export",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        1140,
-        -170
+        1488,
+        400
       ],
-      "parameters": {
-        "resource": "file",
-        "operation": "upload",
-        "name": "={{ $json.export_file_name }}",
-        "authentication": "oAuth2",
-        "inputDataFieldName": "export_file",
-        "folderId": "={{ $json.drive_output_folder_id || $json.gdrive_root_folder_id || \"\" }}"
-      },
       "credentials": {
         "googleDriveOAuth2Api": {
           "id": "__GDRIVE_CREDENTIAL_ID__",
@@ -475,82 +469,73 @@
       }
     },
     {
-      "id": "14",
-      "name": "Merge Drive Export Context",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        1340,
-        -170
-      ],
       "parameters": {
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {
-          "includeUnpaired": true,
           "clashHandling": {
             "values": {
               "resolveClash": "preferInput1",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
-          }
+          },
+          "includeUnpaired": true
         }
-      }
+      },
+      "id": "14",
+      "name": "Merge Drive Export Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1712,
+        304
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nconst items = Array.isArray(input.media_image_items) ? input.media_image_items : [];\nconst driveFileId = String(input.id ?? input.fileId ?? input.data?.id ?? '').trim();\nconst driveUrl = String(input.webViewLink ?? input.alternateLink ?? input.data?.webViewLink ?? '').trim();\n\nconst failedCount = items.filter((item) => String(item?.image_status ?? '') === 'failed').length;\nconst generatedCount = items.filter((item) => String(item?.image_status ?? '') === 'generated').length;\n\nlet status = 'success';\nlet errorReason = null;\n\nif (items.length === 0) {\n  status = 'failed';\n  errorReason = 'empty_items';\n} else if (failedCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n  errorReason = generatedCount > 0 ? 'partial_failures' : 'all_failed';\n}\n\nif (!driveFileId) {\n  if (status === 'success') {\n    status = 'partial_failed';\n  }\n  errorReason = errorReason ?? 'drive_export_failed';\n}\n\nreturn {\n  ...input,\n  workflow: 'text-to-images',\n  request_id: String(input.request_id ?? ''),\n  status,\n  items,\n  drive_exports: driveFileId ? [{\n    drive_file_id: driveFileId,\n    drive_url: driveUrl,\n    mime_type: 'application/json',\n    file_name: String(input.export_file_name ?? ''),\n  }] : [],\n  error_reason: errorReason,\n};"
+      },
       "id": "15",
       "name": "Prepare Drive Output",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1560,
-        -170
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst items = Array.isArray(input.media_image_items) ? input.media_image_items : [];\nconst driveFileId = String(input.id ?? input.fileId ?? input.data?.id ?? '').trim();\nconst driveUrl = String(input.webViewLink ?? input.alternateLink ?? input.data?.webViewLink ?? '').trim();\n\nconst failedCount = items.filter((item) => String(item?.image_status ?? '') === 'failed').length;\nconst generatedCount = items.filter((item) => String(item?.image_status ?? '') === 'generated').length;\n\nlet status = 'success';\nlet errorReason = null;\n\nif (items.length === 0) {\n  status = 'failed';\n  errorReason = 'empty_items';\n} else if (failedCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n  errorReason = generatedCount > 0 ? 'partial_failures' : 'all_failed';\n}\n\nif (!driveFileId) {\n  if (status === 'success') {\n    status = 'partial_failed';\n  }\n  errorReason = errorReason ?? 'drive_export_failed';\n}\n\nreturn {\n  ...input,\n  workflow: 'text-to-images',\n  request_id: String(input.request_id ?? ''),\n  status,\n  items,\n  drive_exports: driveFileId ? [{\n    drive_file_id: driveFileId,\n    drive_url: driveUrl,\n    mime_type: 'application/json',\n    file_name: String(input.export_file_name ?? ''),\n  }] : [],\n  error_reason: errorReason,\n};"
-      }
+        1936,
+        304
+      ]
     },
     {
+      "parameters": {
+        "fieldToSplitOut": "media_chunks",
+        "include": "allOtherFields",
+        "options": {}
+      },
       "id": "16",
       "name": "Split Media Chunks",
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        400,
-        120
-      ],
-      "parameters": {
-        "fieldToSplitOut": "media_chunks",
-        "include": "allOtherFields",
-        "options": {}
-      }
+        144,
+        400
+      ]
     },
     {
+      "parameters": {
+        "batchSize": "={{ (() => { const n = Number($json.image_parallelism ?? 2); if (!Number.isFinite(n) || n < 1) return 2; return Math.min(20, Math.floor(n)); })() }}",
+        "options": {}
+      },
       "id": "17",
       "name": "Loop Over Image Chunks",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        640,
-        120
-      ],
-      "parameters": {
-        "batchSize": "={{ (() => { const n = Number($json.image_parallelism ?? 2); if (!Number.isFinite(n) || n < 1) return 2; return Math.min(20, Math.floor(n)); })() }}",
-        "options": {}
-      }
+        368,
+        400
+      ]
     },
     {
-      "id": "18",
-      "name": "Create Image Job",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        880,
-        120
-      ],
-      "continueOnFail": true,
       "parameters": {
         "method": "POST",
         "url": "={{ ($json.image_api_base_url || '').replace(/\\/$/, '') + ($json.image_job_create_path || '/jobs') }}",
@@ -571,75 +556,71 @@
         "specifyBody": "json",
         "jsonBody": "={{ { request_id: $json.request_id, workflow: $json.workflow || 'text-to-images', scene_id: $json.scene_id || $json.chunk_key, order: $json.order, scene_title: $json.scene_title || '', narration_text: $json.narration_text || $json.text || '', image_prompt_en: $json.image_prompt_en || '', highlight_quote_vi: $json.highlight_quote_vi || '', prompt: $json.image_prompt_en || $json.image_prompt_fixed || $json.text || '', model: $json.image_model, aspect_ratio: $json.image_aspect_ratio || '16:9', input_mode: $json.input_mode, output_mode: $json.output_mode, drive_file_id: $json.drive_file_id || '', source: 'text-to-images', image_file_name: String($json.image_file_name || ''), file_name: String($json.image_file_name || '') } }}",
         "options": {}
-      }
+      },
+      "id": "18",
+      "name": "Create Image Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        592,
+        -32
+      ],
+      "continueOnFail": true
     },
     {
-      "id": "19",
-      "name": "Merge Created Image Context",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        1120,
-        120
-      ],
       "parameters": {
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {
-          "includeUnpaired": true,
           "clashHandling": {
             "values": {
               "resolveClash": "preferInput1",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
-          }
+          },
+          "includeUnpaired": true
         }
-      }
+      },
+      "id": "19",
+      "name": "Merge Created Image Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        816,
+        -32
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction pickFirstString(values) {\n  for (const value of values) {\n    const text = String(value ?? '').trim();\n    if (text) return text;\n  }\n  return '';\n}\n\nfunction pickResponseSource(value) {\n  const candidates = [value, value?.body, value?.data, value?.response, value?.result, value?.output, value?.json];\n  for (const candidate of candidates) {\n    if (candidate && typeof candidate === 'object') return candidate;\n  }\n  return value ?? {};\n}\n\nfunction normalizeBaseUrl(baseUrl) {\n  return String(baseUrl ?? '').trim().replace(/\\/$/, '');\n}\n\nfunction buildStatusUrl(baseUrl, statusPath, jobId) {\n  const normalizedBase = normalizeBaseUrl(baseUrl);\n  const normalizedPath = String(statusPath ?? '/jobs').trim() || '/jobs';\n  const path = normalizedPath.startsWith('/') ? normalizedPath : '/' + normalizedPath;\n  const safeJobId = encodeURIComponent(String(jobId ?? '').trim());\n  if (!normalizedBase) return '';\n  return normalizedBase + path.replace(/\\/$/, '') + '/' + safeJobId;\n}\n\nconst source = pickResponseSource(input);\nconst errorText = safeText(input.error?.message ?? input.error ?? source.error?.message ?? source.error, '');\n\nconst requestId = safeText(\n  input.request_id,\n  safeText(source.request_id, safeText(source.job_id, safeText(source.id, 'req-' + Date.now().toString(36)))),\n);\n\nconst jobId = pickFirstString([\n  source.job_id,\n  source.jobId,\n  source.id,\n  source.data?.job_id,\n  source.data?.jobId,\n  source.data?.id,\n  source.result?.job_id,\n  source.result?.jobId,\n  source.result?.id,\n  source.job?.id,\n  source.output?.job_id,\n  source.output?.jobId,\n  source.output?.id,\n  requestId,\n]);\n\nconst jobStatus = pickFirstString([\n  source.status,\n  source.state,\n  source.job_status,\n  source.jobStatus,\n  source.data?.status,\n  source.data?.state,\n  source.result?.status,\n  source.result?.state,\n  source.output?.status,\n  source.output?.state,\n  source.job?.status,\n]).toLowerCase();\n\nlet image = pickFirstString([\n  source.image,\n  source.image_url,\n  source.imageUrl,\n  source.url,\n  source.output_url,\n  source.outputUrl,\n  source.data?.image,\n  source.data?.image_url,\n  source.data?.imageUrl,\n  source.data?.url,\n  source.result?.image,\n  source.result?.image_url,\n  source.result?.imageUrl,\n  source.result?.url,\n  source.output?.image,\n  source.output?.image_url,\n  source.output?.imageUrl,\n  source.output?.url,\n  Array.isArray(source.output) ? source.output[0]?.url : '',\n]);\n\nif (!image) {\n  const base64 = pickFirstString([\n    source.image_base64,\n    source.imageBase64,\n    source.b64_json,\n    source.data?.image_base64,\n    source.data?.imageBase64,\n    source.result?.image_base64,\n    source.result?.imageBase64,\n    source.output?.image_base64,\n    source.output?.imageBase64,\n  ]).replace(/^data:image\\/[a-zA-Z0-9+.-]+;base64,/, '');\n  if (base64) {\n    image = 'data:image/png;base64,' + base64;\n  }\n}\n\nconst video = pickFirstString([\n  source.video,\n  source.video_url,\n  source.videoUrl,\n  source.data?.video,\n  source.data?.video_url,\n  source.data?.videoUrl,\n  source.result?.video,\n  source.result?.video_url,\n  source.result?.videoUrl,\n  source.output?.video,\n  source.output?.video_url,\n  source.output?.videoUrl,\n]);\n\nconst jobCreatedStatus = jobStatus || (image || video ? 'done' : 'pending');\nconst timeoutMsRaw = Number(input.image_timeout_ms ?? 900000);\nconst timeoutMs = Number.isFinite(timeoutMsRaw) ? Math.max(10000, Math.floor(timeoutMsRaw)) : 900000;\nconst intervalRaw = Number(input.image_poll_interval_seconds ?? 3);\nconst pollIntervalSeconds = Number.isFinite(intervalRaw) ? Math.max(1, Math.floor(intervalRaw)) : 10;\nconst startedAt = safeText(input.image_poll_started_at, new Date().toISOString());\nconst deadlineAt = safeText(input.image_poll_deadline_at, new Date(Date.now() + timeoutMs).toISOString());\nconst pollState = errorText\n  ? 'failed'\n  : ['failed', 'error', 'cancelled', 'canceled', 'timeout', 'aborted', 'rejected'].includes(jobCreatedStatus)\n    ? 'failed'\n    : ['done', 'succeeded', 'success', 'completed', 'complete', 'ready', 'finished'].includes(jobCreatedStatus) || image || video\n      ? 'done'\n      : 'pending';\n\nconst imageStatus = pollState === 'done'\n  ? (image || video ? 'generated' : 'failed')\n  : pollState === 'failed' ? 'failed' : 'pending';\n\nconst errorReason = pollState === 'failed'\n  ? errorText || (image || video ? null : 'image_job_create_missing_asset')\n  : null;\n\nreturn {\n  ...input,\n  request_id: requestId,\n  image_job_id: jobId,\n  image_job_status: jobCreatedStatus,\n  image_job_status_url: buildStatusUrl(input.image_api_base_url, input.image_job_status_path, jobId),\n  image_poll_state: pollState,\n  image_poll_started_at: startedAt,\n  image_poll_deadline_at: deadlineAt,\n  image_poll_interval_seconds: pollIntervalSeconds,\n  image: image || '',\n  video: video || '',\n  image_status: imageStatus,\n  error_reason: errorReason,\n};"
+      },
       "id": "20",
       "name": "Normalize Created Image Job",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1360,
-        120
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction pickFirstString(values) {\n  for (const value of values) {\n    const text = String(value ?? '').trim();\n    if (text) return text;\n  }\n  return '';\n}\n\nfunction pickResponseSource(value) {\n  const candidates = [value, value?.body, value?.data, value?.response, value?.result, value?.output, value?.json];\n  for (const candidate of candidates) {\n    if (candidate && typeof candidate === 'object') return candidate;\n  }\n  return value ?? {};\n}\n\nfunction normalizeBaseUrl(baseUrl) {\n  return String(baseUrl ?? '').trim().replace(/\\/$/, '');\n}\n\nfunction buildStatusUrl(baseUrl, statusPath, jobId) {\n  const normalizedBase = normalizeBaseUrl(baseUrl);\n  const normalizedPath = String(statusPath ?? '/jobs').trim() || '/jobs';\n  const path = normalizedPath.startsWith('/') ? normalizedPath : '/' + normalizedPath;\n  const safeJobId = encodeURIComponent(String(jobId ?? '').trim());\n  if (!normalizedBase) return '';\n  return normalizedBase + path.replace(/\\/$/, '') + '/' + safeJobId;\n}\n\nconst source = pickResponseSource(input);\nconst errorText = safeText(input.error?.message ?? input.error ?? source.error?.message ?? source.error, '');\n\nconst requestId = safeText(\n  input.request_id,\n  safeText(source.request_id, safeText(source.job_id, safeText(source.id, 'req-' + Date.now().toString(36)))),\n);\n\nconst jobId = pickFirstString([\n  source.job_id,\n  source.jobId,\n  source.id,\n  source.data?.job_id,\n  source.data?.jobId,\n  source.data?.id,\n  source.result?.job_id,\n  source.result?.jobId,\n  source.result?.id,\n  source.job?.id,\n  source.output?.job_id,\n  source.output?.jobId,\n  source.output?.id,\n  requestId,\n]);\n\nconst jobStatus = pickFirstString([\n  source.status,\n  source.state,\n  source.job_status,\n  source.jobStatus,\n  source.data?.status,\n  source.data?.state,\n  source.result?.status,\n  source.result?.state,\n  source.output?.status,\n  source.output?.state,\n  source.job?.status,\n]).toLowerCase();\n\nlet image = pickFirstString([\n  source.image,\n  source.image_url,\n  source.imageUrl,\n  source.url,\n  source.output_url,\n  source.outputUrl,\n  source.data?.image,\n  source.data?.image_url,\n  source.data?.imageUrl,\n  source.data?.url,\n  source.result?.image,\n  source.result?.image_url,\n  source.result?.imageUrl,\n  source.result?.url,\n  source.output?.image,\n  source.output?.image_url,\n  source.output?.imageUrl,\n  source.output?.url,\n  Array.isArray(source.output) ? source.output[0]?.url : '',\n]);\n\nif (!image) {\n  const base64 = pickFirstString([\n    source.image_base64,\n    source.imageBase64,\n    source.b64_json,\n    source.data?.image_base64,\n    source.data?.imageBase64,\n    source.result?.image_base64,\n    source.result?.imageBase64,\n    source.output?.image_base64,\n    source.output?.imageBase64,\n  ]).replace(/^data:image\\/[a-zA-Z0-9+.-]+;base64,/, '');\n  if (base64) {\n    image = 'data:image/png;base64,' + base64;\n  }\n}\n\nconst video = pickFirstString([\n  source.video,\n  source.video_url,\n  source.videoUrl,\n  source.data?.video,\n  source.data?.video_url,\n  source.data?.videoUrl,\n  source.result?.video,\n  source.result?.video_url,\n  source.result?.videoUrl,\n  source.output?.video,\n  source.output?.video_url,\n  source.output?.videoUrl,\n]);\n\nconst jobCreatedStatus = jobStatus || (image || video ? 'done' : 'pending');\nconst timeoutMsRaw = Number(input.image_timeout_ms ?? 900000);\nconst timeoutMs = Number.isFinite(timeoutMsRaw) ? Math.max(10000, Math.floor(timeoutMsRaw)) : 900000;\nconst intervalRaw = Number(input.image_poll_interval_seconds ?? 3);\nconst pollIntervalSeconds = Number.isFinite(intervalRaw) ? Math.max(1, Math.floor(intervalRaw)) : 10;\nconst startedAt = safeText(input.image_poll_started_at, new Date().toISOString());\nconst deadlineAt = safeText(input.image_poll_deadline_at, new Date(Date.now() + timeoutMs).toISOString());\nconst pollState = errorText\n  ? 'failed'\n  : ['failed', 'error', 'cancelled', 'canceled', 'timeout', 'aborted', 'rejected'].includes(jobCreatedStatus)\n    ? 'failed'\n    : ['done', 'succeeded', 'success', 'completed', 'complete', 'ready', 'finished'].includes(jobCreatedStatus) || image || video\n      ? 'done'\n      : 'pending';\n\nconst imageStatus = pollState === 'done'\n  ? (image || video ? 'generated' : 'failed')\n  : pollState === 'failed' ? 'failed' : 'pending';\n\nconst errorReason = pollState === 'failed'\n  ? errorText || (image || video ? null : 'image_job_create_missing_asset')\n  : null;\n\nreturn {\n  ...input,\n  request_id: requestId,\n  image_job_id: jobId,\n  image_job_status: jobCreatedStatus,\n  image_job_status_url: buildStatusUrl(input.image_api_base_url, input.image_job_status_path, jobId),\n  image_poll_state: pollState,\n  image_poll_started_at: startedAt,\n  image_poll_deadline_at: deadlineAt,\n  image_poll_interval_seconds: pollIntervalSeconds,\n  image: image || '',\n  video: video || '',\n  image_status: imageStatus,\n  error_reason: errorReason,\n};"
-      }
+        1040,
+        -32
+      ]
     },
     {
+      "parameters": {
+        "amount": "={{ $json.image_poll_interval_seconds || 3 }}"
+      },
       "id": "21",
       "name": "Wait For Image Job",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        1600,
-        120
+        1264,
+        -32
       ],
-      "parameters": {
-        "resume": "timeInterval",
-        "amount": "={{ $json.image_poll_interval_seconds || 3 }}",
-        "unit": "seconds",
-        "options": {}
-      },
       "webhookId": "text-to-images-wait-image-job"
     },
     {
-      "id": "22",
-      "name": "Fetch Image Job Status",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        1840,
-        120
-      ],
-      "continueOnFail": true,
       "parameters": {
-        "method": "GET",
         "url": "={{ $json.image_job_status_url }}",
         "sendQuery": true,
         "queryParameters": {
@@ -658,7 +639,6 @@
             }
           ]
         },
-        "options": {},
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -671,56 +651,58 @@
               "value": "={{ $json.image_api_key || \"\" }}"
             }
           ]
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "22",
+      "name": "Fetch Image Job Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1488,
+        -32
+      ],
+      "continueOnFail": true
     },
     {
-      "id": "23",
-      "name": "Merge Image Status Context",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        2080,
-        120
-      ],
       "parameters": {
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {
-          "includeUnpaired": true,
           "clashHandling": {
             "values": {
               "resolveClash": "preferInput1",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
-          }
+          },
+          "includeUnpaired": true
         }
-      }
+      },
+      "id": "23",
+      "name": "Merge Image Status Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1712,
+        -128
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction pickFirstString(values) {\n  for (const value of values) {\n    const text = String(value ?? '').trim();\n    if (text) return text;\n  }\n  return '';\n}\n\nfunction pickResponseSource(value) {\n  const candidates = [value, value?.body, value?.data, value?.response, value?.result, value?.output, value?.json];\n  for (const candidate of candidates) {\n    if (candidate && typeof candidate === 'object') return candidate;\n  }\n  return value ?? {};\n}\n\nconst source = pickResponseSource(input);\nconst errorText = safeText(input.error?.message ?? input.error ?? source.error?.message ?? source.error, '');\nconst statusText = pickFirstString([\n  source.status,\n  source.state,\n  source.job_status,\n  source.jobStatus,\n  source.data?.status,\n  source.data?.state,\n  source.result?.status,\n  source.result?.state,\n  source.output?.status,\n  source.output?.state,\n  source.job?.status,\n]).toLowerCase();\n\nconst progressRaw = Number(pickFirstString([\n  source.progress,\n  source.progress_percent,\n  source.progressPercent,\n  source.percent,\n  source.data?.progress,\n  source.data?.progress_percent,\n  source.result?.progress,\n  source.result?.progress_percent,\n  source.output?.progress,\n  source.output?.progress_percent,\n]));\nconst progress = Number.isFinite(progressRaw) ? progressRaw : null;\n\nlet image = pickFirstString([\n  source.image,\n  source.image_url,\n  source.imageUrl,\n  source.url,\n  source.output_url,\n  source.outputUrl,\n  source.data?.image,\n  source.data?.image_url,\n  source.data?.imageUrl,\n  source.data?.url,\n  source.result?.image,\n  source.result?.image_url,\n  source.result?.imageUrl,\n  source.result?.url,\n  source.output?.image,\n  source.output?.image_url,\n  source.output?.imageUrl,\n  source.output?.url,\n  Array.isArray(source.output) ? source.output[0]?.url : '',\n]);\n\nif (!image) {\n  const base64 = pickFirstString([\n    source.image_base64,\n    source.imageBase64,\n    source.b64_json,\n    source.data?.image_base64,\n    source.data?.imageBase64,\n    source.result?.image_base64,\n    source.result?.imageBase64,\n    source.output?.image_base64,\n    source.output?.imageBase64,\n  ]).replace(/^data:image\\/[a-zA-Z0-9+.-]+;base64,/, '');\n  if (base64) {\n    image = 'data:image/png;base64,' + base64;\n  }\n}\n\nconst video = pickFirstString([\n  source.video,\n  source.video_url,\n  source.videoUrl,\n  source.data?.video,\n  source.data?.video_url,\n  source.data?.videoUrl,\n  source.result?.video,\n  source.result?.video_url,\n  source.result?.videoUrl,\n  source.output?.video,\n  source.output?.video_url,\n  source.output?.videoUrl,\n]);\n\nconst deadlineMs = Date.parse(input.image_poll_deadline_at ?? '');\nconst timedOut = Number.isFinite(deadlineMs) ? Date.now() > deadlineMs : false;\n\nconst pendingStatuses = ['queued', 'pending', 'processing', 'running', 'in_progress', 'inprogress', 'started', 'submitted', 'working', 'open'];\nconst doneStatuses = ['done', 'succeeded', 'success', 'completed', 'complete', 'ready', 'finished', 'available', 'delivered'];\nconst failedStatuses = ['failed', 'error', 'cancelled', 'canceled', 'timeout', 'aborted', 'rejected'];\n\nlet pollState = 'pending';\nif (timedOut) {\n  pollState = 'failed';\n} else if (errorText || failedStatuses.includes(statusText)) {\n  pollState = 'failed';\n} else if (doneStatuses.includes(statusText) || image || video) {\n  pollState = 'done';\n} else if (pendingStatuses.includes(statusText)) {\n  pollState = 'pending';\n} else if (progress !== null) {\n  pollState = progress >= 100 ? 'done' : 'pending';\n} else if (statusText) {\n  pollState = 'failed';\n} else if (image || video) {\n  pollState = 'done';\n} else {\n  pollState = 'failed';\n}\n\nconst imageStatus = pollState === 'done'\n  ? (image || video ? 'generated' : 'failed')\n  : pollState === 'failed' ? 'failed' : 'pending';\n\nlet errorReason = null;\nif (pollState === 'failed') {\n  errorReason = errorText || (timedOut ? 'poll_timeout' : (!image && !video ? 'image_response_missing_asset' : null));\n}\n\nreturn {\n  ...input,\n  image_job_status: statusText || input.image_job_status || pollState,\n  image_poll_state: pollState,\n  image: image || '',\n  video: video || '',\n  image_status: imageStatus,\n  error_reason: errorReason,\n};"
+      },
       "id": "24",
       "name": "Normalize Image Job Status",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2320,
-        120
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction pickFirstString(values) {\n  for (const value of values) {\n    const text = String(value ?? '').trim();\n    if (text) return text;\n  }\n  return '';\n}\n\nfunction pickResponseSource(value) {\n  const candidates = [value, value?.body, value?.data, value?.response, value?.result, value?.output, value?.json];\n  for (const candidate of candidates) {\n    if (candidate && typeof candidate === 'object') return candidate;\n  }\n  return value ?? {};\n}\n\nconst source = pickResponseSource(input);\nconst errorText = safeText(input.error?.message ?? input.error ?? source.error?.message ?? source.error, '');\nconst statusText = pickFirstString([\n  source.status,\n  source.state,\n  source.job_status,\n  source.jobStatus,\n  source.data?.status,\n  source.data?.state,\n  source.result?.status,\n  source.result?.state,\n  source.output?.status,\n  source.output?.state,\n  source.job?.status,\n]).toLowerCase();\n\nconst progressRaw = Number(pickFirstString([\n  source.progress,\n  source.progress_percent,\n  source.progressPercent,\n  source.percent,\n  source.data?.progress,\n  source.data?.progress_percent,\n  source.result?.progress,\n  source.result?.progress_percent,\n  source.output?.progress,\n  source.output?.progress_percent,\n]));\nconst progress = Number.isFinite(progressRaw) ? progressRaw : null;\n\nlet image = pickFirstString([\n  source.image,\n  source.image_url,\n  source.imageUrl,\n  source.url,\n  source.output_url,\n  source.outputUrl,\n  source.data?.image,\n  source.data?.image_url,\n  source.data?.imageUrl,\n  source.data?.url,\n  source.result?.image,\n  source.result?.image_url,\n  source.result?.imageUrl,\n  source.result?.url,\n  source.output?.image,\n  source.output?.image_url,\n  source.output?.imageUrl,\n  source.output?.url,\n  Array.isArray(source.output) ? source.output[0]?.url : '',\n]);\n\nif (!image) {\n  const base64 = pickFirstString([\n    source.image_base64,\n    source.imageBase64,\n    source.b64_json,\n    source.data?.image_base64,\n    source.data?.imageBase64,\n    source.result?.image_base64,\n    source.result?.imageBase64,\n    source.output?.image_base64,\n    source.output?.imageBase64,\n  ]).replace(/^data:image\\/[a-zA-Z0-9+.-]+;base64,/, '');\n  if (base64) {\n    image = 'data:image/png;base64,' + base64;\n  }\n}\n\nconst video = pickFirstString([\n  source.video,\n  source.video_url,\n  source.videoUrl,\n  source.data?.video,\n  source.data?.video_url,\n  source.data?.videoUrl,\n  source.result?.video,\n  source.result?.video_url,\n  source.result?.videoUrl,\n  source.output?.video,\n  source.output?.video_url,\n  source.output?.videoUrl,\n]);\n\nconst deadlineMs = Date.parse(input.image_poll_deadline_at ?? '');\nconst timedOut = Number.isFinite(deadlineMs) ? Date.now() > deadlineMs : false;\n\nconst pendingStatuses = ['queued', 'pending', 'processing', 'running', 'in_progress', 'inprogress', 'started', 'submitted', 'working', 'open'];\nconst doneStatuses = ['done', 'succeeded', 'success', 'completed', 'complete', 'ready', 'finished', 'available', 'delivered'];\nconst failedStatuses = ['failed', 'error', 'cancelled', 'canceled', 'timeout', 'aborted', 'rejected'];\n\nlet pollState = 'pending';\nif (timedOut) {\n  pollState = 'failed';\n} else if (errorText || failedStatuses.includes(statusText)) {\n  pollState = 'failed';\n} else if (doneStatuses.includes(statusText) || image || video) {\n  pollState = 'done';\n} else if (pendingStatuses.includes(statusText)) {\n  pollState = 'pending';\n} else if (progress !== null) {\n  pollState = progress >= 100 ? 'done' : 'pending';\n} else if (statusText) {\n  pollState = 'failed';\n} else if (image || video) {\n  pollState = 'done';\n} else {\n  pollState = 'failed';\n}\n\nconst imageStatus = pollState === 'done'\n  ? (image || video ? 'generated' : 'failed')\n  : pollState === 'failed' ? 'failed' : 'pending';\n\nlet errorReason = null;\nif (pollState === 'failed') {\n  errorReason = errorText || (timedOut ? 'poll_timeout' : (!image && !video ? 'image_response_missing_asset' : null));\n}\n\nreturn {\n  ...input,\n  image_job_status: statusText || input.image_job_status || pollState,\n  image_poll_state: pollState,\n  image: image || '',\n  video: video || '',\n  image_status: imageStatus,\n  error_reason: errorReason,\n};"
-      }
+        1936,
+        -128
+      ]
     },
     {
-      "id": "25",
-      "name": "If Image Still Pending?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        2560,
-        120
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -741,60 +723,60 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "25",
+      "name": "If Image Still Pending?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2160,
+        112
+      ]
     },
     {
+      "parameters": {
+        "jsCode": "const inputItems = $input.all().map((item) => item.json ?? {});\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction normalizeItem(item) {\n  const order = asInt(item.order, asInt(item.index, 1, 1, 1000000), 1, 1000000);\n  const sceneId = safeText(item.scene_id, safeText(item.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n  const imageUrl = safeText(item.image_url, safeText(item.image_drive_url, safeText(item.image)));\n\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(item.scene_title),\n    scene_role: safeText(item.scene_role),\n    narration_text: safeText(item.narration_text, safeText(item.text)),\n    image_prompt_en: safeText(item.image_prompt_en),\n    highlight_quote_vi: safeText(item.highlight_quote_vi),\n\n    image_url: imageUrl,\n    image_status: safeText(item.image_status, 'unknown'),\n    image_drive_file_id: safeText(item.image_drive_file_id),\n    image_drive_url: safeText(item.image_drive_url, imageUrl),\n    error_reason: item.error_reason ?? null,\n\n    chunk_key: safeText(item.chunk_key, sceneId),\n    partName: safeText(item.partName, sceneId),\n    index: asInt(item.index, order, 1, 1000000),\n    text: safeText(item.text, safeText(item.narration_text)),\n    sentence_count: asInt(item.sentence_count, 1, 1, 10),\n    image: imageUrl,\n  };\n}\n\nconst sortedItems = inputItems\n  .map(normalizeItem)\n  .sort((a, b) => a.order - b.order || a.scene_id.localeCompare(b.scene_id));\n\nconst first = inputItems[0] ?? {};\nconst requestId = safeText(first.request_id, 'req-' + Date.now().toString(36));\n\nreturn [{\n  json: {\n    ...first,\n    workflow: 'text-to-images',\n    request_id: requestId,\n    media_image_items: sortedItems,\n  },\n}];"
+      },
       "id": "26",
       "name": "Collect Image Results",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2800,
-        120
-      ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const inputItems = $input.all().map((item) => item.json ?? {});\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction normalizeItem(item) {\n  const order = asInt(item.order, asInt(item.index, 1, 1, 1000000), 1, 1000000);\n  const sceneId = safeText(item.scene_id, safeText(item.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n  const imageUrl = safeText(item.image_url, safeText(item.image_drive_url, safeText(item.image)));\n\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(item.scene_title),\n    scene_role: safeText(item.scene_role),\n    narration_text: safeText(item.narration_text, safeText(item.text)),\n    image_prompt_en: safeText(item.image_prompt_en),\n    highlight_quote_vi: safeText(item.highlight_quote_vi),\n\n    image_url: imageUrl,\n    image_status: safeText(item.image_status, 'unknown'),\n    image_drive_file_id: safeText(item.image_drive_file_id),\n    image_drive_url: safeText(item.image_drive_url, imageUrl),\n    error_reason: item.error_reason ?? null,\n\n    chunk_key: safeText(item.chunk_key, sceneId),\n    partName: safeText(item.partName, sceneId),\n    index: asInt(item.index, order, 1, 1000000),\n    text: safeText(item.text, safeText(item.narration_text)),\n    sentence_count: asInt(item.sentence_count, 1, 1, 10),\n    image: imageUrl,\n  };\n}\n\nconst sortedItems = inputItems\n  .map(normalizeItem)\n  .sort((a, b) => a.order - b.order || a.scene_id.localeCompare(b.scene_id));\n\nconst first = inputItems[0] ?? {};\nconst requestId = safeText(first.request_id, 'req-' + Date.now().toString(36));\n\nreturn [{\n  json: {\n    ...first,\n    workflow: 'text-to-images',\n    request_id: requestId,\n    media_image_items: sortedItems,\n  },\n}];"
-      }
+        592,
+        400
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nreturn {\n  ...input,\n  media_image_items: [],\n};"
+      },
       "id": "27",
       "name": "Prepare Empty Image Results",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        400,
-        260
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nreturn {\n  ...input,\n  media_image_items: [],\n};"
-      }
+        592,
+        784
+      ]
     },
     {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0) {\n  const number = Number(value);\n  if (!Number.isFinite(number)) {\n    return fallback;\n  }\n  return Math.floor(number);\n}\n\nfunction formatElapsedLabel(elapsedSecondsInput = 0) {\n  const elapsedSeconds = Math.max(0, asInt(elapsedSecondsInput, 0));\n  const elapsedMinutes = Math.floor(elapsedSeconds / 60);\n  const remainingSeconds = elapsedSeconds % 60;\n  return elapsedMinutes > 0\n    ? (elapsedMinutes + ' phut ' + String(remainingSeconds).padStart(2, '0') + ' giay')\n    : (remainingSeconds + ' giay');\n}\n\nfunction resolveChunk(source) {\n  if (source?.media_chunks && typeof source.media_chunks === 'object' && !Array.isArray(source.media_chunks)) {\n    return source.media_chunks;\n  }\n  return source ?? {};\n}\n\nconst chunk = resolveChunk(input);\nconst requestHelper =\n  helpers?.httpRequest ??\n  (typeof $helpers !== 'undefined' ? $helpers?.httpRequest : undefined);\n\nconst telegramBotToken = safeText(input.telegram_bot_token);\nconst telegramChatId = safeText(input.telegram_chat_id);\nconst progressMessageId = asInt(input.image_progress_message_id, 0);\nconst estimateMinutes = Math.max(1, asInt(input.image_progress_estimated_minutes, 3) || 3);\nconst totalFromManifest = Array.isArray(input.chunk_manifest) ? input.chunk_manifest.length : 0;\nconst totalFiles = Math.max(0, asInt(input.image_progress_total_files, totalFromManifest));\nconst rawDone = asInt(chunk?.order ?? input.order ?? chunk?.index ?? input.index, 0);\nconst doneFiles = totalFiles > 0\n  ? Math.min(Math.max(rawDone, 0), totalFiles)\n  : Math.max(rawDone, 0);\nconst startedAtMs = asInt(input.image_progress_started_at_ms, Date.now());\nconst elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000));\n\nconst progressSuffix = totalFiles > 0\n  ? (' | file ' + doneFiles + '/' + totalFiles)\n  : '';\n\nconst progressText = 'Dang tao anh... (da cho ' + formatElapsedLabel(elapsedSeconds) + ' / du kien ' + estimateMinutes + ' phut)' + progressSuffix;\n\nlet updateStatus = 'skipped';\nlet updateError = null;\nif (telegramBotToken && telegramChatId && progressMessageId > 0 && typeof requestHelper === 'function') {\n  try {\n    await requestHelper({\n      method: 'POST',\n      url: 'https://api.telegram.org/bot' + telegramBotToken + '/editMessageText',\n      body: {\n        chat_id: telegramChatId,\n        message_id: progressMessageId,\n        text: progressText,\n        disable_web_page_preview: true,\n      },\n      json: true,\n      timeout: 20000,\n    });\n    updateStatus = 'sent';\n  } catch (error) {\n    updateStatus = 'failed';\n    updateError = safeText(error?.message, String(error)).slice(0, 280) || 'telegram_edit_failed';\n  }\n}\n\nreturn {\n  ...input,\n  image_progress_last_text: progressText,\n  image_progress_files_done: doneFiles,\n  image_progress_total_files: totalFiles,\n  image_progress_update_status: updateStatus,\n  image_progress_update_error: updateError,\n};"
+      },
       "id": "img-update-progress-message",
       "name": "Update Image Progress Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2470,
-        120
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0) {\n  const number = Number(value);\n  if (!Number.isFinite(number)) {\n    return fallback;\n  }\n  return Math.floor(number);\n}\n\nfunction formatElapsedLabel(elapsedSecondsInput = 0) {\n  const elapsedSeconds = Math.max(0, asInt(elapsedSecondsInput, 0));\n  const elapsedMinutes = Math.floor(elapsedSeconds / 60);\n  const remainingSeconds = elapsedSeconds % 60;\n  return elapsedMinutes > 0\n    ? (elapsedMinutes + ' phut ' + String(remainingSeconds).padStart(2, '0') + ' giay')\n    : (remainingSeconds + ' giay');\n}\n\nfunction resolveChunk(source) {\n  if (source?.media_chunks && typeof source.media_chunks === 'object' && !Array.isArray(source.media_chunks)) {\n    return source.media_chunks;\n  }\n  return source ?? {};\n}\n\nconst chunk = resolveChunk(input);\nconst requestHelper =\n  helpers?.httpRequest ??\n  (typeof $helpers !== 'undefined' ? $helpers?.httpRequest : undefined);\n\nconst telegramBotToken = safeText(input.telegram_bot_token);\nconst telegramChatId = safeText(input.telegram_chat_id);\nconst progressMessageId = asInt(input.image_progress_message_id, 0);\nconst estimateMinutes = Math.max(1, asInt(input.image_progress_estimated_minutes, 3) || 3);\nconst totalFromManifest = Array.isArray(input.chunk_manifest) ? input.chunk_manifest.length : 0;\nconst totalFiles = Math.max(0, asInt(input.image_progress_total_files, totalFromManifest));\nconst rawDone = asInt(chunk?.order ?? input.order ?? chunk?.index ?? input.index, 0);\nconst doneFiles = totalFiles > 0\n  ? Math.min(Math.max(rawDone, 0), totalFiles)\n  : Math.max(rawDone, 0);\nconst startedAtMs = asInt(input.image_progress_started_at_ms, Date.now());\nconst elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000));\n\nconst progressSuffix = totalFiles > 0\n  ? (' | file ' + doneFiles + '/' + totalFiles)\n  : '';\n\nconst progressText = 'Dang tao anh... (da cho ' + formatElapsedLabel(elapsedSeconds) + ' / du kien ' + estimateMinutes + ' phut)' + progressSuffix;\n\nlet updateStatus = 'skipped';\nlet updateError = null;\nif (telegramBotToken && telegramChatId && progressMessageId > 0 && typeof requestHelper === 'function') {\n  try {\n    await requestHelper({\n      method: 'POST',\n      url: 'https://api.telegram.org/bot' + telegramBotToken + '/editMessageText',\n      body: {\n        chat_id: telegramChatId,\n        message_id: progressMessageId,\n        text: progressText,\n        disable_web_page_preview: true,\n      },\n      json: true,\n      timeout: 20000,\n    });\n    updateStatus = 'sent';\n  } catch (error) {\n    updateStatus = 'failed';\n    updateError = safeText(error?.message, String(error)).slice(0, 280) || 'telegram_edit_failed';\n  }\n}\n\nreturn {\n  ...input,\n  image_progress_last_text: progressText,\n  image_progress_files_done: doneFiles,\n  image_progress_total_files: totalFiles,\n  image_progress_update_status: updateStatus,\n  image_progress_update_error: updateError,\n};"
-      }
+        2160,
+        -152
+      ]
     },
     {
-      "id": "img-if-session-sheet-realtime-update",
-      "name": "If Session Sheet Realtime Update (Image)",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        2660,
-        120
-      ],
       "parameters": {
         "conditions": {
           "options": {
@@ -815,18 +797,19 @@
             }
           ],
           "combinator": "and"
-        }
-      }
+        },
+        "options": {}
+      },
+      "id": "img-if-session-sheet-realtime-update",
+      "name": "If Session Sheet Realtime Update (Image)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2384,
+        -152
+      ]
     },
     {
-      "id": "img-write-row-session-sheet-realtime",
-      "name": "Write Image Row To Session Sheet (Realtime)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        2860,
-        40
-      ],
       "parameters": {
         "method": "POST",
         "url": "={{ 'https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent($json.session_sheet_id || '') + '/values:batchUpdate' }}",
@@ -853,31 +836,135 @@
             }
           }
         }
-      }
+      },
+      "id": "img-write-row-session-sheet-realtime",
+      "name": "Write Image Row To Session Sheet (Realtime)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2608,
+        -224
+      ]
     },
     {
-      "id": "img-merge-realtime-sheet-update-context",
-      "name": "Merge Realtime Sheet Update Context (Image)",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        3040,
-        120
-      ],
       "parameters": {
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {
-          "includeUnpaired": true,
           "clashHandling": {
             "values": {
               "resolveClash": "preferInput1",
               "mergeMode": "shallowMerge",
               "overrideEmpty": true
             }
-          }
+          },
+          "includeUnpaired": true
         }
-      }
+      },
+      "id": "img-merge-realtime-sheet-update-context",
+      "name": "Merge Realtime Sheet Update Context (Image)",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2832,
+        -152
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## INPUT CONTRACT\n\nCore input:\n`input_mode` (`form_upload|drive_url`), `output_mode` (`inline|drive_export`)\n`drive_file_url`, `drive_output_folder_url`, `drive_output_folder_id`\n`input_text` / `text` / `content`\n`chunk_manifest` hoặc `media_chunks` hoặc `review_manifest.scenes`\n\nImage runtime params:\n`image_api_base_url`, `image_api_key`, `image_model`, `image_prompt_fixed`, `image_aspect_ratio`, `image_timeout_ms`, `image_parallelism`, `image_job_create_path`, `image_job_status_path`, `image_poll_interval_seconds`\n\nRealtime sheet (optional):\n`session_sheet_id` + chunk `order` để update row theo scene\n\nMain output:\n`status`, `items`, `drive_exports`, `error_reason`",
+        "height": 800,
+        "width": 780,
+        "color": 7
+      },
+      "id": "9401",
+      "name": "NOTE::IMG::INPUT_FIELDS",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2064,
+        -576
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## STAGE 1: NORMALIZE INPUT\n\nNodes:\n- Set Config\n- Normalize Inputs\n- Switch Input Mode / Drive Download\n\nGoal:\n- chuẩn hóa nguồn input thành `media_chunks`\n- set flags `media_should_run`, `needs_drive_download`\n- chuẩn hóa IDs/path cho Drive và request.",
+        "height": 380,
+        "width": 680,
+        "color": 5
+      },
+      "id": "9402",
+      "name": "NOTE::IMG::STAGE_NORMALIZE",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1220,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## STAGE 2: CREATE JOB + POLL LOOP\n\nFlow:\n- Split Media Chunks\n- Loop Over Image Chunks\n- Create Image Job\n- Normalize Created Image Job\n- Wait For Image Job\n- Fetch Image Job Status\n- Normalize Image Job Status\n- If Image Still Pending? (loop)\n\nMục tiêu: tạo ảnh/video per chunk với timeout/poll có kiểm soát.",
+        "height": 460,
+        "width": 760,
+        "color": 6
+      },
+      "id": "9403",
+      "name": "NOTE::IMG::STAGE_JOB_POLL",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        760,
+        -620
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## STAGE 3: COLLECT + OUTPUT MODE\n\nNodes:\n- Collect Image Results\n- Switch Output Mode\n- Prepare Inline Output / Build Drive Export Payload\n\nKết quả:\n- tổng hợp `media_image_items`\n- set `status=success|partial_failed|failed`\n- rẽ nhánh inline hoặc drive_export.",
+        "height": 380,
+        "width": 680,
+        "color": 4
+      },
+      "id": "9404",
+      "name": "NOTE::IMG::STAGE_COLLECT_OUTPUT",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        640,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## BRANCH: DRIVE EXPORT\n\nFlow:\n- Convert Export To File\n- Google Drive Upload Export\n- Prepare Drive Output\n\nOutput `drive_exports` để workflow cha lấy artifact JSON kết quả.",
+        "height": 320,
+        "width": 620,
+        "color": 3
+      },
+      "id": "9405",
+      "name": "NOTE::IMG::BRANCH_DRIVE_EXPORT",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## BRANCH: REALTIME SHEET UPDATE\n\nFlow:\n- Update Image Progress Message\n- If Session Sheet Realtime Update (Image)\n- Write Image Row To Session Sheet (Realtime)\n\nGhi trực tiếp URL/status/error của visual vào tab `assets`.",
+        "height": 320,
+        "width": 640,
+        "color": 2
+      },
+      "id": "9406",
+      "name": "NOTE::IMG::BRANCH_REALTIME_SHEET",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2208,
+        -416
+      ]
     }
   ],
   "connections": {
