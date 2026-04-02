@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # SYNC_MANAGED_WRAPPER=1
-# SYNC_WORKFLOW_ID=4g3N5urBBIuo9HcJ
+# SYNC_WORKFLOW_ID=901WvOJHn6O2Hbze
 
 ROOT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
 N8N_ENV_FILE="${1:-$ROOT_DIR/env.n8n.local}"
@@ -12,3 +12,4 @@ bash "$ROOT_DIR/scripts/workflows/import/import-workflow.sh" \
   "$N8N_ENV_FILE" \
   "$PROXY_ENV_FILE" \
   "$WORKFLOW_TEMPLATE"
+

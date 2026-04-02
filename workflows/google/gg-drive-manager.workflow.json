@@ -29,7 +29,7 @@
       "typeVersion": 1.1,
       "position": [
         -1520,
-        480
+        328
       ]
     },
     {
@@ -41,8 +41,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1072,
-        480
+        -1296,
+        328
       ]
     },
     {
@@ -74,8 +74,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -848,
-        480
+        -1072,
+        328
       ]
     },
     {
@@ -100,14 +100,14 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        -624,
-        480
+        -848,
+        328
       ],
       "alwaysOutputData": true,
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_LABEL__"
+          "id": "8Js1s0C68vWbwopW",
+          "name": "Google account"
         }
       }
     },
@@ -131,8 +131,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        -400,
-        256
+        -624,
+        112
       ]
     },
     {
@@ -164,8 +164,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -176,
-        192
+        -400,
+        112
       ]
     },
     {
@@ -206,8 +206,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        720,
-        16
+        496,
+        -56
       ]
     },
     {
@@ -239,8 +239,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        48,
-        256
+        -176,
+        280
       ]
     },
     {
@@ -292,8 +292,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        272,
-        160
+        48,
+        88
       ]
     },
     {
@@ -313,13 +313,13 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        272,
-        352
+        48,
+        280
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_LABEL__"
+          "id": "8Js1s0C68vWbwopW",
+          "name": "Google account"
         }
       }
     },
@@ -343,8 +343,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        496,
-        432
+        272,
+        352
       ]
     },
     {
@@ -385,8 +385,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        720,
-        432
+        496,
+        352
       ]
     },
     {
@@ -418,8 +418,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        944,
-        256
+        720,
+        184
       ]
     },
     {
@@ -448,8 +448,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1168,
-        208
+        944,
+        136
       ]
     },
     {
@@ -465,8 +465,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.1,
       "position": [
-        1392,
-        208
+        1168,
+        136
       ]
     },
     {
@@ -507,8 +507,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        944,
-        640
+        720,
+        568
       ]
     },
     {
@@ -537,8 +537,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1168,
-        592
+        944,
+        520
       ]
     },
     {
@@ -621,8 +621,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        1392,
-        560
+        1168,
+        488
       ]
     },
     {
@@ -647,14 +647,14 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        1616,
-        672
+        1392,
+        592
       ],
       "alwaysOutputData": true,
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_LABEL__"
+          "id": "8Js1s0C68vWbwopW",
+          "name": "Google account"
         }
       }
     },
@@ -678,8 +678,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        1840,
-        656
+        1616,
+        560
       ]
     },
     {
@@ -711,8 +711,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2064,
-        672
+        1840,
+        560
       ]
     },
     {
@@ -744,8 +744,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2288,
-        576
+        2064,
+        424
       ]
     },
     {
@@ -759,13 +759,13 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        2512,
-        480
+        2288,
+        424
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_LABEL__"
+          "id": "8Js1s0C68vWbwopW",
+          "name": "Google account"
         }
       }
     },
@@ -824,8 +824,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2512,
-        672
+        2288,
+        616
       ]
     },
     {
@@ -871,8 +871,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2960,
-        400
+        2736,
+        352
       ]
     },
     {
@@ -924,8 +924,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2288,
-        768
+        2064,
+        616
       ]
     },
     {
@@ -948,8 +948,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        2736,
-        400
+        2512,
+        352
       ]
     },
     {
@@ -976,14 +976,14 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        1616,
-        864
+        1392,
+        784
       ],
       "alwaysOutputData": true,
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_LABEL__"
+          "id": "8Js1s0C68vWbwopW",
+          "name": "Google account"
         }
       }
     },
@@ -996,8 +996,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1840,
-        864
+        1616,
+        784
       ]
     },
     {
@@ -1029,8 +1029,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1616,
-        112
+        1392,
+        40
       ]
     },
     {
@@ -1055,14 +1055,14 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        1840,
-        64
+        1616,
+        40
       ],
       "alwaysOutputData": true,
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_LABEL__"
+          "id": "8Js1s0C68vWbwopW",
+          "name": "Google account"
         }
       }
     },
@@ -1086,8 +1086,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        2064,
-        -16
+        1840,
+        -40
       ]
     },
     {
@@ -1119,8 +1119,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2288,
-        -64
+        2064,
+        -40
       ]
     },
     {
@@ -1145,13 +1145,13 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        2512,
-        -160
+        2288,
+        -152
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_LABEL__"
+          "id": "8Js1s0C68vWbwopW",
+          "name": "Google account"
         }
       }
     },
@@ -1175,7 +1175,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        2736,
+        2512,
         -224
       ]
     },
@@ -1234,7 +1234,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2960,
+        2736,
         -224
       ]
     },
@@ -1257,13 +1257,13 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        2512,
-        96
+        2288,
+        40
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_LABEL__"
+          "id": "8Js1s0C68vWbwopW",
+          "name": "Google account"
         }
       }
     },
@@ -1287,8 +1287,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        2736,
-        160
+        2512,
+        112
       ]
     },
     {
@@ -1346,8 +1346,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2960,
-        160
+        2736,
+        112
       ]
     },
     {
@@ -1399,8 +1399,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1840,
-        256
+        1616,
+        232
       ]
     },
     {

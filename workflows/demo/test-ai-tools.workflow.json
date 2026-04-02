@@ -1,5 +1,5 @@
 {
-  "name": "Test AI Agent Tools",
+  "name": "Test AI Tools",
   "nodes": [
     {
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
@@ -396,7 +396,7 @@
             },
             {
               "id": "f17cdce5-1343-4c2c-a2d6-ef10cf68da88",
-              "name": "ggDriveRootFolderId",
+              "name": "gdriveRootFolderId",
               "value": "1ykMeq3i9svSq97_gtA8duJyZvBg_8Fe5",
               "type": "string"
             }
@@ -434,7 +434,7 @@
         -160
       ],
       "id": "10547bfd-7b2d-438e-916d-c0f122c102b1",
-      "name": "Book Review AI Agent",
+      "name": "Book Review",
       "retryOnFail": true
     },
     {
@@ -456,7 +456,7 @@
       "ai_memory": [
         [
           {
-            "node": "Book Review AI Agent",
+            "node": "Book Review",
             "type": "ai_memory",
             "index": 0
           }
@@ -467,7 +467,7 @@
       "ai_tool": [
         [
           {
-            "node": "Book Review AI Agent",
+            "node": "Book Review",
             "type": "ai_tool",
             "index": 0
           }
@@ -489,7 +489,7 @@
       "ai_tool": [
         [
           {
-            "node": "Book Review AI Agent",
+            "node": "Book Review",
             "type": "ai_tool",
             "index": 0
           }
@@ -500,7 +500,7 @@
       "ai_tool": [
         [
           {
-            "node": "Book Review AI Agent",
+            "node": "Book Review",
             "type": "ai_tool",
             "index": 0
           }
@@ -511,7 +511,7 @@
       "ai_tool": [
         [
           {
-            "node": "Book Review AI Agent",
+            "node": "Book Review",
             "type": "ai_tool",
             "index": 0
           }
@@ -533,7 +533,7 @@
       "ai_tool": [
         [
           {
-            "node": "Book Review AI Agent",
+            "node": "Book Review",
             "type": "ai_tool",
             "index": 0
           }
@@ -544,7 +544,7 @@
       "ai_tool": [
         [
           {
-            "node": "Book Review AI Agent",
+            "node": "Book Review",
             "type": "ai_tool",
             "index": 0
           }
@@ -588,7 +588,7 @@
       "ai_languageModel": [
         [
           {
-            "node": "Book Review AI Agent",
+            "node": "Book Review",
             "type": "ai_languageModel",
             "index": 0
           }
@@ -599,7 +599,7 @@
       "main": [
         [
           {
-            "node": "Book Review AI Agent",
+            "node": "Book Review",
             "type": "main",
             "index": 0
           }
@@ -610,7 +610,7 @@
       "main": [
         [
           {
-            "node": "Book Review AI Agent",
+            "node": "Book Review",
             "type": "main",
             "index": 0
           }

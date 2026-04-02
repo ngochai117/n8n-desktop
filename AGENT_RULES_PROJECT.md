@@ -2,113 +2,66 @@
 
 Project: `n8n-desktop`
 
-## 1) Workflow import policy (bat buoc upsert)
-- Khong tao moi workflow neu da ton tai.
-- Uu tien update theo `workflow ID`.
-- Registry: `workflow-registry.json` (map theo `name` hoac `template`).
-- Neu ID trong registry da archived/khong ton tai: bo qua ID do.
-- Neu chua co ID hop le: tim theo `name` (chi lay workflow non-archived), tim thay thi update, khong thay moi tao moi.
-- Neu workflow vua duoc sua tren UI, uu tien sync nguoc ve JSON truoc khi AI sua tiep: `bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply`.
-- Moi lan agent sua bat ky file workflow JSON nao (trong `workflows/*.workflow.json`), bat buoc chay lai script import workflow tuong ung de cap nhat state tren n8n truoc khi ket luan da xong.
+## 1) Canonical workflow
+- Repo nay chi duy tri 1 workflow chinh cho Book Review: `Book Review`.
+- Template canonical: `workflows/book-review/book-review.workflow.json`.
+- Khong duy tri alias, wrapper, doc, hay path song song cho cung 1 workflow.
 
-## 2) Model policy
-- Uu tien model moi nhat/manh nhat khi cap nhat demo.
-- Mac dinh hien tai:
-  - Gemini: `gemini-3-flash-preview` (fallback: `gemini-2.5-pro` cho workflow review sach)
-  - OpenAI: `gpt-5.4`
-- Tra cuu model qua Management Center hoac `GET /v1/models` truoc khi doi model.
+## 2) Workflow import policy
+- Workflow import phai la upsert, uu tien update theo workflow ID trong `workflow-registry.json`.
+- Neu workflow da duoc sua tren UI, uu tien sync nguoc ve JSON truoc khi AI sua tiep: `bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply`.
+- Moi lan agent sua workflow JSON canonical, bat buoc import lai wrapper tuong ung truoc khi ket luan.
 
-## 3) Runtime security policy
-- Proxy runtime phai bind localhost (`127.0.0.1`/`localhost`) cho local-only security.
-- Dung `PROXY_API_KEY` cho client-to-proxy auth (khong hard-code trong workflow/template).
-- Khong commit env local (`env.proxy.local`) va data runtime local (`~/.9router`) vao repo.
+## 3) Workflow design style (bat buoc)
+- UI-first: canvas phai de doc, de trace, de debug.
+- Stage-driven: flow uu tien cac cum ro rang `trigger/input -> shared config -> AI stage -> canonicalize -> persist/send`.
+- `Config Main` chi chua shared values dung thuc su nhieu noi.
+- Khong de qua nhieu config nodes. Neu 1 gia tri chi phuc vu cuc nho, uu tien dat ngay node gan no hoac dung code node san co.
+- Moi node = 1 trach nhiem ro rang. Khong de branch chet, action chet, hay UI hua hen tinh nang chua implement.
+- Truoc khi persist/fan-out, phai co 1 diem canonicalize/normalize de chot contract output.
+- Uu tien node-first cho routing, file handling, merge/split, subworkflow call. Code node chi dung cho normalize/parse/contract logic ma node built-in dien dat khong ro.
+- Naming cho workflow config/field/contract moi dung `camelCase`.
 
-## 4) Documentation policy
-- Moi thay doi quy trinh van hanh: cap nhat `README.md`.
-- Uu tien ghi chi tiet thay doi vao `CHANGELOG.md` (dac biet voi workflow sync/import).
-- Moi thay doi project rules/skills: phai xin xac nhan user truoc.
+## 4) Runtime and config hygiene
+- Proxy runtime local phai bind localhost (`127.0.0.1`/`localhost`).
+- Khong hard-code secrets vao code/template.
+- Prompt source cua Book Review nam trong `workflows/book-review/prompts/`.
+- Khi workflow canonical chua wire prompt file truc tiep, prompt source van duoc quan ly tai thu muc prompt va backlog tiep tuc duoc ghi trong `docs/book-review-todo.md`.
+- Dung env/example gon, khong de bien mo coi khong con phuc vu workflow canonical va tooling hien tai.
 
-## 5) Standard commands
+## 5) Current Book Review scope
+- Workflow canonical hien tai uu tien generate outline -> manifest -> QC -> persist draft/manifest -> gui review ready.
+- Reviewer session flow, media pipeline, session persistence, va E2E runtime se duoc implement tiep theo backlog trong `docs/book-review-todo.md`.
+- Khong duoc tai su dung branch/logic cu chi de "cho chay tam" neu no lam flow kho doc hoac tao contract mo ho.
+
+## 6) Standard commands
 - `bash scripts/bootstrap/bootstrap-local.sh`
 - `bash scripts/bootstrap/verify-local.sh`
 - `bash scripts/bootstrap/enable-full-mcp.sh`
 - `bash scripts/proxy/setup-proxy.sh`
-- `bash scripts/workflows/import/import-shared-notification-router-workflow.sh`
-- `bash scripts/workflows/import/import-gemini-demo-workflow.sh`
-- `bash scripts/workflows/import/import-openai-demo-workflow.sh`
 - `bash scripts/workflows/import/import-book-review-workflow.sh`
 - `bash scripts/workflows/sync/sync-workflows-from-n8n.sh`
 - `bash scripts/workflows/tests/test-book-review-checklist.sh`
 
-## 6) Checklist execution policy (bat buoc)
-- Neu user yeu cau "chay checklist" (hoac tuong duong), agent phai chay automation test checklist.
-- Khong duoc chi review ly thuyet/thu cong neu chua chay script checklist.
-- Script mac dinh cho workflow review sach: `bash scripts/workflows/tests/test-book-review-checklist.sh`
+## 7) Checklist execution policy
+- Neu user yeu cau "chay checklist" cho Book Review, mac dinh chay:
+  - `bash scripts/workflows/tests/test-book-review-checklist.sh`
+- Checklist hien tai la static contract/topology checklist cho workflow canonical.
+- Khong mo ta E2E/media checklist nhu da san sang khi workflow chua implement den muc do.
 
-## 7) Shared notification policy (bat buoc)
-- Moi workflow trong project phai goi workflow notify dung chung o cuoi pipeline.
-- Workflow notify dung chung mac dinh: `Shared Notification Router`.
-- Notification phai bao gom status `success/failed` va noi dung dong tu workflow chinh (khong hard-code thong diep co dinh).
-
-## 8) n8n Code-node mode safety (bat buoc)
-- Neu node Code dung `mode=runOnceForEachItem`, uu tien doc input item hien tai bang `$json`.
-- Khong dung `$input.first()` hoac `$input.all()` trong `runOnceForEachItem` (de tranh runtime error: `Can't use .first() here`).
+## 8) Code-node mode safety
+- Neu node Code dung `mode=runOnceForEachItem`, uu tien doc item hien tai bang `$json`.
+- Khong dung `$input.first()` hoac `$input.all()` trong `runOnceForEachItem`.
 - Chi dung `$input.first()`/`$input.all()` khi node o `mode=runOnceForAllItems`.
-- Truoc khi ket luan da fix workflow, chay checklist automation de bat loi mode-access regression.
 
-## 9) AI prompt externalization policy (bat buoc)
-- Moi prompt AI moi (system/template prompt) phai duoc tach thanh file `.txt` rieng trong thu muc prompt theo workflow: `workflows/<workflow>/prompts/`.
-- Khong hard-code prompt dai truc tiep trong workflow JSON neu prompt do co the quan ly qua file.
-- Prompt file phai duoc inject vao workflow qua `Set Config` + script import wrapper tuong ung.
-- Khi sync workflow tu UI ve JSON, script sanitizer phai tra ve placeholder cho cac field prompt template de tranh drift/noise.
+## 9) Execute Workflow Trigger input schema
+- Ap dung cho moi subworkflow dung `When Executed by Another Workflow`.
+- Khong de schema rong dang `workflowInputs.values: [{}]`.
+- Bat buoc khai bao `inputSource=workflowInputs` va moi field co `name` + `type`.
+- Neu schema bi reset/rong sau sync UI, phai map lai theo contract thuc te va import lai workflow.
 
-## 10) Workflow UI cleanliness + routing data policy (bat buoc)
-- Thiet ke node phai clean, uu tien gom nhom node logic va tai su dung nhom node thay vi tach le tung node khong can thiet.
-- Cac node dieu huong UI nhu `Split Out`, `Merge`, `Switch`, `If` khi dong vai tro router chung phai giu du lieu day du (`include all other fields`) de tranh rot data.
-- Neu dung pattern notify hub (vi du `Send Informations`), payload parse phai di theo thu tu: `parse notify data -> split hub -> set notify targets -> fan-out notify`.
+## 10) Sticky-note va visual readability
+- Neu workflow co sticky note, moi lan sua logic/contract phai cap nhat note.
+- Note phai phan anh dung input/output va cac stage dang ton tai.
+- Khong de sticky note stale sau khi cutover hay don flow.
 
-## 11) Node-first workflow design policy (bat buoc)
-- Uu tien dung cac node component built-in cua n8n de xu ly mapping, routing, merge/split, va transform data.
-- Chi dung Code node cho logic khong the bieu dien tot bang component nodes (ve do ro rang, do on dinh, hoac maintainability).
-- Khong dung Code node cho cac tac vu da co node built-in tuong duong.
-
-## 12) Sub-agent operating policy reference (bat buoc)
-- Ap dung theo `AGENT_RULES_GLOBAL.md` muc 6 (Sub-agent orchestration framework).
-- Project nay khong override rieng cho roster `Conductor/Planner/FlowBuilder/Builder/Runner/Gatekeeper`.
-
-## 13) n8n visual-flow readability policy (bat buoc)
-- Uu tien workflow theo nguyen tac `moi node = 1 trach nhiem ro rang`.
-- Voi tac vu async/polling (image/TTS/job queue...), bat buoc theo mau:
-  1) `Create Job` (HTTP Request)
-  2) `Wait` (Wait node rieng)
-  3) `Get Status` (HTTP Request rieng)
-  4) `If Completed?` (If node)
-  5) nhanh `false` quay lai `Wait` (loop)
-  6) nhanh `true` -> `Get Result`/`Finalize`
-- Khong duoc `sleep` bang Code node khi da co Wait node.
-- Bat buoc co gioi han polling (`max attempts` hoac timeout) de tranh loop vo han.
-- Voi xu ly theo tung item/chunk, uu tien `Loop Over Items`/`Split Out` + `Merge`/`Aggregate` de gom ket qua.
-- Code node chi duoc dung cho normalize/parse nho khi node built-in khong bieu dien duoc ro rang.
-- Neu logic dai, phai tach thanh nhieu node nho theo tung buoc, khong gom monolithic script kho theo doi.
-
-## 14) Workflow sticky-note maintenance policy (bat buoc)
-- Neu workflow da co `stickyNote`, moi lan sua logic (node/add/remove/sua branch/sua input-output contract) bat buoc cap nhat note de phan anh dung luong xu ly moi.
-- Khong duoc de note stale/khong con dung voi flow thuc te sau khi da sua workflow.
-- Convention dat ten note:
-  - Prefix bat buoc: `NOTE::<WORKFLOW_TAG>::...` (vi du: `NOTE::TTS::...`, `NOTE::IMG::...`, `NOTE::SHARED_NOTIFY::...`).
-  - Bo note toi thieu:
-    1) `INPUT_FIELDS`: liet ke contract input + default quan trong + output chinh.
-    2) `STAGE_*`: mo ta tung stage xu ly chinh (normalize/router/poll/finalize...).
-    3) `BRANCH_*`: mo ta nhanh dieu kien quan trong (notify channels, drive export, realtime sheet...).
-- Khi cap nhat note, uu tien idempotent:
-  - update/replace theo prefix cung workflow tag,
-  - tranh tao duplicate note moi lan sync/import.
-- Sau khi sua note trong workflow JSON, bat buoc chay lai import wrapper workflow tuong ung truoc khi ket luan xong task.
-
-## 15) Execute Workflow Trigger input schema policy (bat buoc)
-- Ap dung cho moi subworkflow dung node `When Executed by Another Workflow` (`n8n-nodes-base.executeWorkflowTrigger`, `typeVersion=1.1`).
-- Khong duoc de schema rong dang `workflowInputs.values: [{}]`.
-- Bat buoc khai bao `inputSource=workflowInputs` va moi input field phai co day du `name` + `type` (`any|string|number|boolean|array|object`).
-- Neu sync tu UI lam schema bi reset/rong, agent phai map lai input schema theo contract thuc te cua workflow (cac key duoc doc boi Code/Set/HTTP nodes), sau do import lai workflow.
-- Truoc khi ket luan task co lien quan subworkflow, bat buoc import lai wrapper tuong ung de publish state moi tren n8n (`GG Drive Manager`, `GG Sheet Manager`, `TTS`, `Text To Images` khi co lien quan).
-- Neu workflow dang ho tro nhieu contract goi, uu tien giu alias backward-compatible trong input schema (vi du `sheetId` + `session_sheet_id`).

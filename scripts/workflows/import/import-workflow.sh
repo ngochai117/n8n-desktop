@@ -10,18 +10,6 @@ WORKFLOW_REGISTRY_FILE="${WORKFLOW_REGISTRY_FILE:-$ROOT_DIR/workflow-registry.js
 N8N_WORKFLOW_LIST_LIMIT="${N8N_WORKFLOW_LIST_LIMIT:-250}"
 N8N_API_RETRY_MAX="${N8N_API_RETRY_MAX:-6}"
 N8N_API_RETRY_DELAY_SECONDS="${N8N_API_RETRY_DELAY_SECONDS:-1}"
-SHARED_NOTIFICATION_ROUTER_PATH="${SHARED_NOTIFICATION_ROUTER_PATH:-$ROOT_DIR/workflows/shared/shared-notification-router.workflow.json}"
-GG_DRIVE_MANAGER_WORKFLOW_PATH="${GG_DRIVE_MANAGER_WORKFLOW_PATH:-$ROOT_DIR/workflows/shared/gg-drive-manager.workflow.json}"
-GG_SHEET_MANAGER_WORKFLOW_PATH="${GG_SHEET_MANAGER_WORKFLOW_PATH:-$ROOT_DIR/workflows/shared/gg-sheet-manager.workflow.json}"
-TEXT_TO_IMAGES_WORKFLOW_PATH="${TEXT_TO_IMAGES_WORKFLOW_PATH:-$ROOT_DIR/workflows/book-review/text-to-images.workflow.json}"
-TEXT_TO_VIDEOS_WORKFLOW_PATH="${TEXT_TO_VIDEOS_WORKFLOW_PATH:-$ROOT_DIR/workflows/book-review/text-to-videos-veo3.workflow.json}"
-TTS_WORKFLOW_PATH="${TTS_WORKFLOW_PATH:-$ROOT_DIR/workflows/book-review/tts.workflow.json}"
-TEXT_TO_IMAGES_WORKFLOW_ID="${TEXT_TO_IMAGES_WORKFLOW_ID:-}"
-TEXT_TO_VIDEOS_WORKFLOW_ID="${TEXT_TO_VIDEOS_WORKFLOW_ID:-}"
-TTS_WORKFLOW_ID="${TTS_WORKFLOW_ID:-}"
-TEXT_TO_IMAGES_WORKFLOW_NAME_DEFAULT="${TEXT_TO_IMAGES_WORKFLOW_NAME:-Text To Images}"
-TEXT_TO_VIDEOS_WORKFLOW_NAME_DEFAULT="${TEXT_TO_VIDEOS_WORKFLOW_NAME:-Text To Videos VEO3}"
-TTS_WORKFLOW_NAME_DEFAULT="${TTS_WORKFLOW_NAME:-TTS}"
 
 resolve_path() {
   local path_input="$1"
@@ -56,6 +44,26 @@ require_cmd() {
   }
 }
 
+load_env_with_commented_fallback() {
+  local env_file="$1"
+  local assignment var_name
+
+  [ -f "$env_file" ] || return 0
+
+  set -a
+  # shellcheck source=/dev/null
+  source "$env_file"
+  set +a
+
+  while IFS= read -r assignment; do
+    [ -n "$assignment" ] || continue
+    var_name="${assignment%%=*}"
+    if [ -z "${!var_name:-}" ]; then
+      eval "export $assignment"
+    fi
+  done < <(sed -nE 's/^#[[:space:]]*([A-Z0-9_][A-Z0-9_]*=.*)$/\1/p' "$env_file")
+}
+
 require_cmd curl
 require_cmd jq
 
@@ -64,51 +72,19 @@ PROXY_ENV_FILE="$(resolve_path "$PROXY_ENV_FILE_INPUT")"
 WORKFLOW_TEMPLATE="$(resolve_path "$WORKFLOW_TEMPLATE_INPUT")"
 REGISTRY_TEMPLATE="$(normalize_registry_template "$REGISTRY_TEMPLATE_INPUT")"
 REGISTRY_TEMPLATE_ABS="$(resolve_path "$REGISTRY_TEMPLATE_INPUT")"
-SHARED_NOTIFICATION_ROUTER_PATH="$(resolve_path "$SHARED_NOTIFICATION_ROUTER_PATH")"
-GG_DRIVE_MANAGER_WORKFLOW_PATH="$(resolve_path "$GG_DRIVE_MANAGER_WORKFLOW_PATH")"
-GG_SHEET_MANAGER_WORKFLOW_PATH="$(resolve_path "$GG_SHEET_MANAGER_WORKFLOW_PATH")"
-TEXT_TO_IMAGES_WORKFLOW_PATH="$(resolve_path "$TEXT_TO_IMAGES_WORKFLOW_PATH")"
-TEXT_TO_VIDEOS_WORKFLOW_PATH="$(resolve_path "$TEXT_TO_VIDEOS_WORKFLOW_PATH")"
-TTS_WORKFLOW_PATH="$(resolve_path "$TTS_WORKFLOW_PATH")"
 
 [ -f "$N8N_ENV_FILE" ] || { echo "Missing file: $N8N_ENV_FILE" >&2; exit 1; }
-[ -f "$PROXY_ENV_FILE" ] || { echo "Missing file: $PROXY_ENV_FILE" >&2; exit 1; }
 [ -f "$WORKFLOW_TEMPLATE" ] || { echo "Missing file: $WORKFLOW_TEMPLATE" >&2; exit 1; }
 
-set -a
-# shellcheck source=/dev/null
-source "$N8N_ENV_FILE"
-# shellcheck source=/dev/null
-source "$PROXY_ENV_FILE"
-set +a
+load_env_with_commented_fallback "$N8N_ENV_FILE"
+load_env_with_commented_fallback "$PROXY_ENV_FILE"
 
 : "${N8N_API_URL:?N8N_API_URL is required}"
 : "${N8N_API_KEY:?N8N_API_KEY is required}"
-: "${PROXY_BASE_URL:?PROXY_BASE_URL is required}"
-: "${PROXY_API_KEY:?PROXY_API_KEY is required}"
-N8N_API_URL_DEFAULT="${N8N_API_URL:-}"
-N8N_API_KEY_DEFAULT="${N8N_API_KEY:-}"
 
-NOTIFY_TARGETS_DEFAULT="${NOTIFY_TARGETS:-telegram}"
 TELEGRAM_BOT_TOKEN_DEFAULT="${TELEGRAM_BOT_TOKEN:-}"
-TELEGRAM_CHAT_ID_DEFAULT="${TELEGRAM_CHAT_ID:-}"
-GG_CHAT_WEBHOOK_DEFAULT="${GG_CHAT_WEBHOOK:-}"
 TELEGRAM_BASE_URL_DEFAULT="${TELEGRAM_BASE_URL:-https://api.telegram.org}"
 TELEGRAM_CREDENTIAL_NAME_DEFAULT="${TELEGRAM_CREDENTIAL_NAME:-Local Telegram Bot}"
-IMAGE_API_BASE_URL_DEFAULT="${IMAGE_API_BASE_URL:-}"
-IMAGE_API_KEY_DEFAULT="${IMAGE_API_KEY:-}"
-TTS_API_BASE_URL_DEFAULT="${TTS_API_BASE_URL:-http://127.0.0.1:8001}"
-TTS_VOICE_ID_DEFAULT="${TTS_VOICE_ID:-ngochuyen}"
-GDRIVE_ROOT_FOLDER_ID_DEFAULT="${GDRIVE_ROOT_FOLDER_ID_DEFAULT:-${GDRIVE_ROOT_FOLDER_ID:-}}"
-CONTENT_MODEL_DEFAULT="${CONTENT_MODEL:-cx/gpt-5.4}"
-FALLBACK_MODEL_DEFAULT="${FALLBACK_MODEL:-cx/gpt-5.2}"
-QC_MODEL_DEFAULT="${QC_MODEL:-$CONTENT_MODEL_DEFAULT}"
-GEMINI_CONTENT_MODEL_DEFAULT="${GEMINI_CONTENT_MODEL:-gemini-3-flash-preview}"
-IMAGE_MODEL_DEFAULT="${IMAGE_MODEL:-nano-banana-pro}"
-VIDEO_MODEL_DEFAULT="${VIDEO_MODEL:-veo3}"
-MEDIA_VISUAL_MODE_DEFAULT="${MEDIA_VISUAL_MODE:-image}"
-VIDEO_CLIP_DURATION_SECONDS_DEFAULT="${VIDEO_CLIP_DURATION_SECONDS:-8}"
-VIDEO_TARGET_BUFFER_SECONDS_DEFAULT="${VIDEO_TARGET_BUFFER_SECONDS:-1}"
 
 if [ "$N8N_WORKFLOW_LIST_LIMIT" -gt 250 ]; then
   echo "N8N_WORKFLOW_LIST_LIMIT must be <= 250 (current: $N8N_WORKFLOW_LIST_LIMIT)" >&2
@@ -200,74 +176,6 @@ find_workflow_id_by_name() {
       | .[0].id
     ) // empty
   '
-}
-
-workflow_template_has_set_assignment() {
-  local assignment_name="$1"
-  jq -e --arg assignment "$assignment_name" '
-    any(.nodes[]?; any((.parameters.assignments.assignments // [])[]?; .name == $assignment))
-  ' "$WORKFLOW_TEMPLATE" >/dev/null
-}
-
-workflow_template_has_node_name() {
-  local node_name="$1"
-  jq -e --arg name "$node_name" '
-    any(.nodes[]?; .name == $name)
-  ' "$WORKFLOW_TEMPLATE" >/dev/null
-}
-
-resolve_media_subworkflow_ids() {
-  local needs_text_to_images="false"
-  local needs_text_to_videos="false"
-  local needs_tts="false"
-
-  if workflow_template_has_set_assignment "text_to_images_workflow_id" || workflow_template_has_node_name "Generate Image Assets (Worker)"; then
-    needs_text_to_images="true"
-  fi
-  if workflow_template_has_set_assignment "text_to_videos_workflow_id"; then
-    needs_text_to_videos="true"
-  fi
-
-  if workflow_template_has_set_assignment "tts_workflow_id" || workflow_template_has_node_name "Generate TTS Assets (Worker)"; then
-    needs_tts="true"
-  fi
-
-  if [ "$needs_text_to_images" = "true" ] && [ -z "$TEXT_TO_IMAGES_WORKFLOW_ID" ]; then
-    TEXT_TO_IMAGES_WORKFLOW_ID="$(find_workflow_id_by_name "$TEXT_TO_IMAGES_WORKFLOW_NAME_DEFAULT")"
-    if [ -n "$TEXT_TO_IMAGES_WORKFLOW_ID" ]; then
-      log "Resolved Text To Images workflow ID by name '$TEXT_TO_IMAGES_WORKFLOW_NAME_DEFAULT': $TEXT_TO_IMAGES_WORKFLOW_ID"
-    fi
-  fi
-  if [ "$needs_text_to_videos" = "true" ] && [ -z "$TEXT_TO_VIDEOS_WORKFLOW_ID" ]; then
-    TEXT_TO_VIDEOS_WORKFLOW_ID="$(find_workflow_id_by_name "$TEXT_TO_VIDEOS_WORKFLOW_NAME_DEFAULT")"
-    if [ -n "$TEXT_TO_VIDEOS_WORKFLOW_ID" ]; then
-      log "Resolved Text To Videos workflow ID by name '$TEXT_TO_VIDEOS_WORKFLOW_NAME_DEFAULT': $TEXT_TO_VIDEOS_WORKFLOW_ID"
-    fi
-  fi
-
-  if [ "$needs_tts" = "true" ] && [ -z "$TTS_WORKFLOW_ID" ]; then
-    TTS_WORKFLOW_ID="$(find_workflow_id_by_name "$TTS_WORKFLOW_NAME_DEFAULT")"
-    if [ -n "$TTS_WORKFLOW_ID" ]; then
-      log "Resolved TTS workflow ID by name '$TTS_WORKFLOW_NAME_DEFAULT': $TTS_WORKFLOW_ID"
-    fi
-  fi
-
-  if [ "$needs_text_to_images" = "true" ] && [ -z "$TEXT_TO_IMAGES_WORKFLOW_ID" ]; then
-    echo "Cannot resolve TEXT_TO_IMAGES_WORKFLOW_ID for workflow '$WORKFLOW_TEMPLATE'." >&2
-    echo "Import 'Text To Images' first or set TEXT_TO_IMAGES_WORKFLOW_ID before importing this workflow." >&2
-    exit 1
-  fi
-  if [ "$needs_text_to_videos" = "true" ] && [ -z "$TEXT_TO_VIDEOS_WORKFLOW_ID" ]; then
-    echo "Cannot resolve TEXT_TO_VIDEOS_WORKFLOW_ID for workflow '$WORKFLOW_TEMPLATE'." >&2
-    echo "Import 'Text To Videos VEO3' first or set TEXT_TO_VIDEOS_WORKFLOW_ID before importing this workflow." >&2
-    exit 1
-  fi
-
-  if [ "$needs_tts" = "true" ] && [ -z "$TTS_WORKFLOW_ID" ]; then
-    echo "Cannot resolve TTS_WORKFLOW_ID for workflow '$WORKFLOW_TEMPLATE'." >&2
-    echo "Import 'TTS' first or set TTS_WORKFLOW_ID before importing this workflow." >&2
-    exit 1
-  fi
 }
 
 find_telegram_credential_id_by_name() {
@@ -452,126 +360,14 @@ if [ -n "$gdrive_binding" ]; then
   IFS=$'\t' read -r gdrive_credential_id gdrive_credential_label gdrive_credential_type <<< "$gdrive_binding"
 fi
 
-resolve_media_subworkflow_ids
-
 payload="$(jq \
-  --arg base "$PROXY_BASE_URL" \
-  --arg key "$PROXY_API_KEY" \
-  --arg n8nApiUrl "$N8N_API_URL_DEFAULT" \
-  --arg n8nApiKey "$N8N_API_KEY_DEFAULT" \
-  --arg notifyPath "$SHARED_NOTIFICATION_ROUTER_PATH" \
-  --arg ggDriveManagerWorkflowPath "$GG_DRIVE_MANAGER_WORKFLOW_PATH" \
-  --arg ggSheetManagerWorkflowPath "$GG_SHEET_MANAGER_WORKFLOW_PATH" \
-  --arg notifyTargets "$NOTIFY_TARGETS_DEFAULT" \
-  --arg notifyTargetsExpr "={{ \$json.notify_targets || \"$NOTIFY_TARGETS_DEFAULT\" }}" \
-  --arg telegramBotToken "$TELEGRAM_BOT_TOKEN_DEFAULT" \
-  --arg telegramChatId "$TELEGRAM_CHAT_ID_DEFAULT" \
-  --arg ggChatWebhook "$GG_CHAT_WEBHOOK_DEFAULT" \
-  --arg imageApiBaseUrl "$IMAGE_API_BASE_URL_DEFAULT" \
-  --arg imageApiKey "$IMAGE_API_KEY_DEFAULT" \
-  --arg ttsApiBaseUrl "$TTS_API_BASE_URL_DEFAULT" \
-  --arg ttsVoiceId "$TTS_VOICE_ID_DEFAULT" \
-  --arg gdriveRootFolderId "$GDRIVE_ROOT_FOLDER_ID_DEFAULT" \
   --arg gdriveCredentialId "$gdrive_credential_id" \
   --arg gdriveCredentialResolvedName "$gdrive_credential_label" \
   --arg gdriveCredentialType "$gdrive_credential_type" \
-  --arg textToImagesWorkflowPath "$TEXT_TO_IMAGES_WORKFLOW_PATH" \
-  --arg textToVideosWorkflowPath "$TEXT_TO_VIDEOS_WORKFLOW_PATH" \
-  --arg ttsWorkflowPath "$TTS_WORKFLOW_PATH" \
-  --arg textToImagesWorkflowId "$TEXT_TO_IMAGES_WORKFLOW_ID" \
-  --arg textToVideosWorkflowId "$TEXT_TO_VIDEOS_WORKFLOW_ID" \
-  --arg ttsWorkflowId "$TTS_WORKFLOW_ID" \
   --arg telegramCredentialId "$telegram_credential_id" \
   --arg telegramCredentialName "$TELEGRAM_CREDENTIAL_NAME_DEFAULT" \
-  --arg contentModel "$CONTENT_MODEL_DEFAULT" \
-  --arg fallbackModel "$FALLBACK_MODEL_DEFAULT" \
-  --arg qcModel "$QC_MODEL_DEFAULT" \
-  --arg geminiContentModel "$GEMINI_CONTENT_MODEL_DEFAULT" \
-  --arg imageModelExpr "={{ \$json.image_model || \"$IMAGE_MODEL_DEFAULT\" }}" \
-  --arg videoModel "$VIDEO_MODEL_DEFAULT" \
-  --arg mediaVisualMode "$MEDIA_VISUAL_MODE_DEFAULT" \
-  --argjson videoClipDuration "$VIDEO_CLIP_DURATION_SECONDS_DEFAULT" \
-  --argjson videoTargetBuffer "$VIDEO_TARGET_BUFFER_SECONDS_DEFAULT" \
-  --arg qcModelExpr "={{ \$json.qc_model || \"$QC_MODEL_DEFAULT\" }}" \
   '
-  (.name | tostring | test("gemini"; "i")) as $isGeminiWorkflow
-  | (.nodes[]? |= del(.issues))
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="content_model") | .value) = (if $isGeminiWorkflow then $geminiContentModel else $contentModel end)
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="fallback_model") | .value) = $fallbackModel
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="qc_model") | .value) = $qcModel
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="image_model") | .value) = $imageModelExpr
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="video_model") | .value) = $videoModel
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="media_visual_mode") | .value) = $mediaVisualMode
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="video_clip_duration_seconds") | .value) = $videoClipDuration
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="video_target_buffer_seconds") | .value) = $videoTargetBuffer
-  | (.nodes[]? | select(.name=="Set Config (Worker)") | .parameters.assignments.assignments[]? | select(.name=="qc_model") | .value) = $qcModelExpr
-  | (.nodes[] | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[] | select(.name=="proxy_base_url") | .value) = $base
-  | (.nodes[] | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[] | select(.name=="proxy_api_key") | .value) = $key
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="n8n_api_url") | .value) = $n8nApiUrl
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="n8n_api_key") | .value) = $n8nApiKey
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="notify_targets") | .value) = $notifyTargets
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="telegram_bot_token") | .value) = $telegramBotToken
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="telegram_chat_id") | .value) = $telegramChatId
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="ggchat_webhook_url") | .value) = $ggChatWebhook
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="image_api_base_url") | .value) = $imageApiBaseUrl
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="image_api_key") | .value) = $imageApiKey
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="tts_api_base_url") | .value) = $ttsApiBaseUrl
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="tts_voice_id") | .value) = $ttsVoiceId
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="gdrive_root_folder_id") | .value) = $gdriveRootFolderId
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="gdriveRootFolderId") | .value) = $gdriveRootFolderId
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="text_to_images_workflow_path") | .value) = $textToImagesWorkflowPath
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="text_to_videos_workflow_path") | .value) = $textToVideosWorkflowPath
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="tts_workflow_path") | .value) = $ttsWorkflowPath
-  | if $textToImagesWorkflowId != "" then
-      (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="text_to_images_workflow_id") | .value) = $textToImagesWorkflowId
-    else
-      .
-    end
-  | if $textToVideosWorkflowId != "" then
-      (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="text_to_videos_workflow_id") | .value) = $textToVideosWorkflowId
-    else
-      .
-    end
-  | if $ttsWorkflowId != "" then
-      (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="tts_workflow_id") | .value) = $ttsWorkflowId
-    else
-      .
-    end
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="shared_notification_workflow_path") | .value) = $notifyPath
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="gg_drive_manager_workflow_path") | .value) = $ggDriveManagerWorkflowPath
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="ggDriveManagerWorkflowPath") | .value) = $ggDriveManagerWorkflowPath
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="gg_sheet_manager_workflow_path") | .value) = $ggSheetManagerWorkflowPath
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name=="ggSheetManagerWorkflowPath") | .value) = $ggSheetManagerWorkflowPath
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.includeOtherFields) = true
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name=="notify_targets") | .value) = $notifyTargetsExpr
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name=="telegram_bot_token") | .value) = $telegramBotToken
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name=="telegram_chat_id") | .value) = $telegramChatId
-  | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name=="ggchat_webhook_url") | .value) = $ggChatWebhook
-  | (.nodes[]? | select((.name | tostring) | startswith("Notify via Shared Workflow")) | .parameters.source) = "localFile"
-  | (.nodes[]? | select((.name | tostring) | startswith("Notify via Shared Workflow")) | .parameters.workflowPath) = $notifyPath
-  | (.nodes[]? | select((.name | tostring) | startswith("Notify via Shared Workflow")) | .parameters) |= del(.workflowId)
-  | if $textToImagesWorkflowId != "" then
-      (.nodes[]? | select(.name=="Generate Image Assets (Worker)") | .parameters.source) = "database"
-      | (.nodes[]? | select(.name=="Generate Image Assets (Worker)") | .parameters.workflowId) = {
-          "__rl": true,
-          "mode": "id",
-          "value": "={{ (() => { const mode = String($json.media_visual_mode || 'image').toLowerCase(); if (mode === 'video') { return $json.text_to_videos_workflow_id || '__TEXT_TO_VIDEOS_WORKFLOW_ID__'; } return $json.text_to_images_workflow_id || '__TEXT_TO_IMAGES_WORKFLOW_ID__'; })() }}"
-        }
-      | (.nodes[]? | select(.name=="Generate Image Assets (Worker)") | .parameters) |= del(.workflowPath)
-    else
-      .
-    end
-  | if $ttsWorkflowId != "" then
-      (.nodes[]? | select(.name=="Generate TTS Assets (Worker)") | .parameters.source) = "database"
-      | (.nodes[]? | select(.name=="Generate TTS Assets (Worker)") | .parameters.workflowId) = {
-          "__rl": true,
-          "mode": "list",
-          "value": $ttsWorkflowId
-        }
-      | (.nodes[]? | select(.name=="Generate TTS Assets (Worker)") | .parameters) |= del(.workflowPath)
-    else
-      .
-    end
+  (.nodes[]? |= del(.issues))
   | if $gdriveCredentialId != "" and $gdriveCredentialType != "" then
       (.nodes[]? | select(.type=="n8n-nodes-base.googleDrive")) |= (
         .parameters.authentication = (if $gdriveCredentialType == "googleDriveOAuth2Api" then "oAuth2" else "serviceAccount" end)

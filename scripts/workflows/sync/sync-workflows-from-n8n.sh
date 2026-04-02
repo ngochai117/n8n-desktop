@@ -36,6 +36,26 @@ require_cmd() {
   }
 }
 
+load_env_with_commented_fallback() {
+  local env_file="$1"
+  local assignment var_name
+
+  [ -f "$env_file" ] || return 0
+
+  set -a
+  # shellcheck source=/dev/null
+  source "$env_file"
+  set +a
+
+  while IFS= read -r assignment; do
+    [ -n "$assignment" ] || continue
+    var_name="${assignment%%=*}"
+    if [ -z "${!var_name:-}" ]; then
+      eval "export $assignment"
+    fi
+  done < <(sed -nE 's/^#[[:space:]]*([A-Z0-9_][A-Z0-9_]*=.*)$/\1/p' "$env_file")
+}
+
 file_has_regex() {
   local pattern="$1"
   local file="$2"
@@ -1056,62 +1076,6 @@ sanitize_and_shape_workflow() {
       settings: (.settings // {})
     }
     | (.nodes[]? |= del(.issues))
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "proxy_base_url") | .value) = "__PROXY_BASE_URL__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "proxy_api_key") | .value) = "__PROXY_API_KEY__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "n8n_api_url") | .value) = "__N8N_API_URL__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "n8n_api_key") | .value) = "__N8N_API_KEY__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "telegram_bot_token") | .value) = "__TELEGRAM_BOT_TOKEN__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "telegram_chat_id") | .value) = "__TELEGRAM_CHAT_ID__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "ggchat_webhook_url") | .value) = "__GG_CHAT_WEBHOOK__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "image_api_key") | .value) = ""
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "gdrive_root_folder_id") | .value) = "__GDRIVE_ROOT_FOLDER_ID__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "gdriveRootFolderId") | .value) = "__GDRIVE_ROOT_FOLDER_ID__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "text_to_images_workflow_id") | .value) = "__TEXT_TO_IMAGES_WORKFLOW_ID__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "text_to_videos_workflow_id") | .value) = "__TEXT_TO_VIDEOS_WORKFLOW_ID__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "tts_workflow_id") | .value) = "__TTS_WORKFLOW_ID__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "shared_notification_workflow_path") | .value) = "__SHARED_NOTIFICATION_WORKFLOW_PATH__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "gg_drive_manager_workflow_path") | .value) = "__GG_DRIVE_MANAGER_WORKFLOW_PATH__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "ggDriveManagerWorkflowPath") | .value) = "__GG_DRIVE_MANAGER_WORKFLOW_PATH__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "gg_sheet_manager_workflow_path") | .value) = "__GG_SHEET_MANAGER_WORKFLOW_PATH__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "ggSheetManagerWorkflowPath") | .value) = "__GG_SHEET_MANAGER_WORKFLOW_PATH__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "master_prompt_template") | .value) = "__BOOK_REVIEW_MASTER_PROMPT__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "scene_outline_prompt_template") | .value) = "__BOOK_REVIEW_SCENE_OUTLINE_PROMPT__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "scene_expand_prompt_template") | .value) = "__BOOK_REVIEW_SCENE_EXPAND_PROMPT__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "metadata_prompt_template") | .value) = "__BOOK_REVIEW_METADATA_PROMPT__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "qc_prompt_template") | .value) = "__BOOK_REVIEW_QC_PROMPT__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Config")) | .parameters.assignments.assignments[]? | select(.name == "review_revision_prompt_template") | .value) = "__BOOK_REVIEW_REVIEW_EDIT_PROMPT__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.includeOtherFields) = true
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name == "notify_targets") | .value) = "__NOTIFY_TARGETS__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name == "telegram_bot_token") | .value) = "__TELEGRAM_BOT_TOKEN__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name == "telegram_chat_id") | .value) = "__TELEGRAM_CHAT_ID__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Set Notify Targets")) | .parameters.assignments.assignments[]? | select(.name == "ggchat_webhook_url") | .value) = "__GG_CHAT_WEBHOOK__"
-    | (.nodes[]? | select((.name | tostring) | startswith("Notify via Shared Workflow")) | .parameters.workflowPath) = "__SHARED_NOTIFICATION_WORKFLOW_PATH__"
-    | (.nodes[]? | select(.name == "Generate Image Assets (Worker)") | .parameters.source) = "database"
-    | (.nodes[]? | select(.name == "Generate Image Assets (Worker)") | .parameters.workflowId) = {
-        "__rl": true,
-        "mode": "id",
-        "value": "={{ (() => { const mode = String($json.media_visual_mode || 'image').toLowerCase(); if (mode === 'video') { return $json.text_to_videos_workflow_id || \"__TEXT_TO_VIDEOS_WORKFLOW_ID__\"; } return $json.text_to_images_workflow_id || \"__TEXT_TO_IMAGES_WORKFLOW_ID__\"; })() }}"
-      }
-    | (.nodes[]? | select(.name == "Generate Image Assets (Worker)") | .parameters) |= del(.workflowPath)
-    | (.nodes[]? | select(.name == "Generate TTS Assets (Worker)") | .parameters.source) = "database"
-    | (.nodes[]? | select(.name == "Generate TTS Assets (Worker)") | .parameters.workflowId) = {
-        "__rl": true,
-        "mode": "id",
-        "value": "={{ $json.tts_workflow_id || \"__TTS_WORKFLOW_ID__\" }}"
-      }
-    | (.nodes[]? | select(.name == "Generate TTS Assets (Worker)") | .parameters) |= del(.workflowPath)
-    | (.nodes[]? | select(.credentials.googleApi != null) | .credentials.googleApi) = {
-        id: "__GDRIVE_CREDENTIAL_ID__",
-        name: "__GDRIVE_CREDENTIAL_LABEL__"
-      }
-    | (.nodes[]? | select(.credentials.googleDriveOAuth2Api != null) | .credentials.googleDriveOAuth2Api) = {
-        id: "__GDRIVE_CREDENTIAL_ID__",
-        name: "__GDRIVE_CREDENTIAL_LABEL__"
-      }
-    | (.nodes[]? | select(.type == "n8n-nodes-base.telegram" or .type == "n8n-nodes-base.telegramTrigger") | .credentials.telegramApi) = {
-        id: "__TELEGRAM_CREDENTIAL_ID__",
-        name: "__TELEGRAM_CREDENTIAL_NAME__"
-      }
   '
 }
 
@@ -1135,10 +1099,7 @@ main() {
     exit 1
   fi
 
-  set -a
-  # shellcheck source=/dev/null
-  source "$N8N_ENV_FILE"
-  set +a
+  load_env_with_commented_fallback "$N8N_ENV_FILE"
 
   : "${N8N_API_URL:?N8N_API_URL is required}"
   : "${N8N_API_KEY:?N8N_API_KEY is required}"

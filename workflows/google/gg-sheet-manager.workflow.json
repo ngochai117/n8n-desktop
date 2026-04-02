@@ -11,7 +11,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -608,
+        -832,
         320
       ]
     },
@@ -44,7 +44,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -384,
+        -608,
         320
       ]
     },
@@ -81,13 +81,13 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        -160,
+        -384,
         224
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_LABEL__"
+          "id": "8Js1s0C68vWbwopW",
+          "name": "Google account"
         }
       }
     },
@@ -101,7 +101,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -160,
+        -384,
         416
       ]
     },
@@ -115,7 +115,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        64,
+        -160,
         320
       ]
     },
@@ -148,7 +148,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        288,
+        64,
         320
       ]
     },
@@ -161,21 +161,20 @@
           "mode": "list",
           "value": "My Drive"
         },
-        "folderId": "={{ $json.folderId }}",
-        "authentication": "oAuth2"
+        "folderId": "={{ $json.folderId }}"
       },
       "id": "9",
       "name": "Move Sheet To Folder",
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        512,
+        288,
         224
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_LABEL__"
+          "id": "8Js1s0C68vWbwopW",
+          "name": "Google account"
         }
       }
     },
@@ -189,7 +188,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        736,
+        512,
         224
       ]
     },
@@ -203,7 +202,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        736,
+        512,
         416
       ]
     },
@@ -236,7 +235,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        960,
+        736,
         320
       ]
     },
@@ -273,13 +272,13 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        1184,
+        960,
         224
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_LABEL__"
+          "id": "8Js1s0C68vWbwopW",
+          "name": "Google account"
         }
       }
     },
@@ -293,7 +292,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1408,
+        1184,
         224
       ]
     },
@@ -307,7 +306,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1408,
+        1184,
         416
       ]
     },
@@ -321,7 +320,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1632,
+        1408,
         320
       ]
     },
@@ -423,40 +422,32 @@
     },
     {
       "parameters": {
-        "inputSource": "workflowInputs",
         "workflowInputs": {
           "values": [
             {
-              "name": "action",
-              "type": "string"
+              "name": "action"
             },
             {
-              "name": "spreadsheetId",
-              "type": "string"
+              "name": "spreadsheetId"
             },
             {
-              "name": "spreadsheetName",
-              "type": "string"
+              "name": "spreadsheetName"
             },
             {
-              "name": "sheetName",
-              "type": "string"
+              "name": "sheetName"
             },
             {
-              "name": "folderId",
-              "type": "string"
+              "name": "folderId"
             },
             {
               "name": "rows",
               "type": "array"
             },
             {
-              "name": "range",
-              "type": "string"
+              "name": "range"
             },
             {
-              "name": "valueInputOption",
-              "type": "string"
+              "name": "valueInputOption"
             }
           ]
         }

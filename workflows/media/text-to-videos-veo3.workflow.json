@@ -5,12 +5,130 @@
       "id": "1",
       "name": "When Executed by Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
-      "typeVersion": 1,
+      "typeVersion": 1.1,
       "position": [
         -980,
         -200
       ],
-      "parameters": {}
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "request_id",
+              "type": "string"
+            },
+            {
+              "name": "input_mode",
+              "type": "string"
+            },
+            {
+              "name": "drive_file_url",
+              "type": "string"
+            },
+            {
+              "name": "workflow",
+              "type": "string"
+            },
+            {
+              "name": "input_text",
+              "type": "string"
+            },
+            {
+              "name": "text",
+              "type": "string"
+            },
+            {
+              "name": "content",
+              "type": "string"
+            },
+            {
+              "name": "media_chunks",
+              "type": "array"
+            },
+            {
+              "name": "chunk_manifest",
+              "type": "array"
+            },
+            {
+              "name": "review_manifest",
+              "type": "object"
+            },
+            {
+              "name": "image_api_base_url",
+              "type": "string"
+            },
+            {
+              "name": "image_api_key",
+              "type": "string"
+            },
+            {
+              "name": "image_model",
+              "type": "string"
+            },
+            {
+              "name": "image_prompt_fixed",
+              "type": "string"
+            },
+            {
+              "name": "image_aspect_ratio",
+              "type": "string"
+            },
+            {
+              "name": "image_timeout_ms",
+              "type": "number"
+            },
+            {
+              "name": "image_parallelism",
+              "type": "number"
+            },
+            {
+              "name": "image_job_create_path",
+              "type": "string"
+            },
+            {
+              "name": "image_job_status_path",
+              "type": "string"
+            },
+            {
+              "name": "image_poll_interval_seconds",
+              "type": "number"
+            },
+            {
+              "name": "video_job_create_path",
+              "type": "string"
+            },
+            {
+              "name": "video_job_status_path",
+              "type": "string"
+            },
+            {
+              "name": "video_poll_interval_seconds",
+              "type": "number"
+            },
+            {
+              "name": "video_parallelism",
+              "type": "number"
+            },
+            {
+              "name": "video_timeout_ms",
+              "type": "number"
+            },
+            {
+              "name": "video_clip_duration_seconds",
+              "type": "number"
+            },
+            {
+              "name": "video_target_buffer_seconds",
+              "type": "number"
+            },
+            {
+              "name": "video_mock_mode",
+              "type": "boolean"
+            }
+          ]
+        }
+      }
     },
     {
       "id": "2",
@@ -38,18 +156,8 @@
               "requiredField": true
             },
             {
-              "fieldLabel": "output_mode",
-              "placeholder": "inline | drive_export",
-              "requiredField": true
-            },
-            {
               "fieldLabel": "drive_file_url",
               "placeholder": "https://drive.google.com/file/d/.../view",
-              "requiredField": false
-            },
-            {
-              "fieldLabel": "drive_output_folder_url",
-              "placeholder": "https://drive.google.com/drive/folders/...",
               "requiredField": false
             },
             {
@@ -95,27 +203,9 @@
               "type": "string"
             },
             {
-              "id": "cfg-3",
-              "name": "output_mode",
-              "value": "={{ $json.output_mode || 'inline' }}",
-              "type": "string"
-            },
-            {
               "id": "cfg-4",
               "name": "drive_file_url",
               "value": "={{ $json.drive_file_url || '' }}",
-              "type": "string"
-            },
-            {
-              "id": "cfg-5",
-              "name": "drive_output_folder_url",
-              "value": "={{ $json.drive_output_folder_url || '' }}",
-              "type": "string"
-            },
-            {
-              "id": "cfg-6",
-              "name": "gdrive_root_folder_id",
-              "value": "__GDRIVE_ROOT_FOLDER_ID__",
               "type": "string"
             },
             {
@@ -179,60 +269,6 @@
               "type": "number"
             },
             {
-              "id": "cfg-15",
-              "name": "tts_api_base_url",
-              "value": "http://127.0.0.1:8001",
-              "type": "string"
-            },
-            {
-              "id": "cfg-16",
-              "name": "tts_voice_id",
-              "value": "ngochuyen_lora",
-              "type": "string"
-            },
-            {
-              "id": "cfg-17",
-              "name": "tts_temperature",
-              "value": "={{ $json.tts_temperature || 0.8 }}",
-              "type": "number"
-            },
-            {
-              "id": "cfg-18",
-              "name": "tts_top_k",
-              "value": "={{ $json.tts_top_k || 50 }}",
-              "type": "number"
-            },
-            {
-              "id": "cfg-19",
-              "name": "tts_max_chars",
-              "value": "={{ $json.tts_max_chars || 256 }}",
-              "type": "number"
-            },
-            {
-              "id": "cfg-20",
-              "name": "tts_silence_p",
-              "value": "={{ $json.tts_silence_p || 0.05 }}",
-              "type": "number"
-            },
-            {
-              "id": "cfg-21",
-              "name": "tts_crossfade_p",
-              "value": "={{ $json.tts_crossfade_p || 0.03 }}",
-              "type": "number"
-            },
-            {
-              "id": "cfg-22",
-              "name": "tts_timeout_ms",
-              "value": "={{ $json.tts_timeout_ms || 900000 }}",
-              "type": "number"
-            },
-            {
-              "id": "cfg-23",
-              "name": "tts_parallelism",
-              "value": "={{ $json.tts_parallelism || 2 }}",
-              "type": "number"
-            },
-            {
               "id": "media-video_clip_duration_seconds",
               "name": "video_clip_duration_seconds",
               "value": 8,
@@ -267,7 +303,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction safeJsonParse(value, fallback = null) {\n  try {\n    return JSON.parse(String(value ?? ''));\n  } catch (_) {\n    return fallback;\n  }\n}\n\nfunction parseJsonObject(rawText) {\n  const raw = safeText(rawText);\n  if (!raw) return null;\n\n  const direct = safeJsonParse(raw, null);\n  if (direct && typeof direct === 'object') return direct;\n\n  const fence = raw.match(/\\x60\\x60\\x60(?:json)?\\s*([\\s\\S]*?)\\x60\\x60\\x60/i);\n  if (fence) {\n    const parsedFence = safeJsonParse(fence[1], null);\n    if (parsedFence && typeof parsedFence === 'object') return parsedFence;\n  }\n\n  const firstObj = raw.indexOf('{');\n  const lastObj = raw.lastIndexOf('}');\n  if (firstObj >= 0 && lastObj > firstObj) {\n    const parsedObj = safeJsonParse(raw.slice(firstObj, lastObj + 1), null);\n    if (parsedObj && typeof parsedObj === 'object') return parsedObj;\n  }\n\n  return null;\n}\n\nfunction tokenizeSentences(text) {\n  const normalized = normalizeText(text).replace(/\\s+/g, ' ');\n  if (!normalized) return [];\n\n  const matches = normalized.match(/[^.!?…]+(?:[.!?…]+(?:[\"'”’)\\]]+)*)|[^.!?…]+$/g) ?? [];\n  const sentences = matches.map((item) => item.trim()).filter(Boolean);\n  return sentences.length > 0 ? sentences : [normalized];\n}\n\nfunction normalizeSceneItem(item, index) {\n  const source = item && typeof item === 'object' ? item : {};\n  const order = asInt(source.order, index + 1, 1, 10000);\n  const sceneId = safeText(source.scene_id, safeText(source.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n  const narrationText = safeText(source.narration_text, safeText(source.text));\n\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    scene_role: safeText(source.scene_role, order === 1 ? 'hook' : 'core'),\n    narration_text: narrationText,\n    image_prompt_en: safeText(source.image_prompt_en),\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    estimated_duration_sec: asInt(source.estimated_duration_sec, order === 1 ? 60 : 95, 15, 300),\n    transition: safeText(source.transition, 'cut'),\n\n    chunk_key: safeText(source.chunk_key, sceneId),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order, 1, 10000),\n    text: safeText(source.text, narrationText),\n    sentence_count: Math.max(1, tokenizeSentences(narrationText).length),\n    chunk_type: safeText(source.chunk_type, 'scene'),\n  };\n}\n\nfunction normalizeChunkManifest(items) {\n  if (!Array.isArray(items)) return [];\n  return items\n    .map((item, idx) => normalizeSceneItem(item, idx))\n    .filter((item) => safeText(item.narration_text) !== '' || safeText(item.image_prompt_en) !== '');\n}\n\nfunction parseDriveFileIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/d\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  const byUc = text.match(/\\/uc\\?.*?[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byUc) return safeText(byUc[1]);\n\n  return '';\n}\n\nfunction parseDriveFolderIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/folders\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]folder=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  return '';\n}\n\nfunction readFirstBinaryText(binaryMap) {\n  const keys = Object.keys(binaryMap ?? {});\n  if (keys.length === 0) return '';\n\n  const first = binaryMap[keys[0]];\n  const base64 = safeText(first?.data);\n  if (!base64) return '';\n\n  try {\n    return Buffer.from(base64, 'base64').toString('utf8');\n  } catch (_) {\n    return '';\n  }\n}\n\nlet inputMode = safeText(input.input_mode).toLowerCase();\nif (!inputMode) {\n  inputMode = safeText(input.drive_file_url) ? 'drive_url' : 'form_upload';\n}\nif (inputMode !== 'form_upload' && inputMode !== 'drive_url') {\n  inputMode = 'form_upload';\n}\n\nlet outputMode = safeText(input.output_mode, 'inline').toLowerCase();\nif (outputMode !== 'inline' && outputMode !== 'drive_export') {\n  outputMode = 'inline';\n}\n\nconst driveFileUrl = safeText(input.drive_file_url);\nconst driveOutputFolderUrl = safeText(input.drive_output_folder_url);\nconst driveFileId = parseDriveFileIdFromUrl(driveFileUrl);\nconst driveOutputFolderId = safeText(input.drive_output_folder_id)\n  || parseDriveFolderIdFromUrl(driveOutputFolderUrl)\n  || safeText(input.gdrive_root_folder_id)\n  || safeText(input.gdrive_root_folder_id_default);\n\nconst incomingManifest = Array.isArray(input.chunk_manifest) && input.chunk_manifest.length > 0\n  ? input.chunk_manifest\n  : input.media_chunks;\nlet chunks = normalizeChunkManifest(incomingManifest);\n\nif (chunks.length === 0 && input.review_manifest && typeof input.review_manifest === 'object') {\n  chunks = normalizeChunkManifest(input.review_manifest.scenes);\n}\n\nif (chunks.length === 0) {\n  const sourceText = normalizeText(input.input_text ?? input.text ?? input.content ?? readFirstBinaryText(binary));\n  if (sourceText) {\n    const parsed = parseJsonObject(sourceText);\n    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.scenes)) {\n      chunks = normalizeChunkManifest(parsed.scenes);\n    }\n\n    if (chunks.length === 0) {\n      chunks = [normalizeSceneItem({\n        scene_id: 'scene_01',\n        order: 1,\n        scene_title: 'Scene 01',\n        scene_role: 'core',\n        narration_text: sourceText,\n        image_prompt_en: safeText(input.image_prompt_fixed, 'cinematic storytelling illustration, warm light, emotional depth'),\n        highlight_quote_vi: '',\n        estimated_duration_sec: 120,\n        transition: 'cut',\n      }, 0)];\n    }\n  }\n}\n\nconst requestId = safeText(input.request_id, 'req-' + Date.now().toString(36));\nconst needsDriveDownload = inputMode === 'drive_url' && chunks.length === 0 && !!driveFileUrl && !!driveFileId;\nconst driveUrlStatus =\n  inputMode === 'drive_url'\n    ? (driveFileId ? 'parsed' : (driveFileUrl ? 'invalid_url' : 'missing_url'))\n    : 'not_required';\n\nreturn {\n  ...input,\n  workflow: safeText(input.workflow, 'scene-media'),\n  request_id: requestId,\n  input_mode: inputMode,\n  output_mode: outputMode,\n  drive_file_url: driveFileUrl,\n  drive_file_id: driveFileId,\n  drive_output_folder_url: driveOutputFolderUrl,\n  drive_output_folder_id: driveOutputFolderId,\n  drive_url_status: driveUrlStatus,\n  needs_drive_download: needsDriveDownload,\n  media_chunks: chunks,\n  chunk_manifest: chunks,\n  media_should_run: chunks.length > 0,\n};"
+        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction safeJsonParse(value, fallback = null) {\n  try {\n    return JSON.parse(String(value ?? ''));\n  } catch (_) {\n    return fallback;\n  }\n}\n\nfunction parseJsonObject(rawText) {\n  const raw = safeText(rawText);\n  if (!raw) return null;\n\n  const direct = safeJsonParse(raw, null);\n  if (direct && typeof direct === 'object') return direct;\n\n  const fence = raw.match(/\\x60\\x60\\x60(?:json)?\\s*([\\s\\S]*?)\\x60\\x60\\x60/i);\n  if (fence) {\n    const parsedFence = safeJsonParse(fence[1], null);\n    if (parsedFence && typeof parsedFence === 'object') return parsedFence;\n  }\n\n  const firstObj = raw.indexOf('{');\n  const lastObj = raw.lastIndexOf('}');\n  if (firstObj >= 0 && lastObj > firstObj) {\n    const parsedObj = safeJsonParse(raw.slice(firstObj, lastObj + 1), null);\n    if (parsedObj && typeof parsedObj === 'object') return parsedObj;\n  }\n\n  return null;\n}\n\nfunction tokenizeSentences(text) {\n  const normalized = normalizeText(text).replace(/\\s+/g, ' ');\n  if (!normalized) return [];\n\n  const matches = normalized.match(/[^.!?…]+(?:[.!?…]+(?:[\"'”’)\\]]+)*)|[^.!?…]+$/g) ?? [];\n  const sentences = matches.map((item) => item.trim()).filter(Boolean);\n  return sentences.length > 0 ? sentences : [normalized];\n}\n\nfunction normalizeSceneItem(item, index) {\n  const source = item && typeof item === 'object' ? item : {};\n  const order = asInt(source.order, index + 1, 1, 10000);\n  const sceneId = safeText(source.scene_id, safeText(source.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n  const narrationText = safeText(source.narration_text, safeText(source.text));\n\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    scene_role: safeText(source.scene_role, order === 1 ? 'hook' : 'core'),\n    narration_text: narrationText,\n    image_prompt_en: safeText(source.image_prompt_en),\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    estimated_duration_sec: asInt(source.estimated_duration_sec, order === 1 ? 60 : 95, 15, 300),\n    transition: safeText(source.transition, 'cut'),\n\n    chunk_key: safeText(source.chunk_key, sceneId),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order, 1, 10000),\n    text: safeText(source.text, narrationText),\n    sentence_count: Math.max(1, tokenizeSentences(narrationText).length),\n    chunk_type: safeText(source.chunk_type, 'scene'),\n  };\n}\n\nfunction normalizeChunkManifest(items) {\n  if (!Array.isArray(items)) return [];\n  return items\n    .map((item, idx) => normalizeSceneItem(item, idx))\n    .filter((item) => safeText(item.narration_text) !== '' || safeText(item.image_prompt_en) !== '');\n}\n\nfunction parseDriveFileIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/d\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  const byUc = text.match(/\\/uc\\?.*?[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byUc) return safeText(byUc[1]);\n\n  return '';\n}\n\nfunction readFirstBinaryText(binaryMap) {\n  const keys = Object.keys(binaryMap ?? {});\n  if (keys.length === 0) return '';\n\n  const first = binaryMap[keys[0]];\n  const base64 = safeText(first?.data);\n  if (!base64) return '';\n\n  try {\n    return Buffer.from(base64, 'base64').toString('utf8');\n  } catch (_) {\n    return '';\n  }\n}\n\nlet inputMode = safeText(input.input_mode).toLowerCase();\nif (!inputMode) {\n  inputMode = safeText(input.drive_file_url) ? 'drive_url' : 'form_upload';\n}\nif (inputMode !== 'form_upload' && inputMode !== 'drive_url') {\n  inputMode = 'form_upload';\n}\n\nconst driveFileUrl = safeText(input.drive_file_url);\nconst driveFileId = parseDriveFileIdFromUrl(driveFileUrl);\n\nconst incomingManifest = Array.isArray(input.chunk_manifest) && input.chunk_manifest.length > 0\n  ? input.chunk_manifest\n  : input.media_chunks;\nlet chunks = normalizeChunkManifest(incomingManifest);\n\nif (chunks.length === 0 && input.review_manifest && typeof input.review_manifest === 'object') {\n  chunks = normalizeChunkManifest(input.review_manifest.scenes);\n}\n\nif (chunks.length === 0) {\n  const sourceText = normalizeText(input.input_text ?? input.text ?? input.content ?? readFirstBinaryText(binary));\n  if (sourceText) {\n    const parsed = parseJsonObject(sourceText);\n    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.scenes)) {\n      chunks = normalizeChunkManifest(parsed.scenes);\n    }\n\n    if (chunks.length === 0) {\n      chunks = [normalizeSceneItem({\n        scene_id: 'scene_01',\n        order: 1,\n        scene_title: 'Scene 01',\n        scene_role: 'core',\n        narration_text: sourceText,\n        image_prompt_en: 'cinematic storytelling illustration, warm light, emotional depth',\n        highlight_quote_vi: '',\n        estimated_duration_sec: 120,\n        transition: 'cut',\n      }, 0)];\n    }\n  }\n}\n\nconst requestId = safeText(input.request_id, 'req-' + Date.now().toString(36));\nconst needsDriveDownload = inputMode === 'drive_url' && chunks.length === 0 && !!driveFileUrl && !!driveFileId;\nconst driveUrlStatus =\n  inputMode === 'drive_url'\n    ? (driveFileId ? 'parsed' : (driveFileUrl ? 'invalid_url' : 'missing_url'))\n    : 'not_required';\n\nreturn {\n  ...input,\n  workflow: safeText(input.workflow, 'scene-media'),\n  request_id: requestId,\n  input_mode: inputMode,\n  drive_file_url: driveFileUrl,\n  drive_file_id: driveFileId,\n  drive_url_status: driveUrlStatus,\n  needs_drive_download: needsDriveDownload,\n  media_chunks: chunks,\n  chunk_manifest: chunks,\n  media_should_run: chunks.length > 0,\n};"
       }
     },
     {
@@ -319,8 +355,8 @@
       },
       "credentials": {
         "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_LABEL__"
+          "id": "8Js1s0C68vWbwopW",
+          "name": "Google account"
         }
       }
     },
@@ -335,7 +371,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction safeJsonParse(value, fallback = null) {\n  try {\n    return JSON.parse(String(value ?? ''));\n  } catch (_) {\n    return fallback;\n  }\n}\n\nfunction parseJsonObject(rawText) {\n  const raw = safeText(rawText);\n  if (!raw) return null;\n\n  const direct = safeJsonParse(raw, null);\n  if (direct && typeof direct === 'object') return direct;\n\n  const fence = raw.match(/\\x60\\x60\\x60(?:json)?\\s*([\\s\\S]*?)\\x60\\x60\\x60/i);\n  if (fence) {\n    const parsedFence = safeJsonParse(fence[1], null);\n    if (parsedFence && typeof parsedFence === 'object') return parsedFence;\n  }\n\n  const firstObj = raw.indexOf('{');\n  const lastObj = raw.lastIndexOf('}');\n  if (firstObj >= 0 && lastObj > firstObj) {\n    const parsedObj = safeJsonParse(raw.slice(firstObj, lastObj + 1), null);\n    if (parsedObj && typeof parsedObj === 'object') return parsedObj;\n  }\n\n  return null;\n}\n\nfunction tokenizeSentences(text) {\n  const normalized = normalizeText(text).replace(/\\s+/g, ' ');\n  if (!normalized) return [];\n\n  const matches = normalized.match(/[^.!?…]+(?:[.!?…]+(?:[\"'”’)\\]]+)*)|[^.!?…]+$/g) ?? [];\n  const sentences = matches.map((item) => item.trim()).filter(Boolean);\n  return sentences.length > 0 ? sentences : [normalized];\n}\n\nfunction normalizeSceneItem(item, index) {\n  const source = item && typeof item === 'object' ? item : {};\n  const order = asInt(source.order, index + 1, 1, 10000);\n  const sceneId = safeText(source.scene_id, safeText(source.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n  const narrationText = safeText(source.narration_text, safeText(source.text));\n\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    scene_role: safeText(source.scene_role, order === 1 ? 'hook' : 'core'),\n    narration_text: narrationText,\n    image_prompt_en: safeText(source.image_prompt_en),\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    estimated_duration_sec: asInt(source.estimated_duration_sec, order === 1 ? 60 : 95, 15, 300),\n    transition: safeText(source.transition, 'cut'),\n\n    chunk_key: safeText(source.chunk_key, sceneId),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order, 1, 10000),\n    text: safeText(source.text, narrationText),\n    sentence_count: Math.max(1, tokenizeSentences(narrationText).length),\n    chunk_type: safeText(source.chunk_type, 'scene'),\n  };\n}\n\nfunction normalizeChunkManifest(items) {\n  if (!Array.isArray(items)) return [];\n  return items\n    .map((item, idx) => normalizeSceneItem(item, idx))\n    .filter((item) => safeText(item.narration_text) !== '' || safeText(item.image_prompt_en) !== '');\n}\n\nfunction parseDriveFileIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/d\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  const byUc = text.match(/\\/uc\\?.*?[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byUc) return safeText(byUc[1]);\n\n  return '';\n}\n\nfunction parseDriveFolderIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/folders\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]folder=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  return '';\n}\n\nfunction readFirstBinaryText(binaryMap) {\n  const keys = Object.keys(binaryMap ?? {});\n  if (keys.length === 0) return '';\n\n  const first = binaryMap[keys[0]];\n  const base64 = safeText(first?.data);\n  if (!base64) return '';\n\n  try {\n    return Buffer.from(base64, 'base64').toString('utf8');\n  } catch (_) {\n    return '';\n  }\n}\n\nlet inputMode = safeText(input.input_mode).toLowerCase();\nif (!inputMode) {\n  inputMode = safeText(input.drive_file_url) ? 'drive_url' : 'form_upload';\n}\nif (inputMode !== 'form_upload' && inputMode !== 'drive_url') {\n  inputMode = 'form_upload';\n}\n\nlet outputMode = safeText(input.output_mode, 'inline').toLowerCase();\nif (outputMode !== 'inline' && outputMode !== 'drive_export') {\n  outputMode = 'inline';\n}\n\nconst driveFileUrl = safeText(input.drive_file_url);\nconst driveOutputFolderUrl = safeText(input.drive_output_folder_url);\nconst driveFileId = parseDriveFileIdFromUrl(driveFileUrl);\nconst driveOutputFolderId = safeText(input.drive_output_folder_id)\n  || parseDriveFolderIdFromUrl(driveOutputFolderUrl)\n  || safeText(input.gdrive_root_folder_id)\n  || safeText(input.gdrive_root_folder_id_default);\n\nconst incomingManifest = Array.isArray(input.chunk_manifest) && input.chunk_manifest.length > 0\n  ? input.chunk_manifest\n  : input.media_chunks;\nlet chunks = normalizeChunkManifest(incomingManifest);\n\nif (chunks.length === 0 && input.review_manifest && typeof input.review_manifest === 'object') {\n  chunks = normalizeChunkManifest(input.review_manifest.scenes);\n}\n\nif (chunks.length === 0) {\n  const sourceText = normalizeText(input.input_text ?? input.text ?? input.content ?? readFirstBinaryText(binary));\n  if (sourceText) {\n    const parsed = parseJsonObject(sourceText);\n    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.scenes)) {\n      chunks = normalizeChunkManifest(parsed.scenes);\n    }\n\n    if (chunks.length === 0) {\n      chunks = [normalizeSceneItem({\n        scene_id: 'scene_01',\n        order: 1,\n        scene_title: 'Scene 01',\n        scene_role: 'core',\n        narration_text: sourceText,\n        image_prompt_en: safeText(input.image_prompt_fixed, 'cinematic storytelling illustration, warm light, emotional depth'),\n        highlight_quote_vi: '',\n        estimated_duration_sec: 120,\n        transition: 'cut',\n      }, 0)];\n    }\n  }\n}\n\nconst requestId = safeText(input.request_id, 'req-' + Date.now().toString(36));\nconst needsDriveDownload = inputMode === 'drive_url' && chunks.length === 0 && !!driveFileUrl && !!driveFileId;\nconst driveUrlStatus =\n  inputMode === 'drive_url'\n    ? (driveFileId ? 'parsed' : (driveFileUrl ? 'invalid_url' : 'missing_url'))\n    : 'not_required';\n\nreturn {\n  ...input,\n  workflow: safeText(input.workflow, 'scene-media'),\n  request_id: requestId,\n  input_mode: inputMode,\n  output_mode: outputMode,\n  drive_file_url: driveFileUrl,\n  drive_file_id: driveFileId,\n  drive_output_folder_url: driveOutputFolderUrl,\n  drive_output_folder_id: driveOutputFolderId,\n  drive_url_status: driveUrlStatus,\n  needs_drive_download: needsDriveDownload,\n  media_chunks: chunks,\n  chunk_manifest: chunks,\n  media_should_run: chunks.length > 0,\n};"
+        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const number = Number(value);\n  const normalized = Number.isFinite(number) ? Math.floor(number) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction safeJsonParse(value, fallback = null) {\n  try {\n    return JSON.parse(String(value ?? ''));\n  } catch (_) {\n    return fallback;\n  }\n}\n\nfunction parseJsonObject(rawText) {\n  const raw = safeText(rawText);\n  if (!raw) return null;\n\n  const direct = safeJsonParse(raw, null);\n  if (direct && typeof direct === 'object') return direct;\n\n  const fence = raw.match(/\\x60\\x60\\x60(?:json)?\\s*([\\s\\S]*?)\\x60\\x60\\x60/i);\n  if (fence) {\n    const parsedFence = safeJsonParse(fence[1], null);\n    if (parsedFence && typeof parsedFence === 'object') return parsedFence;\n  }\n\n  const firstObj = raw.indexOf('{');\n  const lastObj = raw.lastIndexOf('}');\n  if (firstObj >= 0 && lastObj > firstObj) {\n    const parsedObj = safeJsonParse(raw.slice(firstObj, lastObj + 1), null);\n    if (parsedObj && typeof parsedObj === 'object') return parsedObj;\n  }\n\n  return null;\n}\n\nfunction tokenizeSentences(text) {\n  const normalized = normalizeText(text).replace(/\\s+/g, ' ');\n  if (!normalized) return [];\n\n  const matches = normalized.match(/[^.!?…]+(?:[.!?…]+(?:[\"'”’)\\]]+)*)|[^.!?…]+$/g) ?? [];\n  const sentences = matches.map((item) => item.trim()).filter(Boolean);\n  return sentences.length > 0 ? sentences : [normalized];\n}\n\nfunction normalizeSceneItem(item, index) {\n  const source = item && typeof item === 'object' ? item : {};\n  const order = asInt(source.order, index + 1, 1, 10000);\n  const sceneId = safeText(source.scene_id, safeText(source.chunk_key, 'scene_' + String(order).padStart(2, '0')));\n  const narrationText = safeText(source.narration_text, safeText(source.text));\n\n  return {\n    scene_id: sceneId,\n    order,\n    scene_title: safeText(source.scene_title, 'Phan canh ' + String(order).padStart(2, '0')),\n    scene_role: safeText(source.scene_role, order === 1 ? 'hook' : 'core'),\n    narration_text: narrationText,\n    image_prompt_en: safeText(source.image_prompt_en),\n    highlight_quote_vi: safeText(source.highlight_quote_vi),\n    estimated_duration_sec: asInt(source.estimated_duration_sec, order === 1 ? 60 : 95, 15, 300),\n    transition: safeText(source.transition, 'cut'),\n\n    chunk_key: safeText(source.chunk_key, sceneId),\n    partName: safeText(source.partName, sceneId),\n    index: asInt(source.index, order, 1, 10000),\n    text: safeText(source.text, narrationText),\n    sentence_count: Math.max(1, tokenizeSentences(narrationText).length),\n    chunk_type: safeText(source.chunk_type, 'scene'),\n  };\n}\n\nfunction normalizeChunkManifest(items) {\n  if (!Array.isArray(items)) return [];\n  return items\n    .map((item, idx) => normalizeSceneItem(item, idx))\n    .filter((item) => safeText(item.narration_text) !== '' || safeText(item.image_prompt_en) !== '');\n}\n\nfunction parseDriveFileIdFromUrl(url) {\n  const text = safeText(url);\n  if (!text) return '';\n\n  const byPath = text.match(/\\/d\\/([a-zA-Z0-9_-]{10,})/);\n  if (byPath) return safeText(byPath[1]);\n\n  const byQuery = text.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byQuery) return safeText(byQuery[1]);\n\n  const byUc = text.match(/\\/uc\\?.*?[?&]id=([a-zA-Z0-9_-]{10,})/);\n  if (byUc) return safeText(byUc[1]);\n\n  return '';\n}\n\nfunction readFirstBinaryText(binaryMap) {\n  const keys = Object.keys(binaryMap ?? {});\n  if (keys.length === 0) return '';\n\n  const first = binaryMap[keys[0]];\n  const base64 = safeText(first?.data);\n  if (!base64) return '';\n\n  try {\n    return Buffer.from(base64, 'base64').toString('utf8');\n  } catch (_) {\n    return '';\n  }\n}\n\nlet inputMode = safeText(input.input_mode).toLowerCase();\nif (!inputMode) {\n  inputMode = safeText(input.drive_file_url) ? 'drive_url' : 'form_upload';\n}\nif (inputMode !== 'form_upload' && inputMode !== 'drive_url') {\n  inputMode = 'form_upload';\n}\n\nconst driveFileUrl = safeText(input.drive_file_url);\nconst driveFileId = parseDriveFileIdFromUrl(driveFileUrl);\n\nconst incomingManifest = Array.isArray(input.chunk_manifest) && input.chunk_manifest.length > 0\n  ? input.chunk_manifest\n  : input.media_chunks;\nlet chunks = normalizeChunkManifest(incomingManifest);\n\nif (chunks.length === 0 && input.review_manifest && typeof input.review_manifest === 'object') {\n  chunks = normalizeChunkManifest(input.review_manifest.scenes);\n}\n\nif (chunks.length === 0) {\n  const sourceText = normalizeText(input.input_text ?? input.text ?? input.content ?? readFirstBinaryText(binary));\n  if (sourceText) {\n    const parsed = parseJsonObject(sourceText);\n    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.scenes)) {\n      chunks = normalizeChunkManifest(parsed.scenes);\n    }\n\n    if (chunks.length === 0) {\n      chunks = [normalizeSceneItem({\n        scene_id: 'scene_01',\n        order: 1,\n        scene_title: 'Scene 01',\n        scene_role: 'core',\n        narration_text: sourceText,\n        image_prompt_en: 'cinematic storytelling illustration, warm light, emotional depth',\n        highlight_quote_vi: '',\n        estimated_duration_sec: 120,\n        transition: 'cut',\n      }, 0)];\n    }\n  }\n}\n\nconst requestId = safeText(input.request_id, 'req-' + Date.now().toString(36));\nconst needsDriveDownload = inputMode === 'drive_url' && chunks.length === 0 && !!driveFileUrl && !!driveFileId;\nconst driveUrlStatus =\n  inputMode === 'drive_url'\n    ? (driveFileId ? 'parsed' : (driveFileUrl ? 'invalid_url' : 'missing_url'))\n    : 'not_required';\n\nreturn {\n  ...input,\n  workflow: safeText(input.workflow, 'scene-media'),\n  request_id: requestId,\n  input_mode: inputMode,\n  drive_file_url: driveFileUrl,\n  drive_file_id: driveFileId,\n  drive_url_status: driveUrlStatus,\n  needs_drive_download: needsDriveDownload,\n  media_chunks: chunks,\n  chunk_manifest: chunks,\n  media_should_run: chunks.length > 0,\n};"
       }
     },
     {
@@ -371,51 +407,6 @@
       }
     },
     {
-      "id": "9",
-      "name": "Switch Output Mode",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
-      "position": [
-        400,
-        -20
-      ],
-      "parameters": {
-        "mode": "rules",
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ $json.output_mode }}",
-                    "rightValue": "drive_export",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": false,
-              "outputKey": ""
-            }
-          ]
-        },
-        "options": {
-          "fallbackOutput": "extra",
-          "renameFallbackOutput": "inline",
-          "allMatchingOutputs": false
-        }
-      }
-    },
-    {
       "id": "10",
       "name": "Prepare Inline Output",
       "type": "n8n-nodes-base.code",
@@ -426,102 +417,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst items = Array.isArray(input.media_video_items)\n  ? input.media_video_items\n  : (Array.isArray(input.media_image_items) ? input.media_image_items : []);\n\nconst statusOf = (item) => String(item?.video_status ?? item?.image_status ?? '');\nconst failedCount = items.filter((item) => statusOf(item) === 'failed').length;\nconst generatedCount = items.filter((item) => statusOf(item) === 'generated').length;\n\nlet status = 'success';\nlet errorReason = null;\nif (items.length === 0) {\n  status = 'failed';\n  errorReason = 'empty_items';\n} else if (failedCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n  errorReason = generatedCount > 0 ? 'partial_failures' : 'all_failed';\n}\n\nreturn {\n  ...input,\n  workflow: 'text-to-videos-veo3',\n  request_id: String(input.request_id ?? ''),\n  status,\n  items,\n  drive_exports: [],\n  error_reason: errorReason,\n};\n"
-      }
-    },
-    {
-      "id": "11",
-      "name": "Build Drive Export Payload",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        650,
-        -170
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst requestId = String(input.request_id ?? 'req-' + Date.now().toString(36));\nconst items = Array.isArray(input.media_video_items)\n  ? input.media_video_items\n  : (Array.isArray(input.media_image_items) ? input.media_image_items : []);\n\nconst statusOf = (item) => String(item?.video_status ?? item?.image_status ?? '');\nconst failedCount = items.filter((item) => statusOf(item) === 'failed').length;\nconst generatedCount = items.filter((item) => statusOf(item) === 'generated').length;\n\nlet status = 'success';\nif (items.length === 0) {\n  status = 'failed';\n} else if (failedCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n}\n\nconst payload = {\n  workflow: 'text-to-videos-veo3',\n  request_id: requestId,\n  generated_at: new Date().toISOString(),\n  status,\n  items,\n};\n\nreturn {\n  ...input,\n  export_payload_json: JSON.stringify(payload, null, 2),\n  export_file_name: 'text-to-videos-veo3-' + requestId + '.json',\n};\n"
-      }
-    },
-    {
-      "id": "12",
-      "name": "Convert Export To File",
-      "type": "n8n-nodes-base.convertToFile",
-      "typeVersion": 1.1,
-      "position": [
-        900,
-        -170
-      ],
-      "parameters": {
-        "operation": "toBinary",
-        "sourceProperty": "export_payload_json",
-        "options": {
-          "fileName": "={{ $json.export_file_name }}",
-          "mimeType": "application/json"
-        },
-        "binaryPropertyName": "export_file"
-      }
-    },
-    {
-      "id": "13",
-      "name": "Google Drive Upload Export",
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [
-        1140,
-        -170
-      ],
-      "parameters": {
-        "resource": "file",
-        "operation": "upload",
-        "name": "={{ $json.export_file_name }}",
-        "authentication": "oAuth2",
-        "inputDataFieldName": "export_file",
-        "folderId": "={{ $json.drive_output_folder_id || $json.gdrive_root_folder_id || \"\" }}"
-      },
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "__GDRIVE_CREDENTIAL_ID__",
-          "name": "__GDRIVE_CREDENTIAL_LABEL__"
-        }
-      }
-    },
-    {
-      "id": "14",
-      "name": "Merge Drive Export Context",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        1340,
-        -170
-      ],
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {
-          "includeUnpaired": true,
-          "clashHandling": {
-            "values": {
-              "resolveClash": "preferInput1",
-              "mergeMode": "shallowMerge",
-              "overrideEmpty": true
-            }
-          }
-        }
-      }
-    },
-    {
-      "id": "15",
-      "name": "Prepare Drive Output",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1560,
-        -170
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst items = Array.isArray(input.media_video_items)\n  ? input.media_video_items\n  : (Array.isArray(input.media_image_items) ? input.media_image_items : []);\nconst driveFileId = String(input.id ?? input.fileId ?? input.data?.id ?? '').trim();\nconst driveUrl = String(input.webViewLink ?? input.alternateLink ?? input.data?.webViewLink ?? '').trim();\n\nconst statusOf = (item) => String(item?.video_status ?? item?.image_status ?? '');\nconst failedCount = items.filter((item) => statusOf(item) === 'failed').length;\nconst generatedCount = items.filter((item) => statusOf(item) === 'generated').length;\n\nlet status = 'success';\nlet errorReason = null;\n\nif (items.length === 0) {\n  status = 'failed';\n  errorReason = 'empty_items';\n} else if (failedCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n  errorReason = generatedCount > 0 ? 'partial_failures' : 'all_failed';\n}\n\nif (!driveFileId) {\n  if (status === 'success') {\n    status = 'partial_failed';\n  }\n  errorReason = errorReason ?? 'drive_export_failed';\n}\n\nreturn {\n  ...input,\n  workflow: 'text-to-videos-veo3',\n  request_id: String(input.request_id ?? ''),\n  status,\n  items,\n  drive_exports: driveFileId ? [{\n    drive_file_id: driveFileId,\n    drive_url: driveUrl,\n    mime_type: 'application/json',\n    file_name: String(input.export_file_name ?? ''),\n  }] : [],\n  error_reason: errorReason,\n};\n"
+        "jsCode": "const input = $json ?? {};\nconst items = Array.isArray(input.media_video_items)\n  ? input.media_video_items\n  : (Array.isArray(input.media_image_items) ? input.media_image_items : []);\n\nconst statusOf = (item) => String(item?.video_status ?? item?.image_status ?? '');\nconst failedCount = items.filter((item) => statusOf(item) === 'failed').length;\nconst generatedCount = items.filter((item) => statusOf(item) === 'generated').length;\n\nlet status = 'success';\nlet errorReason = null;\nif (items.length === 0) {\n  status = 'failed';\n  errorReason = 'empty_items';\n} else if (failedCount > 0) {\n  status = generatedCount > 0 ? 'partial_failed' : 'failed';\n  errorReason = generatedCount > 0 ? 'partial_failures' : 'all_failed';\n}\n\nreturn {\n  ...input,\n  workflow: 'text-to-videos-veo3',\n  request_id: String(input.request_id ?? ''),\n  status,\n  items,\n  error_reason: errorReason,\n};"
       }
     },
     {
@@ -581,7 +477,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { request_id: $json.request_id, workflow: $json.workflow || 'text-to-videos-veo3', scene_id: $json.scene_id || $json.chunk_key, order: $json.order, scene_title: $json.scene_title || '', narration_text: $json.narration_text || $json.text || '', image_prompt_en: $json.image_prompt_en || '', video_prompt_en: $json.video_prompt_en || $json.image_prompt_en || '', highlight_quote_vi: $json.highlight_quote_vi || '', prompt: $json.video_prompt_en || $json.image_prompt_en || $json.image_prompt_fixed || $json.text || '', model: $json.image_model || 'veo3', aspect_ratio: $json.image_aspect_ratio || '16:9', target_duration_seconds: Number($json.target_duration_seconds || $json.duration_seconds || $json.estimated_duration_sec || 0), duration_buffer_seconds: Number($json.duration_buffer_seconds || $json.video_target_buffer_seconds || 1), clip_duration_average_seconds: Number($json.clip_target_avg_seconds || $json.video_clip_duration_seconds || 8), shot_count_initial: Number($json.shot_count_initial || 1), shot_prompts_en: Array.isArray($json.shot_prompts_en) ? $json.shot_prompts_en : [], generation_strategy: 'generate_until_enough', concat_and_trim: true, trim_to_target_duration: true, filler_policy: 'hold_last_frame', input_mode: $json.input_mode, output_mode: $json.output_mode, drive_file_id: $json.drive_file_id || '', source: 'text-to-videos-veo3', provider: 'veo3', mock_mode: $json.video_mock_mode !== false, video_file_name: String($json.video_file_name || $json.image_file_name || ''), file_name: String($json.video_file_name || $json.image_file_name || '') } }}",
+        "jsonBody": "={{ { request_id: $json.request_id, workflow: $json.workflow || 'text-to-videos-veo3', scene_id: $json.scene_id || $json.chunk_key, order: $json.order, scene_title: $json.scene_title || '', narration_text: $json.narration_text || $json.text || '', image_prompt_en: $json.image_prompt_en || '', video_prompt_en: $json.video_prompt_en || $json.image_prompt_en || '', highlight_quote_vi: $json.highlight_quote_vi || '', prompt: $json.video_prompt_en || $json.image_prompt_en || $json.image_prompt_fixed || $json.text || '', model: $json.image_model || 'veo3', aspect_ratio: $json.image_aspect_ratio || '16:9', target_duration_seconds: Number($json.target_duration_seconds || $json.duration_seconds || $json.estimated_duration_sec || 0), duration_buffer_seconds: Number($json.duration_buffer_seconds || $json.video_target_buffer_seconds || 1), clip_duration_average_seconds: Number($json.clip_target_avg_seconds || $json.video_clip_duration_seconds || 8), shot_count_initial: Number($json.shot_count_initial || 1), shot_prompts_en: Array.isArray($json.shot_prompts_en) ? $json.shot_prompts_en : [], generation_strategy: 'generate_until_enough', concat_and_trim: true, trim_to_target_duration: true, filler_policy: 'hold_last_frame', input_mode: $json.input_mode, drive_file_id: $json.drive_file_id || '', source: 'text-to-videos-veo3', provider: 'veo3', mock_mode: $json.video_mock_mode !== false, video_file_name: String($json.video_file_name || $json.image_file_name || ''), file_name: String($json.video_file_name || $json.image_file_name || '') } }}",
         "options": {}
       }
     },
@@ -783,113 +679,6 @@
         "mode": "runOnceForEachItem",
         "jsCode": "const input = $json ?? {};\n\nreturn {\n  ...input,\n  media_video_items: [],\n  media_image_items: [],\n};\n"
       }
-    },
-    {
-      "id": "img-update-progress-message",
-      "name": "Update Image Progress Message",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2470,
-        120
-      ],
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0) {\n  const number = Number(value);\n  if (!Number.isFinite(number)) {\n    return fallback;\n  }\n  return Math.floor(number);\n}\n\nfunction formatElapsedLabel(elapsedSecondsInput = 0) {\n  const elapsedSeconds = Math.max(0, asInt(elapsedSecondsInput, 0));\n  const elapsedMinutes = Math.floor(elapsedSeconds / 60);\n  const remainingSeconds = elapsedSeconds % 60;\n  return elapsedMinutes > 0\n    ? (elapsedMinutes + ' phut ' + String(remainingSeconds).padStart(2, '0') + ' giay')\n    : (remainingSeconds + ' giay');\n}\n\nfunction resolveChunk(source) {\n  if (source?.media_chunks && typeof source.media_chunks === 'object' && !Array.isArray(source.media_chunks)) {\n    return source.media_chunks;\n  }\n  return source ?? {};\n}\n\nconst chunk = resolveChunk(input);\nconst requestHelper =\n  helpers?.httpRequest ??\n  (typeof $helpers !== 'undefined' ? $helpers?.httpRequest : undefined);\n\nconst telegramBotToken = safeText(input.telegram_bot_token);\nconst telegramChatId = safeText(input.telegram_chat_id);\nconst progressMessageId = asInt(input.image_progress_message_id, 0);\nconst estimateMinutes = Math.max(1, asInt(input.image_progress_estimated_minutes, 3) || 3);\nconst totalFromManifest = Array.isArray(input.chunk_manifest) ? input.chunk_manifest.length : 0;\nconst totalFiles = Math.max(0, asInt(input.image_progress_total_files, totalFromManifest));\nconst rawDone = asInt(chunk?.order ?? input.order ?? chunk?.index ?? input.index, 0);\nconst doneFiles = totalFiles > 0\n  ? Math.min(Math.max(rawDone, 0), totalFiles)\n  : Math.max(rawDone, 0);\nconst startedAtMs = asInt(input.image_progress_started_at_ms, Date.now());\nconst elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000));\n\nconst progressSuffix = totalFiles > 0\n  ? (' | file ' + doneFiles + '/' + totalFiles)\n  : '';\n\nconst progressText = 'Dang tao video... (da cho ' + formatElapsedLabel(elapsedSeconds) + ' / du kien ' + estimateMinutes + ' phut)' + progressSuffix;\n\nlet updateStatus = 'skipped';\nlet updateError = null;\nif (telegramBotToken && telegramChatId && progressMessageId > 0 && typeof requestHelper === 'function') {\n  try {\n    await requestHelper({\n      method: 'POST',\n      url: 'https://api.telegram.org/bot' + telegramBotToken + '/editMessageText',\n      body: {\n        chat_id: telegramChatId,\n        message_id: progressMessageId,\n        text: progressText,\n        disable_web_page_preview: true,\n      },\n      json: true,\n      timeout: 20000,\n    });\n    updateStatus = 'sent';\n  } catch (error) {\n    updateStatus = 'failed';\n    updateError = safeText(error?.message, String(error)).slice(0, 280) || 'telegram_edit_failed';\n  }\n}\n\nreturn {\n  ...input,\n  image_progress_last_text: progressText,\n  image_progress_files_done: doneFiles,\n  image_progress_total_files: totalFiles,\n  image_progress_update_status: updateStatus,\n  image_progress_update_error: updateError,\n};\n"
-      }
-    },
-    {
-      "id": "img-if-session-sheet-realtime-update",
-      "name": "If Session Sheet Realtime Update (Image)",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        2660,
-        120
-      ],
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "leftValue": "={{ $json.image_status === 'generated' && !!$json.session_sheet_id && Number($json.order ?? $json.media_chunks?.order ?? 0) > 0 }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        }
-      }
-    },
-    {
-      "id": "img-write-row-session-sheet-realtime",
-      "name": "Write Image Row To Session Sheet (Realtime)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
-      "position": [
-        2860,
-        40
-      ],
-      "parameters": {
-        "method": "POST",
-        "url": "={{ 'https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent($json.session_sheet_id || '') + '/values:batchUpdate' }}",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "googleDriveOAuth2Api",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ (() => {\n  const toText = (value) => String(value ?? '');\n  const orderRaw = Number($json.order ?? $json.media_chunks?.order ?? 0);\n  const order = Number.isFinite(orderRaw) && orderRaw > 0 ? Math.floor(orderRaw) : 1;\n  const row = order + 1;\n\n  const chunk = ($json.media_chunks && typeof $json.media_chunks === 'object' && !Array.isArray($json.media_chunks))\n    ? $json.media_chunks\n    : $json;\n\n  const sceneId = toText(chunk.scene_id ?? $json.scene_id ?? chunk.chunk_key ?? $json.chunk_key ?? ('scene_' + String(order).padStart(2, '0')));\n  const sceneTitle = toText(chunk.scene_title ?? $json.scene_title ?? '');\n  const sceneRole = toText(chunk.scene_role ?? $json.scene_role ?? '');\n  const narrationText = toText(chunk.narration_text ?? chunk.text ?? $json.narration_text ?? $json.text ?? '');\n  const imagePromptEn = toText(chunk.image_prompt_en ?? $json.image_prompt_en ?? '');\n  const highlightQuoteVi = toText(chunk.highlight_quote_vi ?? $json.highlight_quote_vi ?? '');\n\n  const visualModeRaw = toText($json.media_visual_mode ?? chunk.media_visual_mode ?? (toText($json.video_url || $json.video) ? 'video' : 'image')).toLowerCase();\n  const visualMode = visualModeRaw === 'video' ? 'video' : 'image';\n\n  const visualUrl = toText(\n    $json.visual_url\n    ?? $json.video_url\n    ?? $json.image_url\n    ?? $json.video_drive_url\n    ?? $json.image_drive_url\n    ?? $json.video\n    ?? $json.image\n    ?? ''\n  );\n\n  const videoUrl = toText($json.video_url ?? $json.video_drive_url ?? (visualMode === 'video' ? visualUrl : ''));\n  const imageUrl = toText($json.image_url ?? $json.image_drive_url ?? (visualMode === 'image' ? visualUrl : ''));\n\n  const visualStatus = toText($json.visual_status ?? $json.video_status ?? $json.image_status ?? '');\n  const videoStatus = toText($json.video_status ?? (visualMode === 'video' ? visualStatus : ''));\n  const imageStatus = toText($json.image_status ?? (visualMode === 'image' ? visualStatus : ''));\n\n  const visualDriveFileId = toText($json.visual_drive_file_id ?? $json.video_drive_file_id ?? $json.image_drive_file_id ?? '');\n  const videoDriveFileId = toText($json.video_drive_file_id ?? (visualMode === 'video' ? visualDriveFileId : ''));\n  const imageDriveFileId = toText($json.image_drive_file_id ?? (visualMode === 'image' ? visualDriveFileId : ''));\n\n  return {\n    valueInputOption: 'RAW',\n    data: [\n      {\n        range: 'assets!A' + row + ':H' + row,\n        values: [[sceneId, String(order), sceneTitle, sceneRole, narrationText, imagePromptEn, highlightQuoteVi, visualMode]],\n      },\n      {\n        range: 'assets!I' + row + ':K' + row,\n        values: [[visualUrl, videoUrl, imageUrl]],\n      },\n      {\n        range: 'assets!N' + row + ':P' + row,\n        values: [[visualStatus, videoStatus, imageStatus]],\n      },\n      {\n        range: 'assets!R' + row + ':R' + row,\n        values: [[String($json.error_reason ?? '')]],\n      },\n      {\n        range: 'assets!S' + row + ':U' + row,\n        values: [[visualDriveFileId, videoDriveFileId, imageDriveFileId]],\n      },\n    ],\n  };\n})() }}",
-        "options": {
-          "response": {
-            "response": {
-              "fullResponse": true,
-              "neverError": true,
-              "responseFormat": "json"
-            }
-          }
-        }
-      }
-    },
-    {
-      "id": "img-merge-realtime-sheet-update-context",
-      "name": "Merge Realtime Sheet Update Context (Image)",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        3040,
-        120
-      ],
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {
-          "includeUnpaired": true,
-          "clashHandling": {
-            "values": {
-              "resolveClash": "preferInput1",
-              "mergeMode": "shallowMerge",
-              "overrideEmpty": true
-            }
-          }
-        }
-      }
     }
   ],
   "connections": {
@@ -971,73 +760,6 @@
         [
           {
             "node": "If Media Should Run?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Switch Output Mode": {
-      "main": [
-        [
-          {
-            "node": "Build Drive Export Payload",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Prepare Inline Output",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Drive Export Payload": {
-      "main": [
-        [
-          {
-            "node": "Convert Export To File",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge Drive Export Context",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Convert Export To File": {
-      "main": [
-        [
-          {
-            "node": "Google Drive Upload Export",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Google Drive Upload Export": {
-      "main": [
-        [
-          {
-            "node": "Merge Drive Export Context",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Merge Drive Export Context": {
-      "main": [
-        [
-          {
-            "node": "Prepare Drive Output",
             "type": "main",
             "index": 0
           }
@@ -1169,11 +891,6 @@
             "node": "If Image Still Pending?",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Update Image Progress Message",
-            "type": "main",
-            "index": 0
           }
         ]
       ]
@@ -1200,7 +917,7 @@
       "main": [
         [
           {
-            "node": "Switch Output Mode",
+            "node": "Prepare Inline Output",
             "type": "main",
             "index": 0
           }
@@ -1211,60 +928,12 @@
       "main": [
         [
           {
-            "node": "Switch Output Mode",
+            "node": "Prepare Inline Output",
             "type": "main",
             "index": 0
           }
         ]
       ]
-    },
-    "Update Image Progress Message": {
-      "main": [
-        [
-          {
-            "node": "If Session Sheet Realtime Update (Image)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If Session Sheet Realtime Update (Image)": {
-      "main": [
-        [
-          {
-            "node": "Write Image Row To Session Sheet (Realtime)",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge Realtime Sheet Update Context (Image)",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Merge Realtime Sheet Update Context (Image)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Write Image Row To Session Sheet (Realtime)": {
-      "main": [
-        [
-          {
-            "node": "Merge Realtime Sheet Update Context (Image)",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Merge Realtime Sheet Update Context (Image)": {
-      "main": []
     }
   },
   "settings": {
