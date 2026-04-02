@@ -15,8 +15,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        -1808,
-        752
+        -1624,
+        740
       ],
       "id": "94bdf134-0a4e-46d3-a158-efe3c7361b30",
       "name": "OpenAI Chat Model",
@@ -41,8 +41,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        -1456,
-        896
+        -1272,
+        888
       ],
       "id": "5dd9ac93-398b-46be-8933-1ef63b6ae740",
       "name": "OpenAI Chat Model3",
@@ -67,8 +67,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        -1104,
-        1040
+        -920,
+        1036
       ],
       "id": "0db38b4f-8aff-4d21-8539-7be3572a3b96",
       "name": "OpenAI Chat Model5",
@@ -82,7 +82,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $('Config Main').item.json.chatInput }}{{ JSON.stringify($json.output) }}",
+        "text": "={{ $('Config Main').item.json.chatInput }}\n<<<MANIFEST_JSON>>>\n{{ JSON.stringify($json.output) }}",
         "hasOutputParser": true,
         "options": {
           "systemMessage": "={{ $('Config Main').item.json.master_prompt }}\nPROMPT QC: THE CRITICAL SOUL EDITOR (V4)\n\nROLE:\n- Bạn là một biên tập viên QC gắt gao cho các nội dung kể chuyện review sách dài.\n\nMISSION:\n- Đánh giá chất lượng khách quan và độ khớp với phong cách Soulful Narrator.\n\nSTYLE KERNEL REFERENCE (INJECTED FROM MASTER):\n__BOOK_REVIEW_STYLE_KERNEL__\n\nEVALUATION LAYERS:\n1) Objective layer:\n- Sức mạnh của Hook.\n- Sự mạch lạc của dòng tự sự.\n- Độ nguyên bản (Originality).\n- Tính ứng dụng của Bridge vào thực tế đời sống.\n\n2) Style-fit layer:\n- Sự nhất quán của giọng kể.\n- Mạch trôi tự nhiên (tránh meta labeling).\n- Chiều sâu cảm xúc và các ẩn dụ đời thường.\n\nSCORING & FEEDBACK:\n- Thang điểm từ 0 đến 10 cho: Hook, Clarity, Originality, Practical.\n- Trừ điểm nặng nếu dính meta-label lặp đi lặp lại hoặc hô hào giáo điều.\n- Feedback phải thẳng thắn, ưu tiên các lỗi cần sửa ngay, nhưng giữ cho sự sáng tạo của người kể chuyện còn sống.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"hook\": 0,\n  \"clarity\": 0,\n  \"originality\": 0,\n  \"practical\": 0,\n  \"risk\": \"low|med|high\",\n  \"feedback\": \"string\",\n  \"qc_issues\": [\"string\"]\n}\n\n"
@@ -91,8 +91,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -1104,
-        816
+        -928,
+        812
       ],
       "id": "4de0adc6-2877-4954-81b4-cd25e0807235",
       "name": "QC AI Agent",
@@ -110,8 +110,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -1808,
-        528
+        -1632,
+        516
       ],
       "id": "3bf17144-d8d7-44a0-a352-dd195585b8ef",
       "name": "Outline AI Agent",
@@ -120,15 +120,16 @@
     {
       "parameters": {
         "updates": [
-          "message"
+          "message",
+          "callback_query"
         ],
         "additionalFields": {}
       },
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
       "position": [
-        -2480,
-        624
+        -2528,
+        804
       ],
       "id": "945f4306-8695-48ae-893a-91925fe087cb",
       "name": "Telegram Trigger",
@@ -148,8 +149,8 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.4,
       "position": [
-        -2480,
-        432
+        -2528,
+        612
       ],
       "id": "190f4d23-2d0c-4ccf-aa02-0ecab8231409",
       "name": "When chat message received",
@@ -169,7 +170,7 @@
             {
               "id": "7c7003f4-ae62-4abe-8629-0f57dfbb9d19",
               "name": "telegramChatId",
-              "value": "={{ $json.message?.chat?.id || 6920403077}}",
+              "value": "={{ $json.callback_query?.message?.chat?.id || $json.message?.chat?.id || 6920403077}}",
               "type": "string"
             },
             {
@@ -183,6 +184,12 @@
               "name": "ggDriveRootFolderId",
               "value": "1u1p_7y5hWKzuQhRHno2OFHjZqM9cG3pa",
               "type": "string"
+            },
+            {
+              "id": "001bc078-cb0e-47be-806a-f6a38286f7f7",
+              "name": "",
+              "value": "",
+              "type": "string"
             }
           ]
         },
@@ -192,8 +199,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -2256,
-        528
+        -2304,
+        708
       ],
       "id": "80d18528-92a0-4365-859a-480a30658ac7",
       "name": "Config Main"
@@ -209,8 +216,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -2032,
-        528
+        -1856,
+        516
       ],
       "id": "f9ec94b5-f4b9-4476-ae38-e876d0bd5429",
       "name": "Send Creating Outline Message",
@@ -230,8 +237,8 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        -1680,
-        752
+        -1496,
+        740
       ],
       "id": "c38027f9-eb12-4bac-85ce-c26433d0395d",
       "name": "Structured Outline Output Parser"
@@ -243,8 +250,8 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        -1328,
-        896
+        -1144,
+        888
       ],
       "id": "164722d2-496b-44ab-b98a-026859132277",
       "name": "Structured Expand Output Parser"
@@ -256,8 +263,8 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        -976,
-        1040
+        -792,
+        1036
       ],
       "id": "619e23b4-2945-4ed1-a567-3f6377836719",
       "name": "Structured Output Parser"
@@ -269,8 +276,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -752,
-        816
+        -576,
+        812
       ],
       "id": "c2b300de-18cc-462e-992e-2b733b185e98",
       "name": "Prepare Manifest"
@@ -287,8 +294,8 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        -528,
-        720
+        -352,
+        716
       ],
       "id": "4def4593-b0b9-402a-a113-3ef54e465324",
       "name": "Convert Manifest to File"
@@ -374,8 +381,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        -304,
-        720
+        -128,
+        716
       ],
       "id": "2aaf9012-301a-479f-8519-a9b42b5587be",
       "name": "GG Drive Manager Save Manifest"
@@ -391,8 +398,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -1040,
-        528
+        -864,
+        516
       ],
       "id": "0d875b16-e41c-4b19-8443-229576ede7e6",
       "name": "Send QC is Reviewing Message",
@@ -415,7 +422,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -1392,
+        -1216,
         368
       ],
       "id": "c37296a4-050c-4c12-bf2a-f34017203d7f",
@@ -431,7 +438,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $('Config Main').item.json.chatInput }}{{ JSON.stringify($json.output) }}",
+        "text": "={{ $('Config Main').item.json.chatInput }}\n<<<OUTLINE_JSON>>>\n{{ JSON.stringify($json.output) }}",
         "hasOutputParser": true,
         "options": {
           "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\nPROMPT SCENE EXPAND: THE SCRIPTWRITER (V4)\n\nROLE:\n- Bạn là người viết kịch bản kể chuyện cho video review sách dài.\n\nTASK:\n- Mở rộng dàn ý thành một review_manifest sẵn sàng sản xuất.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- Giữ đúng số lượng cảnh từ dàn ý.\n- Tổng narration_text: 15.000 - 20.000 ký tự tiếng Việt.\n- Hook/Outro: 45-75 giây mỗi cảnh.\n- Core scenes: 75-120 giây mỗi cảnh, tối thiểu 45 giây.\n- scene_01 là hook, scene cuối là outro.\n- image_prompt_en: viết bằng tiếng Anh và không để trống.\n- highlight_quote_vi: tùy chọn, không có thì để chuỗi rỗng.\n- transition mặc định \"cut\".\n- metadata.title: Phải chứa một \"Mâu thuẫn\" (Tension) hoặc một \"Câu hỏi tử huyệt\" chạm đến nỗi đau/khao khát của con người hiện đại. TRÁNH: \"Review sách: [Tên sách]\". NÊN \"Tại sao bạn vẫn mãi thất bại dù đã cố gắng?\".\n- metadata.caption: Dưới 150 chữ, tiếng Việt. Cấu trúc: 1 Câu hỏi khơi gợi nỗi đau (Emotional Hook) + 1 Giá trị cốt lõi từ sách + 1 Lời hứa về sự thay đổi (Practical Takeaway).\n- metadata.thumbnail_text: Cực ngắn (dưới 6 từ), clear và curiosity-driven. Phải là một lời cảnh báo hoặc một lời mời gọi mang tính quyết định, không lặp lại Title.\n- metadata.hashtags: 5-7 tags, viết thường, không dấu. Bao gồm tên sách, tên tác giả, ngách nội dung (self-help, triết lý).\n\nANTI-RIGID CONSTRAINTS:\n- Tuyệt đối không dùng các mẫu câu lặp đi lặp lại giữa các cảnh.\n- Không biến narration thành danh sách liệt kê tóm tắt.\n- Giữ sự cân bằng giữa chiều sâu cảm xúc và tính ứng dụng thực tế.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"book\": {\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"style_keywords\": [\"string\"]\n  },\n  \"video\": {\n    \"aspect_ratio\": \"16:9\",\n    \"target_duration_min_sec\": 900,\n    \"target_duration_max_sec\": 1200,\n    \"estimated_total_duration_sec\": 0\n  },\n  \"metadata\": {\n    \"title\": \"string\",\n    \"caption\": \"string\",\n    \"thumbnail_text\": \"string\",\n    \"hashtags\": [\"#tag\"]\n  },\n  \"scenes\": [\n    {\n      \"scene_id\": \"scene_01\",\n      \"order\": 1,\n      \"scene_title\": \"string\",\n      \"scene_role\": \"hook|core|outro\",\n      \"narration_text\": \"string\",\n      \"image_prompt_en\": \"string\",\n      \"highlight_quote_vi\": \"string\",\n      \"estimated_duration_sec\": 0,\n      \"transition\": \"cut\"\n    }\n  ]\n}\n"
@@ -440,8 +447,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -1456,
-        672
+        -1280,
+        664
       ],
       "id": "99a2c42e-85b1-43c3-b056-af39d4e59bf0",
       "name": "Manifest AI Agent",
@@ -456,8 +463,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        144,
-        720
+        320,
+        716
       ],
       "id": "a9fec56a-588f-4942-a9cb-f4b539305030",
       "name": "Delete Loading Message",
@@ -472,21 +479,40 @@
     {
       "parameters": {
         "chatId": "={{ $('Config Main').item.json.telegramChatId }}",
-        "text": "=conent: {{ $('GG Drive Manager Save Content Readable').item.json.fileUrl }}\nmanifest: {{ $('GG Drive Manager Save Manifest').item.json.fileUrl }}\nfolderUrl: {{ $json.folderUrl }}\n------------------\nhook: {{ $('Prepare Manifest').item.json.qc.hook }}, clarity: {{ $('Prepare Manifest').item.json.qc.clarity }}, originality: {{ $('Prepare Manifest').item.json.qc.originality }}, practical: {{ $('Prepare Manifest').item.json.qc.practical }}, risk: {{ $('Prepare Manifest').item.json.qc.risk }}\n------------------\n{{ $('Prepare Manifest').item.json.qc.feedback }}\n------------------\n{{ $('Prepare Manifest').item.json.qc.qc_issues.join('\\n') }}",
-        "replyMarkup": "=none",
-        "forceReply": {},
-        "replyKeyboardOptions": {},
-        "replyKeyboardRemove": {},
+        "text": "=content: {{ $('GG Drive Manager Save Content Readable').item.json.fileUrl }}\nmanifest: {{ $('GG Drive Manager Save Manifest').item.json.fileUrl }}\nfolderUrl: {{ $json.folderUrl }}\n------------------\nhook: {{ $('Prepare Manifest').item.json.qc.hook }}, clarity: {{ $('Prepare Manifest').item.json.qc.clarity }}, originality: {{ $('Prepare Manifest').item.json.qc.originality }}, practical: {{ $('Prepare Manifest').item.json.qc.practical }}, risk: {{ $('Prepare Manifest').item.json.qc.risk }}\n------------------\n{{ $('Prepare Manifest').item.json.qc.feedback }}\n------------------\n{{ $('Prepare Manifest').item.json.qc.qc_issues.join('\\n') }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Stop",
+                    "additionalFields": {
+                      "callback_data": "stop_review"
+                    }
+                  },
+                  {
+                    "text": "Continue",
+                    "additionalFields": {
+                      "callback_data": "continue_review"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
         "additionalFields": {
           "appendAttribution": false,
-          "parse_mode": "HTML"
+          "parse_mode": "=none"
         }
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        144,
-        912
+        320,
+        908
       ],
       "id": "db77dd13-287c-407d-8198-7f8e0a4a7638",
       "name": "Send Review Message",
@@ -511,8 +537,8 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        -528,
-        912
+        -352,
+        908
       ],
       "id": "551444f5-9b96-4349-ae96-5090b12af886",
       "name": "Convert Content Readable to File"
@@ -528,8 +554,8 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        -80,
-        816
+        96,
+        812
       ],
       "id": "65108b1d-22c1-4e8e-a57f-3a2c0dc104ef",
       "name": "Merge"
@@ -615,11 +641,151 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        -304,
-        912
+        -128,
+        908
       ],
       "id": "3e3a0347-622a-4452-866e-ac536815218a",
       "name": "GG Drive Manager Save Content Readable"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.callback_query?.data  ||  \"start_review\" }}",
+                    "rightValue": "start_review",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "6f334ad0-5e23-49ad-882b-4a076c9c1efa"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "start"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "61ad9b65-5533-4cd7-ad9d-fb800208a597",
+                    "leftValue": "={{ $json.callback_query?.data  ||  \"start_review\" }}",
+                    "rightValue": "stop_review",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "stop"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "4fea26cf-ec59-4b35-8572-83db1faba335",
+                    "leftValue": "={{ $json.callback_query?.data  ||  \"start_review\" }}",
+                    "rightValue": "continue_review",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "continue"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -2080,
+        692
+      ],
+      "id": "c7e40cac-5070-44a7-bdf4-a3c6f4991cca",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Config Main').item.json.telegramChatId }}",
+        "messageId": "={{ $('Telegram Trigger').item.json.callback_query.message.message_id }}",
+        "text": "={{ $('Telegram Trigger').item.json.callback_query.message.text }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1856,
+        708
+      ],
+      "id": "db42e313-fc59-43f1-92e9-d864ceffe7fb",
+      "name": "Edit a text message",
+      "webhookId": "14ddb494-a79c-4418-9891-3f45358e27e8",
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "__TELEGRAM_CREDENTIAL_NAME__"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Config Main').item.json.telegramChatId }}",
+        "text": "Đang tạo media...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1856,
+        900
+      ],
+      "id": "b8577339-08fe-4d86-937a-2e05c35ddfce",
+      "name": "Send Creating Outline Message1",
+      "webhookId": "5d1921ba-59cc-4e43-b3a6-c2a30eee5a98",
+      "notesInFlow": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "__TELEGRAM_CREDENTIAL_ID__",
+          "name": "__TELEGRAM_CREDENTIAL_NAME__"
+        }
+      }
     }
   ],
   "connections": {
@@ -709,7 +875,7 @@
       "main": [
         [
           {
-            "node": "Send Creating Outline Message",
+            "node": "Switch",
             "type": "main",
             "index": 0
           }
@@ -858,6 +1024,41 @@
             "node": "Merge",
             "type": "main",
             "index": 1
+          }
+        ]
+      ]
+    },
+    "Delete Loading Message": {
+      "main": [
+        []
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send Creating Outline Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit a text message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Creating Outline Message1",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
