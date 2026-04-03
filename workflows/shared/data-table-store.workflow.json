@@ -1,0 +1,645 @@
+{
+  "name": "DataTableStore",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "action"
+            },
+            {
+              "name": "tableName"
+            },
+            {
+              "name": "keyField"
+            },
+            {
+              "name": "keyValue"
+            },
+            {
+              "name": "data",
+              "type": "object"
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1184,
+        216
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function asObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst input = $json ?? {};\nconst action = safeText(input.action, 'upsert');\nconst tableName = safeText(input.tableName);\nconst keyField = safeText(input.keyField);\nconst keyValue = safeText(input.keyValue);\nconst inputData = asObject(input.data);\n\nif (!['get', 'upsert', 'delete'].includes(action)) {\n  throw new Error('DataTableStore only supports action=get|upsert|delete.');\n}\n\nif (!tableName) {\n  throw new Error('tableName is required.');\n}\n\nif (!keyField) {\n  throw new Error('keyField is required.');\n}\n\nif (!keyValue) {\n  throw new Error('keyValue is required.');\n}\n\nconst rowData = {\n  ...inputData,\n  [keyField]: inputData[keyField] ?? keyValue,\n};\n\nreturn {\n  _action: action,\n  _tableName: tableName,\n  _keyField: keyField,\n  _keyValue: keyValue,\n  _rowData: rowData,\n};"
+      },
+      "id": "2",
+      "name": "Normalize Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        216
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "={{ $json._tableName }}",
+        "columns": {
+          "column": [
+            {
+              "name": "keyField"
+            },
+            {
+              "name": "keyValue"
+            },
+            {
+              "name": "dataJson"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        }
+      },
+      "id": "3",
+      "name": "Ensure Data Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -736,
+        216
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $(\"Normalize Request\").item.json._action || \"upsert\" }}",
+                    "rightValue": "get",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "get"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $(\"Normalize Request\").item.json._action || \"upsert\" }}",
+                    "rightValue": "delete",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delete"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "upsert",
+          "allMatchingOutputs": false
+        }
+      },
+      "id": "5",
+      "name": "Switch Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -512,
+        216
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id || \"\" }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "keyField",
+              "keyValue": "={{ $(\"Normalize Request\").item.json._keyField }}"
+            },
+            {
+              "keyName": "keyValue",
+              "keyValue": "={{ $(\"Normalize Request\").item.json._keyValue }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "id": "6",
+      "name": "Get Matching Row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -288,
+        216
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput2",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          },
+          "includeUnpaired": true
+        }
+      },
+      "id": "7",
+      "name": "Merge Get Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -64,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeParseObject(value) {\n  if (typeof value !== 'string' || value.trim() === '') {\n    return null;\n  }\n\n  try {\n    const parsed = JSON.parse(value);\n    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;\n  } catch (error) {\n    return null;\n  }\n}\n\nconst input = $json ?? {};\nconst storedRow = safeParseObject(input.dataJson);\nconst found = storedRow !== null;\n\nreturn {\n  status: 'success',\n  found,\n  row: found ? storedRow : null,\n};"
+      },
+      "id": "8",
+      "name": "Build Get Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id || \"\" }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "keyField",
+              "keyValue": "={{ $(\"Normalize Request\").item.json._keyField }}"
+            },
+            {
+              "keyName": "keyValue",
+              "keyValue": "={{ $(\"Normalize Request\").item.json._keyValue }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": "={{ ({ keyField: $(\"Normalize Request\").item.json._keyField, keyValue: $(\"Normalize Request\").item.json._keyValue, dataJson: JSON.stringify($(\"Normalize Request\").item.json._rowData || {}) }) }}",
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "10",
+      "name": "Upsert Matching Row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -288,
+        408
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeParseObject(value) {\n  if (typeof value !== 'string' || value.trim() === '') {\n    return {};\n  }\n\n  try {\n    const parsed = JSON.parse(value);\n    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};\n  } catch (error) {\n    return {};\n  }\n}\n\nreturn {\n  status: 'success',\n  found: true,\n  row: safeParseObject($json.dataJson),\n};"
+      },
+      "id": "12",
+      "name": "Build Upsert Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        408
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id || \"\" }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "keyField",
+              "keyValue": "={{ $(\"Normalize Request\").item.json._keyField }}"
+            },
+            {
+              "keyName": "keyValue",
+              "keyValue": "={{ $(\"Normalize Request\").item.json._keyValue }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "id": "13",
+      "name": "Get Matching Row For Delete",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -288,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ String($json.id || \"\").trim().length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "14",
+      "name": "If Delete Row Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -64,
+        688
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $(\"Ensure Data Table\").item.json.id || \"\" }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "keyField",
+              "keyValue": "={{ $(\"Normalize Request\").item.json._keyField }}"
+            },
+            {
+              "keyName": "keyValue",
+              "keyValue": "={{ $(\"Normalize Request\").item.json._keyValue }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "15",
+      "name": "Delete Matching Row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        160,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeParseObject(value) {\n  if (typeof value !== 'string' || value.trim() === '') {\n    return null;\n  }\n\n  try {\n    const parsed = JSON.parse(value);\n    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;\n  } catch (error) {\n    return null;\n  }\n}\n\nconst deletedSource = $('Get Matching Row For Delete').first().json || {};\n\nreturn {\n  status: 'success',\n  found: true,\n  deleted: true,\n  row: safeParseObject(deletedSource.dataJson),\n};"
+      },
+      "id": "16",
+      "name": "Build Delete Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "delete-notfound-1",
+              "name": "status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "id": "delete-notfound-2",
+              "name": "found",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "delete-notfound-3",
+              "name": "deleted",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "delete-notfound-4",
+              "name": "row",
+              "value": "={{ null }}",
+              "type": "json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "17",
+      "name": "Build Delete NotFound Result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        160,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## INPUT FIELDS\n\n`action`: `get|upsert|delete`\n- example: `get`\n`tableName`: ten Data Table can doc/ghi\n- example: `Book Review Sessions`\n`keyField`: logical key name\n- example: `sessionToken`\n`keyValue`: logical key value\n- example: `review_abc123`\n`data`: object payload cho `upsert`\n- example: `{ \"sessionToken\": \"review_abc123\", \"status\": \"reviewing\" }`\n\n### Quick examples\n`get` -> `{ action: \"get\", tableName: \"Book Review Sessions\", keyField: \"sessionToken\", keyValue: \"review_abc123\", data: {} }`\n`upsert` -> `{ action: \"upsert\", tableName: \"Book Review Sessions\", keyField: \"sessionToken\", keyValue: \"review_abc123\", data: { sessionToken: \"review_abc123\", status: \"reviewing\" } }`\n`delete` -> `{ action: \"delete\", tableName: \"Book Review Sessions\", keyField: \"sessionToken\", keyValue: \"review_abc123\", data: {} }`\n\n### Output\n`status`, `found`, `row`",
+        "height": 760,
+        "width": 760,
+        "color": 7
+      },
+      "id": "dt-note-1",
+      "name": "NOTE::DATATABLESTORE::INPUT_FIELDS",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1900,
+        -360
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## IMPORTANT LINE: NORMALIZE\n\nFlow:\n- When Executed by Another Workflow\n- Normalize Request\n- Ensure Data Table\n- Switch Action\n\nPurpose:\n- validate input toi thieu\n- normalize ve `_action`, `_keyField`, `_keyValue`, `_rowData`\n- ensure table ton tai truoc khi doc/ghi",
+        "height": 340,
+        "width": 560,
+        "color": 5
+      },
+      "id": "dt-note-2",
+      "name": "NOTE::DATATABLESTORE::STAGE_NORMALIZE",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1120,
+        -248
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## IMPORTANT LINE: GET\n\nFlow:\n- Switch Action (get)\n- Get Matching Row\n- Merge Get Context\n- Build Get Result\n\nResult example:\n- found -> `{ status: \"success\", found: true, row: {...} }`\n- not found -> `{ status: \"success\", found: false, row: null }`",
+        "height": 320,
+        "width": 620,
+        "color": 4
+      },
+      "id": "dt-note-3",
+      "name": "NOTE::DATATABLESTORE::BRANCH_GET",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        -304
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## IMPORTANT LINE: UPSERT\n\nFlow:\n- Switch Action (upsert)\n- Upsert Matching Row\n- Build Upsert Result\n\nResult example:\n- `{ status: \"success\", found: true, row: { sessionToken: \"review_abc123\", status: \"reviewing\" } }`",
+        "height": 260,
+        "width": 620,
+        "color": 3
+      },
+      "id": "dt-note-4",
+      "name": "NOTE::DATATABLESTORE::BRANCH_UPSERT",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## IMPORTANT LINE: DELETE\n\nFlow:\n- Switch Action (delete)\n- Get Matching Row For Delete\n- If Delete Row Exists\n- Delete Matching Row\n- Build Delete Result\n\nResult example:\n- found -> `{ status: \"success\", found: true, deleted: true, row: {...} }`\n- not found -> `{ status: \"success\", found: false, deleted: false, row: null }`",
+        "height": 300,
+        "width": 680,
+        "color": 6
+      },
+      "id": "dt-note-5",
+      "name": "NOTE::DATATABLESTORE::BRANCH_DELETE",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        16,
+        872
+      ]
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Normalize Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Request": {
+      "main": [
+        [
+          {
+            "node": "Ensure Data Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Data Table": {
+      "main": [
+        [
+          {
+            "node": "Switch Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Action": {
+      "main": [
+        [
+          {
+            "node": "Get Matching Row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Get Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Matching Row For Delete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Upsert Matching Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Matching Row": {
+      "main": [
+        [
+          {
+            "node": "Merge Get Context",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Get Context": {
+      "main": [
+        [
+          {
+            "node": "Build Get Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Matching Row": {
+      "main": [
+        [
+          {
+            "node": "Build Upsert Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Matching Row For Delete": {
+      "main": [
+        [
+          {
+            "node": "If Delete Row Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Delete Row Exists": {
+      "main": [
+        [
+          {
+            "node": "Delete Matching Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Delete NotFound Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Matching Row": {
+      "main": [
+        [
+          {
+            "node": "Build Delete Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}

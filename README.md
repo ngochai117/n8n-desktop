@@ -25,9 +25,11 @@ Repo nay chua local tooling va workflow templates cho n8n, voi `Book Review` la 
   - mo rong thanh manifest
   - QC output
   - chuan hoa output
-  - persist `review_readable.txt` va `review_manifest.json`
-  - gui review ready message
-- Reviewer session flow, media pipeline, session persistence, sheet/export, va E2E runtime se lam tiep theo backlog trong `docs/book-review-todo.md`.
+  - persist `Manifest.json` va `ContentReadable.txt`
+  - persist reviewer session state vao `DataTableStore`
+  - gui review ready message voi `continueReview:<sessionToken>` / `stopReview:<sessionToken>`
+  - rehydrate manifest tu `manifestUrl` khi reviewer chon Continue va chot `reviewPassed`
+- Media pipeline, TTS/visual branch, sheet/export, va E2E runtime van tiep tuc trong `docs/book-review-todo.md`.
 
 ## Quick start
 ```bash
@@ -39,6 +41,7 @@ bash scripts/proxy/setup-proxy.sh
 
 ## Import
 ```bash
+bash scripts/workflows/import/import-data-table-store-workflow.sh
 bash scripts/workflows/import/import-gg-drive-manager-workflow.sh
 bash scripts/workflows/import/import-book-review-workflow.sh
 ```
@@ -63,7 +66,7 @@ bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply
 bash scripts/workflows/tests/test-book-review-checklist.sh
 ```
 
-Checklist hien tai la static contract/topology checklist cho workflow canonical. Repo hien khong advertise full E2E runner cho Book Review cho den khi backlog reviewer/media/session duoc re-implement.
+Checklist hien tai la static contract/topology checklist cho workflow canonical. Repo hien khong advertise full E2E runner cho Book Review cho den khi media branch va runtime E2E duoc rebuild day du.
 
 ## Env files
 - `env.n8n.local.example`: env mau toi thieu. Mac dinh co the de trong; chi them bien khi can public URL, Cloudflare tunnel, hoac admin tooling nhu import/sync/MCP
@@ -71,6 +74,7 @@ Checklist hien tai la static contract/topology checklist cho workflow canonical.
 
 ## Repo map
 - `workflows/book-review/book-review.workflow.json`: workflow canonical
+- `workflows/shared/data-table-store.workflow.json`: subworkflow generic cho Data Table get/upsert
 - `workflows/book-review/prompts/`: prompt source files
 - `docs/book-review-workflow.md`: mo ta hien trang workflow canonical
 - `docs/book-review-todo.md`: backlog tiep tuc

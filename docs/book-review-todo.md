@@ -1,27 +1,28 @@
 # Book Review TODO
 
 ## Current baseline
-- Workflow canonical hien tai da co generate -> QC -> persist draft/manifest -> send review ready.
-- Chua rebuild reviewer/media/session branch.
+- Workflow canonical hien tai da co generate -> QC -> persist manifest/readable -> save reviewer session -> send review ready.
+- Reviewer callback da handle `continueReview` / `stopReview` voi `sessionToken`.
+- `continueReview` hien da rehydrate `Manifest.json` tu `manifestUrl` va chot `reviewPassed`.
+- Media/TTS branch sau `reviewPassed` van chua noi tiep.
 
 ## Backlog can lam tiep
 
 ### 1) Reviewer/session flow
-- Tao `sessionToken` on dinh cho moi run.
-- Parse callback/action co trace token.
-- Persist session state vao data table.
-- Lock/ack callback message dung cach.
+- Hoan thien lock/edit review message neu can disable keyboard sau callback.
+- Them retry/error recovery cho case session bi ket o `continueReview`.
+- Neu can, bo sung signal debug cho reviewer branch.
 
 ### 2) Media branch
-- Them gate `mediaContinue` / `mediaStop`.
+- Noi branch media sau `reviewPassed`.
 - Rebuild branch TTS.
 - Rebuild branch visual (`Text To Images` / `Text To Videos VEO3`).
 - Progress message theo stage neu can.
 - Media shared workflows hien da duoc simplify: chi tra artifact/result cho workflow cha, khong tu upload Drive hay ghi Sheet.
 
 ### 3) Session assets
-- Tao session folder context.
-- Persist them review/session package neu can.
+- Session folder context da co `rootFolderId` + `folderPath`.
+- Can quyet dinh them artifact/session package nao can persist.
 - Rebuild session sheet output khi media branch tro lai.
 - Chot naming canonical cho file, folder, sheet.
 
@@ -41,9 +42,7 @@
 - Rebuild media/debug tooling theo contract moi.
 
 ## Thu tu goi y
-1. sessionToken + callback contract
-2. review-ready state persistence
-3. mediaContinue/mediaStop
-4. TTS + visual branch
-5. session assets + sheet
-6. shared notify + E2E
+1. media branch sau `reviewPassed`
+2. TTS + visual branch
+3. session assets + sheet
+4. shared notify + E2E

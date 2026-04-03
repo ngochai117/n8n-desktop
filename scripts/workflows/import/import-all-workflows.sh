@@ -20,6 +20,7 @@ contains_item() {
 
 priority_scripts=(
   "import-shared-notification-router-workflow.sh"
+  "import-data-table-store-workflow.sh"
   "import-gemini-demo-workflow.sh"
   "import-openai-demo-workflow.sh"
   "import-book-review-workflow.sh"

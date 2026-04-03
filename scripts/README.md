@@ -6,6 +6,7 @@
 
 ## Import
 - `import-book-review-workflow.sh`: import workflow canonical `Book Review`
+- `import-data-table-store-workflow.sh`: import subworkflow Data Table generic cho session state
 - `import-gg-drive-manager-workflow.sh`: import subworkflow Drive reusable
 - `import-gg-sheet-manager-workflow.sh`: import subworkflow Sheet reusable
 - `import-text-to-images-workflow.sh`: import shared workflow Text To Images
@@ -23,5 +24,6 @@
 
 ## Book Review notes
 - Workflow canonical: `workflows/book-review/book-review.workflow.json`
-- Backlog reviewer/media/session: `docs/book-review-todo.md`
-
+- Shared session store: `workflows/shared/data-table-store.workflow.json`
+- Book Review hien da persist reviewer session state va handle `continueReview` / `stopReview`
+- Backlog media/TTS branch tiep theo: `docs/book-review-todo.md`

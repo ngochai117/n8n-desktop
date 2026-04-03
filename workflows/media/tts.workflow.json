@@ -290,7 +290,8 @@
       "parameters": {
         "operation": "download",
         "fileId": "={{ $json.drive_file_id }}",
-        "options": {}
+        "options": {},
+        "authentication": "oAuth2"
       },
       "id": "6",
       "name": "Google Drive Download Source",
@@ -612,9 +613,9 @@
     },
     {
       "parameters": {
-        "content": "## INPUT CONTRACT\n\nCore input:\n`input_mode` (`form_upload|drive_url`)\n`drive_file_url`\n`input_text` / `text` / `content`\n`chunk_manifest` hoặc `media_chunks` hoặc `review_manifest.scenes`\n\nTTS runtime params:\n`tts_api_base_url`, `tts_voice_id`, `tts_temperature`, `tts_top_k`, `tts_max_chars`, `tts_silence_p`, `tts_crossfade_p`, `tts_timeout_ms`, `tts_parallelism`, `tts_poll_interval_seconds`, `tts_poll_max_attempts`\n\nMain output:\n`status`, `items`, `error_reason`\nBinary output:\nfile audio được trả lại trên item output cuối, workflow cha tự quyết định upload/lưu tiếp.",
-        "height": 780,
-        "width": 760,
+        "content": "## INPUT FIELDS\n\n`input_mode`: `form_upload|drive_url`\n- example: `drive_url`\n`drive_file_url`: Google Drive URL neu input den tu Drive\n- example: `https://drive.google.com/file/d/1AbCdEfGhIjK/view`\n`input_text` / `text` / `content`: text narration thuan\n- example: `Day la doan narration cho scene 1...`\n`chunk_manifest` hoac `media_chunks`: danh sach chunk/scenes da tach san\n- example: `[{ \"scene_id\": \"scene_01\", \"order\": 1, \"narration_text\": \"...\", \"partName\": \"part_001\", \"chunk_key\": \"scene_01\" }]`\n`review_manifest.scenes`: fallback scenes tu Book Review manifest\n- example: `review_manifest.scenes[0].narration_text`\n\n### Runtime params\n`tts_api_base_url` example: `http://127.0.0.1:8001`\n`tts_voice_id` example: `ngochuyen`\n`tts_parallelism` example: `2`\n`tts_poll_interval_seconds` example: `3`\n`tts_poll_max_attempts` example: `180`\n\n### Main output\n`status`, `items`, `error_reason`, `media_tts_items`",
+        "height": 960,
+        "width": 820,
         "color": 7
       },
       "id": "9301",
@@ -628,9 +629,9 @@
     },
     {
       "parameters": {
-        "content": "## STAGE 1: NORMALIZE INPUT\n\nNodes:\n- Set Config\n- Normalize Inputs\n- If Needs Drive Download / Build Chunks From Drive File\n\nGoal:\n- gom các nguồn input thành `media_chunks`\n- set flags `media_should_run`, `needs_drive_download`\n- chỉ giữ contract cần cho việc generate TTS, không tự lo side-effect downstream.",
-        "height": 420,
-        "width": 680,
+        "content": "## IMPORTANT LINE: NORMALIZE INPUT\n\nFlow:\n- Set Config\n- Normalize Inputs\n- If Needs Drive Download / Google Drive Download Source / Build Chunks From Drive File\n\nOutput chinh:\n- `media_chunks`\n- `media_should_run`\n- `needs_drive_download`",
+        "height": 320,
+        "width": 620,
         "color": 5
       },
       "id": "9302",
@@ -644,9 +645,9 @@
     },
     {
       "parameters": {
-        "content": "## STAGE 2: GENERATE + POLL LOOP\n\nFlow:\n- Split Out Media Chunks\n- Loop Over TTS Chunks\n- Create TTS Audio\n- Normalize TTS Response\n- If TTS Poll Required -> Wait -> Get TTS Job Status (loop)\n\nMục tiêu: tạo voice per chunk với timeout/poll có giới hạn.",
-        "height": 420,
-        "width": 700,
+        "content": "## IMPORTANT LINE: GENERATE + POLL\n\nFlow:\n- Split Out Media Chunks\n- Loop Over TTS Chunks\n- Create TTS Audio\n- Normalize TTS Response\n- If TTS Poll Required -> Wait -> Prepare TTS Status Poll -> Get TTS Job Status\n\nTypical per-chunk request:\n- `text=<chunk text>`\n- `voice_id=ngochuyen`\n- `request_id=req-...`\n- `chunk_key=scene_01`",
+        "height": 380,
+        "width": 680,
         "color": 6
       },
       "id": "9303",
@@ -654,15 +655,15 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        850,
-        -572
+        760,
+        -620
       ]
     },
     {
       "parameters": {
-        "content": "## STAGE 3: FINALIZE OUTPUT\n\nNodes:\n- Finalize TTS Results\n\nKết quả:\n- tổng hợp `media_tts_items`\n- set `status=success|partial_failed|failed`\n- gom binary voice theo key để workflow cha tự upload/lưu tiếp nếu cần.",
-        "height": 380,
-        "width": 660,
+        "content": "## IMPORTANT LINE: FINAL OUTPUT\n\nFlow:\n- Finalize TTS Results\n- Finalize Empty TTS Result\n\nOutput chinh:\n- `status=success|partial_failed|failed`\n- `media_tts_items`\n- aggregated binary voice keys nhu `voice_001`, `voice_002`",
+        "height": 260,
+        "width": 620,
         "color": 4
       },
       "id": "9304",
@@ -670,8 +671,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        870,
-        -532
+        760,
+        120
       ]
     }
   ],

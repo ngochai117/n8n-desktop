@@ -161,7 +161,8 @@
           "mode": "list",
           "value": "My Drive"
         },
-        "folderId": "={{ $json.folderId }}"
+        "folderId": "={{ $json.folderId }}",
+        "authentication": "oAuth2"
       },
       "id": "9",
       "name": "Move Sheet To Folder",
@@ -169,7 +170,7 @@
       "typeVersion": 3,
       "position": [
         288,
-        224
+        248
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -177,34 +178,6 @@
           "name": "Google account"
         }
       }
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nreturn {\n  ...input,\n  moveStatus: 'success',\n};"
-      },
-      "id": "10",
-      "name": "Prepare Move Context",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        512,
-        224
-      ]
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nreturn {\n  ...input,\n  moveStatus: 'skipped',\n};"
-      },
-      "id": "11",
-      "name": "Prepare Move Skipped",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        512,
-        416
-      ]
     },
     {
       "parameters": {
@@ -235,7 +208,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        736,
+        512,
         320
       ]
     },
@@ -272,8 +245,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        960,
-        224
+        736,
+        248
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -285,50 +258,22 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nconst writeStatusCodeRaw = Number(input.statusCode ?? 0);\nreturn {\n  ...input,\n  writeStatusCode: Number.isFinite(writeStatusCodeRaw) ? writeStatusCodeRaw : 0,\n};"
-      },
-      "id": "14",
-      "name": "Prepare Write Result",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1184,
-        224
-      ]
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\nreturn {\n  ...input,\n  writeStatusCode: 0,\n};"
-      },
-      "id": "15",
-      "name": "Prepare Write Skipped",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1184,
-        416
-      ]
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst spreadsheetId = safeText(input.spreadsheetId);\nconst spreadsheetUrl = safeText(input.spreadsheetUrl, spreadsheetId ? 'https://docs.google.com/spreadsheets/d/' + spreadsheetId : '');\n\nconst createStatusCodeRaw = Number(input.createStatusCode ?? 0);\nconst createStatusCode = Number.isFinite(createStatusCodeRaw) ? createStatusCodeRaw : 0;\n\nconst writeStatusCodeRaw = Number(input.writeStatusCode ?? 0);\nconst writeStatusCode = Number.isFinite(writeStatusCodeRaw) ? writeStatusCodeRaw : 0;\n\nconst writeOk = input.shouldWrite !== true\n  ? true\n  : (input.missingSpreadsheetIdForWrite === true\n      ? false\n      : (writeStatusCode >= 200 && writeStatusCode < 300));\nconst ensureOk = input.shouldEnsure !== true || spreadsheetId !== '';\n\nconst moveStatus = safeText(input.moveStatus, input.shouldMove === true ? 'failed' : 'skipped');\n\nreturn {\n  ...input,\n  status: ensureOk && writeOk ? 'success' : 'partial',\n  spreadsheetId,\n  spreadsheetUrl,\n  createStatusCode,\n  writeStatusCode,\n  writeRange: safeText(input.writeRange),\n  moveStatus,\n};"
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst spreadsheetId = safeText(input.spreadsheetId);\nconst spreadsheetUrl = safeText(input.spreadsheetUrl, spreadsheetId ? 'https://docs.google.com/spreadsheets/d/' + spreadsheetId : '');\n\nconst createStatusCodeRaw = Number(input.createStatusCode ?? 0);\nconst createStatusCode = Number.isFinite(createStatusCodeRaw) ? createStatusCodeRaw : 0;\n\nconst writeStatusCodeRaw = Number(input.statusCode ?? 0);\nconst writeStatusCode = Number.isFinite(writeStatusCodeRaw) ? writeStatusCodeRaw : 0;\n\nconst writeOk = input.shouldWrite !== true\n  ? true\n  : (input.missingSpreadsheetIdForWrite === true\n      ? false\n      : (writeStatusCode >= 200 && writeStatusCode < 300));\nconst ensureOk = input.shouldEnsure !== true || spreadsheetId !== '';\nconst moveStatus = input.shouldMove === true ? 'success' : 'skipped';\n\nreturn {\n  ...input,\n  status: ensureOk && writeOk ? 'success' : 'partial',\n  spreadsheetId,\n  spreadsheetUrl,\n  createStatusCode,\n  writeStatusCode,\n  writeRange: safeText(input.writeRange),\n  moveStatus,\n};"
       },
       "id": "16",
       "name": "Build Result",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1408,
+        960,
         320
       ]
     },
     {
       "parameters": {
-        "content": "## INPUT CONTRACT (Execute Workflow Trigger)\n\n`action` (string): `ensureAndWrite|ensureSheet|writeRows` (default `ensureAndWrite`)\n`spreadsheetId` (string): existing spreadsheet ID (optional)\n`spreadsheetName` (string): spreadsheet title when creating (default `untitled-sheet`)\n`sheetName` (string): tab name (default `Sheet1`)\n`folderId` (string): Drive folder ID de move spreadsheet (optional)\n`rows` (2D array): data rows de ghi vao range\n`range` (string): range ghi du lieu (default `${sheetName}!A1`)\n`valueInputOption` (string): `RAW|USER_ENTERED` (default `RAW`)\n\n### Behavior flags (auto by Normalize Request)\n- `shouldEnsure`, `shouldWrite`, `shouldMove`\n- `shouldCreateSheet`, `shouldCallWriteApi`\n- `missingSpreadsheetIdForWrite`\n\n### Result keys\n`status`, `spreadsheetId`, `spreadsheetUrl`, `createStatusCode`, `writeStatusCode`, `writeRange`, `moveStatus`.",
-        "height": 820,
-        "width": 760,
+        "content": "## INPUT FIELDS\n\n`action`: `ensureAndWrite|ensureSheet|writeRows`\n- example: `ensureAndWrite`\n`spreadsheetId`: ID spreadsheet co san\n- example: `1AbCdEfGhIjK`\n`spreadsheetName`: title khi can tao moi\n- example: `Book Review Sessions`\n`sheetName`: ten tab\n- example: `Sessions`\n`folderId`: Drive folder de move spreadsheet\n- example: `1FolderAbCdEf`\n`rows`: mang 2 chieu de ghi\n- example: `[[\"sessionToken\",\"reviewStatus\"],[\"abc123\",\"reviewing\"]]`\n`range`: range ghi du lieu\n- example: `Sessions!A1`\n`valueInputOption`: `RAW|USER_ENTERED`\n- example: `RAW`\n\n### Quick examples\n`ensureSheet` -> `{ action: \"ensureSheet\", spreadsheetName: \"Book Review Sessions\", sheetName: \"Sessions\", folderId: \"1FolderAbCdEf\" }`\n`writeRows` -> `{ action: \"writeRows\", spreadsheetId: \"1AbCdEfGhIjK\", sheetName: \"Sessions\", range: \"Sessions!A1\", rows: [[\"sessionToken\",\"reviewStatus\"],[\"abc123\",\"reviewing\"]] }`",
+        "height": 980,
+        "width": 820,
         "color": 7
       },
       "id": "9101",
@@ -342,9 +287,9 @@
     },
     {
       "parameters": {
-        "content": "## STAGE 1: NORMALIZE + ROUTE FLAGS\n\nNodes:\n- When Executed by Another Workflow\n- Normalize Request\n\nPurpose:\n- chuan hoa input camelCase\n- validate action + defaults\n- dung flags dieu huong cho ensure/move/write.",
-        "height": 340,
-        "width": 640,
+        "content": "## IMPORTANT LINE: NORMALIZE\n\nFlow:\n- When Executed by Another Workflow\n- Normalize Request\n\nSinh ra cac flags quan trong:\n- `shouldEnsure`\n- `shouldWrite`\n- `shouldMove`\n- `shouldCreateSheet`\n- `shouldCallWriteApi`",
+        "height": 320,
+        "width": 620,
         "color": 5
       },
       "id": "9102",
@@ -358,9 +303,9 @@
     },
     {
       "parameters": {
-        "content": "## STAGE 2: ENSURE SPREADSHEET\n\nFlow:\n- If Need Create Sheet\n- Create Sheet OR Use Existing Sheet\n- Prepare Sheet Meta\n\nKet qua:\n- luon tra `spreadsheetId` + `spreadsheetUrl` de dung cho move/write.",
-        "height": 360,
-        "width": 620,
+        "content": "## IMPORTANT LINE: ENSURE\n\nFlow:\n- If Need Create Sheet\n- Create Sheet OR Use Existing Sheet\n- Prepare Sheet Meta\n\nOutput chinh:\n- `spreadsheetId`\n- `spreadsheetUrl`\n- `createStatusCode`",
+        "height": 300,
+        "width": 560,
         "color": 6
       },
       "id": "9103",
@@ -374,9 +319,9 @@
     },
     {
       "parameters": {
-        "content": "## STAGE 3: MOVE TO FOLDER (OPTIONAL)\n\nFlow:\n- If Should Move Sheet\n- Move Sheet To Folder\n- Prepare Move Context / Prepare Move Skipped\n\nChi chay khi co `folderId` va co `spreadsheetId`.",
-        "height": 320,
-        "width": 620,
+        "content": "## IMPORTANT LINE: MOVE\n\nFlow:\n- If Should Move Sheet\n- Move Sheet To Folder\n\nChi chay khi co `folderId` va co `spreadsheetId`.",
+        "height": 220,
+        "width": 520,
         "color": 4
       },
       "id": "9104",
@@ -390,9 +335,9 @@
     },
     {
       "parameters": {
-        "content": "## STAGE 4: WRITE ROWS (OPTIONAL)\n\nFlow:\n- If Should Write Rows\n- Write Sheet Rows\n- Prepare Write Result / Prepare Write Skipped\n\nWrite target: `writeRange` voi payload `values` tu `rows`.",
-        "height": 320,
-        "width": 620,
+        "content": "## IMPORTANT LINE: WRITE\n\nFlow:\n- If Should Write Rows\n- Write Sheet Rows\n- Build Result\n\nTypical write:\n- `range=Sessions!A1`\n- `rows=[[\"sessionToken\",\"reviewStatus\"],[\"abc123\",\"reviewing\"]]`",
+        "height": 280,
+        "width": 560,
         "color": 3
       },
       "id": "9105",
@@ -406,9 +351,9 @@
     },
     {
       "parameters": {
-        "content": "## STAGE 5: FINAL RESULT\n\nNode: Build Result\n\nRule:\n- `status=success` khi ensure/write pass theo logic flags\n- `status=partial` khi thieu spreadsheet ID cho write hoac write API khong 2xx\n\nOutput tra keys generic, khong gan context book-review.",
-        "height": 300,
-        "width": 560,
+        "content": "## IMPORTANT LINE: RESULT\n\nOutput keys:\n- `status`\n- `spreadsheetId`\n- `spreadsheetUrl`\n- `createStatusCode`\n- `writeStatusCode`\n- `writeRange`\n- `moveStatus`",
+        "height": 260,
+        "width": 520,
         "color": 2
       },
       "id": "9106",
@@ -536,28 +481,6 @@
         ],
         [
           {
-            "node": "Prepare Move Skipped",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Move Sheet To Folder": {
-      "main": [
-        [
-          {
-            "node": "Prepare Move Context",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Move Context": {
-      "main": [
-        [
-          {
             "node": "If Should Write Rows",
             "type": "main",
             "index": 0
@@ -565,7 +488,7 @@
         ]
       ]
     },
-    "Prepare Move Skipped": {
+    "Move Sheet To Folder": {
       "main": [
         [
           {
@@ -587,28 +510,6 @@
         ],
         [
           {
-            "node": "Prepare Write Skipped",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Write Sheet Rows": {
-      "main": [
-        [
-          {
-            "node": "Prepare Write Result",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Write Result": {
-      "main": [
-        [
-          {
             "node": "Build Result",
             "type": "main",
             "index": 0
@@ -616,7 +517,7 @@
         ]
       ]
     },
-    "Prepare Write Skipped": {
+    "Write Sheet Rows": {
       "main": [
         [
           {

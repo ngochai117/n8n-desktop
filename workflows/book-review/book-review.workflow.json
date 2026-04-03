@@ -9,7 +9,7 @@
       "typeVersion": 1.4,
       "position": [
         -1744,
-        2100
+        1776
       ],
       "id": "f88a5dd0-8b2e-474c-bd07-34fbc4d83ca7",
       "name": "When chat message received",
@@ -30,19 +30,20 @@
                 },
                 "conditions": [
                   {
-                    "leftValue": "={{ $json.callback_query?.data  ||  \"start_review\" }}",
-                    "rightValue": "start_review",
+                    "id": "41964737-f23d-4ebf-8d6a-294e76f8bbe4",
+                    "leftValue": "={{ String($json.callbackAction || \"\")?.length > 0 }}",
+                    "rightValue": "",
                     "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    },
-                    "id": "6f334ad0-5e23-49ad-882b-4a076c9c1efa"
+                      "type": "boolean",
+                      "operation": "false",
+                      "singleValue": true
+                    }
                   }
                 ],
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "start"
+              "outputKey": "start review"
             },
             {
               "conditions": {
@@ -54,9 +55,9 @@
                 },
                 "conditions": [
                   {
-                    "id": "61ad9b65-5533-4cd7-ad9d-fb800208a597",
-                    "leftValue": "={{ $json.callback_query?.data  ||  \"start_review\" }}",
-                    "rightValue": "stop_review",
+                    "id": "0d8e7ff1-7b62-4dfa-94ec-b5e24999c44b",
+                    "leftValue": "={{ $json.callbackAction }}",
+                    "rightValue": "changeContent",
                     "operator": {
                       "type": "string",
                       "operation": "equals",
@@ -67,7 +68,7 @@
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "stop"
+              "outputKey": "change content"
             },
             {
               "conditions": {
@@ -79,9 +80,9 @@
                 },
                 "conditions": [
                   {
-                    "id": "4fea26cf-ec59-4b35-8572-83db1faba335",
-                    "leftValue": "={{ $json.callback_query?.data  ||  \"start_review\" }}",
-                    "rightValue": "continue_review",
+                    "id": "c415d8ec-5c3b-4178-a73c-4f53d69c9720",
+                    "leftValue": "={{ $json.callbackAction }}",
+                    "rightValue": "delete",
                     "operator": {
                       "type": "string",
                       "operation": "equals",
@@ -92,7 +93,57 @@
                 "combinator": "and"
               },
               "renameOutput": true,
-              "outputKey": "continue"
+              "outputKey": "delete"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "727d6c4f-ead9-435c-a3a2-60fa7671d66a",
+                    "leftValue": "={{ $json.callbackAction }}",
+                    "rightValue": "reviewPassed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "review passed"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "415d5b04-34a6-4bca-9f39-f26bf95630aa",
+                    "leftValue": "={{ String($json.callbackAction || \"\")?.length > 0 }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "others"
             }
           ]
         },
@@ -101,60 +152,11 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        -1296,
-        2180
+        -1072,
+        1824
       ],
       "id": "ca838936-8f42-47d0-89d9-97bf230f1a0d",
-      "name": "Switch"
-    },
-    {
-      "parameters": {
-        "operation": "editMessageText",
-        "chatId": "={{ $('Config Main1').item.json.telegramChatId }}",
-        "messageId": "={{ $('Telegram Trigger1').item.json.callback_query.message.message_id }}",
-        "text": "={{ $('Telegram Trigger1').item.json.callback_query.message.text }}",
-        "additionalFields": {}
-      },
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        -1072,
-        2196
-      ],
-      "id": "e528ca27-b623-4f06-a4f9-06c4ba29dfb1",
-      "name": "Edit a text message",
-      "webhookId": "14ddb494-a79c-4418-9891-3f45358e27e8",
-      "credentials": {
-        "telegramApi": {
-          "id": "UkrPHyACfAUpSkv8",
-          "name": "Local Telegram Bot"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "chatId": "={{ $('Config Main1').item.json.telegramChatId }}",
-        "text": "Đang tạo media...",
-        "additionalFields": {
-          "appendAttribution": false
-        }
-      },
-      "type": "n8n-nodes-base.telegram",
-      "typeVersion": 1.2,
-      "position": [
-        -1072,
-        2388
-      ],
-      "id": "f937b32a-6060-413a-adf2-ffe5187b6705",
-      "name": "Send Creating Outline Message1",
-      "webhookId": "5d1921ba-59cc-4e43-b3a6-c2a30eee5a98",
-      "notesInFlow": false,
-      "credentials": {
-        "telegramApi": {
-          "id": "UkrPHyACfAUpSkv8",
-          "name": "Local Telegram Bot"
-        }
-      }
+      "name": "Route Request"
     },
     {
       "parameters": {
@@ -170,11 +172,11 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        -840,
-        2228
+        -616,
+        1904
       ],
       "id": "bde55eb2-13aa-443f-bef6-ab0d2913ea20",
-      "name": "OpenAI Chat Model1",
+      "name": "Outline Model",
       "credentials": {
         "openAiApi": {
           "id": "nmpOof7gCtDCf1BD",
@@ -196,11 +198,11 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        -488,
-        2376
+        -264,
+        1948
       ],
       "id": "12c4d16d-645a-464a-adbc-17a199022f1e",
-      "name": "OpenAI Chat Model4",
+      "name": "Manifest Model",
       "credentials": {
         "openAiApi": {
           "id": "nmpOof7gCtDCf1BD",
@@ -222,11 +224,11 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        -136,
-        2524
+        88,
+        2200
       ],
       "id": "dd8cbcac-5483-4382-b7f6-e13b5720f7dd",
-      "name": "OpenAI Chat Model6",
+      "name": "QC Model",
       "credentials": {
         "openAiApi": {
           "id": "nmpOof7gCtDCf1BD",
@@ -237,39 +239,39 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $('Config Main1').item.json.chatInput }}\n<<<MANIFEST_JSON>>>\n{{ JSON.stringify($json.output) }}",
+        "text": "={{ $('Config Main').item.json.chatInput }}\n<<<MANIFEST_JSON>>>\n{{ JSON.stringify($json.output) }}",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "={{ $('Config Main1').item.json.master_prompt }}\nPROMPT QC: THE CRITICAL SOUL EDITOR (V4)\n\nROLE:\n- Bạn là một biên tập viên QC gắt gao cho các nội dung kể chuyện review sách dài.\n\nMISSION:\n- Đánh giá chất lượng khách quan và độ khớp với phong cách Soulful Narrator.\n\nSTYLE KERNEL REFERENCE (INJECTED FROM MASTER):\n__BOOK_REVIEW_STYLE_KERNEL__\n\nEVALUATION LAYERS:\n1) Objective layer:\n- Sức mạnh của Hook.\n- Sự mạch lạc của dòng tự sự.\n- Độ nguyên bản (Originality).\n- Tính ứng dụng của Bridge vào thực tế đời sống.\n\n2) Style-fit layer:\n- Sự nhất quán của giọng kể.\n- Mạch trôi tự nhiên (tránh meta labeling).\n- Chiều sâu cảm xúc và các ẩn dụ đời thường.\n\nSCORING & FEEDBACK:\n- Thang điểm từ 0 đến 10 cho: Hook, Clarity, Originality, Practical.\n- Trừ điểm nặng nếu dính meta-label lặp đi lặp lại hoặc hô hào giáo điều.\n- Feedback phải thẳng thắn, ưu tiên các lỗi cần sửa ngay, nhưng giữ cho sự sáng tạo của người kể chuyện còn sống.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"hook\": 0,\n  \"clarity\": 0,\n  \"originality\": 0,\n  \"practical\": 0,\n  \"risk\": \"low|med|high\",\n  \"feedback\": \"string\",\n  \"qc_issues\": [\"string\"]\n}\n\n"
+          "systemMessage": "={{ $('Config Main').item.json.master_prompt }}\nPROMPT QC: THE CRITICAL SOUL EDITOR (V4)\n\nROLE:\n- Bạn là một biên tập viên QC gắt gao cho các nội dung kể chuyện review sách dài.\n\nMISSION:\n- Đánh giá chất lượng khách quan và độ khớp với phong cách Soulful Narrator.\n\nSTYLE KERNEL REFERENCE (INJECTED FROM MASTER):\n__BOOK_REVIEW_STYLE_KERNEL__\n\nEVALUATION LAYERS:\n1) Objective layer:\n- Sức mạnh của Hook.\n- Sự mạch lạc của dòng tự sự.\n- Độ nguyên bản (Originality).\n- Tính ứng dụng của Bridge vào thực tế đời sống.\n\n2) Style-fit layer:\n- Sự nhất quán của giọng kể.\n- Mạch trôi tự nhiên (tránh meta labeling).\n- Chiều sâu cảm xúc và các ẩn dụ đời thường.\n\nSCORING & FEEDBACK:\n- Thang điểm từ 0 đến 10 cho: Hook, Clarity, Originality, Practical.\n- Trừ điểm nặng nếu dính meta-label lặp đi lặp lại hoặc hô hào giáo điều.\n- Feedback phải thẳng thắn, ưu tiên các lỗi cần sửa ngay, nhưng giữ cho sự sáng tạo của người kể chuyện còn sống.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"hook\": 0,\n  \"clarity\": 0,\n  \"originality\": 0,\n  \"practical\": 0,\n  \"risk\": \"low|med|high\",\n  \"feedback\": \"string\",\n  \"qc_issues\": [\"string\"]\n}\n\n"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -144,
-        2300
+        80,
+        1976
       ],
       "id": "77e150d8-1a32-4dd0-afab-042249707767",
-      "name": "QC AI Agent1",
+      "name": "QC AI Agent",
       "retryOnFail": true
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $('Config Main1').item.json.chatInput }}",
+        "text": "={{ $('Config Main').item.json.chatInput }}",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "={{ $('Config Main1').item.json.masterPrompt }}\n\nPROMPT SCENE OUTLINE: THE CONTENT ARCHITECT (V4)\n\nROLE:\n- Bạn là kiến trúc sư xây dựng khung cảnh cho video review sách dài.\n\nTASK:\n- Thiết kế dàn ý cho video 16:9 với tổng thời lượng 15-20 phút.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- scene_count là số nguyên từ 8 đến 14. Nếu không chắc, dùng 10.\n- Cảnh đầu (order=1) bắt buộc scene_role=\"hook\".\n- Cảnh cuối bắt buộc scene_role=\"outro\".\n- Các cảnh cốt lõi phải dày dặn, không viết cảnh siêu nhỏ.\n- Chọn 1 góc nhìn phân tích chính và 1 góc nhìn hỗ trợ (không phân mảng quá nhiều).\n- Mục tiêu từng cảnh phải có ý nghĩa sâu sắc, không chỉ lặp lại nội dung chương sách.\n- Chọn rõ `primary_lens` và `secondary_lens`, không để trống.\n\nLANGUAGE:\n- Tiếng Việt cho các giá trị nội dung (key JSON giữ tiếng Anh theo schema).\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"angle\": \"string\",\n  \"target_audience\": \"string\",\n  \"primary_lens\": \"string\",\n  \"secondary_lens\": \"string\",\n  \"scene_count\": 10,\n  \"estimated_total_duration_sec\": 1020,\n  \"scenes\": [\n    {\n      \"order\": 1,\n      \"scene_role\": \"hook|core|outro\",\n      \"scene_goal\": \"string\",\n      \"key_points\": [\"string\"]\n    }\n  ]\n}\n"
+          "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\n\nPROMPT SCENE OUTLINE: THE CONTENT ARCHITECT (V4)\n\nROLE:\n- Bạn là kiến trúc sư xây dựng khung cảnh cho video review sách dài.\n\nTASK:\n- Thiết kế dàn ý cho video 16:9 với tổng thời lượng 15-20 phút.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- scene_count là số nguyên từ 8 đến 14. Nếu không chắc, dùng 10.\n- Cảnh đầu (order=1) bắt buộc scene_role=\"hook\".\n- Cảnh cuối bắt buộc scene_role=\"outro\".\n- Các cảnh cốt lõi phải dày dặn, không viết cảnh siêu nhỏ.\n- Chọn 1 góc nhìn phân tích chính và 1 góc nhìn hỗ trợ (không phân mảng quá nhiều).\n- Mục tiêu từng cảnh phải có ý nghĩa sâu sắc, không chỉ lặp lại nội dung chương sách.\n- Chọn rõ `primary_lens` và `secondary_lens`, không để trống.\n\nLANGUAGE:\n- Tiếng Việt cho các giá trị nội dung (key JSON giữ tiếng Anh theo schema).\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"angle\": \"string\",\n  \"target_audience\": \"string\",\n  \"primary_lens\": \"string\",\n  \"secondary_lens\": \"string\",\n  \"scene_count\": 10,\n  \"estimated_total_duration_sec\": 1020,\n  \"scenes\": [\n    {\n      \"order\": 1,\n      \"scene_role\": \"hook|core|outro\",\n      \"scene_goal\": \"string\",\n      \"key_points\": [\"string\"]\n    }\n  ]\n}\n"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -848,
-        2004
+        -624,
+        1680
       ],
       "id": "345e7d01-59d8-45a1-9c7f-c7c34d4132a4",
-      "name": "Outline AI Agent1",
+      "name": "Outline AI Agent",
       "retryOnFail": true
     },
     {
@@ -284,10 +286,10 @@
       "typeVersion": 1.2,
       "position": [
         -1744,
-        2292
+        1968
       ],
       "id": "4d4bb9d4-31c8-48df-84db-bd3252c44709",
-      "name": "Telegram Trigger1",
+      "name": "Telegram Trigger",
       "webhookId": "33f37b05-be97-457e-87dd-2f45f840f5b2",
       "alwaysOutputData": true,
       "credentials": {
@@ -326,9 +328,9 @@
               "type": "string"
             },
             {
-              "id": "001bc078-cb0e-47be-806a-f6a38286f7f7",
-              "name": "",
-              "value": "",
+              "id": "d2f921c5-53aa-4896-be43-f7986dacb025",
+              "name": "sessionTableName",
+              "value": "Book Review Sessions",
               "type": "string"
             }
           ]
@@ -339,11 +341,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -1520,
-        2196
+        -1296,
+        1872
       ],
       "id": "d72bb434-aa98-45ac-85d8-6dbceae690f6",
-      "name": "Config Main1"
+      "name": "Config Main"
     },
     {
       "parameters": {
@@ -356,11 +358,11 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -1072,
-        2004
+        -848,
+        1680
       ],
       "id": "043f651a-6514-4f88-93f5-1c48f3365784",
-      "name": "Send Creating Outline Message2",
+      "name": "Send Creating Outline Message",
       "webhookId": "5d1921ba-59cc-4e43-b3a6-c2a30eee5a98",
       "notesInFlow": false,
       "credentials": {
@@ -377,11 +379,11 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        -712,
-        2228
+        -488,
+        1904
       ],
       "id": "419a4264-be19-485c-9146-2cf2dfe80477",
-      "name": "Structured Outline Output Parser1"
+      "name": "Structured Outline Output Parser"
     },
     {
       "parameters": {
@@ -390,11 +392,11 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        -360,
-        2376
+        -136,
+        1948
       ],
       "id": "6ba7bf20-26b1-4c90-836a-89be70bea31e",
-      "name": "Structured Expand Output Parser1"
+      "name": "Structured Expand Output Parser"
     },
     {
       "parameters": {
@@ -403,24 +405,24 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        -8,
-        2524
+        216,
+        2200
       ],
       "id": "6c4d8c06-9905-4a4b-bc6c-a0675b9118b2",
-      "name": "Structured Output Parser1"
+      "name": "Structured QC Output Parser"
     },
     {
       "parameters": {
-        "jsCode": "function createSessionToken() {\n  return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction asObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0) {\n  const num = Number(value);\n  return Number.isFinite(num) ? Math.floor(num) : fallback;\n}\n\nfunction slugifyBookName(value) {\n  const normalized = String(value ?? '')\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '')\n    .toLowerCase()\n    .replace(/[^a-z0-9]+/g, '-')\n    .replace(/^-+|-+$/g, '');\n\n  if (!normalized) {\n    return 'book';\n  }\n\n  return normalized.slice(0, 80) || 'book';\n}\n\nfunction buildReadableContent(manifest) {\n  const book = asObject(manifest.book);\n  const video = asObject(manifest.video);\n  const metadata = asObject(manifest.metadata);\n  const scenes = asArray(manifest.scenes).sort((a, b) => asInt(a.order) - asInt(b.order));\n\n  const lines = [];\n\n  lines.push(`# ${safeText(book.title, 'Sach chua ro ten')}`);\n\n  if (safeText(book.author)) {\n    lines.push(`Tac gia: ${safeText(book.author)}`);\n  }\n\n  const styleKeywords = asArray(book.style_keywords).map((item) => safeText(item)).filter(Boolean);\n  if (styleKeywords.length) {\n    lines.push(`Style keywords: ${styleKeywords.join(', ')}`);\n  }\n\n  const aspectRatio = safeText(video.aspect_ratio, '16:9');\n  const minSec = asInt(video.target_duration_min_sec);\n  const maxSec = asInt(video.target_duration_max_sec);\n  const estSec = asInt(video.estimated_total_duration_sec);\n\n  lines.push(`Video: ${aspectRatio} | ${minSec}-${maxSec}s | est ${estSec}s`);\n\n  lines.push('');\n  lines.push('## Metadata');\n  lines.push(`Title: ${safeText(metadata.title)}`);\n\n  if (safeText(metadata.thumbnail_text)) {\n    lines.push(`Thumbnail: ${safeText(metadata.thumbnail_text)}`);\n  }\n\n  if (safeText(metadata.caption)) {\n    lines.push('');\n    lines.push('Caption:');\n    lines.push(normalizeText(metadata.caption));\n  }\n\n  const hashtags = asArray(metadata.hashtags).map((item) => safeText(item)).filter(Boolean);\n  if (hashtags.length) {\n    lines.push('');\n    lines.push(`Hashtags: ${hashtags.join(' ')}`);\n  }\n\n  for (const scene of scenes) {\n    const sceneId = safeText(scene.scene_id, 'scene');\n    const sceneTitle = safeText(scene.scene_title, sceneId);\n    const sceneRole = safeText(scene.scene_role, 'core');\n    const duration = asInt(scene.estimated_duration_sec);\n    const narration = normalizeText(scene.narration_text);\n    const quote = safeText(scene.highlight_quote_vi);\n\n    lines.push('');\n    lines.push(`## ${sceneId} - ${sceneTitle}`);\n    lines.push(`Role: ${sceneRole} | Order: ${asInt(scene.order)} | Duration: ${duration}s`);\n\n    if (quote) {\n      lines.push(`Highlight quote: \"${quote}\"`);\n    }\n\n    if (narration) {\n      lines.push('');\n      lines.push(narration);\n    }\n  }\n\n  return lines.join('\\n').replace(/\\n{3,}/g, '\\n\\n').trim();\n}\n\nconst manifestRaw = asObject($('Manifest AI Agent1').first().json.output);\nconst qc = asObject($('QC AI Agent1').first().json.output);\n\nif (Object.keys(manifestRaw).length === 0) {\n  throw new Error('Manifest output is missing from merged payload.');\n}\n\nif (Object.keys(qc).length === 0) {\n  throw new Error('QC output is missing from merged payload.');\n}\n\nconst bookRaw = asObject(manifestRaw.book);\nconst videoRaw = asObject(manifestRaw.video);\nconst metadataRaw = asObject(manifestRaw.metadata);\n\nconst manifest = {\n  ...manifestRaw,\n  book: {\n    title: normalizeText(bookRaw.title),\n    author: normalizeText(bookRaw.author),\n    style_keywords: asArray(bookRaw.style_keywords).map((item) => safeText(item)).filter(Boolean),\n  },\n  video: {\n    aspect_ratio: safeText(videoRaw.aspect_ratio, '16:9'),\n    target_duration_min_sec: asInt(videoRaw.target_duration_min_sec, 900),\n    target_duration_max_sec: asInt(videoRaw.target_duration_max_sec, 1200),\n    estimated_total_duration_sec: asInt(videoRaw.estimated_total_duration_sec, 0),\n  },\n  metadata: {\n    ...metadataRaw,\n    title: normalizeText(metadataRaw.title),\n    caption: normalizeText(metadataRaw.caption),\n    thumbnail_text: normalizeText(metadataRaw.thumbnail_text),\n    hashtags: asArray(metadataRaw.hashtags).map((item) => safeText(item)).filter(Boolean),\n  },\n  scenes: asArray(manifestRaw.scenes)\n    .map((scene, index) => {\n      const s = asObject(scene);\n      return {\n        ...s,\n        scene_id: safeText(s.scene_id, 'scene_' + String(index + 1).padStart(2, '0')),\n        order: asInt(s.order, index + 1),\n        scene_title: normalizeText(s.scene_title),\n        scene_role: safeText(s.scene_role, index === 0 ? 'hook' : 'core'),\n        narration_text: normalizeText(s.narration_text),\n        image_prompt_en: normalizeText(s.image_prompt_en),\n        highlight_quote_vi: normalizeText(s.highlight_quote_vi),\n        estimated_duration_sec: asInt(s.estimated_duration_sec, 0),\n        transition: safeText(s.transition, 'cut'),\n      };\n    })\n    .sort((a, b) => a.order - b.order),\n};\n\nconst contentReadable = buildReadableContent(manifest);\n\nconst sessionToken = safeText(createSessionToken(), 'session');\nconst safeToken = sessionToken.replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'session';\n\nconst safeBookName = slugifyBookName(\n  safeText(`${manifest.book.title}-${manifest.book.author}`, 'book')\n);\n\nreturn {\n  manifest,\n  manifestJSONString: JSON.stringify(manifest, null, 2),\n  contentReadable,\n  qc,\n  ggDriveFolderName: `${safeBookName}-${safeToken}`,\n};\n"
+        "jsCode": "function normalizeText(value) {\n   return String(value ?? '').replace(/\\r?\\n/g, '\\n').trim();\n}\n\nfunction asObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0) {\n  const num = Number(value);\n  return Number.isFinite(num) ? Math.floor(num) : fallback;\n}\n\nfunction slugifyBookName(value) {\n  const normalized = String(value ?? '')\n    .normalize('NFD')\n    .replace(/[̀-ͯ]/g, '')\n    .toLowerCase()\n    .replace(/[^a-z0-9]+/g, '-')\n    .replace(/^-+|-+$/g, '');\n\n  if (!normalized) {\n    return 'book';\n  }\n\n  return normalized.slice(0, 80) || 'book';\n}\n\nfunction buildReadableContent(manifest) {\n  const book = asObject(manifest.book);\n  const video = asObject(manifest.video);\n  const metadata = asObject(manifest.metadata);\n  const scenes = asArray(manifest.scenes).sort((a, b) => asInt(a.order) - asInt(b.order));\n\n  const lines = [];\n\n  lines.push(`# ${safeText(book.title, 'Sach chua ro ten')}`);\n\n  if (safeText(book.author)) {\n    lines.push(`Tac gia: ${safeText(book.author)}`);\n  }\n\n  const styleKeywords = asArray(book.style_keywords).map((item) => safeText(item)).filter(Boolean);\n  if (styleKeywords.length) {\n    lines.push(`Style keywords: ${styleKeywords.join(', ')}`);\n  }\n\n  const aspectRatio = safeText(video.aspect_ratio, '16:9');\n  const minSec = asInt(video.target_duration_min_sec);\n  const maxSec = asInt(video.target_duration_max_sec);\n  const estSec = asInt(video.estimated_total_duration_sec);\n\n  lines.push(`Video: ${aspectRatio} | ${minSec}-${maxSec}s | est ${estSec}s`);\n\n  lines.push('');\n  lines.push('## Metadata');\n  lines.push(`Title: ${safeText(metadata.title)}`);\n\n  if (safeText(metadata.thumbnail_text)) {\n    lines.push(`Thumbnail: ${safeText(metadata.thumbnail_text)}`);\n  }\n\n  if (safeText(metadata.caption)) {\n    lines.push('');\n    lines.push('Caption:');\n    lines.push(normalizeText(metadata.caption));\n  }\n\n  const hashtags = asArray(metadata.hashtags).map((item) => safeText(item)).filter(Boolean);\n  if (hashtags.length) {\n    lines.push('');\n    lines.push(`Hashtags: ${hashtags.join(' ')}`);\n  }\n\n  for (const scene of scenes) {\n    const sceneId = safeText(scene.scene_id, 'scene');\n    const sceneTitle = safeText(scene.scene_title, sceneId);\n    const sceneRole = safeText(scene.scene_role, 'core');\n    const duration = asInt(scene.estimated_duration_sec);\n    const narration = normalizeText(scene.narration_text);\n    const quote = safeText(scene.highlight_quote_vi);\n\n    lines.push('');\n    lines.push(`## ${sceneId} - ${sceneTitle}`);\n    lines.push(`Role: ${sceneRole} | Order: ${asInt(scene.order)} | Duration: ${duration}s`);\n\n    if (quote) {\n      lines.push(`Highlight quote: \"${quote}\"`);\n    }\n\n    if (narration) {\n      lines.push('');\n      lines.push(narration);\n    }\n  }\n\n  return lines.join('\\n').replace(/\\n{3,}/g, '\\n\\n').trim();\n}\n\nconst manifestRaw = asObject($('Manifest AI Agent').first().json.output);\nconst qc = asObject($('QC AI Agent').first().json.output);\n\nif (Object.keys(manifestRaw).length === 0) {\n  throw new Error('Manifest output is missing from merged payload.');\n}\n\nif (Object.keys(qc).length === 0) {\n  throw new Error('QC output is missing from merged payload.');\n}\n\nconst bookRaw = asObject(manifestRaw.book);\nconst videoRaw = asObject(manifestRaw.video);\nconst metadataRaw = asObject(manifestRaw.metadata);\n\nconst manifest = {\n  ...manifestRaw,\n  book: {\n    title: normalizeText(bookRaw.title),\n    author: normalizeText(bookRaw.author),\n    style_keywords: asArray(bookRaw.style_keywords).map((item) => safeText(item)).filter(Boolean),\n  },\n  video: {\n    aspect_ratio: safeText(videoRaw.aspect_ratio, '16:9'),\n    target_duration_min_sec: asInt(videoRaw.target_duration_min_sec, 900),\n    target_duration_max_sec: asInt(videoRaw.target_duration_max_sec, 1200),\n    estimated_total_duration_sec: asInt(videoRaw.estimated_total_duration_sec, 0),\n  },\n  metadata: {\n    ...metadataRaw,\n    title: normalizeText(metadataRaw.title),\n    caption: normalizeText(metadataRaw.caption),\n    thumbnail_text: normalizeText(metadataRaw.thumbnail_text),\n    hashtags: asArray(metadataRaw.hashtags).map((item) => safeText(item)).filter(Boolean),\n  },\n  scenes: asArray(manifestRaw.scenes)\n    .map((scene, index) => {\n      const s = asObject(scene);\n      return {\n        ...s,\n        scene_id: safeText(s.scene_id, 'scene_' + String(index + 1).padStart(2, '0')),\n        order: asInt(s.order, index + 1),\n        scene_title: normalizeText(s.scene_title),\n        scene_role: safeText(s.scene_role, index === 0 ? 'hook' : 'core'),\n        narration_text: normalizeText(s.narration_text),\n        image_prompt_en: normalizeText(s.image_prompt_en),\n        highlight_quote_vi: normalizeText(s.highlight_quote_vi),\n        estimated_duration_sec: asInt(s.estimated_duration_sec, 0),\n        transition: safeText(s.transition, 'cut'),\n      };\n    })\n    .sort((a, b) => a.order - b.order),\n};\n\nconst contentReadable = buildReadableContent(manifest);\n\nconst sessionToken = safeText($('Config Main').first().json.sessionToken, '');\nconst safeToken = sessionToken.replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'session';\n\nconst safeBookName = slugifyBookName(\n  safeText(`${manifest.book.title}-${manifest.book.author}`, 'book')\n);\n\nconst folderPath = `${safeBookName}-${safeToken}`;\n\nreturn {\n  sessionToken,\n  manifest,\n  manifestJSONString: JSON.stringify(manifest, null, 2),\n  contentReadable,\n  qc,\n  folderPath,\n  ggDriveFolderName: folderPath,\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        208,
-        2300
+        432,
+        1976
       ],
       "id": "c1b8ae39-a470-4835-ba95-a9154e994986",
-      "name": "Prepare Manifest1"
+      "name": "Prepare Manifest"
     },
     {
       "parameters": {
@@ -434,11 +436,11 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        432,
-        2204
+        656,
+        1880
       ],
       "id": "fce4bbc3-47cf-40c0-a37c-7ee6290a77ba",
-      "name": "Convert Manifest to File1"
+      "name": "Convert Manifest to File"
     },
     {
       "parameters": {
@@ -454,9 +456,8 @@
           "value": {
             "action": "upsert",
             "fileName": "Manifest.json",
-            "binaryFieldName": "file",
-            "rootFolderId": "={{ $('Config Main1').item.json.ggDriveRootFolderId }}",
-            "folderPath": "={{ $('Prepare Manifest1').item.json.ggDriveFolderName }}"
+            "rootFolderId": "={{ $('Config Main').item.json.ggDriveRootFolderId }}",
+            "folderPath": "={{ $('Prepare Manifest').item.json.ggDriveFolderName }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -501,6 +502,16 @@
               "removed": false
             },
             {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            },
+            {
               "id": "binaryFieldName",
               "displayName": "binaryFieldName",
               "required": false,
@@ -508,7 +519,7 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string",
-              "removed": false
+              "removed": true
             }
           ],
           "attemptToConvertTypes": false,
@@ -521,28 +532,28 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        656,
-        2204
+        880,
+        1880
       ],
       "id": "783252db-35a8-49ec-8339-7cdcb29cacda",
-      "name": "GG Drive Manager Save Manifest1"
+      "name": "Save Manifest to Drive"
     },
     {
       "parameters": {
         "operation": "editMessageText",
-        "chatId": "={{ $('Config Main1').item.json.telegramChatId }}",
-        "messageId": "={{ $('Send Creating Outline Message2').item.json.result.message_id }}",
+        "chatId": "={{ $('Send Creating Outline Message').item.json.result.chat.id }}",
+        "messageId": "={{ $('Send Creating Outline Message').item.json.result.message_id }}",
         "text": "QC đang Review...",
         "additionalFields": {}
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -80,
-        2004
+        144,
+        1680
       ],
       "id": "0cfe3fe2-27f2-4f1b-9b77-cd5e77431298",
-      "name": "Send QC is Reviewing Message1",
+      "name": "Send QC Reviewing Message",
       "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
       "credentials": {
         "telegramApi": {
@@ -554,19 +565,19 @@
     {
       "parameters": {
         "operation": "editMessageText",
-        "chatId": "={{ $('Config Main1').item.json.telegramChatId }}",
-        "messageId": "={{ $('Send Creating Outline Message2').item.json.result.message_id }}",
+        "chatId": "={{ $('Send Creating Outline Message').item.json.result.chat.id }}",
+        "messageId": "={{ $('Send Creating Outline Message').item.json.result.message_id }}",
         "text": "Đang tạo nội dung...",
         "additionalFields": {}
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -432,
-        1856
+        -208,
+        1532
       ],
       "id": "cb57a281-0744-4261-b438-d430c69443f1",
-      "name": "Send Creating Manifest Message1",
+      "name": "Send Creating Manifest Message",
       "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
       "credentials": {
         "telegramApi": {
@@ -578,36 +589,36 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $('Config Main1').item.json.chatInput }}\n<<<OUTLINE_JSON>>>\n{{ JSON.stringify($json.output) }}",
+        "text": "={{ $('Config Main').item.json.chatInput }}\n<<<OUTLINE_JSON>>>\n{{ JSON.stringify($json.output) }}",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "={{ $('Config Main1').item.json.masterPrompt }}\nPROMPT SCENE EXPAND: THE SCRIPTWRITER (V4)\n\nROLE:\n- Bạn là người viết kịch bản kể chuyện cho video review sách dài.\n\nTASK:\n- Mở rộng dàn ý thành một review_manifest sẵn sàng sản xuất.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- Giữ đúng số lượng cảnh từ dàn ý.\n- Tổng narration_text: 15.000 - 20.000 ký tự tiếng Việt.\n- Hook/Outro: 45-75 giây mỗi cảnh.\n- Core scenes: 75-120 giây mỗi cảnh, tối thiểu 45 giây.\n- scene_01 là hook, scene cuối là outro.\n- image_prompt_en: viết bằng tiếng Anh và không để trống.\n- highlight_quote_vi: tùy chọn, không có thì để chuỗi rỗng.\n- transition mặc định \"cut\".\n- metadata.title: Phải chứa một \"Mâu thuẫn\" (Tension) hoặc một \"Câu hỏi tử huyệt\" chạm đến nỗi đau/khao khát của con người hiện đại. TRÁNH: \"Review sách: [Tên sách]\". NÊN \"Tại sao bạn vẫn mãi thất bại dù đã cố gắng?\".\n- metadata.caption: Dưới 150 chữ, tiếng Việt. Cấu trúc: 1 Câu hỏi khơi gợi nỗi đau (Emotional Hook) + 1 Giá trị cốt lõi từ sách + 1 Lời hứa về sự thay đổi (Practical Takeaway).\n- metadata.thumbnail_text: Cực ngắn (dưới 6 từ), clear và curiosity-driven. Phải là một lời cảnh báo hoặc một lời mời gọi mang tính quyết định, không lặp lại Title.\n- metadata.hashtags: 5-7 tags, viết thường, không dấu. Bao gồm tên sách, tên tác giả, ngách nội dung (self-help, triết lý).\n\nANTI-RIGID CONSTRAINTS:\n- Tuyệt đối không dùng các mẫu câu lặp đi lặp lại giữa các cảnh.\n- Không biến narration thành danh sách liệt kê tóm tắt.\n- Giữ sự cân bằng giữa chiều sâu cảm xúc và tính ứng dụng thực tế.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"book\": {\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"style_keywords\": [\"string\"]\n  },\n  \"video\": {\n    \"aspect_ratio\": \"16:9\",\n    \"target_duration_min_sec\": 900,\n    \"target_duration_max_sec\": 1200,\n    \"estimated_total_duration_sec\": 0\n  },\n  \"metadata\": {\n    \"title\": \"string\",\n    \"caption\": \"string\",\n    \"thumbnail_text\": \"string\",\n    \"hashtags\": [\"#tag\"]\n  },\n  \"scenes\": [\n    {\n      \"scene_id\": \"scene_01\",\n      \"order\": 1,\n      \"scene_title\": \"string\",\n      \"scene_role\": \"hook|core|outro\",\n      \"narration_text\": \"string\",\n      \"image_prompt_en\": \"string\",\n      \"highlight_quote_vi\": \"string\",\n      \"estimated_duration_sec\": 0,\n      \"transition\": \"cut\"\n    }\n  ]\n}\n"
+          "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\nPROMPT SCENE EXPAND: THE SCRIPTWRITER (V4)\n\nROLE:\n- Bạn là người viết kịch bản kể chuyện cho video review sách dài.\n\nTASK:\n- Mở rộng dàn ý thành một review_manifest sẵn sàng sản xuất.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- Giữ đúng số lượng cảnh từ dàn ý.\n- Tổng narration_text: 15.000 - 20.000 ký tự tiếng Việt.\n- Hook/Outro: 45-75 giây mỗi cảnh.\n- Core scenes: 75-120 giây mỗi cảnh, tối thiểu 45 giây.\n- scene_01 là hook, scene cuối là outro.\n- image_prompt_en: viết bằng tiếng Anh và không để trống.\n- highlight_quote_vi: tùy chọn, không có thì để chuỗi rỗng.\n- transition mặc định \"cut\".\n- metadata.title: Phải chứa một \"Mâu thuẫn\" (Tension) hoặc một \"Câu hỏi tử huyệt\" chạm đến nỗi đau/khao khát của con người hiện đại. TRÁNH: \"Review sách: [Tên sách]\". NÊN \"Tại sao bạn vẫn mãi thất bại dù đã cố gắng?\".\n- metadata.caption: Dưới 150 chữ, tiếng Việt. Cấu trúc: 1 Câu hỏi khơi gợi nỗi đau (Emotional Hook) + 1 Giá trị cốt lõi từ sách + 1 Lời hứa về sự thay đổi (Practical Takeaway).\n- metadata.thumbnail_text: Cực ngắn (dưới 6 từ), clear và curiosity-driven. Phải là một lời cảnh báo hoặc một lời mời gọi mang tính quyết định, không lặp lại Title.\n- metadata.hashtags: 5-7 tags, viết thường, không dấu. Bao gồm tên sách, tên tác giả, ngách nội dung (self-help, triết lý).\n\nANTI-RIGID CONSTRAINTS:\n- Tuyệt đối không dùng các mẫu câu lặp đi lặp lại giữa các cảnh.\n- Không biến narration thành danh sách liệt kê tóm tắt.\n- Giữ sự cân bằng giữa chiều sâu cảm xúc và tính ứng dụng thực tế.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"book\": {\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"style_keywords\": [\"string\"]\n  },\n  \"video\": {\n    \"aspect_ratio\": \"16:9\",\n    \"target_duration_min_sec\": 900,\n    \"target_duration_max_sec\": 1200,\n    \"estimated_total_duration_sec\": 0\n  },\n  \"metadata\": {\n    \"title\": \"string\",\n    \"caption\": \"string\",\n    \"thumbnail_text\": \"string\",\n    \"hashtags\": [\"#tag\"]\n  },\n  \"scenes\": [\n    {\n      \"scene_id\": \"scene_01\",\n      \"order\": 1,\n      \"scene_title\": \"string\",\n      \"scene_role\": \"hook|core|outro\",\n      \"narration_text\": \"string\",\n      \"image_prompt_en\": \"string\",\n      \"highlight_quote_vi\": \"string\",\n      \"estimated_duration_sec\": 0,\n      \"transition\": \"cut\"\n    }\n  ]\n}\n"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -496,
-        2152
+        -272,
+        1724
       ],
       "id": "644cdd72-93f4-4611-b716-e0aaba79452c",
-      "name": "Manifest AI Agent1",
+      "name": "Manifest AI Agent",
       "retryOnFail": true
     },
     {
       "parameters": {
         "operation": "deleteMessage",
-        "chatId": "={{ $('Config Main1').item.json.telegramChatId }}",
-        "messageId": "={{ $('Send Creating Outline Message2').item.json.result.message_id }}"
+        "chatId": "={{ $('Config Main').item.json.telegramChatId }}",
+        "messageId": "={{ $('Send Creating Outline Message').item.json.result.message_id }}"
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1104,
-        2204
+        1552,
+        1880
       ],
       "id": "9a87d6c3-2e18-4737-b2a5-74d8f1d909bc",
-      "name": "Delete Loading Message1",
+      "name": "Delete Loading Message",
       "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
       "credentials": {
         "telegramApi": {
@@ -618,8 +629,8 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $('Config Main1').item.json.telegramChatId }}",
-        "text": "=content: {{ $('GG Drive Manager Save Content Readable1').item.json.fileUrl }}\nmanifest: {{ $('GG Drive Manager Save Manifest1').item.json.fileUrl }}\nfolderUrl: {{ $json.folderUrl }}\n------------------\nhook: {{ $('Prepare Manifest1').item.json.qc.hook }}, clarity: {{ $('Prepare Manifest1').item.json.qc.clarity }}, originality: {{ $('Prepare Manifest1').item.json.qc.originality }}, practical: {{ $('Prepare Manifest1').item.json.qc.practical }}, risk: {{ $('Prepare Manifest1').item.json.qc.risk }}\n------------------\n{{ $('Prepare Manifest1').item.json.qc.feedback }}\n------------------\n{{ $('Prepare Manifest1').item.json.qc.qc_issues.join('\\n') }}",
+        "chatId": "={{ $('Config Main').item.json.telegramChatId }}",
+        "text": "=content: {{ $('Save Content Readable to Drive').item.json.fileUrl }}\nmanifest: {{ $('Save Manifest to Drive').item.json.fileUrl }}\nfolderUrl: {{ $('Merge Persisted Files').item.json.folderUrl }}\n------------------\nhook: {{ $('Prepare Manifest').item.json.qc.hook }}, clarity: {{ $('Prepare Manifest').item.json.qc.clarity }}, originality: {{ $('Prepare Manifest').item.json.qc.originality }}, practical: {{ $('Prepare Manifest').item.json.qc.practical }}, risk: {{ $('Prepare Manifest').item.json.qc.risk }}\n------------------\n{{ $('Prepare Manifest').item.json.qc.feedback }}\n------------------\n{{ $('Prepare Manifest').item.json.qc.qc_issues.join('\\n') }}",
         "replyMarkup": "inlineKeyboard",
         "inlineKeyboard": {
           "rows": [
@@ -627,15 +638,21 @@
               "row": {
                 "buttons": [
                   {
-                    "text": "Stop",
+                    "text": "Delete",
                     "additionalFields": {
-                      "callback_data": "stop_review"
+                      "callback_data": "={{ \"delete:\" + $(\"Prepare Manifest\").item.json.sessionToken }}"
+                    }
+                  },
+                  {
+                    "text": "Change",
+                    "additionalFields": {
+                      "callback_data": "={{ \"changeContent:\" + $(\"Prepare Manifest\").item.json.sessionToken }}"
                     }
                   },
                   {
                     "text": "Continue",
                     "additionalFields": {
-                      "callback_data": "continue_review"
+                      "callback_data": "={{ \"reviewPassed:\" + $(\"Prepare Manifest\").item.json.sessionToken }}"
                     }
                   }
                 ]
@@ -651,11 +668,11 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1104,
-        2396
+        1552,
+        2072
       ],
       "id": "ab078599-04fc-4709-bb6f-1ee67347c8dc",
-      "name": "Send Review Message1",
+      "name": "Send Review Message",
       "webhookId": "5d1921ba-59cc-4e43-b3a6-c2a30eee5a98",
       "notesInFlow": false,
       "credentials": {
@@ -677,11 +694,11 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        432,
-        2396
+        656,
+        2072
       ],
       "id": "13129dda-41ff-4b41-a932-a1d8bb437ad1",
-      "name": "Convert Content Readable to File1"
+      "name": "Convert Content Readable to File"
     },
     {
       "parameters": {
@@ -694,11 +711,11 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        880,
-        2300
+        1104,
+        1976
       ],
       "id": "be89580e-c19c-48c0-91f2-fd3ec5a14776",
-      "name": "Merge1"
+      "name": "Merge Persisted Files"
     },
     {
       "parameters": {
@@ -715,8 +732,8 @@
             "action": "upsert",
             "fileName": "ContentReadable.txt",
             "binaryFieldName": "file",
-            "rootFolderId": "={{ $('Config Main1').item.json.ggDriveRootFolderId }}",
-            "folderPath": "={{ $('Prepare Manifest1').item.json.ggDriveFolderName }}"
+            "rootFolderId": "={{ $('Config Main').item.json.ggDriveRootFolderId }}",
+            "folderPath": "={{ $('Prepare Manifest').item.json.ggDriveFolderName }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -781,11 +798,910 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        656,
-        2396
+        880,
+        2072
       ],
       "id": "cb1e2334-9a98-4291-a9f6-b0f52424f976",
-      "name": "GG Drive Manager Save Content Readable1"
+      "name": "Save Content Readable to Drive"
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst callbackData = String($json.callback_query?.data ?? '').trim();\nlet callbackAction = '';\nlet sessionToken = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);\n\nif (callbackData) {\n  const separatorIndex = callbackData.indexOf(':');\n  if (separatorIndex === -1) {\n    callbackAction = callbackData;\n  } else {\n    callbackAction = callbackData.slice(0, separatorIndex).trim() || '';\n    sessionToken = callbackData.slice(separatorIndex + 1).trim();\n  }\n}\n\nreturn {\n  ...$json,\n  callbackData,\n  callbackAction,\n  sessionToken: safeText(sessionToken, ''),\n};"
+      },
+      "name": "Parse Callback Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1520,
+        1872
+      ],
+      "id": "de059205-732b-417d-86a8-fceae57eb4dd"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Hq9y27aFMsQhEcuB",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Hq9y27aFMsQhEcuB",
+          "cachedResultName": "DataTableStore"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "upsert",
+            "tableName": "={{ $(\"Config Main\").item.json.sessionTableName || \"\" }}",
+            "keyField": "sessionToken",
+            "keyValue": "={{ (() => { const sessionToken = String($(\"Prepare Manifest\").item.json.sessionToken || \"\").trim(); if (!sessionToken) throw new Error(\"sessionToken is required before saving review session.\"); return sessionToken; })() }}",
+            "data": "={{ (() => { const sessionToken = String($(\"Prepare Manifest\").item.json.sessionToken || \"\").trim(); const manifestUrl = String($(\"Save Manifest to Drive\").item.json.fileUrl || \"\").trim(); const folderUrl = String($(\"Merge Persisted Files\").item.json.folderUrl || $(\"Save Manifest to Drive\").item.json.folderUrl || \"\").trim(); const rootFolderId = String($(\"Config Main\").item.json.ggDriveRootFolderId || \"\").trim(); const folderPath = String($(\"Prepare Manifest\").item.json.folderPath || \"\").trim(); if (!sessionToken) throw new Error(\"sessionToken is required before saving review session.\"); if (!manifestUrl) throw new Error(\"manifestUrl is required before saving review session.\"); return { sessionToken, status: \"reviewing\", manifestUrl, folderUrl, rootFolderId, folderPath }; })() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "tableName",
+              "displayName": "tableName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "keyField",
+              "displayName": "keyField",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "keyValue",
+              "displayName": "keyValue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "data",
+              "displayName": "data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "1dadb463-87f5-4b56-8b4a-9b07a02aea20",
+      "name": "Save Reviewing Session",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1328,
+        1976
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Hq9y27aFMsQhEcuB",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Hq9y27aFMsQhEcuB",
+          "cachedResultName": "DataTableStore"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "get",
+            "tableName": "={{ $(\"Config Main\").item.json.sessionTableName || \"\" }}",
+            "keyField": "sessionToken",
+            "keyValue": "={{ String($(\"Parse Callback Data\").item.json.sessionToken || \"\").trim() || \"__missing_session_token__\" }}",
+            "data": "={{ ({}) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "tableName",
+              "displayName": "tableName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "keyField",
+              "displayName": "keyField",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "keyValue",
+              "displayName": "keyValue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "data",
+              "displayName": "data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "d99a5e99-bc5e-43e8-aea5-6ad3650de7ca",
+      "name": "Get Review Session",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -848,
+        2456
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.callback_query.message.chat.id }}",
+        "text": "Đang tải dữ liệu...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "47d36a27-f040-4c96-9a12-8ef0225a655c",
+      "name": "Answer Continue Query",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -208,
+        2456
+      ],
+      "webhookId": "b3271de9-8677-4f32-ace2-82f1ca8a968c",
+      "credentials": {
+        "telegramApi": {
+          "id": "UkrPHyACfAUpSkv8",
+          "name": "Local Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "QpcIxaHiYXDqjw4p",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/QpcIxaHiYXDqjw4p",
+          "cachedResultName": "GG Drive Manager"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "get",
+            "url": "={{ $('Get Review Session').item.json.row.manifestUrl }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "rootFolderId",
+              "displayName": "rootFolderId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "folderPath",
+              "displayName": "folderPath",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "fileName",
+              "displayName": "fileName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "binaryFieldName",
+              "displayName": "binaryFieldName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "56cdc35a-a800-4b07-8104-6e7ace506bbb",
+      "name": "Get Manifest from Drive",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        432,
+        2456
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "fromJson",
+        "binaryPropertyName": "file",
+        "destinationKey": "manifest",
+        "options": {
+          "keepSource": "json"
+        }
+      },
+      "id": "3d20c5a4-9bda-4590-8597-24bc2d9b4573",
+      "name": "Extract Manifest JSON",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        656,
+        2456
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.found === true && String($('Parse Callback Data').first().json.sessionToken || '').trim().length > 0 }}",
+                    "rightValue": false,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    },
+                    "id": "a71c5269-5aff-4d8b-9d4b-444c72658591"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "not found"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a77e52bc-f709-4bca-87d6-d7237a0738c9",
+                    "leftValue": "={{ $(\"Parse Callback Data\").item.json.callbackAction || \"\" }}",
+                    "rightValue": "reviewPassed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "review passed"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ff917bd9-938c-41e4-a2da-3e1fc761899b",
+                    "leftValue": "={{ $(\"Parse Callback Data\").item.json.callbackAction || \"\" }}",
+                    "rightValue": "delete",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "delete"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -560,
+        2440
+      ],
+      "id": "3c86698d-7b34-485c-aeee-ec2ab5ec113a",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "callback",
+        "queryId": "={{ $(\"Telegram Trigger\").item.json.callback_query.id }}",
+        "additionalFields": {
+          "show_alert": true,
+          "text": "=Không tìm thấy dữ liệu"
+        }
+      },
+      "id": "013e8ed2-1da6-4d39-b5fa-9ba760b526fd",
+      "name": "Answer Noop Query",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -208,
+        2220
+      ],
+      "webhookId": "a38a2f50-a81b-4512-a08c-b7741c669951",
+      "credentials": {
+        "telegramApi": {
+          "id": "UkrPHyACfAUpSkv8",
+          "name": "Local Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3c044e51-e46a-4c8e-8cc8-3d1bc6f7244c",
+              "leftValue": "={{ $json.manifest }}",
+              "rightValue": "success",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        880,
+        2456
+      ],
+      "id": "7c855fa4-3f0c-4db3-a9b6-a5d6fdd51ed5",
+      "name": "If Load Manifest Success"
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Answer Continue Query').item.json.result.chat.id }}",
+        "messageId": "={{ $('Answer Continue Query').item.json.result.message_id }}",
+        "text": "Không tải được dữ liệu",
+        "additionalFields": {}
+      },
+      "id": "ae4223a7-724b-4330-92b0-bc92cd042af9",
+      "name": "Answer Load Manifest Fail",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1104,
+        2504
+      ],
+      "webhookId": "b3271de9-8677-4f32-ace2-82f1ca8a968c",
+      "credentials": {
+        "telegramApi": {
+          "id": "UkrPHyACfAUpSkv8",
+          "name": "Local Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "callback",
+        "queryId": "={{ $(\"Telegram Trigger\").item.json.callback_query.id }}",
+        "additionalFields": {
+          "show_alert": true,
+          "text": "=Không tải được dữ liệu"
+        }
+      },
+      "id": "85a4548b-b1fc-4d4e-ab30-e1aed16b3752",
+      "name": "Alert Answer Load Manifest Fail",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1104,
+        2696
+      ],
+      "webhookId": "a38a2f50-a81b-4512-a08c-b7741c669951",
+      "credentials": {
+        "telegramApi": {
+          "id": "UkrPHyACfAUpSkv8",
+          "name": "Local Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Answer Continue Query').item.json.result.chat.id }}",
+        "messageId": "={{ $('Answer Continue Query').item.json.result.message_id }}",
+        "text": "Đang tạo media...",
+        "additionalFields": {}
+      },
+      "id": "bc63dc30-da70-4626-a206-d2ba71624043",
+      "name": "Answer Start Media",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1104,
+        2216
+      ],
+      "webhookId": "b3271de9-8677-4f32-ace2-82f1ca8a968c",
+      "credentials": {
+        "telegramApi": {
+          "id": "UkrPHyACfAUpSkv8",
+          "name": "Local Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"manifest\": {{ $('Extract Manifest JSON').item.json.manifest }},\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1328,
+        2216
+      ],
+      "id": "d14a94ea-2db9-447d-8b5d-89c0a1e8ab36",
+      "name": "Config Media"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Hq9y27aFMsQhEcuB",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Hq9y27aFMsQhEcuB",
+          "cachedResultName": "DataTableStore"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "upsert",
+            "tableName": "={{ $('Config Main').item.json.sessionTableName }}",
+            "keyField": "sessionToken",
+            "keyValue": "={{ $('Get Review Session').item.json.row.sessionToken }}",
+            "data": "={{ ({ ...($('Get Review Session').item.json.row || {}), sessionToken: String( $('Get Review Session').item.json.row.sessionToken || \"\").trim(), status: \"creatingMedia\" }) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "tableName",
+              "displayName": "tableName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "keyField",
+              "displayName": "keyField",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "keyValue",
+              "displayName": "keyValue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "data",
+              "displayName": "data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "3ddc3048-e911-4277-98e4-c096de6b005a",
+      "name": "Update Session Continue Review",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        144,
+        2456
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Telegram Trigger').item.json.callback_query.message.chat.id }}",
+        "messageId": "={{ $('Telegram Trigger').item.json.callback_query.message.message_id }}",
+        "text": "={{ $('Telegram Trigger').item.json.callback_query.message.text }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -848,
+        2168
+      ],
+      "id": "b9af2bd0-e9ad-4bc0-b78f-e3ccb909cbd8",
+      "name": "Remove button",
+      "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
+      "credentials": {
+        "telegramApi": {
+          "id": "UkrPHyACfAUpSkv8",
+          "name": "Local Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Hq9y27aFMsQhEcuB",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Hq9y27aFMsQhEcuB",
+          "cachedResultName": "DataTableStore"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "delete",
+            "tableName": "={{ $(\"Config Main\").item.json.sessionTableName || \"\" }}",
+            "keyField": "sessionToken",
+            "keyValue": "={{ $('Get Review Session').item.json.row.sessionToken }}",
+            "data": "={{ ({}) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "tableName",
+              "displayName": "tableName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "keyField",
+              "displayName": "keyField",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "keyValue",
+              "displayName": "keyValue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "data",
+              "displayName": "data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "a2696b10-bbc3-484f-bc81-3bd15a4ad856",
+      "name": "Delete Session",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        144,
+        2648
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "QpcIxaHiYXDqjw4p",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/QpcIxaHiYXDqjw4p",
+          "cachedResultName": "GG Drive Manager"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "delete",
+            "url": "={{ $('Get Review Session').item.json.row.folderUrl }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "rootFolderId",
+              "displayName": "rootFolderId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "folderPath",
+              "displayName": "folderPath",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "fileName",
+              "displayName": "fileName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "binaryFieldName",
+              "displayName": "binaryFieldName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -208,
+        2648
+      ],
+      "id": "7e20d3e0-a93d-4162-a667-7bf72ff5723e",
+      "name": "Delete Folder"
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $('Telegram Trigger').item.json.callback_query.message.chat.id }}",
+        "messageId": "={{ $('Telegram Trigger').item.json.callback_query.message.message_id }}",
+        "text": "=~Nội dung đã bị xoá!~",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -848,
+        1924
+      ],
+      "id": "212fbccc-5e08-4871-a1ff-e27b77f38dfd",
+      "name": "Answer Delete",
+      "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
+      "credentials": {
+        "telegramApi": {
+          "id": "UkrPHyACfAUpSkv8",
+          "name": "Local Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteMessage",
+        "chatId": "={{ $('Telegram Trigger').item.json.callback_query.message.chat.id }}",
+        "messageId": "={{ $('Telegram Trigger').item.json.callback_query.message.message_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -848,
+        1488
+      ],
+      "id": "79461372-1de9-4208-b3c6-bbfa8020369b",
+      "name": "Delete A Chat Message",
+      "webhookId": "52703847-effa-4d1c-8b3c-1a659cfa23a3",
+      "credentials": {
+        "telegramApi": {
+          "id": "UkrPHyACfAUpSkv8",
+          "name": "Local Telegram Bot"
+        }
+      }
     }
   ],
   "connections": {
@@ -793,115 +1709,308 @@
       "main": [
         [
           {
-            "node": "Config Main1",
+            "node": "Parse Callback Data",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Switch": {
+    "Route Request": {
       "main": [
         [
           {
-            "node": "Send Creating Outline Message2",
+            "node": "Send Creating Outline Message",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Edit a text message",
+            "node": "Send Creating Outline Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Delete A Chat Message",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Edit a text message",
+            "node": "Get Review Session",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Send Creating Outline Message1",
+            "node": "Answer Delete",
             "type": "main",
             "index": 0
           }
-        ]
-      ]
-    },
-    "OpenAI Chat Model1": {
-      "ai_languageModel": [
+        ],
         [
           {
-            "node": "Outline AI Agent1",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenAI Chat Model4": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Manifest AI Agent1",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenAI Chat Model6": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "QC AI Agent1",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "QC AI Agent1": {
-      "main": [
-        [
-          {
-            "node": "Prepare Manifest1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Outline AI Agent1": {
-      "main": [
-        [
-          {
-            "node": "Send Creating Manifest Message1",
+            "node": "Remove button",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Manifest AI Agent1",
+            "node": "Get Review Session",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Remove button",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Telegram Trigger1": {
+    "Outline Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Outline AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manifest Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Manifest AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QC Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "QC AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QC AI Agent": {
       "main": [
         [
           {
-            "node": "Config Main1",
+            "node": "Prepare Manifest",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Config Main1": {
+    "Outline AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Creating Manifest Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Manifest AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse Callback Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config Main": {
+      "main": [
+        [
+          {
+            "node": "Route Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Creating Outline Message": {
+      "main": [
+        [
+          {
+            "node": "Outline AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Outline Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Outline AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Expand Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Manifest AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured QC Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "QC AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Manifest": {
+      "main": [
+        [
+          {
+            "node": "Convert Manifest to File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Convert Content Readable to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Manifest to File": {
+      "main": [
+        [
+          {
+            "node": "Save Manifest to Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Manifest to Drive": {
+      "main": [
+        [
+          {
+            "node": "Merge Persisted Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manifest AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send QC Reviewing Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "QC AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Content Readable to File": {
+      "main": [
+        [
+          {
+            "node": "Save Content Readable to Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Persisted Files": {
+      "main": [
+        [
+          {
+            "node": "Save Reviewing Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Content Readable to Drive": {
+      "main": [
+        [
+          {
+            "node": "Merge Persisted Files",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Parse Callback Data": {
+      "main": [
+        [
+          {
+            "node": "Config Main",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Reviewing Session": {
+      "main": [
+        [
+          {
+            "node": "Delete Loading Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Review Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Review Session": {
       "main": [
         [
           {
@@ -912,138 +2021,116 @@
         ]
       ]
     },
-    "Send Creating Outline Message2": {
+    "Get Manifest from Drive": {
       "main": [
         [
           {
-            "node": "Outline AI Agent1",
+            "node": "Extract Manifest JSON",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Structured Outline Output Parser1": {
-      "ai_outputParser": [
-        [
-          {
-            "node": "Outline AI Agent1",
-            "type": "ai_outputParser",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Structured Expand Output Parser1": {
-      "ai_outputParser": [
-        [
-          {
-            "node": "Manifest AI Agent1",
-            "type": "ai_outputParser",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Structured Output Parser1": {
-      "ai_outputParser": [
-        [
-          {
-            "node": "QC AI Agent1",
-            "type": "ai_outputParser",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Manifest1": {
+    "Extract Manifest JSON": {
       "main": [
         [
           {
-            "node": "Convert Manifest to File1",
+            "node": "If Load Manifest Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Answer Noop Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Answer Continue Query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delete Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer Continue Query": {
+      "main": [
+        [
+          {
+            "node": "Update Session Continue Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Load Manifest Success": {
+      "main": [
+        [
+          {
+            "node": "Answer Start Media",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert Answer Load Manifest Fail",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Convert Content Readable to File1",
+            "node": "Answer Load Manifest Fail",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Convert Manifest to File1": {
+    "Answer Start Media": {
       "main": [
         [
           {
-            "node": "GG Drive Manager Save Manifest1",
+            "node": "Config Media",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "GG Drive Manager Save Manifest1": {
+    "Update Session Continue Review": {
       "main": [
         [
           {
-            "node": "Merge1",
+            "node": "Get Manifest from Drive",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Manifest AI Agent1": {
+    "Delete Folder": {
       "main": [
         [
           {
-            "node": "Send QC is Reviewing Message1",
+            "node": "Delete Session",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "QC AI Agent1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Convert Content Readable to File1": {
-      "main": [
-        [
-          {
-            "node": "GG Drive Manager Save Content Readable1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge1": {
-      "main": [
-        [
-          {
-            "node": "Delete Loading Message1",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Send Review Message1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "GG Drive Manager Save Content Readable1": {
-      "main": [
-        [
-          {
-            "node": "Merge1",
-            "type": "main",
-            "index": 1
           }
         ]
       ]
