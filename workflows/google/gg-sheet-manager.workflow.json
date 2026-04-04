@@ -37,8 +37,7 @@
           ],
           "combinator": "and"
         },
-        "options": {
-        }
+        "options": {}
       },
       "id": "4",
       "name": "If Need Create Sheet",
@@ -142,8 +141,7 @@
           ],
           "combinator": "and"
         },
-        "options": {
-        }
+        "options": {}
       },
       "id": "8",
       "name": "If Should Move Sheet",
@@ -163,8 +161,7 @@
           "mode": "list",
           "value": "My Drive"
         },
-        "folderId": "={{ $json.folderId }}",
-        "authentication": "oAuth2"
+        "folderId": "={{ $json.folderId }}"
       },
       "id": "9",
       "name": "Move Sheet To Folder",
@@ -203,8 +200,7 @@
           ],
           "combinator": "and"
         },
-        "options": {
-        }
+        "options": {}
       },
       "id": "12",
       "name": "If Should Write Rows",
@@ -248,8 +244,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        736,
-        248
+        1184,
+        392
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -268,7 +264,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        960,
+        1408,
         320
       ]
     },
@@ -417,7 +413,6 @@
     },
     {
       "parameters": {
-        "method": "GET",
         "url": "={{ (() => { const meta = $(\"Prepare Sheet Meta\").item.json || {}; const spreadsheetId = encodeURIComponent(meta.spreadsheetId || \"\"); const range = encodeURIComponent((meta.sheetName || \"Sheet1\") + \"!A1:ZZ\"); return \"https://sheets.googleapis.com/v4/spreadsheets/\" + spreadsheetId + \"/values/\" + range; })() }}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "googleDriveOAuth2Api",
@@ -437,7 +432,7 @@
       "typeVersion": 4.3,
       "position": [
         736,
-        400
+        392
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -457,7 +452,7 @@
       "typeVersion": 2,
       "position": [
         960,
-        400
+        392
       ]
     }
   ],

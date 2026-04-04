@@ -3,7 +3,8 @@
     "Book Review": {
       "id": "901WvOJHn6O2Hbze",
       "template": "workflows/book-review/book-review.workflow.json",
-      "lastSyncedAt": "2026-04-04T13:00:38Z"
+      "lastSyncedAt": "2026-04-04T14:39:35Z",
+      "templateImport": "scripts/workflows/import/import-book-review-workflow.sh"
     },
     "Shared Notification Router": {
       "id": "2oIMm0rwQPf8j4oC",
@@ -14,7 +15,8 @@
     "GG Sheet Manager": {
       "id": "Dhguhje1kdEgdj9I",
       "template": "workflows/google/gg-sheet-manager.workflow.json",
-      "lastSyncedAt": "2026-04-04T12:52:15Z"
+      "lastSyncedAt": "2026-04-04T14:39:35Z",
+      "templateImport": "scripts/workflows/import/import-gg-sheet-manager-workflow.sh"
     },
     "GG Drive Manager": {
       "id": "QpcIxaHiYXDqjw4p",
@@ -61,7 +63,7 @@
     "TTS VieNeu": {
       "id": "2F1jBI12C6NtslBN",
       "template": "workflows/media/tts.workflow.json",
-      "lastSyncedAt": "2026-04-04T11:20:36Z",
+      "lastSyncedAt": "2026-04-04T14:39:35Z",
       "templateImport": "scripts/workflows/import/import-tts-workflow.sh"
     }
   }
