@@ -11,7 +11,7 @@
 - `import-gg-sheet-manager-workflow.sh`: import subworkflow Sheet reusable
 - `import-text-to-images-workflow.sh`: import shared workflow Text To Images
 - `import-text-to-videos-veo3-workflow.sh`: import shared workflow Text To Videos VEO3
-- `import-tts-workflow.sh`: import shared workflow TTS
+- `import-tts-workflow.sh`: import shared workflow TTS VieNeu
 - `import-shared-notification-router-workflow.sh`: import shared notification workflow
 - `import-all-workflows.sh`: import tat ca wrapper theo thu tu uu tien
 
@@ -21,9 +21,12 @@
 ## Tests
 - `test-book-review-checklist.sh`: wrapper chay checklist cho Book Review
 - `test-book-review-checklist.mjs`: static topology/contract checklist cho workflow canonical
+- `test-tts-checklist.sh`: wrapper chay checklist cho `TTS VieNeu`
+- `test-tts-checklist.mjs`: static topology/contract checklist cho workflow `TTS VieNeu`
 
 ## Book Review notes
 - Workflow canonical: `workflows/book-review/book-review.workflow.json`
+- Shared TTS workflow: `workflows/media/tts.workflow.json` (`TTS VieNeu`)
 - Shared session store: `workflows/shared/data-table-store.workflow.json`
-- Book Review hien da persist reviewer session state va handle `continueReview` / `stopReview`
-- Backlog media/TTS branch tiep theo: `docs/book-review-todo.md`
+- Book Review hien da persist reviewer session state, handle `continueReview` / `stopReview`, va wire TTS narration branch sau `reviewPassed`
+- Backlog visual/E2E tiep theo: `docs/book-review-todo.md`

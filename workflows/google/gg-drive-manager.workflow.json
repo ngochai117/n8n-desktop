@@ -61,8 +61,8 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1706,
-        -916
+        -1712,
+        -912
       ]
     },
     {
@@ -145,7 +145,8 @@
         },
         "options": {
           "binaryPropertyName": "file"
-        }
+        },
+        "authentication": "oAuth2"
       },
       "id": "gt-download-file",
       "name": "Download Retrieved File",
@@ -314,7 +315,8 @@
             "size",
             "webViewLink"
           ]
-        }
+        },
+        "authentication": "oAuth2"
       },
       "id": "ed663a03-0bfe-4c06-b54f-e91b83d2e68b",
       "name": "Search Existing File",
@@ -322,7 +324,7 @@
       "typeVersion": 3,
       "position": [
         1568,
-        440
+        448
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -343,7 +345,7 @@
       "typeVersion": 2,
       "position": [
         1792,
-        440
+        448
       ]
     },
     {
@@ -396,7 +398,7 @@
       "typeVersion": 3.4,
       "position": [
         1568,
-        632
+        640
       ]
     },
     {
@@ -455,7 +457,7 @@
       "typeVersion": 3.4,
       "position": [
         2464,
-        536
+        544
       ]
     },
     {
@@ -470,7 +472,8 @@
         "folderId": "={{ $json.targetFolderId || 'root' }}",
         "options": {
           "simplifyOutput": false
-        }
+        },
+        "authentication": "oAuth2"
       },
       "id": "24",
       "name": "Upload New File",
@@ -478,7 +481,7 @@
       "typeVersion": 3,
       "position": [
         2240,
-        536
+        544
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -543,7 +546,7 @@
       "typeVersion": 3.4,
       "position": [
         2464,
-        344
+        352
       ]
     },
     {
@@ -561,7 +564,8 @@
             "size",
             "webViewLink"
           ]
-        }
+        },
+        "authentication": "oAuth2"
       },
       "id": "21",
       "name": "Update Existing File",
@@ -569,7 +573,7 @@
       "typeVersion": 3,
       "position": [
         2240,
-        344
+        352
       ],
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -608,7 +612,7 @@
       "typeVersion": 2.2,
       "position": [
         2016,
-        440
+        448
       ]
     },
     {
@@ -641,7 +645,7 @@
       "typeVersion": 2.2,
       "position": [
         1344,
-        536
+        544
       ]
     },
     {
@@ -654,7 +658,7 @@
       "typeVersion": 2,
       "position": [
         1568,
-        248
+        256
       ]
     },
     {
@@ -674,7 +678,8 @@
             "parents",
             "webViewLink"
           ]
-        }
+        },
+        "authentication": "oAuth2"
       },
       "id": "40",
       "name": "Search Folder Items (List)",
@@ -682,7 +687,7 @@
       "typeVersion": 3,
       "position": [
         1344,
-        248
+        256
       ],
       "alwaysOutputData": true,
       "credentials": {
@@ -732,7 +737,7 @@
       "typeVersion": 3.2,
       "position": [
         1120,
-        440
+        448
       ]
     },
     {
@@ -762,7 +767,7 @@
       "typeVersion": 3.4,
       "position": [
         896,
-        440
+        448
       ]
     },
     {
@@ -931,7 +936,8 @@
           "value": "My Drive"
         },
         "folderId": "={{ $json.baseFolderId || 'root' }}",
-        "options": {}
+        "options": {},
+        "authentication": "oAuth2"
       },
       "id": "9",
       "name": "Create Missing Folder",
@@ -1091,7 +1097,8 @@
             "parents",
             "webViewLink"
           ]
-        }
+        },
+        "authentication": "oAuth2"
       },
       "id": "5",
       "name": "Search Current Folder",
@@ -1145,7 +1152,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const base = $('If Has Segment').item?.json ?? {};\nconst current = $json ?? {};\n\nreturn {\n  json: {\n    ...base,\n    ...current,\n  },\n  binary: $binary,\n};"
+        "jsCode": "const base = $('If Has Segment').item?.json ?? {};\nconst current = $json ?? {};\nconst currentBinary = $binary ?? {};\nconst normalizeBinary = $('Normalize Request').first()?.binary ?? {};\n\nconst outputBinary = Object.keys(currentBinary).length > 0\n  ? currentBinary\n  : normalizeBinary;\n\nreturn {\n  json: {\n    ...base,\n    ...current,\n  },\n  binary: outputBinary,\n};"
       },
       "id": "ctx-folder-search",
       "name": "Attach Folder Search Context",
@@ -1273,7 +1280,8 @@
           "value": "={{ $('Get Drive Info').item.json.id }}",
           "mode": "id"
         },
-        "options": {}
+        "options": {},
+        "authentication": "oAuth2"
       },
       "id": "e78c1cbf-92cf-4642-a823-a463659e02ec",
       "name": "Delete Folder",
@@ -1295,7 +1303,8 @@
       "parameters": {
         "operation": "deleteFile",
         "fileId": "={{ $json.id }}",
-        "options": {}
+        "options": {},
+        "authentication": "oAuth2"
       },
       "id": "227a39d3-8239-4fbc-975d-3e3256637f5e",
       "name": "Delete File",
@@ -1321,7 +1330,7 @@
       "typeVersion": 2,
       "position": [
         -224,
-        -120
+        -128
       ],
       "id": "8737438f-68c7-4337-b445-33fe80858a24",
       "name": "Build Delete Result"

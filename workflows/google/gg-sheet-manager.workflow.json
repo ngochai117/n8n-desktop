@@ -4,7 +4,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst rawAction = safeText(input.action, 'ensureAndWrite').toLowerCase();\nconst action = rawAction === 'ensuresheet'\n  ? 'ensureSheet'\n  : (rawAction === 'writerows' ? 'writeRows' : 'ensureAndWrite');\n\nconst spreadsheetId = safeText(input.spreadsheetId);\nconst spreadsheetName = safeText(input.spreadsheetName, 'untitled-sheet');\nconst sheetName = safeText(input.sheetName, 'Sheet1');\nconst folderId = safeText(input.folderId);\nconst rows = Array.isArray(input.rows) ? input.rows : [];\nconst writeRange = safeText(input.range, sheetName + '!A1');\n\nconst normalizedValueInputOption = safeText(input.valueInputOption, 'RAW').toUpperCase();\nconst valueInputOption = normalizedValueInputOption === 'USER_ENTERED'\n  ? 'USER_ENTERED'\n  : 'RAW';\n\nconst shouldEnsure = action === 'ensureAndWrite' || action === 'ensureSheet';\nconst shouldWrite = action === 'ensureAndWrite' || action === 'writeRows';\nconst shouldMove = shouldEnsure && folderId !== '';\nconst shouldCreateSheet = shouldEnsure && spreadsheetId === '';\nconst missingSpreadsheetIdForWrite = action === 'writeRows' && spreadsheetId === '';\nconst shouldCallWriteApi = shouldWrite && !missingSpreadsheetIdForWrite;\n\nreturn {\n  ...input,\n  action,\n  spreadsheetId,\n  spreadsheetName,\n  sheetName,\n  folderId,\n  rows,\n  writeRange,\n  valueInputOption,\n  shouldEnsure,\n  shouldWrite,\n  shouldMove,\n  shouldCreateSheet,\n  missingSpreadsheetIdForWrite,\n  shouldCallWriteApi,\n};"
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeRows(value) {\n  if (Array.isArray(value)) return value;\n\n  if (typeof value === 'string') {\n    const text = value.trim();\n    if (!text) return [];\n\n    try {\n      const parsed = JSON.parse(text);\n      return Array.isArray(parsed) ? parsed : [];\n    } catch (error) {\n      return [];\n    }\n  }\n\n  return [];\n}\n\nconst rawAction = safeText(input.action, 'ensureAndWrite').toLowerCase();\nlet action = 'ensureAndWrite';\nif (rawAction === 'ensuresheet') action = 'ensureSheet';\nif (rawAction === 'upsertrows') action = 'upsertRows';\n\nconst spreadsheetId = safeText(input.spreadsheetId);\nconst spreadsheetName = safeText(input.spreadsheetName, 'untitled-sheet');\nconst sheetName = safeText(input.sheetName, 'Sheet1');\nconst folderId = safeText(input.folderId);\nconst rows = normalizeRows(input.rows);\nconst writeRange = safeText(input.range, '');\nconst upsertByHeader = safeText(input.upsertByHeader);\nconst failOnNoUpdates = input.failOnNoUpdates === true || safeText(input.failOnNoUpdates).toLowerCase() === 'true';\n\nconst normalizedValueInputOption = safeText(input.valueInputOption, 'RAW').toUpperCase();\nconst valueInputOption = normalizedValueInputOption === 'USER_ENTERED'\n  ? 'USER_ENTERED'\n  : 'RAW';\n\nconst shouldEnsure = action === 'ensureAndWrite' || action === 'ensureSheet';\nconst shouldWrite = action === 'ensureAndWrite' || action === 'upsertRows';\nconst shouldMove = shouldEnsure && folderId !== '';\nconst shouldCreateSheet = shouldEnsure && spreadsheetId === '';\nconst missingSpreadsheetIdForWrite = shouldWrite && spreadsheetId === '';\nconst shouldCallWriteApi = shouldWrite && !missingSpreadsheetIdForWrite && rows.length > 0;\n\nreturn {\n  ...input,\n  action,\n  spreadsheetId,\n  spreadsheetName,\n  sheetName,\n  folderId,\n  rows,\n  writeRange,\n  upsertByHeader,\n  failOnNoUpdates,\n  valueInputOption,\n  shouldEnsure,\n  shouldWrite,\n  shouldMove,\n  shouldCreateSheet,\n  missingSpreadsheetIdForWrite,\n  shouldCallWriteApi,\n};"
       },
       "id": "3",
       "name": "Normalize Request",
@@ -37,7 +37,8 @@
           ],
           "combinator": "and"
         },
-        "options": {}
+        "options": {
+        }
       },
       "id": "4",
       "name": "If Need Create Sheet",
@@ -108,7 +109,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst body = input.body && typeof input.body === 'object' ? input.body : {};\nconst spreadsheetId = safeText(body.spreadsheetId, safeText(input.spreadsheetId));\nconst spreadsheetUrl = safeText(\n  body.spreadsheetUrl,\n  safeText(input.spreadsheetUrl, spreadsheetId ? 'https://docs.google.com/spreadsheets/d/' + spreadsheetId : ''),\n);\n\nconst createStatusCodeRaw = Number(input.statusCode ?? 0);\nconst createStatusCode = Number.isFinite(createStatusCodeRaw) ? createStatusCodeRaw : 0;\n\nreturn {\n  ...input,\n  spreadsheetId,\n  spreadsheetUrl,\n  createStatusCode,\n};"
+        "jsCode": "function safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst normalized = $('Normalize Request').item.json || {};\n\nlet ensured = {};\ntry {\n  ensured = $('Create Sheet').item.json || {};\n} catch (error) {\n  ensured = {};\n}\n\nif (!ensured || Object.keys(ensured).length === 0) {\n  try {\n    ensured = $('Use Existing Sheet').item.json || {};\n  } catch (error) {\n    ensured = {};\n  }\n}\n\nconst body = ensured.body && typeof ensured.body === 'object' ? ensured.body : {};\nconst spreadsheetId = safeText(body.spreadsheetId, safeText(ensured.spreadsheetId, safeText(normalized.spreadsheetId)));\nconst spreadsheetUrl = safeText(\n  body.spreadsheetUrl,\n  safeText(ensured.spreadsheetUrl, spreadsheetId ? 'https://docs.google.com/spreadsheets/d/' + spreadsheetId : ''),\n);\n\nconst createStatusCodeRaw = Number(ensured.statusCode ?? 0);\nconst createStatusCode = Number.isFinite(createStatusCodeRaw) ? createStatusCodeRaw : 0;\n\nreturn {\n  ...normalized,\n  spreadsheetId,\n  spreadsheetUrl,\n  createStatusCode,\n};"
       },
       "id": "7",
       "name": "Prepare Sheet Meta",
@@ -130,7 +131,7 @@
           },
           "conditions": [
             {
-              "leftValue": "={{ $json.shouldMove === true && String($json.spreadsheetId || \"\").trim() !== \"\" }}",
+              "leftValue": "={{ String($(\"Prepare Sheet Meta\").item.json.folderId || \"\").trim() !== \"\" && String($(\"Prepare Sheet Meta\").item.json.spreadsheetId || \"\").trim() !== \"\" }}",
               "rightValue": "",
               "operator": {
                 "type": "boolean",
@@ -141,7 +142,8 @@
           ],
           "combinator": "and"
         },
-        "options": {}
+        "options": {
+        }
       },
       "id": "8",
       "name": "If Should Move Sheet",
@@ -190,7 +192,7 @@
           },
           "conditions": [
             {
-              "leftValue": "={{ $json.shouldCallWriteApi === true }}",
+              "leftValue": "={{ $(\"Prepare Sheet Meta\").item.json.shouldCallWriteApi === true }}",
               "rightValue": "",
               "operator": {
                 "type": "boolean",
@@ -201,7 +203,8 @@
           ],
           "combinator": "and"
         },
-        "options": {}
+        "options": {
+        }
       },
       "id": "12",
       "name": "If Should Write Rows",
@@ -214,8 +217,8 @@
     },
     {
       "parameters": {
-        "method": "PUT",
-        "url": "={{ \"https://sheets.googleapis.com/v4/spreadsheets/\" + encodeURIComponent($json.spreadsheetId || \"\") + \"/values/\" + encodeURIComponent($json.writeRange || (($json.sheetName || \"Sheet1\") + \"!A1\")) + \"?valueInputOption=\" + encodeURIComponent($json.valueInputOption || \"RAW\") }}",
+        "method": "POST",
+        "url": "={{ (() => { const payload = $(\"Prepare Write Payload\").item.json || {}; const spreadsheetId = encodeURIComponent(payload.spreadsheetId || \"\"); return \"https://sheets.googleapis.com/v4/spreadsheets/\" + spreadsheetId + \"/values:batchUpdate\"; })() }}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "googleDriveOAuth2Api",
         "sendHeaders": true,
@@ -229,7 +232,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { values: Array.isArray($json.rows) ? $json.rows : [] } }}",
+        "jsonBody": "={{ (() => { const payload = $(\"Prepare Write Payload\").item.json || {}; const data = Array.isArray(payload.batchData) ? payload.batchData : []; return { valueInputOption: payload.valueInputOption || \"RAW\", data }; })() }}",
         "options": {
           "response": {
             "response": {
@@ -258,7 +261,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst spreadsheetId = safeText(input.spreadsheetId);\nconst spreadsheetUrl = safeText(input.spreadsheetUrl, spreadsheetId ? 'https://docs.google.com/spreadsheets/d/' + spreadsheetId : '');\n\nconst createStatusCodeRaw = Number(input.createStatusCode ?? 0);\nconst createStatusCode = Number.isFinite(createStatusCodeRaw) ? createStatusCodeRaw : 0;\n\nconst writeStatusCodeRaw = Number(input.statusCode ?? 0);\nconst writeStatusCode = Number.isFinite(writeStatusCodeRaw) ? writeStatusCodeRaw : 0;\n\nconst writeOk = input.shouldWrite !== true\n  ? true\n  : (input.missingSpreadsheetIdForWrite === true\n      ? false\n      : (writeStatusCode >= 200 && writeStatusCode < 300));\nconst ensureOk = input.shouldEnsure !== true || spreadsheetId !== '';\nconst moveStatus = input.shouldMove === true ? 'success' : 'skipped';\n\nreturn {\n  ...input,\n  status: ensureOk && writeOk ? 'success' : 'partial',\n  spreadsheetId,\n  spreadsheetUrl,\n  createStatusCode,\n  writeStatusCode,\n  writeRange: safeText(input.writeRange),\n  moveStatus,\n};"
+        "jsCode": "function safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asPositiveInt(value, fallback = 0) {\n  const n = Number(value);\n  if (!Number.isFinite(n)) return fallback;\n  return n > 0 ? Math.floor(n) : fallback;\n}\n\nconst normalized = $('Normalize Request').item.json || {};\nlet prepared = {};\ntry {\n  prepared = $('Prepare Sheet Meta').item.json || {};\n} catch (error) {\n  prepared = {};\n}\n\nlet writePayload = {};\ntry {\n  writePayload = $('Prepare Write Payload').item.json || {};\n} catch (error) {\n  writePayload = {};\n}\n\nlet writeResponse = {};\ntry {\n  writeResponse = $('Write Sheet Rows').item.json || {};\n} catch (error) {\n  writeResponse = {};\n}\n\nlet moveExecuted = false;\ntry {\n  const moveResponse = $('Move Sheet To Folder').item.json || {};\n  moveExecuted = Object.keys(moveResponse).length >= 0;\n} catch (error) {\n  moveExecuted = false;\n}\n\nconst context = {\n  ...normalized,\n  ...prepared,\n  ...writePayload,\n};\n\nconst spreadsheetId = safeText(context.spreadsheetId);\nconst spreadsheetUrl = safeText(context.spreadsheetUrl, spreadsheetId ? 'https://docs.google.com/spreadsheets/d/' + spreadsheetId : '');\n\nconst createStatusCodeRaw = Number(context.createStatusCode ?? 0);\nconst createStatusCode = Number.isFinite(createStatusCodeRaw) ? createStatusCodeRaw : 0;\n\nconst writeStatusCodeRaw = Number(writeResponse.statusCode ?? 0);\nconst writeStatusCode = Number.isFinite(writeStatusCodeRaw) ? writeStatusCodeRaw : 0;\n\nconst shouldWriteRequested = context.shouldWrite === true;\nconst shouldWrite = shouldWriteRequested && context.shouldCallWriteApi === true;\nconst shouldMove = context.shouldMove === true;\nconst missingSpreadsheetIdForWrite = context.missingSpreadsheetIdForWrite === true;\nconst inputRowsCount = asPositiveInt(context.inputRowsCount, Array.isArray(context.rows) ? context.rows.length : 0);\n\nconst writeBody = writeResponse.body && typeof writeResponse.body === 'object' ? writeResponse.body : {};\nconst updatedRows = asPositiveInt(writeBody.totalUpdatedRows, 0);\nconst updatedCells = asPositiveInt(writeBody.totalUpdatedCells, 0);\nconst failOnNoUpdates = context.failOnNoUpdates === true;\nconst noOpWrite = shouldWrite && inputRowsCount > 0 && updatedRows === 0 && updatedCells === 0;\n\nif (shouldWrite && missingSpreadsheetIdForWrite) {\n  throw new Error('spreadsheetId is required for upsertRows');\n}\n\nif (shouldWrite && !(writeStatusCode >= 200 && writeStatusCode < 300)) {\n  throw new Error('Google Sheets write failed (statusCode=' + writeStatusCode + ')');\n}\n\nif (noOpWrite && failOnNoUpdates) {\n  throw new Error('Google Sheets write reported success but updated 0 rows/cells');\n}\n\nconst writeOk = !shouldWrite || (writeStatusCode >= 200 && writeStatusCode < 300);\nconst ensureOk = context.shouldEnsure !== true || spreadsheetId !== '';\nconst moveStatus = shouldMove ? (moveExecuted ? 'success' : 'skipped') : 'skipped';\n\nreturn {\n  ...context,\n  status: ensureOk && writeOk ? 'success' : 'partial',\n  spreadsheetId,\n  spreadsheetUrl,\n  createStatusCode,\n  writeStatusCode,\n  writeRange: safeText(context.writeRangeResolved || context.writeRange),\n  moveStatus,\n  inputRowsCount,\n  updatedRows,\n  updatedCells,\n  noOpWrite,\n};"
       },
       "id": "16",
       "name": "Build Result",
@@ -271,7 +274,7 @@
     },
     {
       "parameters": {
-        "content": "## INPUT FIELDS\n\n`action`: `ensureAndWrite|ensureSheet|writeRows`\n- example: `ensureAndWrite`\n`spreadsheetId`: ID spreadsheet co san\n- example: `1AbCdEfGhIjK`\n`spreadsheetName`: title khi can tao moi\n- example: `Book Review Sessions`\n`sheetName`: ten tab\n- example: `Sessions`\n`folderId`: Drive folder de move spreadsheet\n- example: `1FolderAbCdEf`\n`rows`: mang 2 chieu de ghi\n- example: `[[\"sessionToken\",\"reviewStatus\"],[\"abc123\",\"reviewing\"]]`\n`range`: range ghi du lieu\n- example: `Sessions!A1`\n`valueInputOption`: `RAW|USER_ENTERED`\n- example: `RAW`\n\n### Quick examples\n`ensureSheet` -> `{ action: \"ensureSheet\", spreadsheetName: \"Book Review Sessions\", sheetName: \"Sessions\", folderId: \"1FolderAbCdEf\" }`\n`writeRows` -> `{ action: \"writeRows\", spreadsheetId: \"1AbCdEfGhIjK\", sheetName: \"Sessions\", range: \"Sessions!A1\", rows: [[\"sessionToken\",\"reviewStatus\"],[\"abc123\",\"reviewing\"]] }`",
+        "content": "## INPUT FIELDS\n\n`action`: `ensureAndWrite|ensureSheet|upsertRows`\n- example: `ensureAndWrite`\n`spreadsheetId`: ID spreadsheet co san\n- example: `1AbCdEfGhIjK`\n`spreadsheetName`: title khi can tao moi\n- example: `Book Review Sessions`\n`sheetName`: ten tab\n- example: `Sessions`\n`folderId`: Drive folder de move spreadsheet\n- example: `1FolderAbCdEf`\n`rows`: mang 2 chieu de ghi\n- example: `[[\"scene_id\",\"tts_status\"],[\"scene_001\",\"success\"]]`\n`range`: range ghi du lieu (optional)\n- example: `Sessions!A1`\n`upsertByHeader`: neu co, se upsert theo cot key header\n- example: `scene_id`\n`valueInputOption`: `RAW|USER_ENTERED`\n- example: `RAW`\n`failOnNoUpdates`: optional, mac dinh false\n- example: `false`\n\n### Quick examples\n`upsertRows` init sheet -> `{ action: \"upsertRows\", spreadsheetId: \"1AbCdEfGhIjK\", sheetName: \"Media\", range: \"Media!A1\", rows: [[\"scene_id\",\"tts_status\"],[\"scene_001\",\"\"]] }`\n`upsertRows` theo key -> `{ action: \"upsertRows\", spreadsheetId: \"1AbCdEfGhIjK\", sheetName: \"Media\", upsertByHeader: \"scene_id\", rows: [[\"scene_id\",\"tts_status\"],[\"scene_001\",\"success\"]] }`",
         "height": 980,
         "width": 820,
         "color": 7
@@ -335,7 +338,7 @@
     },
     {
       "parameters": {
-        "content": "## IMPORTANT LINE: WRITE\n\nFlow:\n- If Should Write Rows\n- Write Sheet Rows\n- Build Result\n\nTypical write:\n- `range=Sessions!A1`\n- `rows=[[\"sessionToken\",\"reviewStatus\"],[\"abc123\",\"reviewing\"]]`",
+        "content": "## IMPORTANT LINE: WRITE\n\nFlow:\n- If Should Write Rows\n- Read Current Sheet Rows\n- Prepare Write Payload\n- Write Sheet Rows (`values:batchUpdate`)\n- Build Result\n\nupsertRows behavior:\n- Co `upsertByHeader` -> upsert theo key header (match: update, miss: append)\n- Khong co `upsertByHeader`:\n  - Co `range` -> write vao range do\n  - Khong co `range` -> append cuoi sheet",
         "height": 280,
         "width": 560,
         "color": 3
@@ -393,6 +396,12 @@
             },
             {
               "name": "valueInputOption"
+            },
+            {
+              "name": "upsertByHeader"
+            },
+            {
+              "name": "failOnNoUpdates"
             }
           ]
         }
@@ -405,6 +414,51 @@
       ],
       "id": "9d8e4d45-0e54-41b9-9553-cd90e8a3467c",
       "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ (() => { const meta = $(\"Prepare Sheet Meta\").item.json || {}; const spreadsheetId = encodeURIComponent(meta.spreadsheetId || \"\"); const range = encodeURIComponent((meta.sheetName || \"Sheet1\") + \"!A1:ZZ\"); return \"https://sheets.googleapis.com/v4/spreadsheets/\" + spreadsheetId + \"/values/\" + range; })() }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "14",
+      "name": "Read Current Sheet Rows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        736,
+        400
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "8Js1s0C68vWbwopW",
+          "name": "Google account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "function safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction normalizeRows2D(value) {\n  if (!Array.isArray(value)) return [];\n  return value.map((row) => {\n    if (!Array.isArray(row)) return [];\n    return row.map((cell) => String(cell ?? ''));\n  });\n}\n\nfunction normalizeHeaderRow(row) {\n  if (!Array.isArray(row)) return [];\n  return row.map((cell) => safeText(cell));\n}\n\nfunction readExistingRows(response) {\n  const body = response && typeof response.body === 'object' ? response.body : {};\n  const values = Array.isArray(body.values) ? body.values : [];\n  return normalizeRows2D(values);\n}\n\nfunction ensureRowLength(row, length) {\n  const normalized = Array.isArray(row) ? [...row] : [];\n  while (normalized.length < length) normalized.push('');\n  if (normalized.length > length) return normalized.slice(0, length);\n  return normalized;\n}\n\nfunction toColumnLetter(index) {\n  let n = Number(index);\n  let result = '';\n  while (n > 0) {\n    const mod = (n - 1) % 26;\n    result = String.fromCharCode(65 + mod) + result;\n    n = Math.floor((n - mod) / 26);\n  }\n  return result || 'A';\n}\n\nfunction makeRange(sheetName, colStart, rowStart, colEnd = colStart, rowEnd = rowStart) {\n  const start = toColumnLetter(colStart) + String(rowStart);\n  const end = toColumnLetter(colEnd) + String(rowEnd);\n  if (start === end) return sheetName + '!' + start;\n  return sheetName + '!' + start + ':' + end;\n}\n\nconst meta = $('Prepare Sheet Meta').item.json || {};\nconst readResponse = $json || {};\nconst existingRows = readExistingRows(readResponse);\nconst inputRows = normalizeRows2D(meta.rows);\nconst sheetName = safeText(meta.sheetName, 'Sheet1');\nconst providedRange = safeText(meta.writeRange, '');\nconst upsertByHeader = safeText(meta.upsertByHeader, '');\n\nconst batchData = [];\nlet writeRangeResolved = providedRange || (sheetName + '!A1');\nlet upsertMatched = 0;\nlet upsertInserted = 0;\nlet appendedRows = 0;\n\nif (upsertByHeader) {\n  if (inputRows.length === 0) {\n    throw new Error('rows is required for upsertByHeader mode');\n  }\n\n  const inputHeader = normalizeHeaderRow(inputRows[0]);\n  if (inputHeader.length === 0) {\n    throw new Error('rows[0] header is required for upsertByHeader mode');\n  }\n\n  const keyHeader = upsertByHeader;\n  const inputKeyIndex = inputHeader.findIndex((h) => h === keyHeader);\n  if (inputKeyIndex < 0) {\n    throw new Error('upsertByHeader not found in input header: ' + keyHeader);\n  }\n\n  const existingHeader = existingRows.length > 0 ? normalizeHeaderRow(existingRows[0]) : [];\n  const finalHeader = existingHeader.length > 0 ? [...existingHeader] : [...inputHeader];\n\n  if (existingRows.length === 0) {\n    batchData.push({\n      range: makeRange(sheetName, 1, 1, finalHeader.length, 1),\n      majorDimension: 'ROWS',\n      values: [finalHeader],\n    });\n  }\n\n  const missingHeaders = [];\n  for (const header of inputHeader) {\n    if (!header) continue;\n    if (!finalHeader.includes(header)) {\n      finalHeader.push(header);\n      missingHeaders.push(header);\n    }\n  }\n\n  if (missingHeaders.length > 0) {\n    const startCol = finalHeader.length - missingHeaders.length + 1;\n    const endCol = finalHeader.length;\n    batchData.push({\n      range: makeRange(sheetName, startCol, 1, endCol, 1),\n      majorDimension: 'ROWS',\n      values: [missingHeaders],\n    });\n  }\n\n  const finalKeyIndex = finalHeader.findIndex((h) => h === keyHeader);\n  if (finalKeyIndex < 0) {\n    throw new Error('upsertByHeader not found in final header: ' + keyHeader);\n  }\n\n  const dataRows = (existingRows.length > 0 ? existingRows.slice(1) : [])\n    .map((row) => ensureRowLength(row, finalHeader.length));\n\n  const rowIndexByKey = new Map();\n  dataRows.forEach((row, index) => {\n    const key = safeText(row[finalKeyIndex]);\n    if (key && !rowIndexByKey.has(key)) {\n      rowIndexByKey.set(key, index);\n    }\n  });\n\n  let nextSheetRow = existingRows.length > 0 ? existingRows.length + 1 : 2;\n\n  for (const inputRowRaw of inputRows.slice(1)) {\n    const inputRow = ensureRowLength(inputRowRaw, inputHeader.length);\n    const key = safeText(inputRow[inputKeyIndex]);\n    if (!key) continue;\n\n    const mapped = {};\n    inputHeader.forEach((header, index) => {\n      if (!header) return;\n      mapped[header] = String(inputRow[index] ?? '');\n    });\n\n    if (rowIndexByKey.has(key)) {\n      const dataIndex = rowIndexByKey.get(key);\n      const sheetRow = dataIndex + 2;\n      for (const header of inputHeader) {\n        if (!header || header === keyHeader) continue;\n        const col = finalHeader.findIndex((h) => h === header) + 1;\n        if (col <= 0) continue;\n        batchData.push({\n          range: makeRange(sheetName, col, sheetRow),\n          majorDimension: 'ROWS',\n          values: [[mapped[header] || '']],\n        });\n      }\n      upsertMatched += 1;\n      continue;\n    }\n\n    const newRow = Array(finalHeader.length).fill('');\n    newRow[finalKeyIndex] = key;\n    for (const header of inputHeader) {\n      if (!header || header === keyHeader) continue;\n      const col = finalHeader.findIndex((h) => h === header);\n      if (col >= 0) newRow[col] = mapped[header] || '';\n    }\n\n    batchData.push({\n      range: makeRange(sheetName, 1, nextSheetRow, finalHeader.length, nextSheetRow),\n      majorDimension: 'ROWS',\n      values: [newRow],\n    });\n\n    dataRows.push(newRow);\n    rowIndexByKey.set(key, dataRows.length - 1);\n    nextSheetRow += 1;\n    upsertInserted += 1;\n  }\n\n  writeRangeResolved = sheetName + '!A1';\n} else {\n  if (providedRange) {\n    batchData.push({\n      range: providedRange,\n      majorDimension: 'ROWS',\n      values: inputRows,\n    });\n    writeRangeResolved = providedRange;\n  } else {\n    let rowsToAppend = inputRows;\n    const existingHeader = existingRows.length > 0 ? normalizeHeaderRow(existingRows[0]) : [];\n    const inputHeader = inputRows.length > 0 ? normalizeHeaderRow(inputRows[0]) : [];\n\n    const sameHeader = existingHeader.length > 0\n      && existingHeader.length === inputHeader.length\n      && existingHeader.every((cell, index) => cell === inputHeader[index]);\n\n    if (sameHeader) {\n      rowsToAppend = inputRows.slice(1);\n    }\n\n    const appendStart = existingRows.length + 1;\n    batchData.push({\n      range: sheetName + '!A' + String(appendStart),\n      majorDimension: 'ROWS',\n      values: rowsToAppend,\n    });\n    writeRangeResolved = sheetName + '!A' + String(appendStart);\n    appendedRows = rowsToAppend.length;\n  }\n}\n\nconst inputRowsCount = batchData.reduce((sum, entry) => {\n  const values = Array.isArray(entry.values) ? entry.values : [];\n  return sum + values.length;\n}, 0);\n\nreturn {\n  ...meta,\n  writeRangeResolved,\n  batchData,\n  inputRowsCount,\n  upsertMatched,\n  upsertInserted,\n  appendedRows,\n};"
+      },
+      "id": "15",
+      "name": "Prepare Write Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        400
+      ]
     }
   ],
   "connections": {
@@ -503,7 +557,7 @@
       "main": [
         [
           {
-            "node": "Write Sheet Rows",
+            "node": "Read Current Sheet Rows",
             "type": "main",
             "index": 0
           }
@@ -533,6 +587,28 @@
         [
           {
             "node": "Normalize Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Current Sheet Rows": {
+      "main": [
+        [
+          {
+            "node": "Prepare Write Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Write Payload": {
+      "main": [
+        [
+          {
+            "node": "Write Sheet Rows",
             "type": "main",
             "index": 0
           }

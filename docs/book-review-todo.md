@@ -4,7 +4,7 @@
 - Workflow canonical hien tai da co generate -> QC -> persist manifest/readable -> save reviewer session -> send review ready.
 - Reviewer callback da handle `continueReview` / `stopReview` voi `sessionToken`.
 - `continueReview` hien da rehydrate `Manifest.json` tu `manifestUrl` va chot `reviewPassed`.
-- Media/TTS branch sau `reviewPassed` van chua noi tiep.
+- Media TTS branch sau `reviewPassed` da noi tiep; visual/E2E branch van tiep tuc trong backlog.
 
 ## Backlog can lam tiep
 
@@ -14,11 +14,10 @@
 - Neu can, bo sung signal debug cho reviewer branch.
 
 ### 2) Media branch
-- Noi branch media sau `reviewPassed`.
-- Rebuild branch TTS.
+- [DONE] Noi branch media TTS sau `reviewPassed` (loop narration_text theo scene -> TTS -> upload `/tts` -> append sheet rows).
 - Rebuild branch visual (`Text To Images` / `Text To Videos VEO3`).
 - Progress message theo stage neu can.
-- Media shared workflows hien da duoc simplify: chi tra artifact/result cho workflow cha, khong tu upload Drive hay ghi Sheet.
+- Media shared workflows hien da duoc simplify: chi tra artifact/result cho workflow cha, khong tu upload Drive hay ghi Sheet (tru branch TTS narration logging da wire o Book Review).
 
 ### 3) Session assets
 - Session folder context da co `rootFolderId` + `folderPath`.

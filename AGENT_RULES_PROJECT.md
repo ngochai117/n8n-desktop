@@ -22,6 +22,10 @@ Project: `n8n-desktop`
 - Uu tien node-first cho routing, file handling, merge/split, subworkflow call. Code node chi dung cho normalize/parse/contract logic ma node built-in dien dat khong ro.
 - Chi dung `Merge` khi thuc su co tu 2 nhanh song song can join lai va can hanh vi `Include Any Unpaired Items` de doi/giu context. Khong dung `Merge` chi de keo lai context ma node sau co the doc truc tiep tu node truoc do.
 - Khong lam dung node `Prepare ...` cho passthrough, constant mapping, hay logic rat don gian. Neu input cua node sau co the dien dat ro bang expression thi uu tien dat thang tai node do.
+- Khong fallback chap va cho data path nghiep vu (khong dung kieu `a || b || c`).
+- Khong truyen/map day chuyen qua nhieu node chi de giu context.
+- Node nao dung data thi doc truc tiep tu node goc chua data do (uu tien expression tham chieu node goc), khong qua cac lop map trung gian neu khong bat buoc.
+- Giam toi da node `Set/Edit Fields/Prepare`; chi giu lai khi bat buoc ve ky thuat (vi du: doi kieu du lieu, doi binary field key, hoac chot lai contract output).
 - Naming cho workflow config/field/contract moi dung `camelCase`.
 
 ## 4) Runtime and config hygiene

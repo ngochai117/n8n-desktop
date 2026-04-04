@@ -3,13 +3,14 @@
   "nodes": [
     {
       "parameters": {
-        "options": {}
+        "options": {
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.4,
       "position": [
         -1744,
-        1776
+        1920
       ],
       "id": "f88a5dd0-8b2e-474c-bd07-34fbc4d83ca7",
       "name": "When chat message received",
@@ -147,13 +148,14 @@
             }
           ]
         },
-        "options": {}
+        "options": {
+        }
       },
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
         -1072,
-        1824
+        1968
       ],
       "id": "ca838936-8f42-47d0-89d9-97bf230f1a0d",
       "name": "Route Request"
@@ -167,7 +169,8 @@
           "cachedResultName": "cx/gpt-5.4"
         },
         "responsesApiEnabled": false,
-        "options": {}
+        "options": {
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
@@ -193,13 +196,14 @@
           "cachedResultName": "cx/gpt-5.4"
         },
         "responsesApiEnabled": false,
-        "options": {}
+        "options": {
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
         -264,
-        1948
+        2176
       ],
       "id": "12c4d16d-645a-464a-adbc-17a199022f1e",
       "name": "Manifest Model",
@@ -219,13 +223,14 @@
           "cachedResultName": "cx/gpt-5.4"
         },
         "responsesApiEnabled": false,
-        "options": {}
+        "options": {
+        }
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
         88,
-        2200
+        2344
       ],
       "id": "dd8cbcac-5483-4382-b7f6-e13b5720f7dd",
       "name": "QC Model",
@@ -249,7 +254,7 @@
       "typeVersion": 3.1,
       "position": [
         80,
-        1976
+        2120
       ],
       "id": "77e150d8-1a32-4dd0-afab-042249707767",
       "name": "QC AI Agent",
@@ -280,18 +285,19 @@
           "message",
           "callback_query"
         ],
-        "additionalFields": {}
+        "additionalFields": {
+        }
       },
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
       "position": [
         -1744,
-        1968
+        2112
       ],
       "id": "4d4bb9d4-31c8-48df-84db-bd3252c44709",
       "name": "Telegram Trigger",
       "webhookId": "33f37b05-be97-457e-87dd-2f45f840f5b2",
-      "alwaysOutputData": true,
+      "alwaysOutputData": false,
       "credentials": {
         "telegramApi": {
           "id": "UkrPHyACfAUpSkv8",
@@ -332,17 +338,24 @@
               "name": "sessionTableName",
               "value": "Book Review Sessions",
               "type": "string"
+            },
+            {
+              "id": "e607428e-26af-4d13-8267-3edf775c03fb",
+              "name": "mediaSpreadsheetName",
+              "value": "Media",
+              "type": "string"
             }
           ]
         },
         "includeOtherFields": true,
-        "options": {}
+        "options": {
+        }
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
         -1296,
-        1872
+        2016
       ],
       "id": "d72bb434-aa98-45ac-85d8-6dbceae690f6",
       "name": "Config Main"
@@ -393,7 +406,7 @@
       "typeVersion": 1.3,
       "position": [
         -136,
-        1948
+        2176
       ],
       "id": "6ba7bf20-26b1-4c90-836a-89be70bea31e",
       "name": "Structured Expand Output Parser"
@@ -406,7 +419,7 @@
       "typeVersion": 1.3,
       "position": [
         216,
-        2200
+        2344
       ],
       "id": "6c4d8c06-9905-4a4b-bc6c-a0675b9118b2",
       "name": "Structured QC Output Parser"
@@ -419,7 +432,7 @@
       "typeVersion": 2,
       "position": [
         432,
-        1976
+        2120
       ],
       "id": "c1b8ae39-a470-4835-ba95-a9154e994986",
       "name": "Prepare Manifest"
@@ -436,8 +449,8 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        656,
-        1880
+        1552,
+        1784
       ],
       "id": "fce4bbc3-47cf-40c0-a37c-7ee6290a77ba",
       "name": "Convert Manifest to File"
@@ -459,7 +472,9 @@
             "rootFolderId": "={{ $('Config Main').item.json.ggDriveRootFolderId }}",
             "folderPath": "={{ $('Prepare Manifest').item.json.ggDriveFolderName }}"
           },
-          "matchingColumns": [],
+          "matchingColumns": [
+
+          ],
           "schema": [
             {
               "id": "action",
@@ -532,8 +547,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        880,
-        1880
+        1776,
+        1784
       ],
       "id": "783252db-35a8-49ec-8339-7cdcb29cacda",
       "name": "Save Manifest to Drive"
@@ -544,13 +559,14 @@
         "chatId": "={{ $('Send Creating Outline Message').item.json.result.chat.id }}",
         "messageId": "={{ $('Send Creating Outline Message').item.json.result.message_id }}",
         "text": "QC đang Review...",
-        "additionalFields": {}
+        "additionalFields": {
+        }
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
         144,
-        1680
+        1824
       ],
       "id": "0cfe3fe2-27f2-4f1b-9b77-cd5e77431298",
       "name": "Send QC Reviewing Message",
@@ -568,13 +584,14 @@
         "chatId": "={{ $('Send Creating Outline Message').item.json.result.chat.id }}",
         "messageId": "={{ $('Send Creating Outline Message').item.json.result.message_id }}",
         "text": "Đang tạo nội dung...",
-        "additionalFields": {}
+        "additionalFields": {
+        }
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
         -208,
-        1532
+        1656
       ],
       "id": "cb57a281-0744-4261-b438-d430c69443f1",
       "name": "Send Creating Manifest Message",
@@ -599,7 +616,7 @@
       "typeVersion": 3.1,
       "position": [
         -272,
-        1724
+        1952
       ],
       "id": "644cdd72-93f4-4611-b716-e0aaba79452c",
       "name": "Manifest AI Agent",
@@ -614,8 +631,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1552,
-        1880
+        2448,
+        1928
       ],
       "id": "9a87d6c3-2e18-4737-b2a5-74d8f1d909bc",
       "name": "Delete Loading Message",
@@ -630,7 +647,7 @@
     {
       "parameters": {
         "chatId": "={{ $('Config Main').item.json.telegramChatId }}",
-        "text": "=content: {{ $('Save Content Readable to Drive').item.json.fileUrl }}\nmanifest: {{ $('Save Manifest to Drive').item.json.fileUrl }}\nfolderUrl: {{ $('Merge Persisted Files').item.json.folderUrl }}\n------------------\nhook: {{ $('Prepare Manifest').item.json.qc.hook }}, clarity: {{ $('Prepare Manifest').item.json.qc.clarity }}, originality: {{ $('Prepare Manifest').item.json.qc.originality }}, practical: {{ $('Prepare Manifest').item.json.qc.practical }}, risk: {{ $('Prepare Manifest').item.json.qc.risk }}\n------------------\n{{ $('Prepare Manifest').item.json.qc.feedback }}\n------------------\n{{ $('Prepare Manifest').item.json.qc.qc_issues.join('\\n') }}",
+        "text": "=content: {{ $('Save Content Readable to Drive').item.json.fileUrl }}\nmanifest: {{ $('Save Manifest to Drive').item.json.fileUrl }}\nmediaUrl: {{ $(\"Ensure Media Sheet\").item.json.spreadsheetUrl }}\nfolderUrl: {{ $('Save Manifest to Drive').item.json.folderUrl }}\n------------------\nhook: {{ $('Prepare Manifest').item.json.qc.hook }}, clarity: {{ $('Prepare Manifest').item.json.qc.clarity }}, originality: {{ $('Prepare Manifest').item.json.qc.originality }}, practical: {{ $('Prepare Manifest').item.json.qc.practical }}, risk: {{ $('Prepare Manifest').item.json.qc.risk }}\n------------------\n{{ $('Prepare Manifest').item.json.qc.feedback }}\n------------------\n{{ $('Prepare Manifest').item.json.qc.qc_issues.join('\\n') }}",
         "replyMarkup": "inlineKeyboard",
         "inlineKeyboard": {
           "rows": [
@@ -668,8 +685,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1552,
-        2072
+        2448,
+        2168
       ],
       "id": "ab078599-04fc-4709-bb6f-1ee67347c8dc",
       "name": "Send Review Message",
@@ -694,28 +711,11 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        656,
-        2072
+        1552,
+        1976
       ],
       "id": "13129dda-41ff-4b41-a932-a1d8bb437ad1",
       "name": "Convert Content Readable to File"
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {
-          "includeUnpaired": true
-        }
-      },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        1104,
-        1976
-      ],
-      "id": "be89580e-c19c-48c0-91f2-fd3ec5a14776",
-      "name": "Merge Persisted Files"
     },
     {
       "parameters": {
@@ -735,7 +735,9 @@
             "rootFolderId": "={{ $('Config Main').item.json.ggDriveRootFolderId }}",
             "folderPath": "={{ $('Prepare Manifest').item.json.ggDriveFolderName }}"
           },
-          "matchingColumns": [],
+          "matchingColumns": [
+
+          ],
           "schema": [
             {
               "id": "action",
@@ -778,6 +780,16 @@
               "removed": false
             },
             {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
               "id": "binaryFieldName",
               "displayName": "binaryFieldName",
               "required": false,
@@ -798,8 +810,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        880,
-        2072
+        1776,
+        1976
       ],
       "id": "cb1e2334-9a98-4291-a9f6-b0f52424f976",
       "name": "Save Content Readable to Drive"
@@ -813,7 +825,7 @@
       "typeVersion": 2,
       "position": [
         -1520,
-        1872
+        2016
       ],
       "id": "de059205-732b-417d-86a8-fceae57eb4dd"
     },
@@ -833,9 +845,11 @@
             "tableName": "={{ $(\"Config Main\").item.json.sessionTableName || \"\" }}",
             "keyField": "sessionToken",
             "keyValue": "={{ (() => { const sessionToken = String($(\"Prepare Manifest\").item.json.sessionToken || \"\").trim(); if (!sessionToken) throw new Error(\"sessionToken is required before saving review session.\"); return sessionToken; })() }}",
-            "data": "={{ (() => { const sessionToken = String($(\"Prepare Manifest\").item.json.sessionToken || \"\").trim(); const manifestUrl = String($(\"Save Manifest to Drive\").item.json.fileUrl || \"\").trim(); const folderUrl = String($(\"Merge Persisted Files\").item.json.folderUrl || $(\"Save Manifest to Drive\").item.json.folderUrl || \"\").trim(); const rootFolderId = String($(\"Config Main\").item.json.ggDriveRootFolderId || \"\").trim(); const folderPath = String($(\"Prepare Manifest\").item.json.folderPath || \"\").trim(); if (!sessionToken) throw new Error(\"sessionToken is required before saving review session.\"); if (!manifestUrl) throw new Error(\"manifestUrl is required before saving review session.\"); return { sessionToken, status: \"reviewing\", manifestUrl, folderUrl, rootFolderId, folderPath }; })() }}"
+            "data": "={{\n(() => {\n  const sessionToken = ($(\"Prepare Manifest\").item.json.sessionToken || \"\").toString().trim();\n  const manifestUrl = ($(\"Save Manifest to Drive\").item.json.fileUrl || \"\").toString().trim();\n  const folderUrl = ($(\"Save Manifest to Drive\").item.json.folderUrl || \"\").toString().trim();\n  const rootFolderId = ($(\"Config Main\").item.json.ggDriveRootFolderId || \"\").toString().trim();\n  const folderPath = ($(\"Prepare Manifest\").item.json.folderPath || \"\").toString().trim();\n  const mediaSheetSpreadsheetUrl = ($(\"Ensure Media Sheet\").item.json.spreadsheetUrl || \"\").toString().trim();\n\n  if (!sessionToken) return { error: \"sessionToken is required\" };\n  if (!manifestUrl) return { error: \"manifestUrl is required\" };\n\n  return { \n    sessionToken, \n    status: \"reviewing\", \n    manifestUrl, \n    folderUrl, \n    rootFolderId, \n    folderPath, \n    mediaSheetSpreadsheetUrl \n  };\n})()\n}}"
           },
-          "matchingColumns": [],
+          "matchingColumns": [
+
+          ],
           "schema": [
             {
               "id": "action",
@@ -900,8 +914,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1328,
-        1976
+        2224,
+        2024
       ]
     },
     {
@@ -922,7 +936,9 @@
             "keyValue": "={{ String($(\"Parse Callback Data\").item.json.sessionToken || \"\").trim() || \"__missing_session_token__\" }}",
             "data": "={{ ({}) }}"
           },
-          "matchingColumns": [],
+          "matchingColumns": [
+
+          ],
           "schema": [
             {
               "id": "action",
@@ -988,7 +1004,7 @@
       "typeVersion": 1.3,
       "position": [
         -848,
-        2456
+        2744
       ]
     },
     {
@@ -1005,7 +1021,7 @@
       "typeVersion": 1.2,
       "position": [
         -208,
-        2456
+        2744
       ],
       "webhookId": "b3271de9-8677-4f32-ace2-82f1ca8a968c",
       "credentials": {
@@ -1030,7 +1046,9 @@
             "action": "get",
             "url": "={{ $('Get Review Session').item.json.row.manifestUrl }}"
           },
-          "matchingColumns": [],
+          "matchingColumns": [
+
+          ],
           "schema": [
             {
               "id": "action",
@@ -1106,7 +1124,7 @@
       "typeVersion": 1.3,
       "position": [
         432,
-        2456
+        2744
       ]
     },
     {
@@ -1124,7 +1142,7 @@
       "typeVersion": 1.1,
       "position": [
         656,
-        2456
+        2744
       ],
       "alwaysOutputData": true,
       "onError": "continueRegularOutput"
@@ -1209,13 +1227,14 @@
             }
           ]
         },
-        "options": {}
+        "options": {
+        }
       },
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
         -560,
-        2440
+        2728
       ],
       "id": "3c86698d-7b34-485c-aeee-ec2ab5ec113a",
       "name": "Switch"
@@ -1235,7 +1254,7 @@
       "typeVersion": 1.2,
       "position": [
         -208,
-        2220
+        2508
       ],
       "webhookId": "a38a2f50-a81b-4512-a08c-b7741c669951",
       "credentials": {
@@ -1268,13 +1287,14 @@
           ],
           "combinator": "and"
         },
-        "options": {}
+        "options": {
+        }
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
         880,
-        2456
+        2744
       ],
       "id": "7c855fa4-3f0c-4db3-a9b6-a5d6fdd51ed5",
       "name": "If Load Manifest Success"
@@ -1285,7 +1305,8 @@
         "chatId": "={{ $('Answer Continue Query').item.json.result.chat.id }}",
         "messageId": "={{ $('Answer Continue Query').item.json.result.message_id }}",
         "text": "Không tải được dữ liệu",
-        "additionalFields": {}
+        "additionalFields": {
+        }
       },
       "id": "ae4223a7-724b-4330-92b0-bc92cd042af9",
       "name": "Answer Load Manifest Fail",
@@ -1293,7 +1314,7 @@
       "typeVersion": 1.2,
       "position": [
         1104,
-        2504
+        2744
       ],
       "webhookId": "b3271de9-8677-4f32-ace2-82f1ca8a968c",
       "credentials": {
@@ -1318,7 +1339,7 @@
       "typeVersion": 1.2,
       "position": [
         1104,
-        2696
+        2936
       ],
       "webhookId": "a38a2f50-a81b-4512-a08c-b7741c669951",
       "credentials": {
@@ -1334,7 +1355,8 @@
         "chatId": "={{ $('Answer Continue Query').item.json.result.chat.id }}",
         "messageId": "={{ $('Answer Continue Query').item.json.result.message_id }}",
         "text": "Đang tạo media...",
-        "additionalFields": {}
+        "additionalFields": {
+        }
       },
       "id": "bc63dc30-da70-4626-a206-d2ba71624043",
       "name": "Answer Start Media",
@@ -1342,7 +1364,7 @@
       "typeVersion": 1.2,
       "position": [
         1104,
-        2216
+        2552
       ],
       "webhookId": "b3271de9-8677-4f32-ace2-82f1ca8a968c",
       "credentials": {
@@ -1354,18 +1376,16 @@
     },
     {
       "parameters": {
-        "mode": "raw",
-        "jsonOutput": "={\n  \"manifest\": {{ $('Extract Manifest JSON').item.json.manifest }},\n}\n",
-        "options": {}
+        "jsCode": "function safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction extractSpreadsheetId(value) {\n  const raw = safeText(value);\n  if (!raw) return '';\n\n  const match = raw.match(/\\/spreadsheets\\/d\\/([a-zA-Z0-9-_]+)/);\n  if (match && match[1]) return match[1];\n\n  return raw;\n}\n\nconst manifest = $('Extract Manifest JSON').first().json.manifest || {};\nconst sessionRow = $('Get Review Session').first().json.row || {};\nconst configMain = $('Config Main').first().json || {};\n\nif (!manifest || typeof manifest !== 'object' || !Array.isArray(manifest.scenes)) {\n  throw new Error('manifest is required before media generation');\n}\n\nconst folderPath = safeText(sessionRow.folderPath);\nif (!folderPath) {\n  throw new Error('session folderPath is required before media generation');\n}\n\nconst mediaSheetIdFromSession = extractSpreadsheetId(sessionRow.mediaSheetSpreadsheetUrl);\nconst mediaSheetIdFromConfig = extractSpreadsheetId(configMain.ttsSheetSpreadsheetId);\nconst ttsSheetSpreadsheetId = mediaSheetIdFromSession || mediaSheetIdFromConfig;\nif (!ttsSheetSpreadsheetId) {\n  throw new Error('mediaSheetId is required (sessionRow.mediaSheetSpreadsheetUrl or Config Main ttsSheetSpreadsheetId)');\n}\n\nconst ttsFolderPath = folderPath.replace(/\\/+$/g, '') + '/tts';\n\nreturn {\n  manifest,\n  sessionRow,\n  rootFolderId: safeText(configMain.ggDriveRootFolderId),\n  ttsFolderPath,\n  ttsVoiceId: safeText(configMain.ttsVoiceId, 'Ngoc'),\n  ttsRequestTimeoutSec: Number(configMain.ttsRequestTimeoutSec || 600),\n  ttsRetry: Number(configMain.ttsRetry || 2),\n  ttsSheetSpreadsheetId,\n  ttsSheetName: safeText(configMain.ttsSheetName, 'TTS'),\n  mediaSheetSpreadsheetUrl: safeText(sessionRow.mediaSheetSpreadsheetUrl),\n};"
       },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "name": "Config Media",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         1328,
-        2216
+        2552
       ],
-      "id": "d14a94ea-2db9-447d-8b5d-89c0a1e8ab36",
-      "name": "Config Media"
+      "id": "d14a94ea-2db9-447d-8b5d-89c0a1e8ab36"
     },
     {
       "parameters": {
@@ -1385,7 +1405,9 @@
             "keyValue": "={{ $('Get Review Session').item.json.row.sessionToken }}",
             "data": "={{ ({ ...($('Get Review Session').item.json.row || {}), sessionToken: String( $('Get Review Session').item.json.row.sessionToken || \"\").trim(), status: \"creatingMedia\" }) }}"
           },
-          "matchingColumns": [],
+          "matchingColumns": [
+
+          ],
           "schema": [
             {
               "id": "action",
@@ -1451,7 +1473,7 @@
       "typeVersion": 1.3,
       "position": [
         144,
-        2456
+        2744
       ]
     },
     {
@@ -1460,13 +1482,14 @@
         "chatId": "={{ $('Telegram Trigger').item.json.callback_query.message.chat.id }}",
         "messageId": "={{ $('Telegram Trigger').item.json.callback_query.message.message_id }}",
         "text": "={{ $('Telegram Trigger').item.json.callback_query.message.text }}",
-        "additionalFields": {}
+        "additionalFields": {
+        }
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
         -848,
-        2168
+        2456
       ],
       "id": "b9af2bd0-e9ad-4bc0-b78f-e3ccb909cbd8",
       "name": "Remove button",
@@ -1476,7 +1499,8 @@
           "id": "UkrPHyACfAUpSkv8",
           "name": "Local Telegram Bot"
         }
-      }
+      },
+      "disabled": true
     },
     {
       "parameters": {
@@ -1496,7 +1520,9 @@
             "keyValue": "={{ $('Get Review Session').item.json.row.sessionToken }}",
             "data": "={{ ({}) }}"
           },
-          "matchingColumns": [],
+          "matchingColumns": [
+
+          ],
           "schema": [
             {
               "id": "action",
@@ -1562,7 +1588,7 @@
       "typeVersion": 1.3,
       "position": [
         144,
-        2648
+        2936
       ]
     },
     {
@@ -1580,7 +1606,9 @@
             "action": "delete",
             "url": "={{ $('Get Review Session').item.json.row.folderUrl }}"
           },
-          "matchingColumns": [],
+          "matchingColumns": [
+
+          ],
           "schema": [
             {
               "id": "action",
@@ -1646,13 +1674,14 @@
           "attemptToConvertTypes": false,
           "convertFieldsToString": true
         },
-        "options": {}
+        "options": {
+        }
       },
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
         -208,
-        2648
+        2936
       ],
       "id": "7e20d3e0-a93d-4162-a667-7bf72ff5723e",
       "name": "Delete Folder"
@@ -1663,13 +1692,14 @@
         "chatId": "={{ $('Telegram Trigger').item.json.callback_query.message.chat.id }}",
         "messageId": "={{ $('Telegram Trigger').item.json.callback_query.message.message_id }}",
         "text": "=~Nội dung đã bị xoá!~",
-        "additionalFields": {}
+        "additionalFields": {
+        }
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
         -848,
-        1924
+        2184
       ],
       "id": "212fbccc-5e08-4871-a1ff-e27b77f38dfd",
       "name": "Answer Delete",
@@ -1701,7 +1731,1041 @@
           "id": "UkrPHyACfAUpSkv8",
           "name": "Local Telegram Bot"
         }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0) {\n  const n = Number(value);\n  return Number.isFinite(n) ? Math.floor(n) : fallback;\n}\n\nfunction pad3(value) {\n  return String(value).padStart(3, '0');\n}\n\nconst input = $json ?? {};\nconst manifest = input.manifest && typeof input.manifest === 'object' ? input.manifest : {};\nconst scenes = Array.isArray(manifest.scenes) ? [...manifest.scenes] : [];\nscenes.sort((a, b) => asInt(a.order, 0) - asInt(b.order, 0));\n\nconst narrationItems = [];\n\nfor (const scene of scenes) {\n  const sceneOrder = asInt(scene.order, narrationItems.length + 1);\n  const sceneId = safeText(scene.scene_id, 'scene_' + pad3(sceneOrder));\n  narrationItems.push({\n    scene_id: sceneId,\n    order: sceneOrder,\n    scene_title: safeText(scene.scene_title),\n    scene_role: safeText(scene.scene_role),\n    narration_text: safeText(scene.narration_text),\n    image_prompt_en: safeText(scene.image_prompt_en),\n    highlight_quote_vi: safeText(scene.highlight_quote_vi),\n    estimated_duration_sec: asInt(scene.estimated_duration_sec, 0),\n    transition: safeText(scene.transition, 'cut'),\n    tts_file_name: 'scene_' + pad3(sceneOrder) + '.wav',\n  });\n}\n\nreturn {\n  ...input,\n  narrationItems,\n  narrationTotal: narrationItems.length,\n};"
+      },
+      "name": "Build Narration Queue",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        2552
+      ],
+      "id": "d49ae6dc-87bb-40da-bda9-70c3b4309aa9"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "narrationItems",
+        "options": {
+        }
+      },
+      "name": "Split Out Narration Items",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1776,
+        2552
+      ],
+      "id": "82e3dfff-ed84-491f-b008-74b52cf6ea6d"
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "name": "Loop Over Narration Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2000,
+        2552
+      ],
+      "id": "88628dea-9ff4-42e4-9508-3b2702aeee04"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "2F1jBI12C6NtslBN",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/2F1jBI12C6NtslBN",
+          "cachedResultName": "TTS VieNeu"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "text": "={{ $json.narration_text?.slice(0, 10) }}",
+            "mode": "fullText",
+            "voiceId": "={{ $(\"Config Media\").item.json.ttsVoiceId }}",
+            "retry": "={{ $(\"Config Media\").item.json.ttsRetry }}",
+            "requestTimeoutSec": "={{ $(\"Config Media\").item.json.ttsRequestTimeoutSec }}",
+            "ttsApiBaseUrl": "={{ $json.ttsApiBaseUrl || \"http://127.0.0.1:8001\" }}",
+            "crossfadeSeconds": 0,
+            "maxCharsChunk": 256,
+            "silenceSeconds": 0.15,
+            "joinMode": "silence",
+            "batchSize": 4
+          },
+          "matchingColumns": [
+
+          ],
+          "schema": [
+            {
+              "id": "requestId",
+              "displayName": "requestId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "text",
+              "displayName": "text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "voiceId",
+              "displayName": "voiceId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "mode",
+              "displayName": "mode",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "maxCharsChunk",
+              "displayName": "maxCharsChunk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "batchSize",
+              "displayName": "batchSize",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "joinMode",
+              "displayName": "joinMode",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "silenceSeconds",
+              "displayName": "silenceSeconds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "crossfadeSeconds",
+              "displayName": "crossfadeSeconds",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "retry",
+              "displayName": "retry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "requestTimeoutSec",
+              "displayName": "requestTimeoutSec",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "ttsApiBaseUrl",
+              "displayName": "ttsApiBaseUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "name": "Call TTS VieNeu",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2224,
+        2552
+      ],
+      "id": "affd234d-1d83-407b-887a-d394218235c5"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "QpcIxaHiYXDqjw4p",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/QpcIxaHiYXDqjw4p",
+          "cachedResultName": "GG Drive Manager"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "upsert",
+            "fileName": "={{ $('Loop Over Narration Items').item.json.tts_file_name }}",
+            "rootFolderId": "={{ $(\"Config Media\").item.json.rootFolderId }}",
+            "folderPath": "={{ $(\"Config Media\").item.json.ttsFolderPath }}"
+          },
+          "matchingColumns": [
+
+          ],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "rootFolderId",
+              "displayName": "rootFolderId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "folderPath",
+              "displayName": "folderPath",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "fileName",
+              "displayName": "fileName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "binaryFieldName",
+              "displayName": "binaryFieldName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "name": "Upload TTS WAV to Drive",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2448,
+        2552
+      ],
+      "id": "51f7476b-8533-4961-9de7-9ea989cd1d7e"
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst narrationItem = $('Loop Over Narration Items').item.json || {};\nconst ttsResult = $('Call TTS VieNeu').item.json || {};\nconst uploadResult = $json || {};\n\nconst ttsSuccess = safeText(ttsResult.status) === 'success';\nconst uploadSuccess = safeText(uploadResult.status) === 'success';\nconst ttsUrl = safeText(uploadResult.fileUrl);\n\nlet ttsStatus = 'failed';\nlet ttsErrorReason = '';\n\nif (ttsSuccess && uploadSuccess && ttsUrl) {\n  ttsStatus = 'success';\n} else if (!ttsSuccess) {\n  ttsErrorReason = safeText(ttsResult.errorReason, 'tts_failed');\n} else {\n  ttsErrorReason = safeText(uploadResult.errorMessage || uploadResult.error_reason || uploadResult.status, 'drive_upload_failed');\n}\n\nreturn {\n  scene_id: safeText(narrationItem.scene_id),\n  order: Number(narrationItem.order || 0),\n  tts_url: ttsUrl,\n  tts_status: ttsStatus,\n  tts_error_reason: ttsErrorReason,\n};"
+      },
+      "name": "Build TTS Sheet Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2672,
+        2624
+      ],
+      "id": "1d1b9dfb-a8b4-4bf6-8445-483341b4fe59"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map((item) => item.json || {});\n\nconst sorted = rows.sort((a, b) => {\n  const orderDiff = Number(a.order || 0) - Number(b.order || 0);\n  if (orderDiff !== 0) return orderDiff;\n  return String(a.scene_id || '').localeCompare(String(b.scene_id || ''));\n});\n\nconst ttsHeader = ['scene_id', 'tts_url', 'tts_status', 'tts_error_reason'];\nconst ttsDataRows = sorted.map((row) => [\n  String(row.scene_id || ''),\n  String(row.tts_url || ''),\n  String(row.tts_status || ''),\n  String(row.tts_error_reason || ''),\n]);\n\nconst successCount = sorted.filter((row) => String(row.tts_status || '') === 'success').length;\nconst failedCount = sorted.length - successCount;\n\nreturn [{\n  json: {\n    rows: [ttsHeader, ...ttsDataRows],\n    ttsRowsTotal: sorted.length,\n    ttsRowsSuccess: successCount,\n    ttsRowsFailed: failedCount,\n  },\n}];"
+      },
+      "name": "Finalize TTS Sheet Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        2360
+      ],
+      "id": "6dcaceee-6704-4d3f-8a8e-3d533aac9efa"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Hq9y27aFMsQhEcuB",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Hq9y27aFMsQhEcuB",
+          "cachedResultName": "DataTableStore"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "upsert",
+            "tableName": "={{ $(\"Config Main\").item.json.sessionTableName }}",
+            "keyField": "sessionToken",
+            "keyValue": "={{ $(\"Get Review Session\").item.json.row.sessionToken }}",
+            "data": "={{ ({ ...($(\"Get Review Session\").item.json.row || {}), status: \"reviewPassed\", ttsRowsTotal: Number($(\"Finalize TTS Sheet Rows\").item.json.ttsRowsTotal || 0), ttsRowsSuccess: Number($(\"Finalize TTS Sheet Rows\").item.json.ttsRowsSuccess || 0), ttsRowsFailed: Number($(\"Finalize TTS Sheet Rows\").item.json.ttsRowsFailed || 0) }) }}"
+          },
+          "matchingColumns": [
+
+          ],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "tableName",
+              "displayName": "tableName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "keyField",
+              "displayName": "keyField",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "keyValue",
+              "displayName": "keyValue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "data",
+              "displayName": "data",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+        }
+      },
+      "name": "Update Session Review Passed",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2672,
+        2360
+      ],
+      "id": "4487399a-7019-4afd-900f-f432725076a6"
+    },
+    {
+      "parameters": {
+        "operation": "editMessageText",
+        "chatId": "={{ $(\"Answer Continue Query\").item.json.result.chat.id }}",
+        "messageId": "={{ $(\"Answer Continue Query\").item.json.result.message_id }}",
+        "text": "=Đã tạo xong TTS.\nRows: {{ $(\"Finalize TTS Sheet Rows\").item.json.ttsRowsTotal }} | Success: {{ $(\"Finalize TTS Sheet Rows\").item.json.ttsRowsSuccess }} | Failed: {{ $(\"Finalize TTS Sheet Rows\").item.json.ttsRowsFailed }}\nFolder: {{ \"https://drive.google.com/drive/folders/\" + $(\"Config Media\").item.json.rootFolderId }}",
+        "additionalFields": {
+          "parse_mode": "none"
+        }
+      },
+      "name": "Send Media Done Message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2896,
+        2360
+      ],
+      "id": "65e263cd-06b4-4552-9a65-2f321ddbd0a4",
+      "webhookId": "f7214349-0bec-4300-a467-91bb615a3838",
+      "credentials": {
+        "telegramApi": {
+          "id": "UkrPHyACfAUpSkv8",
+          "name": "Local Telegram Bot"
+        }
       }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Dhguhje1kdEgdj9I",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Dhguhje1kdEgdj9I",
+          "cachedResultName": "GG Sheet Manager"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "ensureSheet",
+            "spreadsheetName": "={{ $('Build Media Sheet').item.json.mediaSpreadsheetName }}",
+            "sheetName": "={{ $('Build Media Sheet').item.json.mediaSheetName }}",
+            "folderId": "={{ $('List Media Folder Items').item.json.folderId }}"
+          },
+          "matchingColumns": [
+
+          ],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "spreadsheetId",
+              "displayName": "spreadsheetId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "spreadsheetName",
+              "displayName": "spreadsheetName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "sheetName",
+              "displayName": "sheetName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "folderId",
+              "displayName": "folderId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "rows",
+              "displayName": "rows",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array",
+              "removed": false
+            },
+            {
+              "id": "range",
+              "displayName": "range",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "valueInputOption",
+              "displayName": "valueInputOption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+        }
+      },
+      "name": "Ensure Media Sheet",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1552,
+        2216
+      ],
+      "id": "3a60b60a-c57e-4a4e-85a9-bbc9d768d28c"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "QpcIxaHiYXDqjw4p",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/QpcIxaHiYXDqjw4p",
+          "cachedResultName": "GG Drive Manager"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "list",
+            "rootFolderId": "={{ String($(\"Config Main\").item.json.ggDriveRootFolderId || \"\").trim() }}",
+            "folderPath": "={{ String($(\"Prepare Manifest\").item.json.folderPath || \"\").trim() }}"
+          },
+          "matchingColumns": [
+
+          ],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "rootFolderId",
+              "displayName": "rootFolderId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "folderPath",
+              "displayName": "folderPath",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "fileName",
+              "displayName": "fileName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "binaryFieldName",
+              "displayName": "binaryFieldName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+        }
+      },
+      "name": "List Media Folder Items",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        656,
+        2216
+      ],
+      "id": "4539d8ca-9783-4cc7-9c91-3ef48ba6a743"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3ee942dc-6ae6-46aa-a177-96f9ae5b8c1a",
+              "leftValue": "={{ $json.hasExistingMediaSheet === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+        }
+      },
+      "name": "If Existing Media Sheet?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1104,
+        2216
+      ],
+      "id": "be930269-fa74-47e4-937d-e3c9ab226f24"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "QpcIxaHiYXDqjw4p",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/QpcIxaHiYXDqjw4p",
+          "cachedResultName": "GG Drive Manager"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "delete",
+            "url": "={{ $json.existingMediaSheetUrl }}"
+          },
+          "matchingColumns": [
+
+          ],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "rootFolderId",
+              "displayName": "rootFolderId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "folderPath",
+              "displayName": "folderPath",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "fileName",
+              "displayName": "fileName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "binaryFieldName",
+              "displayName": "binaryFieldName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+        }
+      },
+      "name": "Delete Existing Media Sheet",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1328,
+        2144
+      ],
+      "id": "7ae15eee-5961-4818-a05f-f068eebf7e7d"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Dhguhje1kdEgdj9I",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Dhguhje1kdEgdj9I",
+          "cachedResultName": "GG Sheet Manager"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "upsertRows",
+            "spreadsheetId": "={{ String($(\"Ensure Media Sheet\").item.json.spreadsheetId || \"\").trim() }}",
+            "sheetName": "={{ $('Build Media Sheet').item.json.mediaSheetName }}",
+            "range": "={{ $(\"Build Media Sheet\").item.json.mediaSheetName + \"!A1\" }}",
+            "rows": "={{ $('Build Media Sheet').item.json.mediaSheetRows }}",
+            "valueInputOption": "RAW"
+          },
+          "matchingColumns": [
+
+          ],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "spreadsheetId",
+              "displayName": "spreadsheetId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "spreadsheetName",
+              "displayName": "spreadsheetName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "sheetName",
+              "displayName": "sheetName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "folderId",
+              "displayName": "folderId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "rows",
+              "displayName": "rows",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array"
+            },
+            {
+              "id": "range",
+              "displayName": "range",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "valueInputOption",
+              "displayName": "valueInputOption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "name": "Write Initial Media Sheet Rows",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1776,
+        2216
+      ],
+      "id": "d9ca8d07-879d-4710-bdbf-621e1e8c3604"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "Dhguhje1kdEgdj9I",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/Dhguhje1kdEgdj9I",
+          "cachedResultName": "GG Sheet Manager"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "upsertRows",
+            "spreadsheetId": "={{ String($(\"Config Media\").item.json.ttsSheetSpreadsheetId || \"\").trim() }}",
+            "sheetName": "={{ $('Config Main').item.json.mediaSpreadsheetName }}",
+            "range": "",
+            "rows": "={{ $(\"Finalize TTS Sheet Rows\").item.json.rows }}",
+            "valueInputOption": "RAW",
+            "spreadsheetName": "={{ $('Config Main').item.json.mediaSpreadsheetName }}",
+            "upsertByHeader": "scene_id"
+          },
+          "matchingColumns": [
+
+          ],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "spreadsheetId",
+              "displayName": "spreadsheetId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "spreadsheetName",
+              "displayName": "spreadsheetName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "sheetName",
+              "displayName": "sheetName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "folderId",
+              "displayName": "folderId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "rows",
+              "displayName": "rows",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array"
+            },
+            {
+              "id": "range",
+              "displayName": "range",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "upsertByHeader",
+              "displayName": "upsertByHeader",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "valueInputOption",
+              "displayName": "valueInputOption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+        }
+      },
+      "name": "Update TTS Rows in Sheet",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2448,
+        2360
+      ],
+      "id": "7012c602-b9dc-4437-b681-44b3997e3110"
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst items = Array.isArray($json.items) ? $json.items : [];\nconst targetName = safeText($('Config Main').first().json.mediaSpreadsheetName);\n\nconst found = items.find((item) => {\n  if (!item || typeof item !== 'object') return false;\n  if (item.isFolder === true) return false;\n  return safeText(item.name) === targetName;\n});\n\nfunction asInt(value, fallback = 0) {\n  const n = Number(value);\n  return Number.isFinite(n) ? Math.floor(n) : fallback;\n}\n\nconst manifest = $('Prepare Manifest').first().json.manifest || {};\nconst mediaSpreadsheetName = safeText($('Config Main').first().json.mediaSpreadsheetName, 'Media');\n\nconst scenes = Array.isArray(manifest.scenes) ? [...manifest.scenes] : [];\nscenes.sort((a, b) => asInt(a.order) - asInt(b.order));\n\nconst header = [\n  'scene_id',\n  'order',\n  'scene_title',\n  'scene_role',\n  'narration_text',\n  'image_prompt_en',\n  'highlight_quote_vi',\n  'estimated_duration_sec',\n  'transition',\n  'tts_url',\n  'tts_status',\n  'tts_error_reason',\n];\n\nconst dataRows = scenes.map((scene) => [\n  safeText(scene.scene_id),\n  asInt(scene.order, 0),\n  safeText(scene.scene_title),\n  safeText(scene.scene_role),\n  safeText(scene.narration_text),\n  safeText(scene.image_prompt_en),\n  safeText(scene.highlight_quote_vi),\n  asInt(scene.estimated_duration_sec, 0),\n  safeText(scene.transition, 'cut'),\n  '',\n  '',\n  '',\n]);\n\nconst mediaSheetRows = [header, ...dataRows];\n\nreturn {\n  hasExistingMediaSheet: Boolean(found),\n  existingMediaSheetUrl: safeText(found?.url),\n  mediaSpreadsheetName: mediaSpreadsheetName,\n  mediaSheetName: mediaSpreadsheetName,\n  mediaSheetRows,\n};"
+      },
+      "name": "Build Media Sheet",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        2216
+      ],
+      "id": "212fd91f-e572-4eee-943a-451673fd1691"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {
+          "includeUnpaired": true
+        }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2000,
+        2008
+      ],
+      "id": "1f3657ff-becf-41d1-a014-819af6671fb0",
+      "name": "Merge"
     }
   ],
   "connections": {
@@ -1779,6 +2843,9 @@
             "index": 0
           }
         ]
+      ],
+      "main": [
+
       ]
     },
     "Manifest Model": {
@@ -1790,6 +2857,9 @@
             "index": 0
           }
         ]
+      ],
+      "main": [
+
       ]
     },
     "QC Model": {
@@ -1801,6 +2871,9 @@
             "index": 0
           }
         ]
+      ],
+      "main": [
+
       ]
     },
     "QC AI Agent": {
@@ -1872,6 +2945,9 @@
             "index": 0
           }
         ]
+      ],
+      "main": [
+
       ]
     },
     "Structured Expand Output Parser": {
@@ -1883,6 +2959,9 @@
             "index": 0
           }
         ]
+      ],
+      "main": [
+
       ]
     },
     "Structured QC Output Parser": {
@@ -1894,6 +2973,9 @@
             "index": 0
           }
         ]
+      ],
+      "main": [
+
       ]
     },
     "Prepare Manifest": {
@@ -1906,6 +2988,11 @@
           },
           {
             "node": "Convert Content Readable to File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "List Media Folder Items",
             "type": "main",
             "index": 0
           }
@@ -1927,7 +3014,7 @@
       "main": [
         [
           {
-            "node": "Merge Persisted Files",
+            "node": "Merge",
             "type": "main",
             "index": 0
           }
@@ -1961,22 +3048,11 @@
         ]
       ]
     },
-    "Merge Persisted Files": {
-      "main": [
-        [
-          {
-            "node": "Save Reviewing Session",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Save Content Readable to Drive": {
       "main": [
         [
           {
-            "node": "Merge Persisted Files",
+            "node": "Merge",
             "type": "main",
             "index": 1
           }
@@ -2129,6 +3205,207 @@
         [
           {
             "node": "Delete Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config Media": {
+      "main": [
+        [
+          {
+            "node": "Build Narration Queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Narration Queue": {
+      "main": [
+        [
+          {
+            "node": "Split Out Narration Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Narration Items": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Narration Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Narration Items": {
+      "main": [
+        [
+          {
+            "node": "Finalize TTS Sheet Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Call TTS VieNeu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call TTS VieNeu": {
+      "main": [
+        [
+          {
+            "node": "Upload TTS WAV to Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload TTS WAV to Drive": {
+      "main": [
+        [
+          {
+            "node": "Build TTS Sheet Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build TTS Sheet Row": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Narration Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize TTS Sheet Rows": {
+      "main": [
+        [
+          {
+            "node": "Update TTS Rows in Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Session Review Passed": {
+      "main": [
+        [
+          {
+            "node": "Send Media Done Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Media Sheet": {
+      "main": [
+        [
+          {
+            "node": "Write Initial Media Sheet Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Media Folder Items": {
+      "main": [
+        [
+          {
+            "node": "Build Media Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Existing Media Sheet?": {
+      "main": [
+        [
+          {
+            "node": "Delete Existing Media Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ensure Media Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Existing Media Sheet": {
+      "main": [
+        [
+          {
+            "node": "Ensure Media Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Initial Media Sheet Rows": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Update TTS Rows in Sheet": {
+      "main": [
+        [
+          {
+            "node": "Update Session Review Passed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Media Sheet": {
+      "main": [
+        [
+          {
+            "node": "If Existing Media Sheet?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Save Reviewing Session",
             "type": "main",
             "index": 0
           }

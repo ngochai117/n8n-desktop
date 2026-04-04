@@ -49,8 +49,13 @@
 - chi update `status = continueReview` neu session dang `reviewing`
 - goi `GG Drive Manager get` bang `manifestUrl`
 - parse lai `Manifest.json`
-- chot `status = reviewPassed`
-- gui message xac nhan session san sang cho media branch tiep theo
+- chay media branch TTS:
+  - loop tung `scenes[*].narration_text` (moi scene 1 request TTS)
+  - goi subworkflow `TTS VieNeu` voi full narration text
+  - upload WAV vao Drive folder `folderPath/tts`
+  - append row log vao Google Sheet (scene fields + `tts_url|tts_status|tts_error_reason`)
+- chot `status = reviewPassed` (kem thong ke TTS rows)
+- gui message xac nhan media branch da chay xong
 
 ## Design style
 
@@ -59,7 +64,7 @@
 - Gia tri cuc bo thi dat ngay tai node/cum dang dung no.
 - Moi AI stage co node rieng cho model, agent, parser.
 - Co 1 node canonicalize truoc khi persist/gui.
-- Reviewer session flow da duoc rebuild o muc toi thieu, nhung media/TTS branch van chua noi tiep sau `reviewPassed`.
+- Reviewer session flow da rebuild day du cho nhanh `reviewPassed` + TTS narration branch.
 
 ## Output chinh
 
@@ -69,6 +74,8 @@
 - `sessionToken` va `status` cho reviewer callback
 - Drive links cho hai file output
 - `manifestUrl` / `folderUrl` de media branch rehydrate session
+- TTS artifacts trong folder `/tts`
+- Google Sheet rows cho tung scene narration TTS (bao gom `tts_url`, `tts_status`, `tts_error_reason`)
 
 ## Tiep tuc
 

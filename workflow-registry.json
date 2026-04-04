@@ -3,14 +3,7 @@
     "Book Review": {
       "id": "901WvOJHn6O2Hbze",
       "template": "workflows/book-review/book-review.workflow.json",
-      "lastSyncedAt": "2026-04-03T03:40:43Z",
-      "templateImport": "scripts/workflows/import/import-book-review-workflow.sh"
-    },
-    "TTS": {
-      "id": "2F1jBI12C6NtslBN",
-      "template": "workflows/media/tts.workflow.json",
-      "lastSyncedAt": "2026-04-02T15:42:03Z",
-      "templateImport": "scripts/workflows/import/import-tts-workflow.sh"
+      "lastSyncedAt": "2026-04-04T13:00:38Z"
     },
     "Shared Notification Router": {
       "id": "2oIMm0rwQPf8j4oC",
@@ -21,13 +14,12 @@
     "GG Sheet Manager": {
       "id": "Dhguhje1kdEgdj9I",
       "template": "workflows/google/gg-sheet-manager.workflow.json",
-      "lastSyncedAt": "2026-04-02T16:28:24Z",
-      "templateImport": "scripts/workflows/import/import-gg-sheet-manager-workflow.sh"
+      "lastSyncedAt": "2026-04-04T12:52:15Z"
     },
     "GG Drive Manager": {
       "id": "QpcIxaHiYXDqjw4p",
       "template": "workflows/google/gg-drive-manager.workflow.json",
-      "lastSyncedAt": "2026-04-03T03:19:16Z",
+      "lastSyncedAt": "2026-04-04T11:20:36Z",
       "templateImport": "scripts/workflows/import/import-gg-drive-manager-workflow.sh"
     },
     "Test AI Tools": {
@@ -65,6 +57,12 @@
       "template": "workflows/shared/data-table-store.workflow.json",
       "lastSyncedAt": "2026-04-03T03:40:43Z",
       "templateImport": "scripts/workflows/import/import-data-table-store-workflow.sh"
+    },
+    "TTS VieNeu": {
+      "id": "2F1jBI12C6NtslBN",
+      "template": "workflows/media/tts.workflow.json",
+      "lastSyncedAt": "2026-04-04T11:20:36Z",
+      "templateImport": "scripts/workflows/import/import-tts-workflow.sh"
     }
   }
 }
