@@ -160,119 +160,45 @@
     },
     {
       "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "cx/gpt-5.4",
-          "mode": "list",
-          "cachedResultName": "cx/gpt-5.4"
-        },
-        "responsesApiEnabled": false,
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.3,
-      "position": [
-        -624,
-        1904
-      ],
-      "id": "bde55eb2-13aa-443f-bef6-ab0d2913ea20",
-      "name": "Outline Model",
-      "credentials": {
-        "openAiApi": {
-          "id": "nmpOof7gCtDCf1BD",
-          "name": "Local OpenAI Proxy"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "cx/gpt-5.4",
-          "mode": "list",
-          "cachedResultName": "cx/gpt-5.4"
-        },
-        "responsesApiEnabled": false,
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.3,
-      "position": [
-        -272,
-        2176
-      ],
-      "id": "12c4d16d-645a-464a-adbc-17a199022f1e",
-      "name": "Manifest Model",
-      "credentials": {
-        "openAiApi": {
-          "id": "nmpOof7gCtDCf1BD",
-          "name": "Local OpenAI Proxy"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "cx/gpt-5.4",
-          "mode": "list",
-          "cachedResultName": "cx/gpt-5.4"
-        },
-        "responsesApiEnabled": false,
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.3,
-      "position": [
-        96,
-        2352
-      ],
-      "id": "dd8cbcac-5483-4382-b7f6-e13b5720f7dd",
-      "name": "QC Model",
-      "credentials": {
-        "openAiApi": {
-          "id": "nmpOof7gCtDCf1BD",
-          "name": "Local OpenAI Proxy"
-        }
-      }
-    },
-    {
-      "parameters": {
         "promptType": "define",
         "text": "={{ $('Config Main').item.json.chatInput }}\n<<<MANIFEST_JSON>>>\n{{ JSON.stringify($json.output) }}",
         "hasOutputParser": true,
+        "needsFallback": true,
         "options": {
-          "systemMessage": "={{ $('Config Main').item.json.master_prompt }}\nPROMPT QC: THE CRITICAL SOUL EDITOR (V4)\n\nROLE:\n- Bạn là một biên tập viên QC gắt gao cho các nội dung kể chuyện review sách dài.\n\nMISSION:\n- Đánh giá chất lượng khách quan và độ khớp với phong cách Soulful Narrator.\n\nSTYLE KERNEL REFERENCE (INJECTED FROM MASTER):\n__BOOK_REVIEW_STYLE_KERNEL__\n\nEVALUATION LAYERS:\n1) Objective layer:\n- Sức mạnh của Hook.\n- Sự mạch lạc của dòng tự sự.\n- Độ nguyên bản (Originality).\n- Tính ứng dụng của Bridge vào thực tế đời sống.\n\n2) Style-fit layer:\n- Sự nhất quán của giọng kể.\n- Mạch trôi tự nhiên (tránh meta labeling).\n- Chiều sâu cảm xúc và các ẩn dụ đời thường.\n\nSCORING & FEEDBACK:\n- Thang điểm từ 0 đến 10 cho: Hook, Clarity, Originality, Practical.\n- Trừ điểm nặng nếu dính meta-label lặp đi lặp lại hoặc hô hào giáo điều.\n- Feedback phải thẳng thắn, ưu tiên các lỗi cần sửa ngay, nhưng giữ cho sự sáng tạo của người kể chuyện còn sống.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"hook\": 0,\n  \"clarity\": 0,\n  \"originality\": 0,\n  \"practical\": 0,\n  \"risk\": \"low|med|high\",\n  \"feedback\": \"string\",\n  \"qc_issues\": [\"string\"]\n}\n\n"
+          "systemMessage": "={{ $('Config Main').item.json.master_prompt }}\nPROMPT QC: THE CRITICAL SOUL EDITOR (V4)\n\nROLE:\n- Bạn là một biên tập viên QC gắt gao cho các nội dung kể chuyện review sách dài.\n\nMISSION:\n- Đánh giá chất lượng khách quan và độ khớp với phong cách Soulful Narrator.\n\nEVALUATION LAYERS:\n1) Objective layer:\n- Sức mạnh của Hook.\n- Sự mạch lạc của dòng tự sự.\n- Độ nguyên bản (Originality).\n- Tính ứng dụng của Bridge vào thực tế đời sống.\n\n2) Style-fit layer:\n- Sự nhất quán của giọng kể.\n- Mạch trôi tự nhiên (tránh meta labeling).\n- Chiều sâu cảm xúc và các ẩn dụ đời thường.\n\nSCORING & FEEDBACK:\n- Thang điểm từ 0 đến 10 cho: Hook, Clarity, Originality, Practical.\n- Trừ điểm nặng nếu dính meta-label lặp đi lặp lại hoặc hô hào giáo điều.\n- Feedback phải thẳng thắn, ưu tiên các lỗi cần sửa ngay, nhưng giữ cho sự sáng tạo của người kể chuyện còn sống.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"hook\": 0,\n  \"clarity\": 0,\n  \"originality\": 0,\n  \"practical\": 0,\n  \"risk\": \"low|med|high\",\n  \"feedback\": \"string\",\n  \"qc_issues\": [\"string\"]\n}"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        80,
-        2128
+        336,
+        2120
       ],
       "id": "77e150d8-1a32-4dd0-afab-042249707767",
       "name": "QC AI Agent",
-      "retryOnFail": true
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
     },
     {
       "parameters": {
         "promptType": "define",
         "text": "={{ $('Config Main').item.json.chatInput }}",
         "hasOutputParser": true,
+        "needsFallback": true,
         "options": {
-          "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\n\nPROMPT SCENE OUTLINE: THE CONTENT ARCHITECT (V4)\n\nROLE:\n- Bạn là kiến trúc sư xây dựng khung cảnh cho video review sách dài.\n\nTASK:\n- Thiết kế dàn ý cho video 16:9 với tổng thời lượng 15-20 phút.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- scene_count là số nguyên từ 8 đến 14. Nếu không chắc, dùng 10.\n- Cảnh đầu (order=1) bắt buộc scene_role=\"hook\".\n- Cảnh cuối bắt buộc scene_role=\"outro\".\n- Các cảnh cốt lõi phải dày dặn, không viết cảnh siêu nhỏ.\n- Chọn 1 góc nhìn phân tích chính và 1 góc nhìn hỗ trợ (không phân mảng quá nhiều).\n- Mục tiêu từng cảnh phải có ý nghĩa sâu sắc, không chỉ lặp lại nội dung chương sách.\n- Chọn rõ `primary_lens` và `secondary_lens`, không để trống.\n\nLANGUAGE:\n- Tiếng Việt cho các giá trị nội dung (key JSON giữ tiếng Anh theo schema).\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"angle\": \"string\",\n  \"target_audience\": \"string\",\n  \"primary_lens\": \"string\",\n  \"secondary_lens\": \"string\",\n  \"scene_count\": 10,\n  \"estimated_total_duration_sec\": 1020,\n  \"scenes\": [\n    {\n      \"order\": 1,\n      \"scene_role\": \"hook|core|outro\",\n      \"scene_goal\": \"string\",\n      \"key_points\": [\"string\"]\n    }\n  ]\n}\n"
+          "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\n\nPROMPT SCENE OUTLINE: THE CONTENT ARCHITECT (V4)\n\nROLE:\n- Bạn là kiến trúc sư xây dựng khung cảnh cho video review sách dài.\n\nTASK:\n- Thiết kế dàn ý cho video 16:9 với tổng thời lượng 15-20 phút.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- scene_count là số nguyên (nên là các bài học đúc kết hoặc số chương + intro + outro).\n- Cảnh đầu (order=1) bắt buộc scene_role=\"hook\".\n- Cảnh cuối bắt buộc scene_role=\"outro\".\n- Các cảnh cốt lõi phải dày dặn, không viết cảnh siêu nhỏ.\n- Chọn 1 góc nhìn phân tích chính và 1 góc nhìn hỗ trợ (không phân mảng quá nhiều).\n- Mục tiêu từng cảnh phải có ý nghĩa sâu sắc, không chỉ lặp lại nội dung chương sách.\n- Chọn rõ `primary_lens` và `secondary_lens`, không để trống.\n\nLANGUAGE:\n- Tiếng Việt cho các giá trị nội dung (key JSON giữ tiếng Anh theo schema).\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"angle\": \"string\",\n  \"target_audience\": \"string\",\n  \"primary_lens\": \"string\",\n  \"secondary_lens\": \"string\",\n  \"scene_count\": 0,\n  \"estimated_total_duration_sec\": 0,\n  \"scenes\": [\n    {\n      \"order\": 1,\n      \"scene_role\": \"hook|core|outro\",\n      \"scene_goal\": \"string\",\n      \"key_points\": [\"string\"]\n    }\n  ]\n}"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -624,
+        -592,
         1680
       ],
       "id": "345e7d01-59d8-45a1-9c7f-c7c34d4132a4",
       "name": "Outline AI Agent",
-      "retryOnFail": true
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
     },
     {
       "parameters": {
@@ -306,7 +232,7 @@
             {
               "id": "fe08b955-42dd-4719-8619-d9ffe65dc9a7",
               "name": "masterPrompt",
-              "value": "ROLE: Bạn là một \"Vị Triết Gia Đời Thường\" (The Everyday Philosopher). Bạn không review sách; bạn dùng sách để giải mã những \"Sự thật ngầm hiểu\" về nỗi đau, khao khát và sự hèn nhát của con người hiện đại.   VOICE & STYLE: - Ngôn ngữ: Tiếng Việt đời thường, giàu hình ảnh, có nhịp điệu (Pacing).  - Thái độ: Thủ thỉ như tâm tình nhưng đanh thép khi cần \"tát tỉnh\" người nghe.  - Tuyệt đối cấm: Các từ AI cửa miệng như \"Tóm lại\", \"Nhìn chung\", \"Trong bối cảnh hiện nay\", \"Chúng ta cần phải\".  HÀNH VI CHIẾN THUẬT: 1. THE PSYCHOLOGICAL BRIDGE (Cầu nối tâm lý): Không chỉ đưa ví dụ đời thực, mà phải giải mã cơ chế tâm lý đằng sau hành động của nhân vật. (Ví dụ: Santiago sợ mất đàn cừu không phải vì tiền, mà vì não bộ đang bảo vệ sự an toàn giả tạo để từ chối sự trưởng thành đau đớn). 2. TỔNG HÒA 3 TẦNG: Mọi phân tích phải đi từ Cảm giác cơ thể (Sinh lý) -> Sự tự lừa dối trong suy nghĩ (Nhận thức) -> Sự trì trệ hoặc bứt phá (Hành vi). 3. TRÁNH CẤU TRÚC \"META\": Mạch kịch bản phải là một dòng chảy (Flow). Dùng những câu nối cảm xúc để chuyển cảnh thay vì tiêu đề cứng nhắc. 4. ẨN DỤ XUYÊN SUỐT: Chọn 1 hình ảnh ẩn dụ xuyên suốt kịch bản để làm \"mỏ neo\" cảm xúc cho người nghe.  LOGIC THEO THỂ LOẠI (ADAPTIVE LENS): - Self-help/Tâm lý: Phân tích theo 3 tầng (Sinh lý - Nhận thức - Hành vi). Không hô hào \"hãy tích cực\"; giải thích gốc rễ tiêu cực. - Tiểu thuyết/Ngụ ngôn: Xem hành trình nhân vật như hành trình tinh thần của người nghe. Biến bối cảnh thành biểu tượng tâm lý. - Triết học/Khoa học: Dịch ý niệm khô thành câu hỏi nhân sinh và lựa chọn thực tế.",
+              "value": "MASTER PROMPT: THE SOULFUL NARRATOR & CULTURAL ANALYST (V4)\n\nROLE:\n- Bạn là một \"Vị Triết Gia Đời Thường\" (The Everyday Philosopher). Bạn không review sách; bạn dùng sách để giải mã những \"Sự thật thầm kín\", \"Bí mật ít ai để ý tới\" về những ý nghĩa mà cuốn sách đem lại cho con người.\n- Bạn thấu cảm, đời thường, nhưng đủ sắc bén để đánh thức người nghe, đánh vào thâm tâm của người nghe.\n- Giọng kể phải tự nhiên như người thật đang tâm sự, không giáo điều, không khẩu hiệu rỗng.\n\nVOICE & STYLE:\n- Ngôn ngữ: Tiếng Việt đời thường, giàu hình ảnh, có nhịp điệu (Pacing).\n- Thái độ: Thủ thỉ như tâm tình nhưng đanh thép khi cần \"tát tỉnh\" người nghe.\n- Tuyệt đối cấm: Các từ AI cửa miệng như \"Tóm lại\", \"Nhìn chung\", \"Trong bối cảnh hiện nay\", \"Chúng ta cần phải\"\n- Tuyệt đối cấm: Đánh đồng như \"con người\", \"tất cả\",...\n- Tuyệt đối cấm: Đụng chạm đến tôn giáo, tín nguongwx\n\nCORE DIRECTIVES:\n1. HOOK THỨC TỈNH:\n- Mở đầu bằng một câu hỏi hoặc tình huống chạm vào nỗi đau/cột mốc mà ai cũng từng gặp.\n- Ưu tiên không nêu tên sách ngay trong câu mở đầu.\n\n2. TRIỆT TIÊU META LABEL:\n- Không viết kiểu \"Phần 1\", \"Tóm tắt\", \"Bài học\" trong narration.\n- Mạch kể phải liền, trôi tự nhiên như một cuộc đối thoại.\n\n3. THE BRIDGE (CẦU NỐI TÂM LÝ):\n- Mỗi luận điểm từ sách cần có câu nối kéo về đời thực ngay sau đó.\n- Bridge phải cụ thể: công việc, gia đình, áp lực, sai lầm, thói quen.\n- Phải giải mã được cơ chế tâm lý đằng sau hành động của nhân vật thay vì chỉ nêu ví dụ.\n\n4. ẨN DỤ ĐỜI THƯỜNG:\n- Dùng hình ảnh gần gũi để giải thích ý khó.\n- Tránh định kiến giới, tránh tâm linh hóa, tránh ví dụ cực đoan.\n\n5. XƯNG HÔ:\n- Ưu tiên \"mình/tôi\" và \"bạn\" (có thể \"bạn thân mến\" khi phù hợp).\n- Giữ cảm giác gần gũi như hai người bạn đang ngồi nói chuyện.\n\n6. NGÔN NGỮ CHIÊM NGHIỆM:\n- Lời văn đời thường, mềm mại, giàu cảm xúc nhưng rõ nghĩa.\n- Tuyệt đối tránh các từ AI cửa miệng như \"Tóm lại\", \"Nhìn chung\", \"Trong bối cảnh\".\n\nLOGIC THEO THỂ LOẠI (ADAPTIVE LENS):\n- Self-help/Tâm lý:\n  Không hô hào \"hãy tích cực\"; giải thích gốc rễ tiêu cực và sự không hoàn hảo.\n  Thần thái: điềm tĩnh, chữa lành, thấu suốt.\n\n- Tiểu thuyết/Ngụ ngôn:\n  Xem hành trình nhân vật như hành trình tinh thần của người nghe.\n  Biến bối cảnh/vật phẩm thành biểu tượng tâm lý để soi chiếu bản thân.\n  Thần thái: giàu hình ảnh, truyền cảm hứng, có khát vọng.\n\n- Triết học/Khoa học:\n  Dịch ý niệm khô thành câu hỏi nhân sinh và trải nghiệm sống.\n  Biến con số thành ý nghĩa cảm xúc và lựa chọn thực tế.\n\nINVISIBLE FLOW (KHUNG NGẦM):\n1. Gõ cửa tâm hồn: Mở bằng tình huống gia đình hoặc câu hỏi nhức nhối.\n2. Dẫn lối vào sách: Giới thiệu sách như tấm gương/liệu pháp để soi mình.\n3. Phân tích sâu + Đối thoại: Đan xen kể chuyện với \"tâm sự mỏng\" về sai lầm, nỗi sợ, khao khát.\n4. Triển khai các cảnh (Scenes): Đặt tiêu đề cảnh theo phần đúc kết nhắc nhở.\n5. Kết đọng: Kết bằng một khẳng định bao dung hoặc câu hỏi mở để người nghe tự phản tư.\n\nTRÁNH\nThứ nhất, lỗi triển khai lặp quá đều ở nhiều scene, tạo cảm giác meta-framework chen vào dòng kể. Nó làm bài dễ đoán, bớt tự nhiên, giảm độ mê hoặc của narrative.\nThứ 2, mật độ câu khẳng định đanh quá dày, nhiều chỗ giống đang tuyên ngôn hơn là dẫn dắt, khiến người nghe hơi bị “dạy đời”. Soulful Narrator cần đau mà tỉnh, không phải câu nào cũng đóng đinh.\nThứ 3, hãy thiên về thức tỉnh tinh thần hơn là bridge thực hành. Người xem được chạm cảm xúc mạnh nhưng chưa được chỉ rõ sau video nên làm gì ngay: kiểm tra tiếng gọi nào lặp lại, phân biệt sợ thật hay muốn thật ra sao, thử một bước nhỏ nào trong 7 ngày tới. \nThứ tư, vài ý lặp semantic quanh “vùng an toàn”, “cái quen”, “nỗi sợ viết hộ đời mình”; nên gọt bớt để mỗi scene có một phát hiện riêng, tránh cùng một luận điểm thay áo.\n\nTóm lại: Có hồn, có lực, có câu quote tốt, đủ khả năng giữ người xem dài. Hãy bớt khung lý thuyết lộ thiên, giảm giọng phán xử, tăng chi tiết thực hành và tạo phân hóa rõ hơn giữa các scene để hành trình đỡ cùng một màu cảm xúc.\n------------------\nTránh mang sắc thái giáo điều, phán quyết mạnh tay, dễ thành cảm giác 'dạy đời'\nTránh Bridge ứng dụng đời sống chưa đủ cụ thể; thiếu hành động nhỏ, rõ, khả thi cho người xem\nTránh ý nghĩa về vùng an toàn và nỗi sợ bị lặp lại ở nhiều scene, cần nén bớt để tránh trùng ý",
               "type": "string"
             },
             {
@@ -380,12 +306,12 @@
     },
     {
       "parameters": {
-        "jsonSchemaExample": "{\n  \"angle\": \"string\",\n  \"target_audience\": \"string\",\n  \"primary_lens\": \"string\",\n  \"secondary_lens\": \"string\",\n  \"scene_count\": 10,\n  \"estimated_total_duration_sec\": 1020,\n  \"scenes\": [\n    {\n      \"order\": 1,\n      \"scene_role\": \"hook|core|outro\",\n      \"scene_goal\": \"string\",\n      \"key_points\": [\"string\"]\n    }\n  ]\n}"
+        "jsonSchemaExample": "{\n  \"angle\": \"string\",\n  \"target_audience\": \"string\",\n  \"primary_lens\": \"string\",\n  \"secondary_lens\": \"string\",\n  \"scene_count\": 0,\n  \"estimated_total_duration_sec\": 0,\n  \"scenes\": [\n    {\n      \"order\": 1,\n      \"scene_role\": \"hook|core|outro\",\n      \"scene_goal\": \"string\",\n      \"key_points\": [\"string\"]\n    }\n  ]\n}"
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        -496,
+        -368,
         1904
       ],
       "id": "419a4264-be19-485c-9146-2cf2dfe80477",
@@ -393,26 +319,13 @@
     },
     {
       "parameters": {
-        "jsonSchemaExample": "{\n  \"book\": {\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"style_keywords\": [\"string\"]\n  },\n  \"video\": {\n    \"aspect_ratio\": \"16:9\",\n    \"target_duration_min_sec\": 900,\n    \"target_duration_max_sec\": 1200,\n    \"estimated_total_duration_sec\": 0\n  },\n  \"metadata\":{\n    \"title\": \"string\",\n    \"caption\": \"string\",\n    \"thumbnail_text\": \"string\",\n    \"hashtags\": [\"#tag\"]\n  },\n  \"scenes\": [\n    {\n      \"scene_id\": \"scene_01\",\n      \"order\": 1,\n      \"scene_title\": \"string\",\n      \"scene_role\": \"hook|core|outro\",\n      \"narration_text\": \"string\",\n      \"image_prompt_en\": \"string\",\n      \"highlight_quote_vi\": \"string\",\n      \"estimated_duration_sec\": 0,\n      \"transition\": \"cut\"\n    }\n  ]\n}"
+        "jsonSchemaExample": "{\n  \"hook\": 0,\n  \"clarity\": 0,\n  \"originality\": 0,\n  \"practical\": 0,\n  \"risk\": \"low|med|high\",\n  \"feedback\": \"string\",\n  \"qc_issues\": [\"string\"]\n}"
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        -144,
-        2176
-      ],
-      "id": "6ba7bf20-26b1-4c90-836a-89be70bea31e",
-      "name": "Structured Expand Output Parser"
-    },
-    {
-      "parameters": {
-        "jsonSchemaExample": "{\n  \"hook\": 0,\n  \"clarity\": 0,\n  \"originality\": 0,\n  \"practical\": 0,\n  \"risk\": \"low|med|high\",\n  \"feedback\": \"string\",\n  \"qc_issues\": [\"string\"]\n}\n"
-      },
-      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
-      "typeVersion": 1.3,
-      "position": [
-        224,
-        2352
+        560,
+        2344
       ],
       "id": "6c4d8c06-9905-4a4b-bc6c-a0675b9118b2",
       "name": "Structured QC Output Parser"
@@ -424,8 +337,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        432,
-        2128
+        768,
+        2120
       ],
       "id": "c1b8ae39-a470-4835-ba95-a9154e994986",
       "name": "Prepare Manifest"
@@ -442,8 +355,8 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        1552,
-        1792
+        1888,
+        1784
       ],
       "id": "fce4bbc3-47cf-40c0-a37c-7ee6290a77ba",
       "name": "Convert Manifest to File"
@@ -538,8 +451,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1776,
-        1792
+        2112,
+        1784
       ],
       "id": "783252db-35a8-49ec-8339-7cdcb29cacda",
       "name": "Save Manifest to Drive"
@@ -555,7 +468,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        144,
+        424,
         1824
       ],
       "id": "0cfe3fe2-27f2-4f1b-9b77-cd5e77431298",
@@ -579,8 +492,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -208,
-        1664
+        -40,
+        1656
       ],
       "id": "cb57a281-0744-4261-b438-d430c69443f1",
       "name": "Send Creating Manifest Message",
@@ -597,19 +510,21 @@
         "promptType": "define",
         "text": "={{ $('Config Main').item.json.chatInput }}\n<<<OUTLINE_JSON>>>\n{{ JSON.stringify($json.output) }}",
         "hasOutputParser": true,
+        "needsFallback": true,
         "options": {
-          "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\nPROMPT SCENE EXPAND: THE SCRIPTWRITER (V4)\n\nROLE:\n- Bạn là người viết kịch bản kể chuyện cho video review sách dài.\n\nTASK:\n- Mở rộng dàn ý thành một review_manifest sẵn sàng sản xuất.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- Giữ đúng số lượng cảnh từ dàn ý.\n- Tổng narration_text: 15.000 - 20.000 ký tự tiếng Việt.\n- Hook/Outro: 45-75 giây mỗi cảnh.\n- Core scenes: 75-120 giây mỗi cảnh, tối thiểu 45 giây.\n- scene_01 là hook, scene cuối là outro.\n- image_prompt_en: viết bằng tiếng Anh và không để trống.\n- highlight_quote_vi: tùy chọn, không có thì để chuỗi rỗng.\n- transition mặc định \"cut\".\n- metadata.title: Phải chứa một \"Mâu thuẫn\" (Tension) hoặc một \"Câu hỏi tử huyệt\" chạm đến nỗi đau/khao khát của con người hiện đại. TRÁNH: \"Review sách: [Tên sách]\". NÊN \"Tại sao bạn vẫn mãi thất bại dù đã cố gắng?\".\n- metadata.caption: Dưới 150 chữ, tiếng Việt. Cấu trúc: 1 Câu hỏi khơi gợi nỗi đau (Emotional Hook) + 1 Giá trị cốt lõi từ sách + 1 Lời hứa về sự thay đổi (Practical Takeaway).\n- metadata.thumbnail_text: Cực ngắn (dưới 6 từ), clear và curiosity-driven. Phải là một lời cảnh báo hoặc một lời mời gọi mang tính quyết định, không lặp lại Title.\n- metadata.hashtags: 5-7 tags, viết thường, không dấu. Bao gồm tên sách, tên tác giả, ngách nội dung (self-help, triết lý).\n\nANTI-RIGID CONSTRAINTS:\n- Tuyệt đối không dùng các mẫu câu lặp đi lặp lại giữa các cảnh.\n- Không biến narration thành danh sách liệt kê tóm tắt.\n- Giữ sự cân bằng giữa chiều sâu cảm xúc và tính ứng dụng thực tế.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"book\": {\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"style_keywords\": [\"string\"]\n  },\n  \"video\": {\n    \"aspect_ratio\": \"16:9\",\n    \"target_duration_min_sec\": 900,\n    \"target_duration_max_sec\": 1200,\n    \"estimated_total_duration_sec\": 0\n  },\n  \"metadata\": {\n    \"title\": \"string\",\n    \"caption\": \"string\",\n    \"thumbnail_text\": \"string\",\n    \"hashtags\": [\"#tag\"]\n  },\n  \"scenes\": [\n    {\n      \"scene_id\": \"scene_01\",\n      \"order\": 1,\n      \"scene_title\": \"string\",\n      \"scene_role\": \"hook|core|outro\",\n      \"narration_text\": \"string\",\n      \"image_prompt_en\": \"string\",\n      \"highlight_quote_vi\": \"string\",\n      \"estimated_duration_sec\": 0,\n      \"transition\": \"cut\"\n    }\n  ]\n}\n"
+          "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\nPROMPT SCENE EXPAND: THE SCRIPTWRITER (V4)\n\nROLE:\n- Bạn là người viết kịch bản kể chuyện cho video review sách dài.\n\nTASK:\n- Mở rộng dàn ý thành một review_manifest sẵn sàng sản xuất.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- Giữ đúng số lượng cảnh từ dàn ý.\n- Tổng narration_text: 15.000 - 20.000 ký tự tiếng Việt.\n- Hook/Outro: 45-75 giây mỗi cảnh.\n- Core scenes: 75-120 giây mỗi cảnh, tối thiểu 45 giây.\n- scene_01 là hook, scene cuối là outro.\n- scene_title phải mạnh và rõ nghĩa, nêu bật ý nghĩa muốn truyền tải.\n- image_prompt_en: viết bằng tiếng Anh và không để trống.\n- highlight_quote_vi: tùy chọn, không có thì để chuỗi rỗng.\n- metadata.title: Phải chứa một \"Mâu thuẫn\" (Tension) hoặc một \"Câu hỏi tử huyệt\" chạm đến nỗi đau/khao khát của con người hiện đại. TRÁNH: \"Review sách: [Tên sách]\". NÊN \"Tại sao bạn vẫn mãi thất bại dù đã cố gắng?\".\n- metadata.caption: Dưới 150 chữ, tiếng Việt. Cấu trúc: 1 Câu hỏi khơi gợi nỗi đau (Emotional Hook) + 1 Giá trị cốt lõi từ sách + 1 Lời hứa về sự thay đổi (Practical Takeaway).\n- metadata.thumbnail_text: Cực ngắn (dưới 6 từ), clear và curiosity-driven. Phải là một lời cảnh báo hoặc một lời mời gọi mang tính quyết định, không lặp lại Title.\n- metadata.hashtags: 5-7 tags, viết thường, không dấu. Bao gồm tên sách, tên tác giả, ngách nội dung (self-help, triết lý).\n\nANTI-RIGID CONSTRAINTS:\n- Tuyệt đối không dùng các mẫu câu lặp đi lặp lại giữa các cảnh.\n- Không biến narration thành danh sách liệt kê tóm tắt.\n- Giữ sự cân bằng giữa chiều sâu cảm xúc và tính ứng dụng thực tế.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"book\": {\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"style_keywords\": [\"string\"],\n  },\n  \"video\": {\n    \"aspect_ratio\": \"16:9\",\n    \"target_duration_min_sec\": 900,\n    \"target_duration_max_sec\": 1200,\n    \"estimated_total_duration_sec\": 0,\n  },\n  \"metadata\": {\n    \"title\": \"string\",\n    \"caption\": \"string\",\n    \"thumbnail_text\": \"string\",\n    \"hashtags\": [\"#tag\"],\n  },\n  \"scenes\": [\n    {\n      \"scene_id\": \"scene_01\",\n      \"order\": 1,\n      \"scene_title\": \"string\",\n      \"scene_role\": \"hook|core|outro\",\n      \"narration_text\": \"string\",\n      \"image_prompt_en\": \"string\",\n      \"highlight_quote_vi\": \"string\",\n      \"estimated_duration_sec\": 0,\n    }\n  ],\n}"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -272,
+        -128,
         1952
       ],
       "id": "644cdd72-93f4-4611-b716-e0aaba79452c",
       "name": "Manifest AI Agent",
-      "retryOnFail": true
+      "retryOnFail": true,
+      "waitBetweenTries": 5000
     },
     {
       "parameters": {
@@ -620,8 +535,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2448,
-        1936
+        2784,
+        1928
       ],
       "id": "9a87d6c3-2e18-4737-b2a5-74d8f1d909bc",
       "name": "Delete Loading Message",
@@ -674,8 +589,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2448,
-        2176
+        2784,
+        2168
       ],
       "id": "ab078599-04fc-4709-bb6f-1ee67347c8dc",
       "name": "Send Review Message",
@@ -700,8 +615,8 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        1552,
-        1984
+        1888,
+        1976
       ],
       "id": "13129dda-41ff-4b41-a932-a1d8bb437ad1",
       "name": "Convert Content Readable to File"
@@ -797,8 +712,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1776,
-        1984
+        2112,
+        1976
       ],
       "id": "cb1e2334-9a98-4291-a9f6-b0f52424f976",
       "name": "Save Content Readable to Drive"
@@ -899,8 +814,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2224,
-        2032
+        2560,
+        2024
       ]
     },
     {
@@ -987,7 +902,7 @@
       "typeVersion": 1.3,
       "position": [
         -848,
-        2752
+        2744
       ]
     },
     {
@@ -1003,8 +918,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -208,
-        2752
+        -40,
+        2744
       ],
       "webhookId": "b3271de9-8677-4f32-ace2-82f1ca8a968c",
       "credentials": {
@@ -1104,8 +1019,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        432,
-        2752
+        768,
+        2744
       ]
     },
     {
@@ -1122,8 +1037,8 @@
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1.1,
       "position": [
-        656,
-        2752
+        992,
+        2744
       ],
       "alwaysOutputData": true,
       "onError": "continueRegularOutput"
@@ -1213,8 +1128,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        -560,
-        2736
+        -504,
+        2728
       ],
       "id": "3c86698d-7b34-485c-aeee-ec2ab5ec113a",
       "name": "Switch"
@@ -1233,8 +1148,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -208,
-        2512
+        -40,
+        2508
       ],
       "webhookId": "a38a2f50-a81b-4512-a08c-b7741c669951",
       "credentials": {
@@ -1272,8 +1187,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        880,
-        2752
+        1216,
+        2744
       ],
       "id": "7c855fa4-3f0c-4db3-a9b6-a5d6fdd51ed5",
       "name": "If Load Manifest Success"
@@ -1291,8 +1206,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1104,
-        2752
+        1440,
+        2744
       ],
       "webhookId": "b3271de9-8677-4f32-ace2-82f1ca8a968c",
       "credentials": {
@@ -1316,8 +1231,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1104,
-        2944
+        1440,
+        2936
       ],
       "webhookId": "a38a2f50-a81b-4512-a08c-b7741c669951",
       "credentials": {
@@ -1340,8 +1255,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1104,
-        2560
+        1440,
+        2552
       ],
       "webhookId": "b3271de9-8677-4f32-ace2-82f1ca8a968c",
       "credentials": {
@@ -1359,8 +1274,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1328,
-        2560
+        1664,
+        2552
       ],
       "id": "d14a94ea-2db9-447d-8b5d-89c0a1e8ab36"
     },
@@ -1447,8 +1362,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        144,
-        2752
+        424,
+        2744
       ]
     },
     {
@@ -1463,7 +1378,7 @@
       "typeVersion": 1.2,
       "position": [
         -848,
-        2464
+        2456
       ],
       "id": "b9af2bd0-e9ad-4bc0-b78f-e3ccb909cbd8",
       "name": "Remove button",
@@ -1559,8 +1474,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        144,
-        2944
+        424,
+        2936
       ]
     },
     {
@@ -1649,8 +1564,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        -208,
-        2944
+        -40,
+        2936
       ],
       "id": "7e20d3e0-a93d-4162-a667-7bf72ff5723e",
       "name": "Delete Folder"
@@ -1667,7 +1582,7 @@
       "typeVersion": 1.2,
       "position": [
         -848,
-        2192
+        2184
       ],
       "id": "212fbccc-5e08-4871-a1ff-e27b77f38dfd",
       "name": "Answer Delete",
@@ -1704,14 +1619,14 @@
     },
     {
       "parameters": {
-        "jsCode": "function safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0) {\n  const n = Number(value);\n  return Number.isFinite(n) ? Math.floor(n) : fallback;\n}\n\nfunction pad3(value) {\n  return String(value).padStart(3, '0');\n}\n\nconst input = $json ?? {};\nconst manifest = input.manifest && typeof input.manifest === 'object' ? input.manifest : {};\nconst scenes = Array.isArray(manifest.scenes) ? [...manifest.scenes] : [];\nscenes.sort((a, b) => asInt(a.order, 0) - asInt(b.order, 0));\n\nconst narrationItems = [];\n\nfor (const scene of scenes) {\n  const sceneOrder = asInt(scene.order, narrationItems.length + 1);\n  const sceneId = safeText(scene.scene_id, 'scene_' + pad3(sceneOrder));\n  narrationItems.push({\n    scene_id: sceneId,\n    order: sceneOrder,\n    scene_title: safeText(scene.scene_title),\n    scene_role: safeText(scene.scene_role),\n    narration_text: safeText(scene.narration_text),\n    image_prompt_en: safeText(scene.image_prompt_en),\n    highlight_quote_vi: safeText(scene.highlight_quote_vi),\n    estimated_duration_sec: asInt(scene.estimated_duration_sec, 0),\n    transition: safeText(scene.transition, 'cut'),\n    tts_file_name: 'scene_' + pad3(sceneOrder) + '.wav',\n  });\n}\n\nreturn {\n  ...input,\n  narrationItems,\n  narrationTotal: narrationItems.length,\n};"
+        "jsCode": "function safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0) {\n  const n = Number(value);\n  return Number.isFinite(n) ? Math.floor(n) : fallback;\n}\n\nfunction pad3(value) {\n  return String(value).padStart(3, '0');\n}\n\nconst input = $json ?? {};\nconst manifest = input.manifest && typeof input.manifest === 'object' ? input.manifest : {};\nconst scenes = Array.isArray(manifest.scenes) ? [...manifest.scenes] : [];\nscenes.sort((a, b) => asInt(a.order, 0) - asInt(b.order, 0));\n\nconst narrationItems = [];\n\nfor (const scene of scenes) {\n  const sceneOrder = asInt(scene.order, narrationItems.length + 1);\n  const sceneId = safeText(scene.scene_id, 'scene_' + pad3(sceneOrder));\n  narrationItems.push({\n    scene_id: sceneId,\n    order: sceneOrder,\n    scene_title: safeText(scene.scene_title),\n    scene_role: safeText(scene.scene_role),\n    narration_text: safeText(scene.narration_text),\n    image_prompt_en: safeText(scene.image_prompt_en),\n    highlight_quote_vi: safeText(scene.highlight_quote_vi),\n    estimated_duration_sec: safeText(scene.estimated_duration_sec, 'cut'),\n    total_chars: safeText(scene.total_chars, 'cut'),\n    tts_file_name: 'scene_' + pad3(sceneOrder) + '.wav',\n  });\n}\n\nreturn {\n  ...input,\n  narrationItems,\n  narrationTotal: narrationItems.length,\n};"
       },
       "name": "Build Narration Queue",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1552,
-        2560
+        1888,
+        2552
       ],
       "id": "d49ae6dc-87bb-40da-bda9-70c3b4309aa9"
     },
@@ -1724,8 +1639,8 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        1776,
-        2560
+        2112,
+        2552
       ],
       "id": "82e3dfff-ed84-491f-b008-74b52cf6ea6d"
     },
@@ -1739,8 +1654,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        2000,
-        2560
+        2336,
+        2552
       ],
       "id": "88628dea-9ff4-42e4-9508-3b2702aeee04"
     },
@@ -1896,8 +1811,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2224,
-        2560
+        2560,
+        2552
       ],
       "id": "affd234d-1d83-407b-887a-d394218235c5"
     },
@@ -1988,34 +1903,34 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2448,
-        2560
+        2784,
+        2552
       ],
       "id": "51f7476b-8533-4961-9de7-9ea989cd1d7e"
     },
     {
       "parameters": {
-        "jsCode": "function safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst narrationItem = $('Loop Over Narration Items').item.json || {};\nconst ttsResult = $('Call TTS VieNeu').item.json || {};\nconst uploadResult = $json || {};\n\nconst ttsSuccess = safeText(ttsResult.status) === 'success';\nconst uploadSuccess = safeText(uploadResult.status) === 'success';\nconst ttsUrl = safeText(uploadResult.fileUrl);\n\nlet ttsStatus = 'failed';\nlet ttsErrorReason = '';\n\nif (ttsSuccess && uploadSuccess && ttsUrl) {\n  ttsStatus = 'success';\n} else if (!ttsSuccess) {\n  ttsErrorReason = safeText(ttsResult.errorReason, 'tts_failed');\n} else {\n  ttsErrorReason = safeText(uploadResult.errorMessage || uploadResult.error_reason || uploadResult.status, 'drive_upload_failed');\n}\n\nreturn {\n  scene_id: safeText(narrationItem.scene_id),\n  order: Number(narrationItem.order || 0),\n  tts_url: ttsUrl,\n  tts_status: ttsStatus,\n  tts_error_reason: ttsErrorReason,\n};"
+        "jsCode": "function safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst narrationItem = $('Loop Over Narration Items').item.json || {};\nconst ttsResult = $('Call TTS VieNeu').item.json || {};\nconst uploadResult = $json || {};\n\nconst ttsSuccess = safeText(ttsResult.status) === 'success';\nconst uploadSuccess = safeText(uploadResult.status) === 'success';\nconst ttsUrl = safeText(uploadResult.fileUrl);\n\nlet ttsStatus = 'failed';\nlet ttsErrorReason = '';\n\nif (ttsSuccess && uploadSuccess && ttsUrl) {\n  ttsStatus = 'success';\n} else if (!ttsSuccess) {\n  ttsErrorReason = safeText(ttsResult.errorReason, 'tts_failed');\n} else {\n  ttsErrorReason = safeText(uploadResult.errorMessage || uploadResult.error_reason || uploadResult.status, 'drive_upload_failed');\n}\n\nreturn {\n  scene_id: safeText(narrationItem.scene_id),\n  order: Number(narrationItem.order || 0),\n  tts_url: ttsUrl,\n  tts_status: ttsStatus,\n  tts_error_reason: ttsErrorReason,\n  tts_duration_sec: ttsResult.totalDurationSec\n};"
       },
       "name": "Build TTS Sheet Row",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2672,
+        3008,
         2624
       ],
       "id": "1d1b9dfb-a8b4-4bf6-8445-483341b4fe59"
     },
     {
       "parameters": {
-        "jsCode": "const rows = $input.all().map((item) => item.json || {});\n\nconst sorted = rows.sort((a, b) => {\n  const orderDiff = Number(a.order || 0) - Number(b.order || 0);\n  if (orderDiff !== 0) return orderDiff;\n  return String(a.scene_id || '').localeCompare(String(b.scene_id || ''));\n});\n\nconst ttsHeader = ['scene_id', 'tts_url', 'tts_status', 'tts_error_reason'];\nconst ttsDataRows = sorted.map((row) => [\n  String(row.scene_id || ''),\n  String(row.tts_url || ''),\n  String(row.tts_status || ''),\n  String(row.tts_error_reason || ''),\n]);\n\nconst successCount = sorted.filter((row) => String(row.tts_status || '') === 'success').length;\nconst failedCount = sorted.length - successCount;\n\nreturn [{\n  json: {\n    rows: [ttsHeader, ...ttsDataRows],\n    ttsRowsTotal: sorted.length,\n    ttsRowsSuccess: successCount,\n    ttsRowsFailed: failedCount,\n  },\n}];"
+        "jsCode": "const rows = $input.all().map((item) => item.json || {});\n\nconst sorted = rows.sort((a, b) => {\n  const orderDiff = Number(a.order || 0) - Number(b.order || 0);\n  if (orderDiff !== 0) return orderDiff;\n  return String(a.scene_id || '').localeCompare(String(b.scene_id || ''));\n});\n\nconst ttsHeader = ['scene_id', 'tts_url', 'tts_duration_sec' ,'tts_status', 'tts_error_reason'];\nconst ttsDataRows = sorted.map((row) => [\n  String(row.scene_id || ''),\n  String(row.tts_url || ''),\n  row.tts_duration_sec || 0,\n  String(row.tts_status || ''),\n  String(row.tts_error_reason || ''),\n]);\n\nconst successCount = sorted.filter((row) => String(row.tts_status || '') === 'success').length;\nconst failedCount = sorted.length - successCount;\n\nreturn [{\n  json: {\n    rows: [ttsHeader, ...ttsDataRows],\n    ttsRowsTotal: sorted.length,\n    ttsRowsSuccess: successCount,\n    ttsRowsFailed: failedCount,\n  },\n}];"
       },
       "name": "Finalize TTS Sheet Rows",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2224,
-        2368
+        2560,
+        2360
       ],
       "id": "6dcaceee-6704-4d3f-8a8e-3d533aac9efa"
     },
@@ -2094,8 +2009,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2672,
-        2368
+        3008,
+        2360
       ],
       "id": "4487399a-7019-4afd-900f-f432725076a6"
     },
@@ -2113,8 +2028,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2896,
-        2368
+        3232,
+        2360
       ],
       "id": "65e263cd-06b4-4552-9a65-2f321ddbd0a4",
       "webhookId": "f7214349-0bec-4300-a467-91bb615a3838",
@@ -2230,8 +2145,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1552,
-        2224
+        1888,
+        2216
       ],
       "id": "3a60b60a-c57e-4a4e-85a9-bbc9d768d28c"
     },
@@ -2320,8 +2235,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        656,
-        2224
+        992,
+        2216
       ],
       "id": "4539d8ca-9783-4cc7-9c91-3ef48ba6a743"
     },
@@ -2353,8 +2268,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1104,
-        2224
+        1440,
+        2216
       ],
       "id": "be930269-fa74-47e4-937d-e3c9ab226f24"
     },
@@ -2443,7 +2358,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1328,
+        1664,
         2144
       ],
       "id": "7ae15eee-5961-4818-a05f-f068eebf7e7d"
@@ -2555,8 +2470,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1776,
-        2224
+        2112,
+        2216
       ],
       "id": "d9ca8d07-879d-4710-bdbf-621e1e8c3604"
     },
@@ -2676,21 +2591,21 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2448,
-        2368
+        2784,
+        2360
       ],
       "id": "7012c602-b9dc-4437-b681-44b3997e3110"
     },
     {
       "parameters": {
-        "jsCode": "function safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst items = Array.isArray($json.items) ? $json.items : [];\nconst targetName = safeText($('Config Main').first().json.mediaSpreadsheetName);\n\nconst found = items.find((item) => {\n  if (!item || typeof item !== 'object') return false;\n  if (item.isFolder === true) return false;\n  return safeText(item.name) === targetName;\n});\n\nfunction asInt(value, fallback = 0) {\n  const n = Number(value);\n  return Number.isFinite(n) ? Math.floor(n) : fallback;\n}\n\nconst manifest = $('Prepare Manifest').first().json.manifest || {};\nconst mediaSpreadsheetName = safeText($('Config Main').first().json.mediaSpreadsheetName, 'Media');\n\nconst scenes = Array.isArray(manifest.scenes) ? [...manifest.scenes] : [];\nscenes.sort((a, b) => asInt(a.order) - asInt(b.order));\n\nconst header = [\n  'scene_id',\n  'order',\n  'scene_title',\n  'scene_role',\n  'narration_text',\n  'image_prompt_en',\n  'highlight_quote_vi',\n  'estimated_duration_sec',\n  'transition',\n  'tts_url',\n  'tts_status',\n  'tts_error_reason',\n];\n\nconst dataRows = scenes.map((scene) => [\n  safeText(scene.scene_id),\n  asInt(scene.order, 0),\n  safeText(scene.scene_title),\n  safeText(scene.scene_role),\n  safeText(scene.narration_text),\n  safeText(scene.image_prompt_en),\n  safeText(scene.highlight_quote_vi),\n  asInt(scene.estimated_duration_sec, 0),\n  safeText(scene.transition, 'cut'),\n  '',\n  '',\n  '',\n]);\n\nconst mediaSheetRows = [header, ...dataRows];\n\nreturn {\n  hasExistingMediaSheet: Boolean(found),\n  existingMediaSheetUrl: safeText(found?.url),\n  mediaSpreadsheetName: mediaSpreadsheetName,\n  mediaSheetName: mediaSpreadsheetName,\n  mediaSheetRows,\n};"
+        "jsCode": "function safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst items = Array.isArray($json.items) ? $json.items : [];\nconst targetName = safeText($('Config Main').first().json.mediaSpreadsheetName);\n\nconst found = items.find((item) => {\n  if (!item || typeof item !== 'object') return false;\n  if (item.isFolder === true) return false;\n  return safeText(item.name) === targetName;\n});\n\nfunction asInt(value, fallback = 0) {\n  const n = Number(value);\n  return Number.isFinite(n) ? Math.floor(n) : fallback;\n}\n\nconst manifest = $('Prepare Manifest').first().json.manifest || {};\nconst mediaSpreadsheetName = safeText($('Config Main').first().json.mediaSpreadsheetName, 'Media');\n\nconst scenes = Array.isArray(manifest.scenes) ? [...manifest.scenes] : [];\nscenes.sort((a, b) => asInt(a.order) - asInt(b.order));\n\nconst header = [\n  'scene_id',\n  'order',\n  'scene_title',\n  'scene_role',\n  'narration_text',\n  'image_prompt_en',\n  'highlight_quote_vi',\n  'estimated_duration_sec',\n];\n\nconst dataRows = scenes.map((scene) => [\n  safeText(scene.scene_id),\n  asInt(scene.order, 0),\n  safeText(scene.scene_title),\n  safeText(scene.scene_role),\n  safeText(scene.narration_text),\n  safeText(scene.image_prompt_en),\n  safeText(scene.highlight_quote_vi),\n  asInt(scene.estimated_duration_sec, 0),\n]);\n\nconst mediaSheetRows = [header, ...dataRows];\n\nreturn {\n  hasExistingMediaSheet: Boolean(found),\n  existingMediaSheetUrl: safeText(found?.url),\n  mediaSpreadsheetName: mediaSpreadsheetName,\n  mediaSheetName: mediaSpreadsheetName,\n  mediaSheetRows,\n};"
       },
       "name": "Build Media Sheet",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        880,
-        2224
+        1216,
+        2216
       ],
       "id": "212fd91f-e572-4eee-943a-451673fd1691"
     },
@@ -2706,11 +2621,172 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        2000,
-        2016
+        2336,
+        2008
       ],
       "id": "1f3657ff-becf-41d1-a014-819af6671fb0",
       "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"book\": {\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"style_keywords\": [\"string\"]\n  },\n  \"video\": {\n    \"aspect_ratio\": \"16:9\",\n    \"target_duration_min_sec\": 900,\n    \"target_duration_max_sec\": 1200,\n    \"estimated_total_duration_sec\": 0\n  },\n  \"metadata\": {\n    \"title\": \"string\",\n    \"caption\": \"string\",\n    \"thumbnail_text\": \"string\",\n    \"hashtags\": [\"#tag\"]\n  },\n  \"scenes\": [\n    {\n      \"scene_id\": \"scene_01\",\n      \"order\": 1,\n      \"scene_title\": \"string\",\n      \"scene_role\": \"hook|core|outro\",\n      \"narration_text\": \"string\",\n      \"image_prompt_en\": \"string\",\n      \"highlight_quote_vi\": \"string\",\n      \"estimated_duration_sec\": 0\n    }\n  ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        96,
+        2176
+      ],
+      "id": "6ba7bf20-26b1-4c90-836a-89be70bea31e",
+      "name": "Structured Manifest Output Parser"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "cx/gpt-5.4",
+          "mode": "list",
+          "cachedResultName": "cx/gpt-5.4"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -32,
+        2176
+      ],
+      "id": "bde55eb2-13aa-443f-bef6-ab0d2913ea20",
+      "name": "OpenAI Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "nmpOof7gCtDCf1BD",
+          "name": "Local OpenAI Proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite-preview",
+        "options": {
+          "maxOutputTokens": 65000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        1904
+      ],
+      "id": "34ec3081-2c22-4c25-b28f-274b3a76a0ce",
+      "name": "Google Gemini 3 Flash Lite",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "fsyqoTYuk0ELrsZp",
+          "name": "Google Gemini Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "cx/gpt-5.4",
+          "mode": "list",
+          "cachedResultName": "cx/gpt-5.4"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        304,
+        2344
+      ],
+      "id": "dd8cbcac-5483-4382-b7f6-e13b5720f7dd",
+      "name": "QC Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "nmpOof7gCtDCf1BD",
+          "name": "Local OpenAI Proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite-preview",
+        "options": {
+          "maxOutputTokens": 65000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        432,
+        2344
+      ],
+      "id": "6d4cc7a4-42f5-4518-a86f-6aea8e7c051d",
+      "name": "Google Gemini 3 Flash Lite2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "fsyqoTYuk0ELrsZp",
+          "name": "Google Gemini Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite-preview",
+        "options": {
+          "maxOutputTokens": 65000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        2176
+      ],
+      "id": "eccd6cc1-1570-480a-aba6-59ca3ca00a2f",
+      "name": "Google Gemini 3 Flash Lite1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "fsyqoTYuk0ELrsZp",
+          "name": "Google Gemini Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "cx/gpt-5.4",
+          "mode": "list",
+          "cachedResultName": "cx/gpt-5.4"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -496,
+        1904
+      ],
+      "id": "0c8805e5-fd0a-4ad0-8db8-87feb2bf2283",
+      "name": "OpenAI Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "nmpOof7gCtDCf1BD",
+          "name": "Local OpenAI Proxy"
+        }
+      }
     }
   ],
   "connections": {
@@ -2779,42 +2855,6 @@
         ]
       ]
     },
-    "Outline Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Outline AI Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ],
-      "main": []
-    },
-    "Manifest Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Manifest AI Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ],
-      "main": []
-    },
-    "QC Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "QC AI Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ],
-      "main": []
-    },
     "QC AI Agent": {
       "main": [
         [
@@ -2880,18 +2920,6 @@
         [
           {
             "node": "Outline AI Agent",
-            "type": "ai_outputParser",
-            "index": 0
-          }
-        ]
-      ],
-      "main": []
-    },
-    "Structured Expand Output Parser": {
-      "ai_outputParser": [
-        [
-          {
-            "node": "Manifest AI Agent",
             "type": "ai_outputParser",
             "index": 0
           }
@@ -3341,6 +3369,96 @@
             "node": "Save Reviewing Session",
             "type": "main",
             "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Manifest Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Manifest AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ],
+      "main": []
+    },
+    "OpenAI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Manifest AI Agent",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ],
+      "main": []
+    },
+    "Google Gemini 3 Flash Lite": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Outline AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QC Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "QC AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini 3 Flash Lite2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "QC AI Agent",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Manifest Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Manifest AI Agent",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Google Gemini 3 Flash Lite1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Manifest AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Outline AI Agent",
+            "type": "ai_languageModel",
+            "index": 1
           }
         ]
       ]

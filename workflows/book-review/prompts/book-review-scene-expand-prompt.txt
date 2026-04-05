@@ -1,3 +1,4 @@
+{{ $('Config Main').item.json.masterPrompt }}
 PROMPT SCENE EXPAND: THE SCRIPTWRITER (V4)
 
 ROLE:
@@ -6,9 +7,6 @@ ROLE:
 TASK:
 - Mở rộng dàn ý thành một review_manifest sẵn sàng sản xuất.
 
-STYLE KERNEL (INJECTED FROM MASTER):
-__BOOK_REVIEW_STYLE_KERNEL__
-
 HARD CONSTRAINTS:
 - Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.
 - Giữ đúng số lượng cảnh từ dàn ý.
@@ -16,9 +14,9 @@ HARD CONSTRAINTS:
 - Hook/Outro: 45-75 giây mỗi cảnh.
 - Core scenes: 75-120 giây mỗi cảnh, tối thiểu 45 giây.
 - scene_01 là hook, scene cuối là outro.
+- scene_title phải mạnh và rõ nghĩa, nêu bật ý nghĩa muốn truyền tải.
 - image_prompt_en: viết bằng tiếng Anh và không để trống.
 - highlight_quote_vi: tùy chọn, không có thì để chuỗi rỗng.
-- transition mặc định "cut".
 - metadata.title: Phải chứa một "Mâu thuẫn" (Tension) hoặc một "Câu hỏi tử huyệt" chạm đến nỗi đau/khao khát của con người hiện đại. TRÁNH: "Review sách: [Tên sách]". NÊN "Tại sao bạn vẫn mãi thất bại dù đã cố gắng?".
 - metadata.caption: Dưới 150 chữ, tiếng Việt. Cấu trúc: 1 Câu hỏi khơi gợi nỗi đau (Emotional Hook) + 1 Giá trị cốt lõi từ sách + 1 Lời hứa về sự thay đổi (Practical Takeaway).
 - metadata.thumbnail_text: Cực ngắn (dưới 6 từ), clear và curiosity-driven. Phải là một lời cảnh báo hoặc một lời mời gọi mang tính quyết định, không lặp lại Title.
@@ -57,8 +55,7 @@ REQUIRED OUTPUT SCHEMA (EXACT KEYS):
       "narration_text": "string",
       "image_prompt_en": "string",
       "highlight_quote_vi": "string",
-      "estimated_duration_sec": 0,
-      "transition": "cut"
+      "estimated_duration_sec": 0
     }
   ]
 }

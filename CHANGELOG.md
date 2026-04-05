@@ -210,3 +210,7 @@
 ## 2026-04-04T14:39:35Z
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=3, missing_ui_folder=0, registry_new=0, registry_updated=2, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=11, changed=3, unchanged=8, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: TTS VieNeu, Book Review, GG Sheet Manager.
+
+## 2026-04-05T03:10:18Z
+- Workflow sync (UI -> JSON) processed 11 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=11, changed=1, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Book Review.

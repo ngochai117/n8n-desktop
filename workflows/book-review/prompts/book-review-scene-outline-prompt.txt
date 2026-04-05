@@ -1,3 +1,5 @@
+{{ $('Config Main').item.json.masterPrompt }}
+
 PROMPT SCENE OUTLINE: THE CONTENT ARCHITECT (V4)
 
 ROLE:
@@ -6,12 +8,9 @@ ROLE:
 TASK:
 - Thiết kế dàn ý cho video 16:9 với tổng thời lượng 15-20 phút.
 
-STYLE KERNEL (INJECTED FROM MASTER):
-__BOOK_REVIEW_STYLE_KERNEL__
-
 HARD CONSTRAINTS:
 - Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.
-- scene_count là số nguyên từ 8 đến 14. Nếu không chắc, dùng 10.
+- scene_count là số nguyên (nên là các bài học đúc kết hoặc số chương + intro + outro).
 - Cảnh đầu (order=1) bắt buộc scene_role="hook".
 - Cảnh cuối bắt buộc scene_role="outro".
 - Các cảnh cốt lõi phải dày dặn, không viết cảnh siêu nhỏ.
@@ -28,8 +27,8 @@ REQUIRED OUTPUT SCHEMA (EXACT KEYS):
   "target_audience": "string",
   "primary_lens": "string",
   "secondary_lens": "string",
-  "scene_count": 10,
-  "estimated_total_duration_sec": 1020,
+  "scene_count": 0,
+  "estimated_total_duration_sec": 0,
   "scenes": [
     {
       "order": 1,
