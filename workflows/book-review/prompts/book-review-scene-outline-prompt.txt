@@ -10,7 +10,7 @@ TASK:
 
 HARD CONSTRAINTS:
 - Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.
-- scene_count là số nguyên (nên là các bài học đúc kết hoặc số chương + intro + outro).
+- scene_count là số nguyên từ 8 đến 14 (nên là các bài học đúc kết hoặc số chương + intro + outro).
 - Cảnh đầu (order=1) bắt buộc scene_role="hook".
 - Cảnh cuối bắt buộc scene_role="outro".
 - Các cảnh cốt lõi phải dày dặn, không viết cảnh siêu nhỏ.
