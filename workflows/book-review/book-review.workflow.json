@@ -9,7 +9,7 @@
       "typeVersion": 1.4,
       "position": [
         -1744,
-        1920
+        1928
       ],
       "id": "f88a5dd0-8b2e-474c-bd07-34fbc4d83ca7",
       "name": "When chat message received",
@@ -153,7 +153,7 @@
       "typeVersion": 3.4,
       "position": [
         -1072,
-        1968
+        1976
       ],
       "id": "ca838936-8f42-47d0-89d9-97bf230f1a0d",
       "name": "Route Request"
@@ -163,7 +163,6 @@
         "promptType": "define",
         "text": "={{ $('Config Main').item.json.chatInput }}\n<<<MANIFEST_JSON>>>\n{{ JSON.stringify($json.output) }}",
         "hasOutputParser": true,
-        "needsFallback": true,
         "options": {
           "systemMessage": "={{ $('Config Main').item.json.master_prompt }}\nPROMPT QC: THE CRITICAL SOUL EDITOR (V4)\n\nROLE:\n- Bạn là một biên tập viên QC gắt gao cho các nội dung kể chuyện review sách dài.\n\nMISSION:\n- Đánh giá chất lượng khách quan và độ khớp với phong cách Soulful Narrator.\n\nEVALUATION LAYERS:\n1) Objective layer:\n- Sức mạnh của Hook.\n- Sự mạch lạc của dòng tự sự.\n- Độ nguyên bản (Originality).\n- Tính ứng dụng của Bridge vào thực tế đời sống.\n\n2) Style-fit layer:\n- Sự nhất quán của giọng kể.\n- Mạch trôi tự nhiên (tránh meta labeling).\n- Chiều sâu cảm xúc và các ẩn dụ đời thường.\n\nSCORING & FEEDBACK:\n- Thang điểm từ 0 đến 10 cho: Hook, Clarity, Originality, Practical.\n- Trừ điểm nặng nếu dính meta-label lặp đi lặp lại hoặc hô hào giáo điều.\n- Feedback phải thẳng thắn, ưu tiên các lỗi cần sửa ngay, nhưng giữ cho sự sáng tạo của người kể chuyện còn sống.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"hook\": 0,\n  \"clarity\": 0,\n  \"originality\": 0,\n  \"practical\": 0,\n  \"risk\": \"low|med|high\",\n  \"feedback\": \"string\",\n  \"qc_issues\": [\"string\"]\n}"
         }
@@ -171,8 +170,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        336,
-        2120
+        656,
+        2008
       ],
       "id": "77e150d8-1a32-4dd0-afab-042249707767",
       "name": "QC AI Agent",
@@ -186,7 +185,7 @@
         "hasOutputParser": true,
         "needsFallback": true,
         "options": {
-          "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\n\nPROMPT SCENE OUTLINE: THE CONTENT ARCHITECT (V4)\n\nROLE:\n- Bạn là kiến trúc sư xây dựng khung cảnh cho video review sách dài.\n\nTASK:\n- Thiết kế dàn ý cho video 16:9 với tổng thời lượng 15-20 phút.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- scene_count là số nguyên (nên là các bài học đúc kết hoặc số chương + intro + outro).\n- Cảnh đầu (order=1) bắt buộc scene_role=\"hook\".\n- Cảnh cuối bắt buộc scene_role=\"outro\".\n- Các cảnh cốt lõi phải dày dặn, không viết cảnh siêu nhỏ.\n- Chọn 1 góc nhìn phân tích chính và 1 góc nhìn hỗ trợ (không phân mảng quá nhiều).\n- Mục tiêu từng cảnh phải có ý nghĩa sâu sắc, không chỉ lặp lại nội dung chương sách.\n- Chọn rõ `primary_lens` và `secondary_lens`, không để trống.\n\nLANGUAGE:\n- Tiếng Việt cho các giá trị nội dung (key JSON giữ tiếng Anh theo schema).\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"angle\": \"string\",\n  \"target_audience\": \"string\",\n  \"primary_lens\": \"string\",\n  \"secondary_lens\": \"string\",\n  \"scene_count\": 0,\n  \"estimated_total_duration_sec\": 0,\n  \"scenes\": [\n    {\n      \"order\": 1,\n      \"scene_role\": \"hook|core|outro\",\n      \"scene_goal\": \"string\",\n      \"key_points\": [\"string\"]\n    }\n  ]\n}"
+          "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\n\nPROMPT SCENE OUTLINE: THE CONTENT ARCHITECT (V4)\n\nROLE:\n- Bạn là kiến trúc sư xây dựng khung cảnh cho video review sách dài.\n\nTASK:\n- Thiết kế dàn ý cho video 16:9 với tổng thời lượng 15-20 phút.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- scene_count là số nguyên từ 8 đến 14 (nên là các bài học đúc kết hoặc số chương + intro + outro).\n- Cảnh đầu (order=1) bắt buộc scene_role=\"hook\".\n- Cảnh cuối bắt buộc scene_role=\"outro\".\n- Các cảnh cốt lõi phải dày dặn, không viết cảnh siêu nhỏ.\n- Chọn 1 góc nhìn phân tích chính và 1 góc nhìn hỗ trợ (không phân mảng quá nhiều).\n- Mục tiêu từng cảnh phải có ý nghĩa sâu sắc, không chỉ lặp lại nội dung chương sách.\n- Chọn rõ `primary_lens` và `secondary_lens`, không để trống.\n\nLANGUAGE:\n- Tiếng Việt cho các giá trị nội dung (key JSON giữ tiếng Anh theo schema).\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"angle\": \"string\",\n  \"target_audience\": \"string\",\n  \"primary_lens\": \"string\",\n  \"secondary_lens\": \"string\",\n  \"scene_count\": 0,\n  \"estimated_total_duration_sec\": 0,\n  \"scenes\": [\n    {\n      \"order\": 1,\n      \"scene_role\": \"hook|core|outro\",\n      \"scene_goal\": \"string\",\n      \"key_points\": [\"string\"]\n    }\n  ]\n}"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -212,7 +211,7 @@
       "typeVersion": 1.2,
       "position": [
         -1744,
-        2112
+        2120
       ],
       "id": "4d4bb9d4-31c8-48df-84db-bd3252c44709",
       "name": "Telegram Trigger",
@@ -274,7 +273,7 @@
       "typeVersion": 3.4,
       "position": [
         -1296,
-        2016
+        2024
       ],
       "id": "d72bb434-aa98-45ac-85d8-6dbceae690f6",
       "name": "Config Main"
@@ -324,8 +323,8 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        560,
-        2344
+        792,
+        2232
       ],
       "id": "6c4d8c06-9905-4a4b-bc6c-a0675b9118b2",
       "name": "Structured QC Output Parser"
@@ -337,8 +336,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        768,
-        2120
+        1008,
+        2008
       ],
       "id": "c1b8ae39-a470-4835-ba95-a9154e994986",
       "name": "Prepare Manifest"
@@ -355,7 +354,7 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        1888,
+        2128,
         1784
       ],
       "id": "fce4bbc3-47cf-40c0-a37c-7ee6290a77ba",
@@ -451,7 +450,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2112,
+        2352,
         1784
       ],
       "id": "783252db-35a8-49ec-8339-7cdcb29cacda",
@@ -468,8 +467,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        424,
-        1824
+        720,
+        1712
       ],
       "id": "0cfe3fe2-27f2-4f1b-9b77-cd5e77431298",
       "name": "Send QC Reviewing Message",
@@ -493,7 +492,7 @@
       "typeVersion": 1.2,
       "position": [
         -40,
-        1656
+        1564
       ],
       "id": "cb57a281-0744-4261-b438-d430c69443f1",
       "name": "Send Creating Manifest Message",
@@ -510,7 +509,6 @@
         "promptType": "define",
         "text": "={{ $('Config Main').item.json.chatInput }}\n<<<OUTLINE_JSON>>>\n{{ JSON.stringify($json.output) }}",
         "hasOutputParser": true,
-        "needsFallback": true,
         "options": {
           "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\nPROMPT SCENE EXPAND: THE SCRIPTWRITER (V4)\n\nROLE:\n- Bạn là người viết kịch bản kể chuyện cho video review sách dài.\n\nTASK:\n- Mở rộng dàn ý thành một review_manifest sẵn sàng sản xuất.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- Giữ đúng số lượng cảnh từ dàn ý.\n- Tổng narration_text: 15.000 - 20.000 ký tự tiếng Việt.\n- Hook/Outro: 45-75 giây mỗi cảnh.\n- Core scenes: 75-120 giây mỗi cảnh, tối thiểu 45 giây.\n- scene_01 là hook, scene cuối là outro.\n- scene_title phải mạnh và rõ nghĩa, nêu bật ý nghĩa muốn truyền tải.\n- image_prompt_en: viết bằng tiếng Anh và không để trống.\n- highlight_quote_vi: tùy chọn, không có thì để chuỗi rỗng.\n- metadata.title: Phải chứa một \"Mâu thuẫn\" (Tension) hoặc một \"Câu hỏi tử huyệt\" chạm đến nỗi đau/khao khát của con người hiện đại. TRÁNH: \"Review sách: [Tên sách]\". NÊN \"Tại sao bạn vẫn mãi thất bại dù đã cố gắng?\".\n- metadata.caption: Dưới 150 chữ, tiếng Việt. Cấu trúc: 1 Câu hỏi khơi gợi nỗi đau (Emotional Hook) + 1 Giá trị cốt lõi từ sách + 1 Lời hứa về sự thay đổi (Practical Takeaway).\n- metadata.thumbnail_text: Cực ngắn (dưới 6 từ), clear và curiosity-driven. Phải là một lời cảnh báo hoặc một lời mời gọi mang tính quyết định, không lặp lại Title.\n- metadata.hashtags: 5-7 tags, viết thường, không dấu. Bao gồm tên sách, tên tác giả, ngách nội dung (self-help, triết lý).\n\nANTI-RIGID CONSTRAINTS:\n- Tuyệt đối không dùng các mẫu câu lặp đi lặp lại giữa các cảnh.\n- Không biến narration thành danh sách liệt kê tóm tắt.\n- Giữ sự cân bằng giữa chiều sâu cảm xúc và tính ứng dụng thực tế.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"book\": {\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"style_keywords\": [\"string\"],\n  },\n  \"video\": {\n    \"aspect_ratio\": \"16:9\",\n    \"target_duration_min_sec\": 900,\n    \"target_duration_max_sec\": 1200,\n    \"estimated_total_duration_sec\": 0,\n  },\n  \"metadata\": {\n    \"title\": \"string\",\n    \"caption\": \"string\",\n    \"thumbnail_text\": \"string\",\n    \"hashtags\": [\"#tag\"],\n  },\n  \"scenes\": [\n    {\n      \"scene_id\": \"scene_01\",\n      \"order\": 1,\n      \"scene_title\": \"string\",\n      \"scene_role\": \"hook|core|outro\",\n      \"narration_text\": \"string\",\n      \"image_prompt_en\": \"string\",\n      \"highlight_quote_vi\": \"string\",\n      \"estimated_duration_sec\": 0,\n    }\n  ],\n}"
         }
@@ -518,8 +516,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -128,
-        1952
+        304,
+        1860
       ],
       "id": "644cdd72-93f4-4611-b716-e0aaba79452c",
       "name": "Manifest AI Agent",
@@ -535,7 +533,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2784,
+        3024,
         1928
       ],
       "id": "9a87d6c3-2e18-4737-b2a5-74d8f1d909bc",
@@ -589,7 +587,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2784,
+        3024,
         2168
       ],
       "id": "ab078599-04fc-4709-bb6f-1ee67347c8dc",
@@ -615,7 +613,7 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        1888,
+        2128,
         1976
       ],
       "id": "13129dda-41ff-4b41-a932-a1d8bb437ad1",
@@ -712,7 +710,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2112,
+        2352,
         1976
       ],
       "id": "cb1e2334-9a98-4291-a9f6-b0f52424f976",
@@ -727,7 +725,7 @@
       "typeVersion": 2,
       "position": [
         -1520,
-        2016
+        2024
       ],
       "id": "de059205-732b-417d-86a8-fceae57eb4dd"
     },
@@ -814,7 +812,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2560,
+        2800,
         2024
       ]
     },
@@ -902,7 +900,7 @@
       "typeVersion": 1.3,
       "position": [
         -848,
-        2744
+        2752
       ]
     },
     {
@@ -919,7 +917,7 @@
       "typeVersion": 1.2,
       "position": [
         -40,
-        2744
+        2752
       ],
       "webhookId": "b3271de9-8677-4f32-ace2-82f1ca8a968c",
       "credentials": {
@@ -1019,8 +1017,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        768,
-        2744
+        720,
+        2752
       ]
     },
     {
@@ -1037,8 +1035,8 @@
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1.1,
       "position": [
-        992,
-        2744
+        1008,
+        2752
       ],
       "alwaysOutputData": true,
       "onError": "continueRegularOutput"
@@ -1129,7 +1127,7 @@
       "typeVersion": 3.4,
       "position": [
         -504,
-        2728
+        2736
       ],
       "id": "3c86698d-7b34-485c-aeee-ec2ab5ec113a",
       "name": "Switch"
@@ -1149,7 +1147,7 @@
       "typeVersion": 1.2,
       "position": [
         -40,
-        2508
+        2396
       ],
       "webhookId": "a38a2f50-a81b-4512-a08c-b7741c669951",
       "credentials": {
@@ -1187,8 +1185,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1216,
-        2744
+        1232,
+        2752
       ],
       "id": "7c855fa4-3f0c-4db3-a9b6-a5d6fdd51ed5",
       "name": "If Load Manifest Success"
@@ -1206,8 +1204,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1440,
-        2744
+        1456,
+        2752
       ],
       "webhookId": "b3271de9-8677-4f32-ace2-82f1ca8a968c",
       "credentials": {
@@ -1231,8 +1229,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1440,
-        2936
+        1456,
+        2944
       ],
       "webhookId": "a38a2f50-a81b-4512-a08c-b7741c669951",
       "credentials": {
@@ -1255,8 +1253,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1440,
-        2552
+        1456,
+        2560
       ],
       "webhookId": "b3271de9-8677-4f32-ace2-82f1ca8a968c",
       "credentials": {
@@ -1274,8 +1272,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1664,
-        2552
+        1680,
+        2560
       ],
       "id": "d14a94ea-2db9-447d-8b5d-89c0a1e8ab36"
     },
@@ -1362,8 +1360,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        424,
-        2744
+        368,
+        2752
       ]
     },
     {
@@ -1378,7 +1376,7 @@
       "typeVersion": 1.2,
       "position": [
         -848,
-        2456
+        2464
       ],
       "id": "b9af2bd0-e9ad-4bc0-b78f-e3ccb909cbd8",
       "name": "Remove button",
@@ -1474,8 +1472,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        424,
-        2936
+        368,
+        2944
       ]
     },
     {
@@ -1565,7 +1563,7 @@
       "typeVersion": 1.3,
       "position": [
         -40,
-        2936
+        2944
       ],
       "id": "7e20d3e0-a93d-4162-a667-7bf72ff5723e",
       "name": "Delete Folder"
@@ -1582,7 +1580,7 @@
       "typeVersion": 1.2,
       "position": [
         -848,
-        2184
+        2108
       ],
       "id": "212fbccc-5e08-4871-a1ff-e27b77f38dfd",
       "name": "Answer Delete",
@@ -1625,8 +1623,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1888,
-        2552
+        1904,
+        2560
       ],
       "id": "d49ae6dc-87bb-40da-bda9-70c3b4309aa9"
     },
@@ -1639,8 +1637,8 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        2112,
-        2552
+        2128,
+        2560
       ],
       "id": "82e3dfff-ed84-491f-b008-74b52cf6ea6d"
     },
@@ -1654,8 +1652,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        2336,
-        2552
+        2352,
+        2560
       ],
       "id": "88628dea-9ff4-42e4-9508-3b2702aeee04"
     },
@@ -1811,8 +1809,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2560,
-        2552
+        2576,
+        2560
       ],
       "id": "affd234d-1d83-407b-887a-d394218235c5"
     },
@@ -1903,8 +1901,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2784,
-        2552
+        2800,
+        2560
       ],
       "id": "51f7476b-8533-4961-9de7-9ea989cd1d7e"
     },
@@ -1916,8 +1914,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3008,
-        2624
+        3024,
+        2632
       ],
       "id": "1d1b9dfb-a8b4-4bf6-8445-483341b4fe59"
     },
@@ -1929,8 +1927,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2560,
-        2360
+        2576,
+        2368
       ],
       "id": "6dcaceee-6704-4d3f-8a8e-3d533aac9efa"
     },
@@ -2009,8 +2007,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        3008,
-        2360
+        3024,
+        2368
       ],
       "id": "4487399a-7019-4afd-900f-f432725076a6"
     },
@@ -2028,8 +2026,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        3232,
-        2360
+        3248,
+        2368
       ],
       "id": "65e263cd-06b4-4552-9a65-2f321ddbd0a4",
       "webhookId": "f7214349-0bec-4300-a467-91bb615a3838",
@@ -2145,7 +2143,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1888,
+        2128,
         2216
       ],
       "id": "3a60b60a-c57e-4a4e-85a9-bbc9d768d28c"
@@ -2235,7 +2233,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        992,
+        1232,
         2216
       ],
       "id": "4539d8ca-9783-4cc7-9c91-3ef48ba6a743"
@@ -2268,7 +2266,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1440,
+        1680,
         2216
       ],
       "id": "be930269-fa74-47e4-937d-e3c9ab226f24"
@@ -2358,7 +2356,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        1664,
+        1904,
         2144
       ],
       "id": "7ae15eee-5961-4818-a05f-f068eebf7e7d"
@@ -2470,7 +2468,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2112,
+        2352,
         2216
       ],
       "id": "d9ca8d07-879d-4710-bdbf-621e1e8c3604"
@@ -2591,8 +2589,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2784,
-        2360
+        2800,
+        2368
       ],
       "id": "7012c602-b9dc-4437-b681-44b3997e3110"
     },
@@ -2604,7 +2602,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1216,
+        1456,
         2216
       ],
       "id": "212fd91f-e572-4eee-943a-451673fd1691"
@@ -2621,7 +2619,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        2336,
+        2576,
         2008
       ],
       "id": "1f3657ff-becf-41d1-a014-819af6671fb0",
@@ -2634,8 +2632,8 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        96,
-        2176
+        440,
+        2084
       ],
       "id": "6ba7bf20-26b1-4c90-836a-89be70bea31e",
       "name": "Structured Manifest Output Parser"
@@ -2656,8 +2654,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        -32,
-        2176
+        312,
+        2084
       ],
       "id": "bde55eb2-13aa-443f-bef6-ab0d2913ea20",
       "name": "OpenAI Model",
@@ -2665,28 +2663,6 @@
         "openAiApi": {
           "id": "nmpOof7gCtDCf1BD",
           "name": "Local OpenAI Proxy"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "modelName": "models/gemini-3.1-flash-lite-preview",
-        "options": {
-          "maxOutputTokens": 65000
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        -624,
-        1904
-      ],
-      "id": "34ec3081-2c22-4c25-b28f-274b3a76a0ce",
-      "name": "Google Gemini 3 Flash Lite",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "fsyqoTYuk0ELrsZp",
-          "name": "Google Gemini Api account"
         }
       }
     },
@@ -2706,8 +2682,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        304,
-        2344
+        664,
+        2232
       ],
       "id": "dd8cbcac-5483-4382-b7f6-e13b5720f7dd",
       "name": "QC Model",
@@ -2715,50 +2691,6 @@
         "openAiApi": {
           "id": "nmpOof7gCtDCf1BD",
           "name": "Local OpenAI Proxy"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "modelName": "models/gemini-3.1-flash-lite-preview",
-        "options": {
-          "maxOutputTokens": 65000
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        432,
-        2344
-      ],
-      "id": "6d4cc7a4-42f5-4518-a86f-6aea8e7c051d",
-      "name": "Google Gemini 3 Flash Lite2",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "fsyqoTYuk0ELrsZp",
-          "name": "Google Gemini Api account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "modelName": "models/gemini-3.1-flash-lite-preview",
-        "options": {
-          "maxOutputTokens": 65000
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        -160,
-        2176
-      ],
-      "id": "eccd6cc1-1570-480a-aba6-59ca3ca00a2f",
-      "name": "Google Gemini 3 Flash Lite1",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "fsyqoTYuk0ELrsZp",
-          "name": "Google Gemini Api account"
         }
       }
     },
@@ -2781,6 +2713,113 @@
       ],
       "id": "0c8805e5-fd0a-4ad0-8db8-87feb2bf2283",
       "name": "OpenAI Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "nmpOof7gCtDCf1BD",
+          "name": "Local OpenAI Proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite-preview",
+        "options": {
+          "maxOutputTokens": 65000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        2084
+      ],
+      "id": "34ec3081-2c22-4c25-b28f-274b3a76a0ce",
+      "name": "Google Gemini 3 Flash Lite",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "fsyqoTYuk0ELrsZp",
+          "name": "Google Gemini Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Config Main').item.json.chatInput }}\n<<<OUTLINE_JSON>>>\n{{ JSON.stringify($json.output) }}",
+        "hasOutputParser": true,
+        "needsFallback": true,
+        "options": {
+          "systemMessage": "={{ $('Config Main').item.json.masterPrompt }}\nPROMPT SCENE EXPAND: THE SCRIPTWRITER (V4)\n\nROLE:\n- Bạn là người viết kịch bản kể chuyện cho video review sách dài.\n\nTASK:\n- Mở rộng dàn ý thành một review_manifest sẵn sàng sản xuất.\n\nHARD CONSTRAINTS:\n- Output phải là 1 JSON object hợp lệ (RFC8259), không markdown, không code fence, không text ngoài JSON.\n- Giữ đúng số lượng cảnh từ dàn ý.\n- Tổng narration_text: 15.000 - 20.000 ký tự tiếng Việt.\n- Hook/Outro: 45-75 giây mỗi cảnh.\n- Core scenes: 75-120 giây mỗi cảnh, tối thiểu 45 giây.\n- scene_01 là hook, scene cuối là outro.\n- scene_title phải mạnh và rõ nghĩa, nêu bật ý nghĩa muốn truyền tải.\n- image_prompt_en: viết bằng tiếng Anh và không để trống.\n- highlight_quote_vi: tùy chọn, không có thì để chuỗi rỗng.\n- metadata.title: Phải chứa một \"Mâu thuẫn\" (Tension) hoặc một \"Câu hỏi tử huyệt\" chạm đến nỗi đau/khao khát của con người hiện đại. TRÁNH: \"Review sách: [Tên sách]\". NÊN \"Tại sao bạn vẫn mãi thất bại dù đã cố gắng?\".\n- metadata.caption: Dưới 150 chữ, tiếng Việt. Cấu trúc: 1 Câu hỏi khơi gợi nỗi đau (Emotional Hook) + 1 Giá trị cốt lõi từ sách + 1 Lời hứa về sự thay đổi (Practical Takeaway).\n- metadata.thumbnail_text: Cực ngắn (dưới 6 từ), clear và curiosity-driven. Phải là một lời cảnh báo hoặc một lời mời gọi mang tính quyết định, không lặp lại Title.\n- metadata.hashtags: 5-7 tags, viết thường, không dấu. Bao gồm tên sách, tên tác giả, ngách nội dung (self-help, triết lý).\n\nANTI-RIGID CONSTRAINTS:\n- Tuyệt đối không dùng các mẫu câu lặp đi lặp lại giữa các cảnh.\n- Không biến narration thành danh sách liệt kê tóm tắt.\n- Giữ sự cân bằng giữa chiều sâu cảm xúc và tính ứng dụng thực tế.\n\nREQUIRED OUTPUT SCHEMA (EXACT KEYS):\n{\n  \"book\": {\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"style_keywords\": [\"string\"],\n  },\n  \"video\": {\n    \"aspect_ratio\": \"16:9\",\n    \"target_duration_min_sec\": 900,\n    \"target_duration_max_sec\": 1200,\n    \"estimated_total_duration_sec\": 0,\n  },\n  \"metadata\": {\n    \"title\": \"string\",\n    \"caption\": \"string\",\n    \"thumbnail_text\": \"string\",\n    \"hashtags\": [\"#tag\"],\n  },\n  \"scenes\": [\n    {\n      \"scene_id\": \"scene_01\",\n      \"order\": 1,\n      \"scene_title\": \"string\",\n      \"scene_role\": \"hook|core|outro\",\n      \"narration_text\": \"string\",\n      \"image_prompt_en\": \"string\",\n      \"highlight_quote_vi\": \"string\",\n      \"estimated_duration_sec\": 0,\n    }\n  ],\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -128,
+        1860
+      ],
+      "id": "0acbd876-216b-4c4c-929e-6af2c9752f74",
+      "name": "Manifest AI Agent1",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"book\": {\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"style_keywords\": [\"string\"]\n  },\n  \"video\": {\n    \"aspect_ratio\": \"16:9\",\n    \"target_duration_min_sec\": 900,\n    \"target_duration_max_sec\": 1200,\n    \"estimated_total_duration_sec\": 0\n  },\n  \"metadata\": {\n    \"title\": \"string\",\n    \"caption\": \"string\",\n    \"thumbnail_text\": \"string\",\n    \"hashtags\": [\"#tag\"]\n  },\n  \"scenes\": [\n    {\n      \"scene_id\": \"scene_01\",\n      \"order\": 1,\n      \"scene_title\": \"string\",\n      \"scene_role\": \"hook|core|outro\",\n      \"narration_text\": \"string\",\n      \"image_prompt_en\": \"string\",\n      \"highlight_quote_vi\": \"string\",\n      \"estimated_duration_sec\": 0\n    }\n  ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        96,
+        2084
+      ],
+      "id": "6f1878c2-94f6-45a5-8881-86b943c6e52d",
+      "name": "Structured Manifest Output Parser1"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite-preview",
+        "options": {
+          "maxOutputTokens": 65000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        1904
+      ],
+      "id": "ca2a8ccd-5498-4dd4-b34a-3ee4da712ed1",
+      "name": "Google Gemini 3 Flash Lite1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "fsyqoTYuk0ELrsZp",
+          "name": "Google Gemini Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "cx/gpt-5.4",
+          "mode": "list",
+          "cachedResultName": "cx/gpt-5.4"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -32,
+        2084
+      ],
+      "id": "d588fd77-1d3a-4397-a02e-9d515653374c",
+      "name": "OpenAI Model2",
       "credentials": {
         "openAiApi": {
           "id": "nmpOof7gCtDCf1BD",
@@ -2875,7 +2914,7 @@
             "index": 0
           },
           {
-            "node": "Manifest AI Agent",
+            "node": "Manifest AI Agent1",
             "type": "main",
             "index": 0
           }
@@ -3391,22 +3430,11 @@
           {
             "node": "Manifest AI Agent",
             "type": "ai_languageModel",
-            "index": 1
+            "index": 0
           }
         ]
       ],
       "main": []
-    },
-    "Google Gemini 3 Flash Lite": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Outline AI Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
     },
     "QC Model": {
       "ai_languageModel": [
@@ -3415,17 +3443,6 @@
             "node": "QC AI Agent",
             "type": "ai_languageModel",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Google Gemini 3 Flash Lite2": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "QC AI Agent",
-            "type": "ai_languageModel",
-            "index": 1
           }
         ]
       ]
@@ -3441,22 +3458,66 @@
         ]
       ]
     },
-    "Google Gemini 3 Flash Lite1": {
+    "OpenAI Model1": {
       "ai_languageModel": [
         [
           {
-            "node": "Manifest AI Agent",
+            "node": "Outline AI Agent",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Google Gemini 3 Flash Lite": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Manifest AI Agent1",
             "type": "ai_languageModel",
             "index": 0
           }
         ]
       ]
     },
-    "OpenAI Model1": {
+    "Structured Manifest Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Manifest AI Agent1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manifest AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Manifest AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini 3 Flash Lite1": {
       "ai_languageModel": [
         [
           {
             "node": "Outline AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Manifest AI Agent1",
             "type": "ai_languageModel",
             "index": 1
           }

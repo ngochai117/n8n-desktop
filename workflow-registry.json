@@ -3,7 +3,7 @@
     "Book Review": {
       "id": "901WvOJHn6O2Hbze",
       "template": "workflows/book-review/book-review.workflow.json",
-      "lastSyncedAt": "2026-04-05T03:10:18Z",
+      "lastSyncedAt": "2026-04-05T07:26:48Z",
       "templateImport": "scripts/workflows/import/import-book-review-workflow.sh"
     },
     "Shared Notification Router": {
