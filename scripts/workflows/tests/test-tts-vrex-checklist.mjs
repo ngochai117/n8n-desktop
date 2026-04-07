@@ -8,7 +8,7 @@ const rootDir = path.resolve(
   "../../..",
 );
 const workflowPath = path.resolve(
-  process.argv[2] || path.join(rootDir, "workflows/media/tts.workflow.json"),
+  process.argv[2] || path.join(rootDir, "workflows/media/tts-vrex.workflow.json"),
 );
 const registryPath = path.join(rootDir, "workflow-registry.json");
 
@@ -28,25 +28,24 @@ function nodeByName(workflow, name) {
 }
 
 if (!fs.existsSync(workflowPath)) {
-  console.error(`[tts-checklist] Missing workflow template: ${workflowPath}`);
+  console.error(`[tts-vrex-checklist] Missing workflow template: ${workflowPath}`);
   process.exit(1);
 }
 
 const workflow = JSON.parse(fs.readFileSync(workflowPath, "utf8"));
 
-check(workflow.name === "TTS VieNeu", "workflow name is TTS VieNeu");
+check(workflow.name === "TTS VREX", "workflow name is TTS VREX");
 
 if (fs.existsSync(registryPath)) {
   const registry = JSON.parse(fs.readFileSync(registryPath, "utf8"));
-  const registryRow = registry?.workflows?.["TTS VieNeu"] || {};
-  const registryId = registryRow.id || "";
+  const registryRow = registry?.workflows?.["TTS VREX"] || {};
   check(
-    registryRow.template === "workflows/media/tts.workflow.json",
-    "registry maps TTS VieNeu template path",
+    registryRow.template === "workflows/media/tts-vrex.workflow.json",
+    "registry maps TTS VREX template path",
   );
   check(
-    typeof registryId === "string" && registryId.length > 0,
-    "registry keeps non-empty TTS VieNeu ID",
+    typeof registryRow.id === "string" && registryRow.id.length > 0,
+    "registry keeps non-empty TTS VREX ID",
   );
 } else {
   failures.push("workflow-registry.json is missing");
@@ -74,6 +73,7 @@ const triggerNode = nodeByName(workflow, "When Executed by Another Workflow");
 const triggerInputs = (triggerNode?.parameters?.workflowInputs?.values || []).map((row) => row.name);
 for (const key of [
   "text",
+  "ttsApiKey",
   "voiceId",
   "mode",
   "maxCharsChunk",
@@ -81,15 +81,19 @@ for (const key of [
   "joinMode",
   "silenceSeconds",
   "crossfadeSeconds",
+  "language",
+  "speed",
+  "quality",
+  "guidanceScale",
+  "denoise",
+  "outputFormat",
   "retry",
   "requestTimeoutSec",
   "ttsApiBaseUrl",
 ]) {
   check(triggerInputs.includes(key), `trigger input includes ${key}`);
 }
-for (const forbidden of ["ttsApiKey", "language", "speed"]) {
-  check(!triggerInputs.includes(forbidden), `trigger input excludes ${forbidden}`);
-}
+
 for (const forbidden of [
   "voice_id",
   "max_chars_chunk",
@@ -99,52 +103,64 @@ for (const forbidden of [
   "crossfade_seconds",
   "request_timeout_sec",
   "tts_api_base_url",
-  "input_text",
-  "request_id",
 ]) {
   check(!triggerInputs.includes(forbidden), `trigger input excludes legacy ${forbidden}`);
 }
 
 const normalizeCode = String(nodeByName(workflow, "Normalize + Plan")?.parameters?.jsCode || "");
 check(
-  normalizeCode.includes("(?<=[\\.!?\\u2026])\\s+") || normalizeCode.includes("(?<=[.!?…])\\s+"),
-  "Normalize + Plan includes sentence split regex",
+  normalizeCode.includes("https://tts.getvrex.com/api/v1"),
+  "Normalize + Plan uses VREX default base URL",
 );
 check(
-  normalizeCode.includes("(?<=[,;:\\-\\u2013\\u2014])\\s+") || normalizeCode.includes("(?<=[,;:\\-–—])\\s+"),
-  "Normalize + Plan includes punctuation fallback split regex",
+  normalizeCode.includes("missing_tts_api_key"),
+  "Normalize + Plan fail-fast on missing ttsApiKey",
 );
 check(
-  normalizeCode.includes("splitTextIntoChunks"),
-  "Normalize + Plan uses text-only chunk planner",
+  normalizeCode.includes("input.quality"),
+  "Normalize + Plan maps quality input",
 );
 check(
-  !normalizeCode.includes("input.max_chars_chunk")
-    && !normalizeCode.includes("input.batch_size")
-    && !normalizeCode.includes("input.join_mode")
-    && !normalizeCode.includes("input.silence_seconds")
-    && !normalizeCode.includes("input.crossfade_seconds")
-    && !normalizeCode.includes("input.request_timeout_sec")
-    && !normalizeCode.includes("input.tts_api_base_url")
-    && !normalizeCode.includes("input.voice_id"),
-  "Normalize + Plan is camelCase-only for n8n inputs",
+  normalizeCode.includes("input.guidanceScale"),
+  "Normalize + Plan maps guidanceScale input",
+);
+check(
+  normalizeCode.includes("input.denoise"),
+  "Normalize + Plan maps denoise input",
 );
 
 const executeCode = String(nodeByName(workflow, "Execute /stream Chunks")?.parameters?.jsCode || "");
 check(executeCode.includes("/voices"), "Execute /stream Chunks resolves voice from /voices");
-check(executeCode.includes("/stream"), "Execute /stream Chunks calls /stream endpoint");
-check(executeCode.includes("[500, 1000, 2000]"), "Execute /stream Chunks uses retry backoff 0.5/1/2s");
-check(executeCode.includes("batchSize"), "Execute /stream Chunks supports mini-batch execution");
+check(executeCode.includes("/tts/stream"), "Execute /stream Chunks calls /tts/stream endpoint");
+check(
+  executeCode.includes("Authorization"),
+  "Execute /stream Chunks includes Authorization header",
+);
+check(
+  executeCode.includes("output_format"),
+  "Execute /stream Chunks sends output_format payload",
+);
 check(
   executeCode.includes("voice_id"),
-  "Execute /stream Chunks uses snake_case voice_id only for server payload/response",
+  "Execute /stream Chunks uses snake_case voice_id in server payload",
+);
+check(
+  executeCode.includes("guidance_scale"),
+  "Execute /stream Chunks sends guidance_scale payload",
+);
+check(
+  executeCode.includes("denoise"),
+  "Execute /stream Chunks sends denoise payload",
+);
+check(
+  executeCode.includes("quality"),
+  "Execute /stream Chunks sends quality payload",
 );
 
 const joinCode = String(nodeByName(workflow, "Join WAV + Finalize")?.parameters?.jsCode || "");
 check(joinCode.includes("parseWavPcm"), "Join WAV + Finalize parses WAV chunks robustly");
 check(joinCode.includes("audioBase64"), "Join WAV + Finalize outputs audioBase64");
-check(joinCode.includes("sampleRate"), "Join WAV + Finalize emits sampleRate");
-check(joinCode.includes("pcmFormat"), "Join WAV + Finalize emits pcmFormat");
+check(joinCode.includes("delete jsonOutput.ttsApiKey"), "Join WAV + Finalize removes ttsApiKey from output");
 const convertNode = nodeByName(workflow, "Convert to File");
 check(
   convertNode?.parameters?.sourceProperty === "audioBase64",
@@ -166,14 +182,14 @@ for (const forbidden of [
 }
 
 if (failures.length > 0) {
-  console.error("[tts-checklist] FAIL");
+  console.error("[tts-vrex-checklist] FAIL");
   for (const message of failures) {
     console.error(`- ${message}`);
   }
   process.exit(1);
 }
 
-console.log("[tts-checklist] PASS");
+console.log("[tts-vrex-checklist] PASS");
 for (const message of passes) {
   console.log(`- ${message}`);
 }

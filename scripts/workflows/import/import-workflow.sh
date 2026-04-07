@@ -6,6 +6,7 @@ N8N_ENV_FILE_INPUT="${1:-env.n8n.local}"
 PROXY_ENV_FILE_INPUT="${2:-env.proxy.local}"
 WORKFLOW_TEMPLATE_INPUT="${3:-workflows/demo/gemini-proxy-demo.workflow.json}"
 REGISTRY_TEMPLATE_INPUT="${WORKFLOW_REGISTRY_TEMPLATE:-$WORKFLOW_TEMPLATE_INPUT}"
+REGISTRY_IMPORT_INPUT="${WORKFLOW_REGISTRY_IMPORT:-}"
 WORKFLOW_REGISTRY_FILE="${WORKFLOW_REGISTRY_FILE:-$ROOT_DIR/workflow-registry.json}"
 N8N_WORKFLOW_LIST_LIMIT="${N8N_WORKFLOW_LIST_LIMIT:-250}"
 N8N_API_RETRY_MAX="${N8N_API_RETRY_MAX:-6}"
@@ -490,6 +491,7 @@ jq \
   --arg name "$workflow_name" \
   --arg id "$workflow_id" \
   --arg template "$REGISTRY_TEMPLATE" \
+  --arg template_import "$REGISTRY_IMPORT_INPUT" \
   --arg synced_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   '
   .workflows = (.workflows // {})
@@ -498,11 +500,15 @@ jq \
       | with_entries(select(.value.id != $id or .key == $name))
     )
   |
-  .workflows[$name] = {
-    id: $id,
-    template: $template,
-    lastSyncedAt: $synced_at
-  }
+  .workflows[$name] = (
+    (.workflows[$name] // {})
+    + {
+      id: $id,
+      template: $template,
+      lastSyncedAt: $synced_at
+    }
+    + (if ($template_import | length) > 0 then { templateImport: $template_import } else {} end)
+  )
   ' "$WORKFLOW_REGISTRY_FILE" > "$tmp_registry"
 mv "$tmp_registry" "$WORKFLOW_REGISTRY_FILE"
 

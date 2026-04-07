@@ -51,9 +51,11 @@
 - parse lai `Manifest.json`
 - chay media branch TTS:
   - loop tung `scenes[*].narration_text` (moi scene 1 request TTS)
-  - goi subworkflow `TTS VieNeu` voi full narration text
+  - goi subworkflow `TTS VREX` voi full narration text
+  - truyen `voiceId` co dinh `d1f5e1f6-fd60-45e7-9564-523ecd819e31`
+  - truyen `ttsApiKey` qua expression env `{{$env.TTS_VREX_API_KEY}}`
   - upload WAV vao Drive folder `folderPath/tts`
-  - append row log vao Google Sheet (scene fields + `tts_url|tts_status|tts_error_reason`)
+  - upsert row log vao Google Sheet (scene fields + `tts_url|tts_status|tts_error_reason`)
 - chot `status = reviewPassed` (kem thong ke TTS rows)
 - gui message xac nhan media branch da chay xong
 

@@ -1,0 +1,581 @@
+{
+  "name": "TTS VREX",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "requestId"
+            },
+            {
+              "name": "text"
+            },
+            {
+              "name": "ttsApiKey"
+            },
+            {
+              "name": "voiceId"
+            },
+            {
+              "name": "mode"
+            },
+            {
+              "name": "maxCharsChunk",
+              "type": "number"
+            },
+            {
+              "name": "batchSize",
+              "type": "number"
+            },
+            {
+              "name": "joinMode"
+            },
+            {
+              "name": "silenceSeconds",
+              "type": "number"
+            },
+            {
+              "name": "crossfadeSeconds",
+              "type": "number"
+            },
+            {
+              "name": "language"
+            },
+            {
+              "name": "speed",
+              "type": "number"
+            },
+            {
+              "name": "retry",
+              "type": "number"
+            },
+            {
+              "name": "requestTimeoutSec",
+              "type": "number"
+            },
+            {
+              "name": "ttsApiBaseUrl"
+            },
+            {
+              "name": "quality",
+              "type": "number"
+            },
+            {
+              "name": "guidanceScale",
+              "type": "number"
+            },
+            {
+              "name": "denoise",
+              "type": "boolean"
+            },
+            {
+              "name": "outputFormat"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1056,
+        488
+      ],
+      "id": "9a8f7b90-e061-46b5-a0d9-c1a71054b5d5",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\nconst binary = $binary ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asNumber(value, fallback, min, max) {\n  const n = Number(value);\n  if (!Number.isFinite(n)) return fallback;\n  if (Number.isFinite(min) && n < min) return min;\n  if (Number.isFinite(max) && n > max) return max;\n  return n;\n}\n\nfunction normalizeText(value) {\n  return String(value ?? '').replace(/\\r\\n/g, '\\n').trim();\n}\n\nfunction readFirstBinaryText(binaryMap) {\n  const keys = Object.keys(binaryMap ?? {});\n  if (keys.length === 0) return '';\n  const first = binaryMap[keys[0]];\n  const base64 = safeText(first?.data);\n  if (!base64 || base64 === 'filesystem-v2' || base64.startsWith('filesystem-v2:')) return '';\n  try {\n    return Buffer.from(base64, 'base64').toString('utf8');\n  } catch (_) {\n    return '';\n  }\n}\n\nfunction splitTextIntoChunks(text, maxCharsChunk) {\n  const raw = normalizeText(text);\n  if (!raw) return [];\n\n  const paragraphs = raw.split(/[\\r\\n]+/);\n  const finalChunks = [];\n\n  for (const paragraphRaw of paragraphs) {\n    const paragraph = String(paragraphRaw ?? '').trim();\n    if (!paragraph) continue;\n\n    const sentences = paragraph\n      .split(/(?<=[\\.!?\\u2026])\\s+/)\n      .map((x) => String(x ?? '').trim())\n      .filter(Boolean);\n\n    let buffer = '';\n\n    for (const sentence of sentences) {\n      if (sentence.length > maxCharsChunk) {\n        if (buffer) {\n          finalChunks.push(buffer);\n          buffer = '';\n        }\n\n        const subParts = sentence\n          .split(/(?<=[,;:\\-\\u2013\\u2014])\\s+/)\n          .map((x) => String(x ?? '').trim())\n          .filter(Boolean);\n\n        for (const part of subParts) {\n          const nextLen = buffer ? (buffer.length + 1 + part.length) : part.length;\n          if (nextLen <= maxCharsChunk) {\n            buffer = buffer ? (buffer + ' ' + part) : part;\n            continue;\n          }\n\n          if (buffer) {\n            finalChunks.push(buffer);\n          }\n\n          buffer = part;\n          if (buffer.length > maxCharsChunk) {\n            const words = buffer.split(/\\s+/).filter(Boolean);\n            let current = '';\n\n            for (const word of words) {\n              if (current && (current.length + 1 + word.length > maxCharsChunk)) {\n                finalChunks.push(current);\n                current = word;\n              } else {\n                current = current ? (current + ' ' + word) : word;\n              }\n            }\n\n            buffer = current;\n          }\n        }\n      } else if (buffer && (buffer.length + 1 + sentence.length > maxCharsChunk)) {\n        finalChunks.push(buffer);\n        buffer = sentence;\n      } else {\n        buffer = buffer ? (buffer + ' ' + sentence) : sentence;\n      }\n    }\n\n    if (buffer) {\n      finalChunks.push(buffer);\n    }\n  }\n\n  return finalChunks.map((x) => x.trim()).filter(Boolean);\n}\n\nconst text = normalizeText(input.text ?? readFirstBinaryText(binary));\nconst ttsApiKey = safeText(input.ttsApiKey);\n\nconst rawMode = safeText(input.mode, 'auto').toLowerCase();\nconst mode = ['auto', 'sentence', 'fulltext', 'fullText'].includes(rawMode)\n  ? (rawMode === 'fulltext' ? 'fullText' : rawMode)\n  : 'auto';\n\nconst maxCharsChunk = Math.floor(asNumber(input.maxCharsChunk, 256, 32, 3000));\nconst batchSize = Math.floor(asNumber(input.batchSize, 1, 1, 20));\n\nconst rawJoinMode = safeText(input.joinMode, 'silence').toLowerCase();\nconst joinMode = rawJoinMode === 'crossfade' ? 'crossfade' : 'silence';\n\nconst silenceSeconds = asNumber(input.silenceSeconds, 0.15, 0, 10);\nconst crossfadeSeconds = asNumber(input.crossfadeSeconds, 0, 0, 5);\nconst language = safeText(input.language, 'auto');\nconst speed = asNumber(input.speed, 1, 0.5, 2);\nconst quality = Math.floor(asNumber(input.quality, 32, 4, 64));\nconst guidanceScale = asNumber(input.guidanceScale, 2, 0, 4);\nconst denoiseRaw = input.denoise;\nconst denoise = typeof denoiseRaw === 'boolean'\n  ? denoiseRaw\n  : !['false', '0', 'no', 'off'].includes(safeText(denoiseRaw, 'true').toLowerCase());\nconst outputFormatRaw = safeText(input.outputFormat, 'raw').toLowerCase();\nconst outputFormat = outputFormatRaw === 'raw' ? 'raw' : 'raw';\nconst retry = Math.floor(asNumber(input.retry, 2, 0, 8));\nconst requestTimeoutSec = Math.floor(asNumber(input.requestTimeoutSec, 120, 5, 1800));\nconst requestId = safeText(input.requestId, 'req-' + Date.now().toString(36));\nconst voiceId = safeText(input.voiceId);\n\nconst baseUrlRaw = safeText(input.ttsApiBaseUrl, 'https://tts.getvrex.com/api/v1');\nconst ttsApiBaseUrl = baseUrlRaw.replace(/\\/$/, '');\n\nif (!text) {\n  return {\n    requestId,\n    text: '',\n    ttsApiKey: '',\n    voiceId,\n    mode,\n    maxCharsChunk,\n    batchSize,\n    joinMode,\n    silenceSeconds,\n    crossfadeSeconds,\n    language,\n    speed,\n    quality,\n    guidanceScale,\n    denoise,\n    outputFormat,\n    retry,\n    requestTimeoutSec,\n    ttsApiBaseUrl,\n    chunks: [],\n    chunksTotal: 0,\n    status: 'failed',\n    errorReason: 'empty_text',\n  };\n}\n\nif (!ttsApiKey) {\n  return {\n    requestId,\n    text,\n    ttsApiKey: '',\n    voiceId,\n    mode,\n    maxCharsChunk,\n    batchSize,\n    joinMode,\n    silenceSeconds,\n    crossfadeSeconds,\n    language,\n    speed,\n    quality,\n    guidanceScale,\n    denoise,\n    outputFormat,\n    retry,\n    requestTimeoutSec,\n    ttsApiBaseUrl,\n    chunks: [],\n    chunksTotal: 0,\n    status: 'failed',\n    errorReason: 'missing_tts_api_key',\n  };\n}\n\nlet effectiveMode = mode;\nif (effectiveMode === 'auto') {\n  effectiveMode = text.length <= maxCharsChunk ? 'sentence' : 'fullText';\n}\n\nconst chunkTexts = effectiveMode === 'sentence'\n  ? [text]\n  : splitTextIntoChunks(text, maxCharsChunk);\n\nconst chunks = chunkTexts.map((chunkText, index) => ({\n  chunkIndex: index,\n  text: chunkText,\n}));\n\nreturn {\n  requestId,\n  text,\n  ttsApiKey,\n  voiceId,\n  mode: effectiveMode,\n  maxCharsChunk,\n  batchSize,\n  joinMode,\n  silenceSeconds,\n  crossfadeSeconds,\n  language,\n  speed,\n  quality,\n  guidanceScale,\n  denoise,\n  outputFormat,\n  retry,\n  requestTimeoutSec,\n  ttsApiBaseUrl,\n  chunks,\n  chunksTotal: chunks.length,\n  status: chunks.length > 0 ? 'planned' : 'failed',\n  errorReason: chunks.length > 0 ? null : 'empty_chunks',\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -832,
+        488
+      ],
+      "id": "27a1bc2f-c602-4adf-8927-6dc77f1c2e3d",
+      "name": "Normalize + Plan"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nconst helperContext = this;\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asInt(value, fallback = 0, min = 0, max = 1000000) {\n  const n = Number(value);\n  const normalized = Number.isFinite(n) ? Math.floor(n) : fallback;\n  return Math.min(max, Math.max(min, normalized));\n}\n\nfunction asNumber(value, fallback = 0, min = 0, max = 1000000) {\n  const n = Number(value);\n  if (!Number.isFinite(n)) return fallback;\n  return Math.min(max, Math.max(min, n));\n}\n\nfunction parseVoicesPayload(payload) {\n  if (Array.isArray(payload)) return payload;\n  if (payload && Array.isArray(payload.data)) return payload.data;\n  if (payload && Array.isArray(payload.voices)) return payload.voices;\n  return [];\n}\n\nfunction getHeader(headers, key, fallback = '') {\n  if (!headers || typeof headers !== 'object') return fallback;\n  const target = key.toLowerCase();\n  for (const [name, value] of Object.entries(headers)) {\n    if (String(name).toLowerCase() === target) {\n      return safeText(value, fallback);\n    }\n  }\n  return fallback;\n}\n\nfunction decodeResponseBodyToBuffer(body) {\n  if (Buffer.isBuffer(body)) return body;\n\n  if (body && typeof body === 'object' && body.type === 'Buffer' && Array.isArray(body.data)) {\n    return Buffer.from(body.data);\n  }\n\n  if (typeof body === 'string') {\n    const compact = body.replace(/\\s+/g, '');\n    const looksBase64 = compact.length > 0\n      && compact.length % 4 === 0\n      && /^[A-Za-z0-9+/=]+$/.test(compact);\n\n    if (looksBase64) {\n      try {\n        return Buffer.from(compact, 'base64');\n      } catch (_) {\n        // Fallback below\n      }\n    }\n\n    return Buffer.from(body, 'binary');\n  }\n\n  return Buffer.from(JSON.stringify(body ?? ''));\n}\n\nasync function requestWithTimeout({\n  url,\n  method,\n  headers,\n  timeoutMs,\n  jsonBody,\n  rawBody,\n  expectBinary = false,\n}) {\n  if (!helperContext || !helperContext.helpers) {\n    throw new Error('http_helper_missing');\n  }\n\n  const timeout = Math.max(1000, asInt(timeoutMs, 5000, 1, 3600000));\n\n  if (typeof helperContext.helpers.request === 'function') {\n    const options = {\n      method,\n      uri: url,\n      headers: headers ?? {},\n      timeout,\n      resolveWithFullResponse: true,\n      simple: false,\n    };\n\n    if (typeof rawBody === 'string') {\n      options.body = rawBody;\n      options.json = false;\n    } else if (jsonBody !== undefined) {\n      options.body = jsonBody;\n      options.json = true;\n    }\n\n    if (expectBinary) {\n      options.encoding = null;\n      options.json = false;\n    }\n\n    return helperContext.helpers.request(options);\n  }\n\n  if (typeof helperContext.helpers.httpRequest === 'function') {\n    const options = {\n      method,\n      url,\n      headers: headers ?? {},\n      timeout,\n      returnFullResponse: true,\n    };\n\n    if (typeof rawBody === 'string') {\n      options.body = rawBody;\n      options.json = false;\n    } else if (jsonBody !== undefined) {\n      options.body = jsonBody;\n      options.json = true;\n    }\n\n    if (expectBinary) {\n      options.encoding = 'base64';\n      options.json = false;\n    }\n\n    return helperContext.helpers.httpRequest(options);\n  }\n\n  throw new Error('http_helper_unavailable');\n}\n\nasync function resolveVoiceId(baseUrl, preferredVoiceId, timeoutMs, ttsApiKey) {\n  const fixed = safeText(preferredVoiceId);\n  if (fixed) return fixed;\n\n  const authHeader = 'Bearer ' + ttsApiKey;\n\n  for (let page = 1; page <= 8; page += 1) {\n    const response = await requestWithTimeout({\n      url: baseUrl + '/voices?page=' + String(page) + '&limit=100',\n      method: 'GET',\n      headers: {\n        Accept: 'application/json',\n        Authorization: authHeader,\n      },\n      timeoutMs,\n    });\n\n    const statusCode = asInt(response?.statusCode, 0, 0, 999);\n    if (!(statusCode >= 200 && statusCode < 300)) {\n      throw new Error('voices_http_' + String(statusCode));\n    }\n\n    const rawPayload = response?.body;\n    const payload = typeof rawPayload === 'string'\n      ? (() => {\n          try {\n            return JSON.parse(rawPayload);\n          } catch (_) {\n            return rawPayload;\n          }\n        })()\n      : rawPayload;\n\n    const voices = parseVoicesPayload(payload);\n    for (const row of voices) {\n      const id = safeText(row?.id, safeText(row?.voice_id));\n      if (id) return id;\n    }\n\n    const pagination = payload?.pagination ?? payload?.meta ?? {};\n    const hasNext = pagination?.has_next_page === true\n      || pagination?.hasNextPage === true\n      || Number(pagination?.next_page || 0) > page\n      || Number(pagination?.current_page || page) < Number(pagination?.total_pages || pagination?.totalPages || page);\n\n    if (!hasNext) {\n      break;\n    }\n  }\n\n  throw new Error('voices_empty');\n}\n\nfunction waitMs(ms) {\n  return new Promise((resolve) => setTimeout(resolve, ms));\n}\n\nasync function runChunk({ baseUrl, voiceId, chunk, retry, timeoutMs, startedAt, ttsApiKey, language, speed, quality, guidanceScale, denoise, outputFormat }) {\n  const backoffs = [500, 1000, 2000];\n  let lastError = 'stream_failed';\n\n  for (let attempt = 1; attempt <= retry + 1; attempt += 1) {\n    try {\n      const response = await requestWithTimeout({\n        url: baseUrl + '/tts/stream',\n        method: 'POST',\n        headers: {\n          'Content-Type': 'application/json',\n          Accept: 'audio/wav,application/octet-stream,application/json',\n          Authorization: 'Bearer ' + ttsApiKey,\n        },\n        rawBody: JSON.stringify({\n          text: chunk.text,\n          voice_id: voiceId,\n          language,\n          speed,\n          quality,\n          guidance_scale: guidanceScale,\n          denoise,\n          output_format: outputFormat,\n        }),\n        timeoutMs,\n        expectBinary: true,\n      });\n\n      const statusCode = asInt(response?.statusCode, 0, 0, 999);\n      const contentType = getHeader(response?.headers, 'content-type').toLowerCase();\n      const body = response?.body;\n      const buffer = decodeResponseBodyToBuffer(body);\n\n      if (!(statusCode >= 200 && statusCode < 300)) {\n        const responseText = buffer.toString('utf8').slice(0, 400);\n        throw new Error('stream_http_' + String(statusCode) + (responseText ? ':' + responseText : ''));\n      }\n\n      if (buffer.length < 44) {\n        throw new Error('stream_audio_too_short:' + String(buffer.length));\n      }\n\n      const isRiffWav = buffer.subarray(0, 4).toString('ascii') === 'RIFF'\n        && buffer.subarray(8, 12).toString('ascii') === 'WAVE';\n\n      if (!isRiffWav) {\n        throw new Error('stream_invalid_wav_header');\n      }\n\n      if (!contentType.includes('audio/')) {\n        const responseText = buffer.toString('utf8').slice(0, 400);\n        throw new Error('stream_non_audio:' + responseText);\n      }\n\n      return {\n        ...chunk,\n        status: 'success',\n        attempts: attempt,\n        voiceId,\n        wavBase64: buffer.toString('base64'),\n        wavBytes: buffer.length,\n        latencyMs: Date.now() - startedAt,\n        errorReason: null,\n      };\n    } catch (error) {\n      lastError = safeText(error?.message, 'stream_failed').slice(0, 500);\n      if (attempt <= retry) {\n        const backoff = backoffs[Math.min(attempt - 1, backoffs.length - 1)] ?? 2000;\n        await waitMs(backoff);\n      }\n    }\n  }\n\n  return {\n    ...chunk,\n    status: 'failed',\n    attempts: retry + 1,\n    voiceId,\n    wavBase64: '',\n    wavBytes: 0,\n    latencyMs: Date.now() - startedAt,\n    errorReason: lastError,\n  };\n}\n\nconst workflowStartedAt = Date.now();\nconst chunks = Array.isArray(input.chunks) ? input.chunks : [];\nconst retry = asInt(input.retry, 2, 0, 8);\nconst batchSize = asInt(input.batchSize, 1, 1, 20);\nconst timeoutMs = asInt(input.requestTimeoutSec, 120, 5, 1800) * 1000;\nconst baseUrl = safeText(input.ttsApiBaseUrl, 'https://tts.getvrex.com/api/v1').replace(/\\/$/, '');\nconst ttsApiKey = safeText(input.ttsApiKey);\nconst language = safeText(input.language, 'auto');\nconst speed = asNumber(input.speed, 1, 0.5, 2);\nconst quality = asInt(input.quality, 32, 4, 64);\nconst guidanceScale = asNumber(input.guidanceScale, 2, 0, 4);\nconst denoiseRaw = input.denoise;\nconst denoise = typeof denoiseRaw === 'boolean'\n  ? denoiseRaw\n  : !['false', '0', 'no', 'off'].includes(safeText(denoiseRaw, 'true').toLowerCase());\nconst outputFormatRaw = safeText(input.outputFormat, 'raw').toLowerCase();\nconst outputFormat = outputFormatRaw === 'raw' ? 'raw' : 'raw';\n\nif (!ttsApiKey) {\n  return {\n    ...input,\n    status: 'failed',\n    errorReason: 'missing_tts_api_key',\n    items: [],\n    failedChunkIndexes: chunks.map((chunk) => chunk.chunkIndex),\n    chunksSuccess: 0,\n  };\n}\n\nif (chunks.length === 0) {\n  return {\n    ...input,\n    status: 'failed',\n    errorReason: 'empty_chunks',\n    items: [],\n    failedChunkIndexes: [],\n    chunksSuccess: 0,\n  };\n}\n\nlet resolvedVoiceId = '';\ntry {\n  resolvedVoiceId = await resolveVoiceId(baseUrl, input.voiceId, timeoutMs, ttsApiKey);\n} catch (error) {\n  return {\n    ...input,\n    status: 'failed',\n    errorReason: safeText(error?.message, 'resolve_voice_failed'),\n    items: chunks.map((chunk) => ({\n      ...chunk,\n      status: 'failed',\n      attempts: 0,\n      voiceId: '',\n      wavBase64: '',\n      wavBytes: 0,\n      latencyMs: Date.now() - workflowStartedAt,\n      errorReason: 'resolve_voice_failed',\n    })),\n    failedChunkIndexes: chunks.map((chunk) => chunk.chunkIndex),\n    chunksSuccess: 0,\n  };\n}\n\nconst orderedResults = [];\nlet firstAudioLatencyMs = -1;\n\nfor (let index = 0; index < chunks.length; index += batchSize) {\n  const batch = chunks.slice(index, index + batchSize);\n  const results = await Promise.all(batch.map((chunk) => runChunk({\n    baseUrl,\n    voiceId: resolvedVoiceId,\n    chunk,\n    retry,\n    timeoutMs,\n    startedAt: workflowStartedAt,\n    ttsApiKey,\n    language,\n    speed,\n    quality,\n    guidanceScale,\n    denoise,\n    outputFormat,\n  })));\n\n  for (const result of results) {\n    if (result.status === 'success' && firstAudioLatencyMs < 0) {\n      firstAudioLatencyMs = result.latencyMs;\n    }\n    orderedResults.push(result);\n  }\n}\n\norderedResults.sort((a, b) => a.chunkIndex - b.chunkIndex);\n\nconst chunksSuccess = orderedResults.filter((item) => item.status === 'success').length;\nconst failedChunkIndexes = orderedResults.filter((item) => item.status !== 'success').map((item) => item.chunkIndex);\n\nlet status = 'success';\nif (chunksSuccess === 0) {\n  status = 'failed';\n} else if (failedChunkIndexes.length > 0) {\n  status = 'partialFailed';\n}\n\nreturn {\n  ...input,\n  voiceId: resolvedVoiceId,\n  batchSizeUsed: batchSize,\n  firstAudioLatencyMs: firstAudioLatencyMs < 0 ? null : firstAudioLatencyMs,\n  items: orderedResults,\n  chunksSuccess,\n  failedChunkIndexes,\n  status,\n  errorReason: status === 'failed' ? 'all_chunks_failed' : null,\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        656
+      ],
+      "id": "f14abffd-95f5-4d3b-b2a1-f4d5a120da1f",
+      "name": "Execute /stream Chunks"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asNumber(value, fallback = 0, min = null, max = null) {\n  const n = Number(value);\n  if (!Number.isFinite(n)) return fallback;\n  if (Number.isFinite(min) && n < min) return min;\n  if (Number.isFinite(max) && n > max) return max;\n  return n;\n}\n\nfunction clampInt16(value) {\n  if (value > 32767) return 32767;\n  if (value < -32768) return -32768;\n  return value;\n}\n\nfunction buildWavHeader(dataLength, sampleRate, channels, bitsPerSample) {\n  const blockAlign = channels * bitsPerSample / 8;\n  const byteRate = sampleRate * blockAlign;\n  const header = Buffer.alloc(44);\n\n  header.write('RIFF', 0);\n  header.writeUInt32LE(36 + dataLength, 4);\n  header.write('WAVE', 8);\n  header.write('fmt ', 12);\n  header.writeUInt32LE(16, 16);\n  header.writeUInt16LE(1, 20);\n  header.writeUInt16LE(channels, 22);\n  header.writeUInt32LE(sampleRate, 24);\n  header.writeUInt32LE(byteRate, 28);\n  header.writeUInt16LE(blockAlign, 32);\n  header.writeUInt16LE(bitsPerSample, 34);\n  header.write('data', 36);\n  header.writeUInt32LE(dataLength, 40);\n\n  return header;\n}\n\nfunction parseWavPcm(wavBuffer) {\n  if (!wavBuffer || wavBuffer.length < 44) {\n    throw new Error('wav_too_short');\n  }\n\n  const riff = wavBuffer.subarray(0, 4).toString('ascii');\n  const wave = wavBuffer.subarray(8, 12).toString('ascii');\n  if (riff !== 'RIFF' || wave !== 'WAVE') {\n    throw new Error('wav_invalid_header');\n  }\n\n  let offset = 12;\n  let sampleRate = 24000;\n  let channels = 1;\n  let bitsPerSample = 16;\n  let audioFormat = 1;\n  let dataStart = -1;\n  let dataLength = 0;\n\n  while (offset + 8 <= wavBuffer.length) {\n    const chunkId = wavBuffer.subarray(offset, offset + 4).toString('ascii');\n    const chunkSize = wavBuffer.readUInt32LE(offset + 4);\n    const chunkDataStart = offset + 8;\n    const chunkDataEnd = chunkDataStart + chunkSize;\n\n    if (chunkDataStart > wavBuffer.length || chunkDataEnd > wavBuffer.length) {\n      throw new Error('wav_invalid_chunk_size');\n    }\n\n    if (chunkId === 'fmt ') {\n      if (chunkSize < 16) {\n        throw new Error('wav_invalid_fmt');\n      }\n      audioFormat = wavBuffer.readUInt16LE(chunkDataStart);\n      channels = wavBuffer.readUInt16LE(chunkDataStart + 2);\n      sampleRate = wavBuffer.readUInt32LE(chunkDataStart + 4);\n      bitsPerSample = wavBuffer.readUInt16LE(chunkDataStart + 14);\n    } else if (chunkId === 'data') {\n      dataStart = chunkDataStart;\n      dataLength = chunkSize;\n      break;\n    }\n\n    offset = chunkDataEnd + (chunkSize % 2);\n  }\n\n  if (dataStart < 0) {\n    throw new Error('wav_missing_data_chunk');\n  }\n\n  if (audioFormat !== 1) {\n    throw new Error('wav_unsupported_audio_format_' + String(audioFormat));\n  }\n\n  if (channels !== 1) {\n    throw new Error('wav_unsupported_channels_' + String(channels));\n  }\n\n  if (bitsPerSample !== 16) {\n    throw new Error('wav_unsupported_bits_' + String(bitsPerSample));\n  }\n\n  const remainingBytes = Math.max(0, wavBuffer.length - dataStart);\n  let effectiveDataLength = dataLength;\n\n  if (!Number.isFinite(effectiveDataLength) || effectiveDataLength < 0) {\n    throw new Error('wav_invalid_data_length');\n  }\n\n  // Some servers return valid PCM but leave data chunk size as 0.\n  // Fallback to actual remaining bytes instead of hard-failing.\n  if (effectiveDataLength === 0 && remainingBytes > 0) {\n    effectiveDataLength = remainingBytes;\n  } else if (effectiveDataLength > remainingBytes) {\n    effectiveDataLength = remainingBytes;\n  }\n\n  const dataEnd = Math.min(wavBuffer.length, dataStart + effectiveDataLength);\n  let pcm = wavBuffer.subarray(dataStart, dataEnd);\n\n  if (pcm.length <= 0) {\n    throw new Error('wav_empty_data');\n  }\n\n  if (pcm.length % 2 !== 0) {\n    pcm = pcm.subarray(0, pcm.length - 1);\n  }\n\n  if (pcm.length <= 0) {\n    throw new Error('wav_empty_pcm');\n  }\n\n  return {\n    pcm,\n    sampleRate,\n    channels,\n    bitsPerSample,\n  };\n}\n\nfunction crossfadePcm(prevPcm, nextPcm, crossfadeSeconds, sampleRate) {\n  const requestedSamples = Math.floor(crossfadeSeconds * sampleRate);\n  const maxSamples = Math.floor(Math.min(prevPcm.length, nextPcm.length) / 2);\n  const samples = Math.min(requestedSamples, maxSamples);\n\n  if (!Number.isFinite(samples) || samples <= 0) {\n    return Buffer.concat([prevPcm, nextPcm]);\n  }\n\n  const overlapBytes = samples * 2;\n  const prevHead = prevPcm.subarray(0, prevPcm.length - overlapBytes);\n  const prevTail = prevPcm.subarray(prevPcm.length - overlapBytes);\n  const nextHead = nextPcm.subarray(0, overlapBytes);\n  const nextTail = nextPcm.subarray(overlapBytes);\n  const mixed = Buffer.alloc(overlapBytes);\n\n  for (let i = 0; i < samples; i += 1) {\n    const a = prevTail.readInt16LE(i * 2) / 32768;\n    const b = nextHead.readInt16LE(i * 2) / 32768;\n    const t = (i + 1) / (samples + 1);\n    const value = clampInt16(Math.round((a * (1 - t) + b * t) * 32767));\n    mixed.writeInt16LE(value, i * 2);\n  }\n\n  return Buffer.concat([prevHead, mixed, nextTail]);\n}\n\nconst items = Array.isArray(input.items) ? input.items : [];\nconst sortedItems = [...items].sort((a, b) => Number(a?.chunkIndex ?? 0) - Number(b?.chunkIndex ?? 0));\n\nconst requestedJoinMode = safeText(input.joinMode, 'silence').toLowerCase();\nconst silenceSecondsInput = asNumber(input.silenceSeconds, 0.15, 0, 10);\nconst crossfadeSecondsInput = asNumber(input.crossfadeSeconds, 0, 0, 5);\nconst silenceSeconds = requestedJoinMode === 'crossfade' ? 0 : silenceSecondsInput;\nconst crossfadeSeconds = requestedJoinMode === 'crossfade' ? crossfadeSecondsInput : 0;\n\nconst normalizedItems = sortedItems.map((item) => ({ ...item }));\nconst audioSegments = [];\nlet targetFormat = null;\n\nfor (const item of normalizedItems) {\n  if (item.status !== 'success') {\n    continue;\n  }\n\n  const wavBase64 = safeText(item.wavBase64);\n  if (!wavBase64) {\n    item.status = 'failed';\n    item.errorReason = safeText(item.errorReason, 'missing_wav_base64');\n    continue;\n  }\n\n  let wavBuffer = Buffer.alloc(0);\n  try {\n    wavBuffer = Buffer.from(wavBase64, 'base64');\n  } catch (_) {\n    item.status = 'failed';\n    item.errorReason = 'wav_base64_decode_failed';\n    continue;\n  }\n\n  try {\n    const parsed = parseWavPcm(wavBuffer);\n\n    if (!targetFormat) {\n      targetFormat = {\n        sampleRate: parsed.sampleRate,\n        channels: parsed.channels,\n        bitsPerSample: parsed.bitsPerSample,\n      };\n    } else if (\n      parsed.sampleRate !== targetFormat.sampleRate\n      || parsed.channels !== targetFormat.channels\n      || parsed.bitsPerSample !== targetFormat.bitsPerSample\n    ) {\n      throw new Error('wav_format_mismatch');\n    }\n\n    audioSegments.push({\n      chunkIndex: Number(item.chunkIndex ?? 0),\n      pcm: parsed.pcm,\n    });\n  } catch (error) {\n    item.status = 'failed';\n    item.errorReason = safeText(error?.message, 'wav_parse_failed').slice(0, 200);\n  }\n}\n\naudioSegments.sort((a, b) => a.chunkIndex - b.chunkIndex);\n\nlet joinedPcm = Buffer.alloc(0);\nconst sampleRate = Number(targetFormat?.sampleRate ?? 24000);\nconst channels = Number(targetFormat?.channels ?? 1);\nconst bitsPerSample = Number(targetFormat?.bitsPerSample ?? 16);\nconst bytesPerSample = Math.floor(bitsPerSample / 8);\n\nconst silenceBytes = Math.max(0, Math.floor(sampleRate * silenceSeconds * channels * bytesPerSample));\nconst silenceBuffer = silenceBytes > 0 ? Buffer.alloc(silenceBytes, 0) : Buffer.alloc(0);\n\nfor (let i = 0; i < audioSegments.length; i += 1) {\n  const pcmBuffer = audioSegments[i].pcm;\n\n  if (!pcmBuffer || pcmBuffer.length === 0) {\n    continue;\n  }\n\n  if (joinedPcm.length === 0) {\n    joinedPcm = pcmBuffer;\n    continue;\n  }\n\n  if (silenceBytes > 0) {\n    joinedPcm = Buffer.concat([joinedPcm, silenceBuffer, pcmBuffer]);\n  } else if (crossfadeSeconds > 0) {\n    joinedPcm = crossfadePcm(joinedPcm, pcmBuffer, crossfadeSeconds, sampleRate);\n  } else {\n    joinedPcm = Buffer.concat([joinedPcm, pcmBuffer]);\n  }\n}\n\nconst outputItems = normalizedItems.map((item) => {\n  const clone = { ...item };\n  delete clone.wavBase64;\n  return clone;\n});\n\nconst chunksTotal = Number(input.chunksTotal ?? outputItems.length ?? 0);\nconst chunksSuccessRaw = outputItems.filter((item) => item.status === 'success').length;\nconst failedChunkIndexes = outputItems\n  .filter((item) => item.status !== 'success')\n  .map((item) => Number(item.chunkIndex ?? 0));\n\nlet status = 'success';\nif (chunksSuccessRaw <= 0 || joinedPcm.length <= 0) {\n  status = 'failed';\n} else if (failedChunkIndexes.length > 0) {\n  status = 'partialFailed';\n}\n\nconst firstFailedItem = outputItems\n  .filter((item) => item && item.status !== 'success')\n  .sort((a, b) => Number(a.chunkIndex ?? 0) - Number(b.chunkIndex ?? 0))[0];\nconst firstFailedReason = safeText(firstFailedItem?.errorReason);\n\nconst totalDurationSec = joinedPcm.length > 0\n  ? Math.round((joinedPcm.length / (sampleRate * channels * bytesPerSample)) * 1000) / 1000\n  : 0;\n\nconst outputFileName = 'tts-' + safeText(input.requestId, Date.now().toString(36)) + '.wav';\n\nconst jsonOutput = {\n  ...input,\n  joinMode: requestedJoinMode === 'crossfade' ? 'crossfade' : 'silence',\n  silenceSeconds,\n  crossfadeSeconds,\n  status,\n  audioBase64: '',    // base64 WAV de node sau tu convert\n  audioMimeType: 'audio/wav',\n  audioFileName: outputFileName,\n  sampleRate,\n  channels,\n  pcmFormat: bitsPerSample === 16 ? 's16le' : ('s' + String(bitsPerSample) + 'le'),\n  chunksTotal,\n  chunksSuccess: joinedPcm.length > 0 ? chunksSuccessRaw : 0,\n  failedChunkIndexes,\n  totalDurationSec,\n  items: outputItems,\n  errorReason: status === 'failed'\n    ? safeText(\n        firstFailedReason,\n        safeText(input.errorReason, failedChunkIndexes.length > 0 ? 'all_chunks_failed' : 'empty_audio'),\n      )\n    : null,\n};\n\ndelete jsonOutput.chunks;\ndelete jsonOutput.ttsApiKey;\n\nif (joinedPcm.length > 0) {\n  const header = buildWavHeader(joinedPcm.length, sampleRate, channels, bitsPerSample);\n  const wav = Buffer.concat([header, joinedPcm]);\n  jsonOutput.audioBase64 = wav.toString('base64');\n}\n\nreturn [{ json: jsonOutput }];\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        392
+      ],
+      "id": "dd5f3d16-1cc9-4e92-95d2-7d2111a89d7d",
+      "name": "Join WAV + Finalize"
+    },
+    {
+      "parameters": {
+        "content": "## INPUT (short)\n\nRequired:\n- `text`: noi dung can TTS\n- `ttsApiKey`: API key VREX (Bearer token)\n\nOptional (default):\n- `mode` = `auto` (`sentence`|`fullText`)\n- `voiceId` = auto resolve qua `GET /voices` neu rong\n- `language` = `auto`\n- `speed` = `1.0` (range `0.5-2.0`)\n- `quality` = `32` (range `4-64`)\n- `guidanceScale` = `2.0` (range `0-4`)\n- `denoise` = `true`\n- `outputFormat` = `raw`\n- `maxCharsChunk` = `256`\n- `batchSize` = `1`\n- `retry` = `2`\n- `requestTimeoutSec` = `120`\n- `joinMode` = `silence`\n- `silenceSeconds` = `0.15`\n- `crossfadeSeconds` = `0`\n- `ttsApiBaseUrl` = `https://tts.getvrex.com/api/v1`\n\nChi dung camelCase (khong ho tro snake_case).\n",
+        "height": 260,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1136,
+        -128
+      ],
+      "id": "5ee40237-66ac-4d29-a8d3-7f07e8ad24a8",
+      "name": "NOTE::TTSVREX::INPUT"
+    },
+    {
+      "parameters": {
+        "content": "## CHUNK RULE\n\n`fullText` mode (text-only chunk):\n1) paragraph by newline\n2) sentence by `(?<=[.!?…])\\s+`\n3) if sentence > max: fallback by `(?<=[,;:\\-–—])\\s+`\n4) if still > max: fallback by words\n\n`sentence` mode: keep full text as single chunk\n",
+        "height": 260,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -816,
+        -128
+      ],
+      "id": "5ebef8d3-82c1-4e66-8d0e-08740fd9502f",
+      "name": "NOTE::TTSVREX::PLAN"
+    },
+    {
+      "parameters": {
+        "content": "## EXECUTION\n\n- Tach `chunks` thanh items\n- Loop qua `chunksTotal` bang `Split in Batches`\n- Moi vong goi `POST /tts/stream` cho 1 chunk\n- Header bat buoc: `Authorization: Bearer <ttsApiKey>`\n- Retry/backoff: `0.5s -> 1s -> 2s`\n- Timeout moi request: `requestTimeoutSec`\n- Khong loop chunks ben trong 1 Code node",
+        "height": 260,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        -128
+      ],
+      "id": "8f0647fa-9445-44fc-95ee-0e82328c0f37",
+      "name": "NOTE::TTSVREX::EXECUTE"
+    },
+    {
+      "parameters": {
+        "content": "## OUTPUT + EXAMPLE\n\nOutput JSON chinh:\n- `status`: `success|partialFailed|failed`\n- `audioBase64` (de `Convert to File` tao binary key `audio`)\n- `sampleRate=24000`, `channels=1`, `pcmFormat=s16le`\n- `chunksTotal`, `chunksSuccess`, `failedChunkIndexes`\n- `totalDurationSec`, `firstAudioLatencyMs`, `items`, `errorReason`\n\nExample input:\n`{ text, ttsApiKey, mode: \"fullText\", batchSize: 2, retry: 2 }`",
+        "height": 260,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        -128
+      ],
+      "id": "0fae6cf9-245f-4ee9-93e0-6b7434eb1809",
+      "name": "NOTE::TTSVREX::FINALIZE"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ Number($json.chunksTotal || 0) > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -608,
+        488
+      ],
+      "id": "5fc952cd-6b10-4e2b-8e7b-77f7da5b6d01",
+      "name": "If Has Chunks?"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "chunks",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -384,
+        656
+      ],
+      "id": "4ad1f6e2-4f8e-4d67-93e8-c20549df6776",
+      "name": "Split Out Chunks"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nconst chunk = input.chunks && typeof input.chunks === 'object' && !Array.isArray(input.chunks)\n  ? input.chunks\n  : (Array.isArray(input.chunks) ? input.chunks[0] : {});\n\nconst chunkIndex = Number.isFinite(Number(chunk?.chunkIndex))\n  ? Math.floor(Number(chunk.chunkIndex))\n  : 0;\nconst chunkText = String(chunk?.text ?? '').trim();\n\nreturn {\n  ...input,\n  chunks: [{\n    chunkIndex,\n    text: chunkText,\n  }],\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        656
+      ],
+      "id": "f6ad8ea5-b5f1-41a7-9918-95fcbf74f614",
+      "name": "Prepare Single Chunk Payload"
+    },
+    {
+      "parameters": {
+        "batchSize": "={{ 1 }}",
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        64,
+        656
+      ],
+      "id": "0cfe1e9f-72f0-4eb8-9859-7f6d1ef47f7d",
+      "name": "Loop Over TTS Chunks"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json ?? {};\nconst singleChunk = Array.isArray(input.chunks) && input.chunks[0] ? input.chunks[0] : {};\nconst result = Array.isArray(input.items) && input.items[0] ? input.items[0] : null;\n\nfunction safeText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nconst fallbackResult = {\n  chunkIndex: Number(singleChunk.chunkIndex ?? 0),\n  text: safeText(singleChunk.text),\n  status: 'failed',\n  attempts: 0,\n  voiceId: safeText(input.voiceId),\n  wavBase64: '',\n  wavBytes: 0,\n  latencyMs: 0,\n  errorReason: safeText(input.errorReason, 'chunk_execution_failed'),\n};\n\nconst chunkResult = result && typeof result === 'object'\n  ? { ...fallbackResult, ...result }\n  : fallbackResult;\n\nreturn {\n  requestId: input.requestId,\n  text: input.text,\n  voiceId: safeText(chunkResult.voiceId, safeText(input.voiceId)),\n  mode: input.mode,\n  maxCharsChunk: input.maxCharsChunk,\n  batchSize: input.batchSize,\n  joinMode: input.joinMode,\n  silenceSeconds: input.silenceSeconds,\n  crossfadeSeconds: input.crossfadeSeconds,\n  language: input.language,\n  speed: input.speed,\n  quality: input.quality,\n  guidanceScale: input.guidanceScale,\n  denoise: input.denoise,\n  outputFormat: input.outputFormat,\n  retry: input.retry,\n  requestTimeoutSec: input.requestTimeoutSec,\n  ttsApiBaseUrl: input.ttsApiBaseUrl,\n  chunksTotal: Number(input.chunksTotal ?? 0),\n  chunkResult,\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        728
+      ],
+      "id": "77537a98-f691-4f30-af88-5a5ffdf37e4e",
+      "name": "Extract Chunk Result"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map((item) => item.json || {});\nconst base = rows[0] || {};\nconst items = rows\n  .map((row) => row.chunkResult || null)\n  .filter((row) => row && typeof row === 'object')\n  .sort((a, b) => Number(a.chunkIndex ?? 0) - Number(b.chunkIndex ?? 0));\n\nconst chunksSuccess = items.filter((item) => String(item.status || '') === 'success').length;\nconst failedChunkIndexes = items\n  .filter((item) => String(item.status || '') !== 'success')\n  .map((item) => Number(item.chunkIndex ?? 0));\n\nlet status = 'success';\nif (chunksSuccess <= 0) {\n  status = 'failed';\n} else if (failedChunkIndexes.length > 0) {\n  status = 'partialFailed';\n}\n\nconst firstAudioLatencyMs = items\n  .filter((item) => String(item.status || '') === 'success')\n  .map((item) => Number(item.latencyMs || 0))\n  .filter((ms) => Number.isFinite(ms) && ms >= 0)\n  .sort((a, b) => a - b)[0];\n\nreturn [{\n  json: {\n    requestId: base.requestId,\n    text: base.text,\n    voiceId: base.voiceId,\n    mode: base.mode,\n    maxCharsChunk: base.maxCharsChunk,\n    batchSize: base.batchSize,\n    batchSizeUsed: 1,\n    joinMode: base.joinMode,\n    silenceSeconds: base.silenceSeconds,\n    crossfadeSeconds: base.crossfadeSeconds,\n    language: base.language,\n    speed: base.speed,\n    quality: base.quality,\n    guidanceScale: base.guidanceScale,\n    denoise: base.denoise,\n    outputFormat: base.outputFormat,\n    retry: base.retry,\n    requestTimeoutSec: base.requestTimeoutSec,\n    ttsApiBaseUrl: base.ttsApiBaseUrl,\n    chunksTotal: Number(base.chunksTotal ?? items.length),\n    chunksSuccess,\n    failedChunkIndexes,\n    firstAudioLatencyMs: Number.isFinite(firstAudioLatencyMs) ? firstAudioLatencyMs : null,\n    items,\n    status,\n    errorReason: status === 'failed' ? 'all_chunks_failed' : null,\n  },\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        464
+      ],
+      "id": "ddd8cb53-6a46-4d48-b54a-b5a72f49e3aa",
+      "name": "Aggregate TTS Chunk Results"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "audioBase64",
+        "binaryPropertyName": "audio",
+        "options": {
+          "fileName": "={{ $json.audioFileName }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        736,
+        320
+      ],
+      "id": "9b1b266c-1857-4713-80ed-788e0401b19c",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "QpcIxaHiYXDqjw4p",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/QpcIxaHiYXDqjw4p",
+          "cachedResultName": "GG Drive Manager"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "action": "upsert",
+            "rootFolderId": "1u1p_7y5hWKzuQhRHno2OFHjZqM9cG3pa",
+            "folderPath": "nha-gia-kim-paulo-coelho-mnk1w67exa4ypu94",
+            "fileName": "scene_001.wav",
+            "binaryFieldName": "audio"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "action",
+              "displayName": "action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "rootFolderId",
+              "displayName": "rootFolderId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "folderPath",
+              "displayName": "folderPath",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "fileName",
+              "displayName": "fileName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "binaryFieldName",
+              "displayName": "binaryFieldName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1184,
+        392
+      ],
+      "id": "0bfc493e-6522-44cc-a8fa-67ce6fd1b633",
+      "name": "Call 'GG Drive Manager'",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true
+        }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        960,
+        392
+      ],
+      "id": "c9c5654a-f1ba-49d9-b3cd-6d4886b02dd9",
+      "name": "Merge"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Normalize + Plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize + Plan": {
+      "main": [
+        [
+          {
+            "node": "If Has Chunks?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has Chunks?": {
+      "main": [
+        [
+          {
+            "node": "Split Out Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Join WAV + Finalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Chunks": {
+      "main": [
+        [
+          {
+            "node": "Prepare Single Chunk Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Single Chunk Payload": {
+      "main": [
+        [
+          {
+            "node": "Loop Over TTS Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over TTS Chunks": {
+      "main": [
+        [
+          {
+            "node": "Aggregate TTS Chunk Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute /stream Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute /stream Chunks": {
+      "main": [
+        [
+          {
+            "node": "Extract Chunk Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Chunk Result": {
+      "main": [
+        [
+          {
+            "node": "Loop Over TTS Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate TTS Chunk Results": {
+      "main": [
+        [
+          {
+            "node": "Join WAV + Finalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Join WAV + Finalize": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Call 'GG Drive Manager'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
+}

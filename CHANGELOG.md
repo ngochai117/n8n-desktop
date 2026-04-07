@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-04-06
+
+- Clone workflow moi `workflows/media/tts-vrex.workflow.json` (`TTS VREX`) tu topology `TTS VieNeu` va cutover API theo docs VREX: base URL mac dinh `https://tts.getvrex.com/api/v1`, resolve voice `GET /voices`, stream audio `POST /tts/stream`, them auth header `Authorization: Bearer <ttsApiKey>`.
+- `TTS VREX` them input `ttsApiKey` (bat buoc), ho tro optional `language` + `speed`, fail-fast `missing_tts_api_key`, va scrub `ttsApiKey` khoi output cuoi de giu secret hygiene.
+- Them wrapper import `scripts/workflows/import/import-tts-vrex-workflow.sh`, checklist moi `scripts/workflows/tests/test-tts-vrex-checklist.mjs` + `scripts/workflows/tests/test-tts-vrex-checklist.sh`, va upsert registry key `TTS VREX` (ID `Zgc9wgtKmZ1qKm5B`).
+- `Book Review` cutover node media call tu `Call TTS VieNeu` sang `Call TTS VREX`, map `ttsApiKey` tu env `TTS_VREX_API_KEY`, va pin `voiceId = d1f5e1f6-fd60-45e7-9564-523ecd819e31`.
+- Cap nhat checklist `test-book-review-checklist.mjs` theo topology hien tai (`Build Media Sheet`, `Merge`, `Call TTS VREX`) va assertions moi cho VREX voice/key mapping.
+- Cap nhat docs (`README.md`, `scripts/README.md`, `docs/book-review-workflow.md`) de phan biet `TTS VieNeu` vs `TTS VREX` va import/test commands moi.
+- `TTS VREX` bo sung params theo docs stream moi: `quality` (4-64), `guidanceScale` (0-4), `denoise` (boolean), `outputFormat` (hien tai normalize va dung `raw` de giu contract WAV join).
+
 ## 2026-04-04
 
 - `GG Sheet Manager` chuyen ve 1 action `upsertRows` va them che do `upsertByHeader` (upsert theo key header: match thi update, miss thi append); neu khong co `upsertByHeader` thi `upsertRows` se append khi bo trong `range`.
@@ -188,33 +198,46 @@
 - Run mode=apply, total=11, changed=3, unchanged=8, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: TTS VieNeu, Book Review, GG Drive Manager.
 
 ## 2026-04-04T07:50:27Z
+
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=1, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=11, changed=1, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: TTS VieNeu.
 
 ## 2026-04-04T09:25:16Z
+
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=3, missing_ui_folder=0, registry_new=0, registry_updated=3, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=11, changed=3, unchanged=8, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: TTS VieNeu, Book Review, GG Drive Manager.
 
 ## 2026-04-04T09:54:47Z
+
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=2, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=11, changed=2, unchanged=9, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: TTS VieNeu, Book Review.
 
 ## 2026-04-04T10:06:01Z
+
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=2, missing_ui_folder=0, registry_new=0, registry_updated=1, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=11, changed=2, unchanged=9, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Book Review, GG Drive Manager.
 
 ## 2026-04-04T11:20:36Z
+
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=3, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=11, changed=1, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: TTS VieNeu.
 
 ## 2026-04-04T14:39:35Z
+
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=3, missing_ui_folder=0, registry_new=0, registry_updated=2, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=11, changed=3, unchanged=8, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: TTS VieNeu, Book Review, GG Sheet Manager.
 
 ## 2026-04-05T03:10:18Z
+
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=11, changed=1, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Book Review.
 
 ## 2026-04-05T07:26:48Z
+
 - Workflow sync (UI -> JSON) processed 11 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=11, changed=1, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Book Review.
+
+## 2026-04-06T16:45:36Z
+
+- Workflow sync (UI -> JSON) processed 13 workflow(s): changed=3, missing_ui_folder=0, registry_new=1, registry_updated=0, conflicts=0, wrapper_new=1, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=13, changed=3, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=1, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Book Review, MoMo AI Assistant, TTS VREX.

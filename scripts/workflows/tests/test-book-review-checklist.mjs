@@ -56,14 +56,13 @@ const requiredNodes = [
   "Prepare Manifest",
   "Save Manifest to Drive",
   "Save Content Readable to Drive",
-  "Build Media Sheet Seed Rows",
+  "Build Media Sheet",
   "List Media Folder Items",
-  "Find Existing Media Sheet",
   "If Existing Media Sheet?",
   "Delete Existing Media Sheet",
   "Ensure Media Sheet",
   "Write Initial Media Sheet Rows",
-  "Merge Persisted + Media Sheet",
+  "Merge",
   "Save Reviewing Session",
   "Get Review Session",
   "Switch",
@@ -77,7 +76,7 @@ const requiredNodes = [
   "Build Narration Queue",
   "Split Out Narration Items",
   "Loop Over Narration Items",
-  "Call TTS VieNeu",
+  "Call TTS VREX",
   "Upload TTS WAV to Drive",
   "Build TTS Sheet Row",
   "Finalize TTS Sheet Rows",
@@ -90,6 +89,8 @@ for (const name of requiredNodes) {
   check(Boolean(nodeByName(workflow, name)), `required node exists: ${name}`);
 }
 
+check(!nodeByName(workflow, "Call TTS VieNeu"), "legacy node Call TTS VieNeu removed");
+
 const configMain = nodeByName(workflow, "Config Main");
 const configAssignments = assignmentMap(configMain);
 
@@ -99,12 +100,7 @@ for (const key of [
   "chatInput",
   "ggDriveRootFolderId",
   "sessionTableName",
-  "ttsWorkflowId",
-  "ttsVoiceId",
-  "ttsRequestTimeoutSec",
-  "ttsRetry",
-  "ttsSheetSpreadsheetId",
-  "ttsSheetName",
+  "mediaSpreadsheetName",
 ]) {
   check(configAssignments.has(key), `Config Main exposes ${key}`);
 }
@@ -150,18 +146,24 @@ check(
   ensureMediaSheetInputs.includes("ensureSheet"),
   "Ensure Media Sheet uses action ensureSheet",
 );
+check(
+  ensureMediaSheetInputs.includes("Build Media Sheet"),
+  "Ensure Media Sheet reads spreadsheet/sheet name from Build Media Sheet",
+);
 
-const buildMediaSheetSeedRows = nodeByName(workflow, "Build Media Sheet Seed Rows");
-const buildMediaSheetSeedRowsCode = String(
-  buildMediaSheetSeedRows?.parameters?.jsCode || "",
+const buildMediaSheet = nodeByName(workflow, "Build Media Sheet");
+const buildMediaSheetCode = String(buildMediaSheet?.parameters?.jsCode || "");
+check(
+  buildMediaSheetCode.includes("narration_text"),
+  "Build Media Sheet preloads narration_text column",
 );
 check(
-  buildMediaSheetSeedRowsCode.includes("narration_text"),
-  "Build Media Sheet Seed Rows preloads narration_text column",
+  buildMediaSheetCode.includes("mediaSheetRows"),
+  "Build Media Sheet emits mediaSheetRows",
 );
 check(
-  buildMediaSheetSeedRowsCode.includes("tts_status"),
-  "Build Media Sheet Seed Rows preloads tts_status column",
+  buildMediaSheetCode.includes("scene_id"),
+  "Build Media Sheet keeps scene_id in sheet seed rows",
 );
 
 const deleteExistingMediaSheet = nodeByName(workflow, "Delete Existing Media Sheet");
@@ -185,10 +187,24 @@ check(
   "Build Narration Queue emits canonical scene-level tts_file_name",
 );
 
-const callTts = nodeByName(workflow, "Call TTS VieNeu");
+const callTts = nodeByName(workflow, "Call TTS VREX");
 check(
-  callTts?.parameters?.workflowId?.value === "2F1jBI12C6NtslBN",
-  "Call TTS VieNeu uses workflow ID 2F1jBI12C6NtslBN",
+  callTts?.parameters?.workflowId?.value === "Zgc9wgtKmZ1qKm5B",
+  "Call TTS VREX uses workflow ID Zgc9wgtKmZ1qKm5B",
+);
+
+const callTtsInputs = callTts?.parameters?.workflowInputs?.value || {};
+check(
+  String(callTtsInputs.mode || "") === "fullText",
+  "Call TTS VREX runs full narration_text in mode fullText",
+);
+check(
+  String(callTtsInputs.voiceId || "") === "d1f5e1f6-fd60-45e7-9564-523ecd819e31",
+  "Call TTS VREX pins expected voiceId",
+);
+check(
+  String(callTtsInputs.ttsApiKey || "").includes("TTS_VREX_API_KEY"),
+  "Call TTS VREX maps ttsApiKey from env TTS_VREX_API_KEY",
 );
 
 const uploadTts = nodeByName(workflow, "Upload TTS WAV to Drive");
@@ -202,8 +218,8 @@ check(
   "Upload TTS WAV to Drive writes into ttsFolderPath",
 );
 check(
-  uploadTtsInputs.includes("audioBinaryKey"),
-  "Upload TTS WAV to Drive maps binaryFieldName from audioBinaryKey",
+  uploadTtsInputs.includes("tts_file_name"),
+  "Upload TTS WAV to Drive maps scene file name from tts_file_name",
 );
 
 const updateRows = nodeByName(workflow, "Update TTS Rows in Sheet");
@@ -219,6 +235,10 @@ check(
 check(
   updateRowsInputs.includes("ttsSheetSpreadsheetId"),
   "Update TTS Rows in Sheet reads ttsSheetSpreadsheetId",
+);
+check(
+  updateRowsInputs.includes("upsertByHeader"),
+  "Update TTS Rows in Sheet upserts rows by header",
 );
 
 const updateSessionReviewPassed = nodeByName(workflow, "Update Session Review Passed");
@@ -239,18 +259,12 @@ const saveReviewingSessionInputs = JSON.stringify(
   saveReviewingSession?.parameters?.workflowInputs?.value || {},
 );
 check(
-  saveReviewingSessionInputs.includes("mediaSheetUrl"),
-  "Save Reviewing Session stores mediaSheetUrl",
+  saveReviewingSessionInputs.includes("mediaSheetSpreadsheetUrl"),
+  "Save Reviewing Session stores mediaSheetSpreadsheetUrl",
 );
 check(
-  saveReviewingSessionInputs.includes("mediaSheetId"),
-  "Save Reviewing Session stores mediaSheetId",
-);
-
-const callTtsInputs = JSON.stringify(callTts?.parameters?.workflowInputs?.value || {});
-check(
-  callTtsInputs.includes("\"mode\":\"fullText\""),
-  "Call TTS VieNeu runs full narration_text in mode fullText",
+  saveReviewingSessionInputs.includes("folderPath"),
+  "Save Reviewing Session stores folderPath",
 );
 
 const buildTtsSheetRow = nodeByName(workflow, "Build TTS Sheet Row");
@@ -263,6 +277,10 @@ check(
   !buildTtsSheetRowCode.includes("sentence_text"),
   "Build TTS Sheet Row no longer writes sentence_text column",
 );
+check(
+  buildTtsSheetRowCode.includes("Call TTS VREX"),
+  "Build TTS Sheet Row reads TTS output from Call TTS VREX",
+);
 
 const connections = workflow.connections || {};
 function hasConnection(from, to) {
@@ -271,31 +289,59 @@ function hasConnection(from, to) {
 }
 
 check(
-  hasConnection("Prepare Manifest", "Build Media Sheet Seed Rows"),
-  "Prepare Manifest branches to Build Media Sheet Seed Rows",
+  hasConnection("Prepare Manifest", "List Media Folder Items"),
+  "Prepare Manifest branches to List Media Folder Items",
 );
 check(
-  hasConnection("Merge Persisted Files", "List Media Folder Items"),
-  "Merge Persisted Files branches to List Media Folder Items",
+  hasConnection("List Media Folder Items", "Build Media Sheet"),
+  "List Media Folder Items branches to Build Media Sheet",
 );
 check(
-  hasConnection("Write Initial Media Sheet Rows", "Merge Persisted + Media Sheet"),
-  "Write Initial Media Sheet Rows feeds Merge Persisted + Media Sheet",
+  hasConnection("Build Media Sheet", "If Existing Media Sheet?"),
+  "Build Media Sheet feeds If Existing Media Sheet?",
+);
+check(
+  hasConnection("Write Initial Media Sheet Rows", "Merge"),
+  "Write Initial Media Sheet Rows feeds Merge",
+);
+check(
+  hasConnection("Save Manifest to Drive", "Merge"),
+  "Save Manifest to Drive feeds Merge",
+);
+check(
+  hasConnection("Save Content Readable to Drive", "Merge"),
+  "Save Content Readable to Drive feeds Merge",
+);
+check(
+  hasConnection("If Existing Media Sheet?", "Delete Existing Media Sheet"),
+  "If Existing Media Sheet? branches to Delete Existing Media Sheet",
+);
+check(
+  hasConnection("If Existing Media Sheet?", "Ensure Media Sheet"),
+  "If Existing Media Sheet? branches to Ensure Media Sheet",
+);
+check(
+  hasConnection("Call TTS VREX", "Upload TTS WAV to Drive"),
+  "Call TTS VREX feeds Upload TTS WAV to Drive",
+);
+check(
+  hasConnection("Finalize TTS Sheet Rows", "Update TTS Rows in Sheet"),
+  "Finalize TTS Sheet Rows feeds Update TTS Rows in Sheet",
 );
 
 const mediaConnectionKeys = [
   "Config Media",
   "List Media Folder Items",
-  "Find Existing Media Sheet",
+  "Build Media Sheet",
   "If Existing Media Sheet?",
   "Delete Existing Media Sheet",
   "Ensure Media Sheet",
   "Write Initial Media Sheet Rows",
-  "Merge Persisted + Media Sheet",
+  "Merge",
   "Build Narration Queue",
   "Split Out Narration Items",
   "Loop Over Narration Items",
-  "Call TTS VieNeu",
+  "Call TTS VREX",
   "Upload TTS WAV to Drive",
   "Build TTS Sheet Row",
   "Finalize TTS Sheet Rows",

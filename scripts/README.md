@@ -12,6 +12,7 @@
 - `import-text-to-images-workflow.sh`: import shared workflow Text To Images
 - `import-text-to-videos-veo3-workflow.sh`: import shared workflow Text To Videos VEO3
 - `import-tts-workflow.sh`: import shared workflow TTS VieNeu
+- `import-tts-vrex-workflow.sh`: import shared workflow TTS VREX
 - `import-shared-notification-router-workflow.sh`: import shared notification workflow
 - `import-all-workflows.sh`: import tat ca wrapper theo thu tu uu tien
 
@@ -23,10 +24,12 @@
 - `test-book-review-checklist.mjs`: static topology/contract checklist cho workflow canonical
 - `test-tts-checklist.sh`: wrapper chay checklist cho `TTS VieNeu`
 - `test-tts-checklist.mjs`: static topology/contract checklist cho workflow `TTS VieNeu`
+- `test-tts-vrex-checklist.sh`: wrapper chay checklist cho `TTS VREX`
+- `test-tts-vrex-checklist.mjs`: static topology/contract checklist cho workflow `TTS VREX`
 
 ## Book Review notes
 - Workflow canonical: `workflows/book-review/book-review.workflow.json`
-- Shared TTS workflow: `workflows/media/tts.workflow.json` (`TTS VieNeu`)
+- Shared TTS workflows: `workflows/media/tts.workflow.json` (`TTS VieNeu`) + `workflows/media/tts-vrex.workflow.json` (`TTS VREX`)
 - Shared session store: `workflows/shared/data-table-store.workflow.json`
-- Book Review hien da persist reviewer session state, handle `continueReview` / `stopReview`, va wire TTS narration branch sau `reviewPassed`
+- Book Review hien da persist reviewer session state, handle `continueReview` / `stopReview`, va wire TTS narration branch sau `reviewPassed` qua `Call TTS VREX`
 - Backlog visual/E2E tiep theo: `docs/book-review-todo.md`
