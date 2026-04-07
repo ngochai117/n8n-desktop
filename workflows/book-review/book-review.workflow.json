@@ -1680,9 +1680,13 @@
             "ttsApiKey": "sk-e336d8f6e10f354b4dccaa8a9d8ace6ee900a02ddbb5017f3613e156ba45b4ac",
             "language": "vi",
             "speed": 1,
-            "maxCharsChunk": 5000,
             "ttsApiBaseUrl": "https://tts.getvrex.com/api/v1",
-            "batchSize": 1
+            "batchSize": 1,
+            "quality": 64,
+            "guidanceScale": 2,
+            "denoise": true,
+            "outputFormat": "raw",
+            "maxCharsChunk": 1000
           },
           "matchingColumns": [],
           "schema": [
@@ -1704,6 +1708,16 @@
               "display": true,
               "canBeUsedToMatch": true,
               "type": "string"
+            },
+            {
+              "id": "ttsApiKey",
+              "displayName": "ttsApiKey",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
             },
             {
               "id": "voiceId",
@@ -1774,6 +1788,26 @@
               "removed": false
             },
             {
+              "id": "language",
+              "displayName": "language",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "speed",
+              "displayName": "speed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
               "id": "retry",
               "displayName": "retry",
               "required": false,
@@ -1801,33 +1835,43 @@
               "type": "string"
             },
             {
-              "id": "ttsApiKey",
-              "displayName": "ttsApiKey",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "string",
-              "removed": false
-            },
-            {
-              "id": "language",
-              "displayName": "language",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "string",
-              "removed": false
-            },
-            {
-              "id": "speed",
-              "displayName": "speed",
+              "id": "quality",
+              "displayName": "quality",
               "required": false,
               "defaultMatch": false,
               "display": true,
               "canBeUsedToMatch": true,
               "type": "number",
+              "removed": false
+            },
+            {
+              "id": "guidanceScale",
+              "displayName": "guidanceScale",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number",
+              "removed": false
+            },
+            {
+              "id": "denoise",
+              "displayName": "denoise",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean",
+              "removed": false
+            },
+            {
+              "id": "outputFormat",
+              "displayName": "outputFormat",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
               "removed": false
             }
           ],

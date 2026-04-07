@@ -59,6 +59,9 @@ Project: `n8n-desktop`
 - Neu node Code dung `mode=runOnceForEachItem`, uu tien doc item hien tai bang `$json`.
 - Khong dung `$input.first()` hoac `$input.all()` trong `runOnceForEachItem`.
 - Chi dung `$input.first()`/`$input.all()` khi node o `mode=runOnceForAllItems`.
+- Uu tien template literal de noi chuoi trong JS code node va expression JS (vi du: `` `${value}` ``), han che noi chuoi bang `+`.
+- Khi refactor code node, neu dang noi chuoi bang `+` thi chuan hoa sang template literal neu giu nguyen behavior.
+- Ngoai le: van dung `+` cho phep cong so hoc, hoac truong hop dung `+` de doc/de hieu hon ma khong gay nham lan kieu du lieu.
 
 ## 9) Execute Workflow Trigger input schema
 - Ap dung cho moi subworkflow dung `When Executed by Another Workflow`.

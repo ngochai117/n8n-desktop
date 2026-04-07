@@ -45,6 +45,7 @@ bash scripts/proxy/setup-proxy.sh
 bash scripts/workflows/import/import-data-table-store-workflow.sh
 bash scripts/workflows/import/import-gg-drive-manager-workflow.sh
 bash scripts/workflows/import/import-book-review-workflow.sh
+bash scripts/workflows/import/import-momo-ai-assistant-workflow.sh
 ```
 
 Neu can shared workflows de dung tiep o backlog:
@@ -68,9 +69,37 @@ bash scripts/workflows/sync/sync-workflows-from-n8n.sh --apply
 bash scripts/workflows/tests/test-book-review-checklist.sh
 bash scripts/workflows/tests/test-tts-checklist.sh
 bash scripts/workflows/tests/test-tts-vrex-checklist.sh
+bash scripts/workflows/tests/test-momo-ai-assistant-checklist.sh
 ```
 
 Checklist hien tai la static contract/topology checklist cho workflow canonical (`Book Review`) va shared workflows `TTS VieNeu` + `TTS VREX`. Repo hien khong advertise full E2E runner cho media/runtime cho den khi backlog E2E duoc rebuild day du.
+
+## MoMo AI Assistant (Sprint Status)
+- Workflow `MoMo AI Assistant` da duoc rebuild theo huong dedicated sprint-status pipeline.
+- Topology toi gian:
+  - `Manual Trigger`
+  - `Schedule Trigger`
+  - `Config Main` (Code node JSON object, de doc/de sua config nhanh)
+  - `Get Active Sprint`
+  - `Pick Active Sprint`
+  - `If Active Sprint?`
+  - `Get Sprint Issues`
+  - `Aggregate Sprint Metrics`
+  - `Write Sprint Review` + `Review Output Parser`
+  - `Get User Directory` (Google Sheet `MoMoer`)
+  - `Build Final Report` / `No Active Sprint Output`
+  - `Send GGChat Webhook`
+- Workflow nay se:
+  - Lay active sprint cua board `1041`
+  - Lay issues trong sprint
+  - Tinh metrics FE/BE + warnings theo business rules trong `docs/check-sprint-execution-status-spec.md` bang pipeline deterministic
+  - Dua metrics vao AI Agent de viet 1 dong review (co parser JSON output)
+  - Neu review co placeholder `<email>`, se map qua Google Chat user mention `<users/{id}>` bang bang mapping trong sheet `MoMoer`
+  - Render output text dung contract:
+    - `- FE passed: ...`
+    - `- BE passed: ...`
+    - `- Review: ...`
+    - `*WARNINGS*: ...`
 
 ## Troubleshooting (GG Drive recursive upsert)
 - `GG Drive Manager` giu nguyen binary khi recurse folder path (`Execute Recursive Workflow`) de nhanh `upsert` khong mat file binary va khong fail `missingFileBinary`.

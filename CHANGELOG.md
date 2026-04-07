@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-04-07
+
+- `MoMo AI Assistant` duoc rebuild greenfield thanh workflow sprint-status dedicated, co 2 trigger song song (`Manual Trigger` + `Schedule Trigger`) vao cung 1 pipeline.
+- `Config Main` chuyen qua Code-node JSON object de de doc/de sua config.
+- Topology moi: `Get Active Sprint` -> `Pick Active Sprint` -> `If Active Sprint?` -> (`Get Sprint Issues` -> `Aggregate Sprint Metrics` -> `Write Sprint Review` + `Review Output Parser` -> `Get User Directory` -> `Build Final Report`) hoac (`No Active Sprint Output`) -> `Send GGChat Webhook`.
+- Stage aggregate xu ly deterministic theo spec: board `1041`, issue type `Task|Bug`, passed statuses (`Ready For Review`, `In Review`, `Ready For Release`, `Close` + map `Closed -> Close`), FE/BE classify theo token, warning rules theo business day, dedupe warning theo uu tien.
+- Them AI stage de viet review ngan (structured output JSON). Ho tro placeholder `<email>` trong review, sau do map sang mention Google Chat `<users/{id}>` qua sheet mapping `MoMoer` (columns `email`, `id`, `name`).
+- Workflow da wire send webhook Google Chat qua node `Send GGChat Webhook` (URL lay tu env `MOMO_GGCHAT_WEBHOOK_URL`/`GGCHAT_WEBHOOK_URL`).
+- Them/cap nhat checklist `scripts/workflows/tests/test-momo-ai-assistant-checklist.mjs` + wrapper `scripts/workflows/tests/test-momo-ai-assistant-checklist.sh` theo topology moi.
+- Cap nhat docs van hanh (`README.md`, `scripts/README.md`) va env local (`env.n8n.local`) cho runtime webhook.
+
 ## 2026-04-06
 
 - Clone workflow moi `workflows/media/tts-vrex.workflow.json` (`TTS VREX`) tu topology `TTS VieNeu` va cutover API theo docs VREX: base URL mac dinh `https://tts.getvrex.com/api/v1`, resolve voice `GET /voices`, stream audio `POST /tts/stream`, them auth header `Authorization: Bearer <ttsApiKey>`.
@@ -241,3 +252,59 @@
 
 - Workflow sync (UI -> JSON) processed 13 workflow(s): changed=3, missing_ui_folder=0, registry_new=1, registry_updated=0, conflicts=0, wrapper_new=1, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=13, changed=3, unchanged=10, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=1, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Book Review, MoMo AI Assistant, TTS VREX.
+
+## 2026-04-07T07:05:35Z
+- Workflow sync (UI -> JSON) processed 13 workflow(s): changed=2, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=13, changed=2, unchanged=11, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Book Review, MoMo AI Assistant.
+
+## 2026-04-07T07:47:00Z
+- Workflow sync (UI -> JSON) processed 13 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=13, changed=1, unchanged=12, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: MoMo AI Assistant.
+
+## 2026-04-07T07:49:25Z
+- Workflow sync (UI -> JSON) processed 13 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=13, changed=1, unchanged=12, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: MoMo AI Assistant.
+
+## 2026-04-07T08:33:10Z
+- Workflow sync (UI -> JSON) processed 13 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=13, changed=1, unchanged=12, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: MoMo AI Assistant.
+
+## 2026-04-07T08:36:01Z
+- Workflow sync (UI -> JSON) processed 13 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=13, changed=1, unchanged=12, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: MoMo AI Assistant.
+
+## 2026-04-07T08:52:38Z
+- Workflow sync (UI -> JSON) processed 13 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=13, changed=1, unchanged=12, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: MoMo AI Assistant.
+
+## 2026-04-07T09:18:10Z
+- Workflow sync (UI -> JSON) processed 13 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=13, changed=1, unchanged=12, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Phase 1 Sprint Healthcheck v2.
+
+## 2026-04-07T09:54:13Z
+- Workflow sync (UI -> JSON) processed 13 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=1, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=13, changed=1, unchanged=12, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Phase 1 Sprint Healthcheck v2.
+
+## 2026-04-07T10:35:52Z
+- Workflow sync (UI -> JSON) processed 13 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=13, changed=1, unchanged=12, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Phase 1 Sprint Healthcheck v2.
+
+## 2026-04-07T11:25:43Z
+- Workflow sync (UI -> JSON) processed 13 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=13, changed=1, unchanged=12, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Phase 1 Sprint Healthcheck v2.
+
+## 2026-04-07T12:59:30Z
+- Workflow sync (UI -> JSON) processed 13 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=13, changed=1, unchanged=12, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Phase 1 Sprint Healthcheck v2.
+
+## 2026-04-07T13:19:33Z
+- Workflow sync (UI -> JSON) processed 13 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=13, changed=1, unchanged=12, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Phase 1 Sprint Healthcheck v2.
+
+## 2026-04-07T13:28:10Z
+- Workflow sync (UI -> JSON) processed 13 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=13, changed=1, unchanged=12, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Phase 1 Sprint Healthcheck v2.
+
+## 2026-04-07T14:15:04Z
+- Workflow sync (UI -> JSON) processed 13 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=13, changed=1, unchanged=12, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Phase 1 Sprint Healthcheck v2.
