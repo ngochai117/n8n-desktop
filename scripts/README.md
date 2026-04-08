@@ -7,6 +7,10 @@
 ## Import
 - `import-book-review-workflow.sh`: import workflow canonical `Book Review`
 - `import-momo-ai-assistant-workflow.sh`: import workflow `MoMo AI Assistant`
+- `import-momo-ai-assistant-state-store-workflow.sh`: import subworkflow state store explicit cho `MoMo AI Assistant`
+- `import-momo-ai-assistant-state-cleanup-workflow.sh`: import subworkflow cleanup state (`purgeAllState`) cho `MoMo AI Assistant`
+- `import-momo-ai-assistant-tool-sprint-healthcheck-workflow.sh`: import subworkflow read-only sprint healthcheck cho `MoMo AI Assistant`
+- `import-momo-ai-assistant-tool-demo-commands-workflow.sh`: import subworkflow demo command tool cho `MoMo AI Assistant`
 - `import-data-table-store-workflow.sh`: import subworkflow Data Table generic cho session state
 - `import-gg-drive-manager-workflow.sh`: import subworkflow Drive reusable
 - `import-gg-sheet-manager-workflow.sh`: import subworkflow Sheet reusable
@@ -28,7 +32,7 @@
 - `test-tts-vrex-checklist.sh`: wrapper chay checklist cho `TTS VREX`
 - `test-tts-vrex-checklist.mjs`: static topology/contract checklist cho workflow `TTS VREX`
 - `test-momo-ai-assistant-checklist.sh`: wrapper chay checklist cho `MoMo AI Assistant`
-- `test-momo-ai-assistant-checklist.mjs`: static topology/contract checklist cho workflow `MoMo AI Assistant`
+- `test-momo-ai-assistant-checklist.mjs`: static topology/contract checklist cho top-level + state store + state cleanup + healthcheck tool + demo command tool cua `MoMo AI Assistant`
 
 ## Book Review notes
 - Workflow canonical: `workflows/book-review/book-review.workflow.json`

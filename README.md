@@ -75,31 +75,37 @@ bash scripts/workflows/tests/test-momo-ai-assistant-checklist.sh
 Checklist hien tai la static contract/topology checklist cho workflow canonical (`Book Review`) va shared workflows `TTS VieNeu` + `TTS VREX`. Repo hien khong advertise full E2E runner cho media/runtime cho den khi backlog E2E duoc rebuild day du.
 
 ## MoMo AI Assistant (Sprint Status)
-- Workflow `MoMo AI Assistant` da duoc rebuild theo huong dedicated sprint-status pipeline.
-- Topology toi gian:
-  - `Manual Trigger`
-  - `Schedule Trigger`
-  - `Config Main` (Code node JSON object, de doc/de sua config nhanh)
-  - `Get Active Sprint`
-  - `Pick Active Sprint`
-  - `If Active Sprint?`
-  - `Get Sprint Issues`
-  - `Aggregate Sprint Metrics`
-  - `Write Sprint Review` + `Review Output Parser`
-  - `Get User Directory` (Google Sheet `MoMoer`)
-  - `Build Final Report` / `No Active Sprint Output`
-  - `Send GGChat Webhook`
-- Workflow nay se:
-  - Lay active sprint cua board `1041`
-  - Lay issues trong sprint
-  - Tinh metrics FE/BE + warnings theo business rules trong `docs/check-sprint-execution-status-spec.md` bang pipeline deterministic
-  - Dua metrics vao AI Agent de viet 1 dong review (co parser JSON output)
-  - Neu review co placeholder `<email>`, se map qua Google Chat user mention `<users/{id}>` bang bang mapping trong sheet `MoMoer`
-  - Render output text dung contract:
-    - `- FE passed: ...`
-    - `- BE passed: ...`
-    - `- Review: ...`
-    - `*WARNINGS*: ...`
+- Workflow `MoMo AI Assistant` da duoc cat thanh 5 lop de mo rong dan ma van giu manual/schedule healthcheck chay on dinh:
+  - top-level `MoMo AI Assistant`: trigger + AI Agent chat orchestration + delivery
+  - subworkflow `MoMo AI Assistant State Store`: explicit tables `assistantSessions`, `assistantPendingActions`, `assistantToolRuns`
+  - subworkflow `MoMo AI Assistant Tool Sprint Healthcheck`: read-only tool giu logic sprint healthcheck hien tai
+  - subworkflow `MoMo AI Assistant Tool Demo Commands`: demo tool cho `release sprint` / `approve` / `reject` / `cancel`
+  - subworkflow `MoMo AI Assistant State Cleanup`: cron cleanup state (`purgeAllState`) theo lich
+- Da live-test chat webhook local: `check sprint` / `status sprint` di qua `AI Agent -> sprint_healthcheck` on dinh, session thread duoc luu dung, va response tra ve report text thay vi fallback generic.
+- Luong dang bat:
+  - `Manual Trigger` va `Manual Trigger Release Sprint` deu route ve nhanh `chat -> AI Agent -> tool` voi command fix cung (`status sprint` va `release sprint`) de test nhanh orchestration
+  - `Schedule Trigger` van route ve `check sprint`, goi subworkflow healthcheck roi ban Google Chat summary card + warning detail thread nhu hien tai
+  - `Google Chat Webhook` nhan lenh chat, load session theo `spaceId:threadKey`, dua context vao `AI Agent`, roi de agent tu chon workflow tool can goi
+  - them `Local Chat Trigger` (khung chat trong n8n editor) de test luong `chat -> AI Agent -> tool` ngay trong UI, khong can Google Chat webhook
+  - `AI Agent` da duoc tune de chat tu nhien hon (chao hoi/cam on/hoi chung) va co simple memory 10 turns qua session (`turns[]`) de giu mach hoi thoai giua cac luot
+  - state session cleanup cron chay hang ngay luc `03:00` qua workflow `MoMo AI Assistant State Cleanup` de reset state dev
+- Lenh chat stable V1:
+  - `check sprint`
+  - `status sprint`
+- Lenh chat demo placeholder:
+  - `release sprint`
+  - `approve`
+  - `reject`
+  - `cancel`
+- Nhom lenh demo hien chi de kiem tra router/session skeleton, chua bat action that de tranh side-effect trong luc uu tien giu flow healthcheck chay on dinh.
+- Import thu tu:
+```bash
+bash scripts/workflows/import/import-momo-ai-assistant-state-store-workflow.sh
+bash scripts/workflows/import/import-momo-ai-assistant-state-cleanup-workflow.sh
+bash scripts/workflows/import/import-momo-ai-assistant-tool-sprint-healthcheck-workflow.sh
+bash scripts/workflows/import/import-momo-ai-assistant-tool-demo-commands-workflow.sh
+bash scripts/workflows/import/import-momo-ai-assistant-workflow.sh
+```
 
 ## Troubleshooting (GG Drive recursive upsert)
 - `GG Drive Manager` giu nguyen binary khi recurse folder path (`Execute Recursive Workflow`) de nhanh `upsert` khong mat file binary va khong fail `missingFileBinary`.

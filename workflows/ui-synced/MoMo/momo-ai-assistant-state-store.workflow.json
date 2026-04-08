@@ -1,0 +1,1122 @@
+{
+  "name": "MoMo AI Assistant State Store",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "operation",
+              "type": "string"
+            },
+            {
+              "name": "sessionId",
+              "type": "string"
+            },
+            {
+              "name": "pendingActionId",
+              "type": "string"
+            },
+            {
+              "name": "session",
+              "type": "object"
+            },
+            {
+              "name": "pendingAction",
+              "type": "object"
+            },
+            {
+              "name": "toolRun",
+              "type": "object"
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1408,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function asObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction asText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asJsonString(value) {\n  if (typeof value === 'string') {\n    return value.trim() || '{}';\n  }\n\n  if (value === null || value === undefined) {\n    return '{}';\n  }\n\n  try {\n    return JSON.stringify(value);\n  } catch (error) {\n    return '{}';\n  }\n}\n\nconst input = $json ?? {};\nconst operation = asText(input.operation);\nconst allowedOperations = new Set([\n  'getSession',\n  'upsertSession',\n  'getPendingAction',\n  'upsertPendingAction',\n  'createToolRun',\n  'purgeAllState',\n]);\n\nif (!allowedOperations.has(operation)) {\n  throw new Error(`Unsupported operation: ${operation}`);\n}\n\nconst nowIso = new Date().toISOString();\nconst session = asObject(input.session);\nconst pendingAction = asObject(input.pendingAction);\nconst toolRun = asObject(input.toolRun);\nconst sessionId = asText(input.sessionId || session.sessionId);\nconst pendingActionId = asText(input.pendingActionId || pendingAction.pendingActionId);\n\nif (operation === 'getSession' && !sessionId) {\n  throw new Error('sessionId is required for getSession.');\n}\n\nif (operation === 'upsertSession' && !sessionId) {\n  throw new Error('session.sessionId is required for upsertSession.');\n}\n\nif (operation === 'getPendingAction' && !pendingActionId) {\n  throw new Error('pendingActionId is required for getPendingAction.');\n}\n\nif (operation === 'upsertPendingAction' && !pendingActionId) {\n  throw new Error('pendingAction.pendingActionId is required for upsertPendingAction.');\n}\n\nif (operation === 'createToolRun' && !asText(toolRun.toolRunId)) {\n  throw new Error('toolRun.toolRunId is required for createToolRun.');\n}\n\nreturn {\n  operation,\n  sessionId,\n  pendingActionId,\n  tables: {\n    sessions: 'assistantSessions',\n    pendingActions: 'assistantPendingActions',\n    toolRuns: 'assistantToolRuns',\n  },\n  sessionRow: {\n    sessionId,\n    channel: asText(session.channel),\n    spaceId: asText(session.spaceId),\n    threadKey: asText(session.threadKey),\n    lastActorId: asText(session.lastActorId),\n    status: asText(session.status, 'active'),\n    currentIntent: asText(session.currentIntent),\n    activePendingActionId: asText(session.activePendingActionId),\n  },\n  pendingActionRow: {\n    pendingActionId,\n    sessionId: asText(pendingAction.sessionId),\n    toolName: asText(pendingAction.toolName),\n    approvalStatus: asText(pendingAction.approvalStatus, 'pending'),\n    requestedBy: asText(pendingAction.requestedBy),\n    requestSummary: asText(pendingAction.requestSummary),\n    targetType: asText(pendingAction.targetType),\n    targetId: asText(pendingAction.targetId),\n    executePayloadJson: asJsonString(pendingAction.executePayloadJson || pendingAction.executePayload || {}),\n    expiresAt: asText(pendingAction.expiresAt),\n    approvedBy: asText(pendingAction.approvedBy),\n    approvedAt: asText(pendingAction.approvedAt),\n    executedAt: asText(pendingAction.executedAt),\n    executionStatus: asText(pendingAction.executionStatus),\n    idempotencyKey: asText(pendingAction.idempotencyKey),\n    approvalPrompt: asText(pendingAction.approvalPrompt),\n  },\n  toolRunRow: {\n    toolRunId: asText(toolRun.toolRunId),\n    sessionId: asText(toolRun.sessionId),\n    toolName: asText(toolRun.toolName),\n    triggerSource: asText(toolRun.triggerSource),\n    inputJson: asJsonString(toolRun.inputJson || {}),\n    outputJson: asJsonString(toolRun.outputJson || {}),\n    resultText: asText(toolRun.resultText),\n  },\n};"
+      },
+      "id": "2",
+      "name": "Normalize Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1184,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "columns": {
+          "column": [
+            {
+              "name": "sessionId"
+            },
+            {
+              "name": "channel"
+            },
+            {
+              "name": "spaceId"
+            },
+            {
+              "name": "threadKey"
+            },
+            {
+              "name": "lastActorId"
+            },
+            {
+              "name": "status"
+            },
+            {
+              "name": "currentIntent"
+            },
+            {
+              "name": "activePendingActionId"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        },
+        "tableName": "={{ $('Normalize Request').first().json.tables.sessions }}"
+      },
+      "id": "3",
+      "name": "Ensure Sessions Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -960,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "columns": {
+          "column": [
+            {
+              "name": "pendingActionId"
+            },
+            {
+              "name": "sessionId"
+            },
+            {
+              "name": "toolName"
+            },
+            {
+              "name": "approvalStatus"
+            },
+            {
+              "name": "requestedBy"
+            },
+            {
+              "name": "requestSummary"
+            },
+            {
+              "name": "targetType"
+            },
+            {
+              "name": "targetId"
+            },
+            {
+              "name": "executePayloadJson"
+            },
+            {
+              "name": "expiresAt"
+            },
+            {
+              "name": "approvedBy"
+            },
+            {
+              "name": "approvedAt"
+            },
+            {
+              "name": "executedAt"
+            },
+            {
+              "name": "executionStatus"
+            },
+            {
+              "name": "idempotencyKey"
+            },
+            {
+              "name": "approvalPrompt"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        },
+        "tableName": "={{ $('Normalize Request').first().json.tables.pendingActions }}"
+      },
+      "id": "4",
+      "name": "Ensure Pending Actions Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -736,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "columns": {
+          "column": [
+            {
+              "name": "toolRunId"
+            },
+            {
+              "name": "sessionId"
+            },
+            {
+              "name": "toolName"
+            },
+            {
+              "name": "triggerSource"
+            },
+            {
+              "name": "inputJson"
+            },
+            {
+              "name": "outputJson"
+            },
+            {
+              "name": "resultText"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        },
+        "tableName": "={{ $('Normalize Request').first().json.tables.toolRuns }}"
+      },
+      "id": "5",
+      "name": "Ensure Tool Runs Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -512,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Normalize Request').first().json.operation }}",
+                    "rightValue": "getSession",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "getSession"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Normalize Request').first().json.operation }}",
+                    "rightValue": "upsertSession",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "upsertSession"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Normalize Request').first().json.operation }}",
+                    "rightValue": "getPendingAction",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "getPendingAction"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Normalize Request').first().json.operation }}",
+                    "rightValue": "upsertPendingAction",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "upsertPendingAction"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $(\"Normalize Request\").first().json.operation }}",
+                    "rightValue": "purgeAllState",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "purgeAllState"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "createToolRun",
+          "allMatchingOutputs": false
+        }
+      },
+      "id": "6",
+      "name": "Switch Operation",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -288,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $(\"Ensure Sessions Table\").item.json.id || \"\" }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "sessionId",
+              "keyValue": "={{ $(\"Normalize Request\").item.json.sessionId }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "id": "7",
+      "name": "Get Session Row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput2",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          },
+          "includeUnpaired": true
+        }
+      },
+      "id": "8",
+      "name": "Merge Session Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        160,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\nconst found = String(input.sessionId || '').trim().length > 0;\n\nreturn {\n  status: 'success',\n  entity: 'session',\n  found,\n  row: found\n    ? {\n        sessionId: String(input.sessionId || '').trim(),\n        channel: String(input.channel || '').trim(),\n        spaceId: String(input.spaceId || '').trim(),\n        threadKey: String(input.threadKey || '').trim(),\n        lastActorId: String(input.lastActorId || '').trim(),\n        status: String(input.status || '').trim(),\n        currentIntent: String(input.currentIntent || '').trim(),\n        activePendingActionId: String(input.activePendingActionId || '').trim(),\n        createdAt: String(input.createdAt || '').trim(),\n        updatedAt: String(input.updatedAt || '').trim(),\n      }\n    : null,\n};"
+      },
+      "id": "9",
+      "name": "Build Get Session Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $(\"Ensure Sessions Table\").item.json.id || \"\" }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "sessionId",
+              "keyValue": "={{ $(\"Normalize Request\").item.json.sessionRow.sessionId }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": "={{ $(\"Normalize Request\").item.json.sessionRow }}",
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "10",
+      "name": "Upsert Session Row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json ?? {};\nconst found = String(input.sessionId || '').trim().length > 0;\n\nreturn {\n  status: 'success',\n  entity: 'session',\n  found,\n  row: found\n    ? {\n        sessionId: String(input.sessionId || '').trim(),\n        channel: String(input.channel || '').trim(),\n        spaceId: String(input.spaceId || '').trim(),\n        threadKey: String(input.threadKey || '').trim(),\n        lastActorId: String(input.lastActorId || '').trim(),\n        status: String(input.status || '').trim(),\n        currentIntent: String(input.currentIntent || '').trim(),\n        activePendingActionId: String(input.activePendingActionId || '').trim(),\n        createdAt: String(input.createdAt || '').trim(),\n        updatedAt: String(input.updatedAt || '').trim(),\n      }\n    : null,\n};"
+      },
+      "id": "11",
+      "name": "Build Upsert Session Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $(\"Ensure Pending Actions Table\").item.json.id || \"\" }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "pendingActionId",
+              "keyValue": "={{ $(\"Normalize Request\").item.json.pendingActionId }}"
+            }
+          ]
+        },
+        "limit": 1
+      },
+      "id": "12",
+      "name": "Get Pending Action Row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "clashHandling": {
+            "values": {
+              "resolveClash": "preferInput2",
+              "mergeMode": "shallowMerge",
+              "overrideEmpty": true
+            }
+          },
+          "includeUnpaired": true
+        }
+      },
+      "id": "13",
+      "name": "Merge Pending Action Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        160,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeParse(value) {\n  if (typeof value !== 'string' || value.trim() === '') return {};\n\n  try {\n    return JSON.parse(value);\n  } catch (error) {\n    return {};\n  }\n}\n\nconst input = $json ?? {};\nconst found = String(input.pendingActionId || '').trim().length > 0;\n\nreturn {\n  status: 'success',\n  entity: 'pendingAction',\n  found,\n  row: found\n    ? {\n        pendingActionId: String(input.pendingActionId || '').trim(),\n        sessionId: String(input.sessionId || '').trim(),\n        toolName: String(input.toolName || '').trim(),\n        approvalStatus: String(input.approvalStatus || '').trim(),\n        requestedBy: String(input.requestedBy || '').trim(),\n        requestSummary: String(input.requestSummary || '').trim(),\n        targetType: String(input.targetType || '').trim(),\n        targetId: String(input.targetId || '').trim(),\n        executePayload: safeParse(input.executePayloadJson),\n        expiresAt: String(input.expiresAt || '').trim(),\n        approvedBy: String(input.approvedBy || '').trim(),\n        approvedAt: String(input.approvedAt || '').trim(),\n        executedAt: String(input.executedAt || '').trim(),\n        executionStatus: String(input.executionStatus || '').trim(),\n        idempotencyKey: String(input.idempotencyKey || '').trim(),\n        approvalPrompt: String(input.approvalPrompt || '').trim(),\n        createdAt: String(input.createdAt || '').trim(),\n        updatedAt: String(input.updatedAt || '').trim(),\n      }\n    : null,\n};"
+      },
+      "id": "14",
+      "name": "Build Get Pending Action Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $(\"Ensure Pending Actions Table\").item.json.id || \"\" }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "pendingActionId",
+              "keyValue": "={{ $(\"Normalize Request\").item.json.pendingActionRow.pendingActionId }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": "={{ $(\"Normalize Request\").item.json.pendingActionRow }}",
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "15",
+      "name": "Upsert Pending Action Row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeParse(value) {\n  if (typeof value !== 'string' || value.trim() === '') return {};\n\n  try {\n    return JSON.parse(value);\n  } catch (error) {\n    return {};\n  }\n}\n\nconst input = $json ?? {};\nconst found = String(input.pendingActionId || '').trim().length > 0;\n\nreturn {\n  status: 'success',\n  entity: 'pendingAction',\n  found,\n  row: found\n    ? {\n        pendingActionId: String(input.pendingActionId || '').trim(),\n        sessionId: String(input.sessionId || '').trim(),\n        toolName: String(input.toolName || '').trim(),\n        approvalStatus: String(input.approvalStatus || '').trim(),\n        requestedBy: String(input.requestedBy || '').trim(),\n        requestSummary: String(input.requestSummary || '').trim(),\n        targetType: String(input.targetType || '').trim(),\n        targetId: String(input.targetId || '').trim(),\n        executePayload: safeParse(input.executePayloadJson),\n        expiresAt: String(input.expiresAt || '').trim(),\n        approvedBy: String(input.approvedBy || '').trim(),\n        approvedAt: String(input.approvedAt || '').trim(),\n        executedAt: String(input.executedAt || '').trim(),\n        executionStatus: String(input.executionStatus || '').trim(),\n        idempotencyKey: String(input.idempotencyKey || '').trim(),\n        approvalPrompt: String(input.approvalPrompt || '').trim(),\n        createdAt: String(input.createdAt || '').trim(),\n        updatedAt: String(input.updatedAt || '').trim(),\n      }\n    : null,\n};"
+      },
+      "id": "16",
+      "name": "Build Upsert Pending Action Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $(\"Ensure Tool Runs Table\").item.json.id || \"\" }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "toolRunId",
+              "keyValue": "={{ $(\"Normalize Request\").item.json.toolRunRow.toolRunId }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": "={{ $(\"Normalize Request\").item.json.toolRunRow }}",
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "17",
+      "name": "Create Tool Run Row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeParse(value) {\n  if (typeof value !== 'string' || value.trim() === '') return {};\n\n  try {\n    return JSON.parse(value);\n  } catch (error) {\n    return {};\n  }\n}\n\nconst input = $json ?? {};\n\nreturn {\n  status: 'success',\n  entity: 'toolRun',\n  found: true,\n  row: {\n    toolRunId: String(input.toolRunId || '').trim(),\n    sessionId: String(input.sessionId || '').trim(),\n    toolName: String(input.toolName || '').trim(),\n    triggerSource: String(input.triggerSource || '').trim(),\n    inputJson: safeParse(input.inputJson),\n    outputJson: safeParse(input.outputJson),\n    resultText: String(input.resultText || '').trim(),\n    createdAt: String(input.createdAt || '').trim(),\n  },\n};"
+      },
+      "id": "18",
+      "name": "Build Create Tool Run Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "delete",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $(\"Ensure Sessions Table\").item.json.id || \"\" }}"
+        }
+      },
+      "id": "19",
+      "name": "Delete Sessions Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "delete",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $(\"Ensure Pending Actions Table\").item.json.id || \"\" }}"
+        }
+      },
+      "id": "20",
+      "name": "Delete Pending Actions Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        160,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "delete",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $(\"Ensure Tool Runs Table\").item.json.id || \"\" }}"
+        }
+      },
+      "id": "21",
+      "name": "Delete Tool Runs Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        384,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "columns": {
+          "column": [
+            {
+              "name": "sessionId"
+            },
+            {
+              "name": "channel"
+            },
+            {
+              "name": "spaceId"
+            },
+            {
+              "name": "threadKey"
+            },
+            {
+              "name": "lastActorId"
+            },
+            {
+              "name": "status"
+            },
+            {
+              "name": "currentIntent"
+            },
+            {
+              "name": "activePendingActionId"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        },
+        "tableName": "={{ $(\"Normalize Request\").first().json.tables.sessions }}"
+      },
+      "id": "22",
+      "name": "Recreate Sessions Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "columns": {
+          "column": [
+            {
+              "name": "pendingActionId"
+            },
+            {
+              "name": "sessionId"
+            },
+            {
+              "name": "toolName"
+            },
+            {
+              "name": "approvalStatus"
+            },
+            {
+              "name": "requestedBy"
+            },
+            {
+              "name": "requestSummary"
+            },
+            {
+              "name": "targetType"
+            },
+            {
+              "name": "targetId"
+            },
+            {
+              "name": "executePayloadJson"
+            },
+            {
+              "name": "expiresAt"
+            },
+            {
+              "name": "approvedBy"
+            },
+            {
+              "name": "approvedAt"
+            },
+            {
+              "name": "executedAt"
+            },
+            {
+              "name": "executionStatus"
+            },
+            {
+              "name": "idempotencyKey"
+            },
+            {
+              "name": "approvalPrompt"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        },
+        "tableName": "={{ $(\"Normalize Request\").first().json.tables.pendingActions }}"
+      },
+      "id": "23",
+      "name": "Recreate Pending Actions Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        832,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "columns": {
+          "column": [
+            {
+              "name": "toolRunId"
+            },
+            {
+              "name": "sessionId"
+            },
+            {
+              "name": "toolName"
+            },
+            {
+              "name": "triggerSource"
+            },
+            {
+              "name": "inputJson"
+            },
+            {
+              "name": "outputJson"
+            },
+            {
+              "name": "resultText"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        },
+        "tableName": "={{ $(\"Normalize Request\").first().json.tables.toolRuns }}"
+      },
+      "id": "24",
+      "name": "Recreate Tool Runs Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1056,
+        816
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  status: 'success',\n  entity: 'state',\n  operation: 'purgeAllState',\n  found: true,\n  row: {\n    sessionsPurged: true,\n    pendingActionsPurged: true,\n    toolRunsPurged: true,\n  },\n  message: 'State store has been reset to clean slate.',\n};"
+      },
+      "id": "25",
+      "name": "Build Purge State Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        816
+      ]
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Normalize Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Request": {
+      "main": [
+        [
+          {
+            "node": "Ensure Sessions Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Sessions Table": {
+      "main": [
+        [
+          {
+            "node": "Ensure Pending Actions Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Pending Actions Table": {
+      "main": [
+        [
+          {
+            "node": "Ensure Tool Runs Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ensure Tool Runs Table": {
+      "main": [
+        [
+          {
+            "node": "Switch Operation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Operation": {
+      "main": [
+        [
+          {
+            "node": "Get Session Row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Session Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Upsert Session Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Pending Action Row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Pending Action Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Upsert Pending Action Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delete Sessions Table",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Tool Run Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Session Row": {
+      "main": [
+        [
+          {
+            "node": "Merge Session Context",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Session Context": {
+      "main": [
+        [
+          {
+            "node": "Build Get Session Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Session Row": {
+      "main": [
+        [
+          {
+            "node": "Build Upsert Session Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Action Row": {
+      "main": [
+        [
+          {
+            "node": "Merge Pending Action Context",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Pending Action Context": {
+      "main": [
+        [
+          {
+            "node": "Build Get Pending Action Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Pending Action Row": {
+      "main": [
+        [
+          {
+            "node": "Build Upsert Pending Action Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Tool Run Row": {
+      "main": [
+        [
+          {
+            "node": "Build Create Tool Run Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Sessions Table": {
+      "main": [
+        [
+          {
+            "node": "Delete Pending Actions Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Pending Actions Table": {
+      "main": [
+        [
+          {
+            "node": "Delete Tool Runs Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Tool Runs Table": {
+      "main": [
+        [
+          {
+            "node": "Recreate Sessions Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recreate Sessions Table": {
+      "main": [
+        [
+          {
+            "node": "Recreate Pending Actions Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recreate Pending Actions Table": {
+      "main": [
+        [
+          {
+            "node": "Recreate Tool Runs Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recreate Tool Runs Table": {
+      "main": [
+        [
+          {
+            "node": "Build Purge State Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
+}

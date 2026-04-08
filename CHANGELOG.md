@@ -1,6 +1,30 @@
 # Changelog
 
+## 2026-04-08
+
+- `MoMo AI Assistant` bo backward-compatible memory parser cu (`lastUserMessage`, `lastAssistantMessage`), chot clean-slate memory schema theo `turns[]` (toi da 10 turn) trong `currentIntent`.
+- `MoMo AI Assistant State Store` them operation moi `purgeAllState`, route qua `Switch Operation` de xoa va recreate 3 data tables state (`assistantSessions`, `assistantPendingActions`, `assistantToolRuns`).
+- Them workflow moi `MoMo AI Assistant State Cleanup` (Manual + Schedule) de goi `purgeAllState` dinh ky; lich mac dinh `0 3 * * *`.
+- Them wrapper import `scripts/workflows/import/import-momo-ai-assistant-state-cleanup-workflow.sh` va wire vao `import-momo-ai-assistant-workflow.sh`.
+- `MoMo AI Assistant Tool Sprint Healthcheck` harden khi Jira host loi DNS/network: `Get Active Sprint` + `Get Sprint Issues` nay `continueOnFail`, va `Pick Active Sprint`/`Prepare AI Input` tra ve `failureReason` ro nghia thay vi fail cung workflow.
+
+- `MoMo AI Assistant` refactor entry routing qua `Switch Entry Route` thay cho `if` long de mo rong sau nay; `Manual Trigger` va `Manual Trigger Release Sprint` nay duoc route ve nhanh `chat -> AI Agent -> tool` (command fix cung) de test orchestration giong luong chat.
+- Them `Local Chat Trigger` + `Build Local Chat Event` de test truc tiep luong `chat -> AI Agent -> tool` ngay tren khung chat n8n editor, khong phu thuoc Google Chat trigger.
+- Nang cap `AI Agent` prompt theo huong tro ly hoi thoai (chao hoi/cam on/hoi chung) va bo sung simple memory qua session bang cach serialize vao `currentIntent` (`intent`, `turns[]`, `memoryUpdatedAt`).
+
 ## 2026-04-07
+
+- Live test `MoMo AI Assistant` chat webhook da pass: top-level `AI Agent` thuc su goi `Sprint Healthcheck Workflow Tool`, tra ve sprint report text qua HTTP response va state session duoc doc/ghi dung theo thread.
+- Fix `MoMo AI Assistant State Store`: Data Table create nodes nay tham chieu truc tiep `Normalize Request` de khong mat `tables.*`, va `Switch Operation` cung route theo `Normalize Request.operation` thay vi output cua node tao bang.
+- Fix chat response path: `Return Chat Response` nay tra truc tiep `resultText` tu `Build Agent Chat Response`, khong con roi ve fallback `Da nhan lenh.` sau khi di qua `Save Agent Session`.
+
+- `MoMo AI Assistant` duoc refactor tiep tu pipeline sprint-status don thanh khung assistant nho gon: top-level router/delivery + subworkflow `MoMo AI Assistant State Store` + subworkflow `MoMo AI Assistant Tool Sprint Healthcheck`.
+- Manual/Schedule van giu hanh vi `check sprint` nhu truoc, nhung gio goi qua subworkflow read-only `sprintHealthcheck` de sau nay tai su dung duoc cho chat va cac use case khac.
+- Them `Google Chat Webhook` + session flow co state store explicit (`assistantSessions`, `assistantPendingActions`, `assistantToolRuns`) de dat nen cho huong hybrid-agentic mo rong ve sau.
+- Top-level chat path da co `AI Agent` ro rang, dung `Call n8n Workflow Tool` de tu chon va goi `MoMo AI Assistant Tool Sprint Healthcheck` hoac `MoMo AI Assistant Tool Demo Commands`.
+- Router chat duoc siet scope lai: `check sprint` va `status sprint` la lenh stable; `release sprint`, `approve`, `reject`, `cancel` di qua demo tool de giu flow healthcheck/manual/schedule an toan.
+- Them wrapper import moi cho `MoMo AI Assistant State Store`, `MoMo AI Assistant Tool Sprint Healthcheck`, `MoMo AI Assistant Tool Demo Commands`; wrapper top-level patch workflow IDs tu `workflow-registry.json` truoc khi import.
+- Rebuild checklist `test-momo-ai-assistant-checklist.mjs` theo topology moi va cap nhat docs `README.md` + `scripts/README.md`.
 
 - `MoMo AI Assistant` duoc rebuild greenfield thanh workflow sprint-status dedicated, co 2 trigger song song (`Manual Trigger` + `Schedule Trigger`) vao cung 1 pipeline.
 - `Config Main` chuyen qua Code-node JSON object de de doc/de sua config.
@@ -308,3 +332,7 @@
 ## 2026-04-07T14:15:04Z
 - Workflow sync (UI -> JSON) processed 13 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=13, changed=1, unchanged=12, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Phase 1 Sprint Healthcheck v2.
+
+## 2026-04-08T00:18:18Z
+- Workflow sync (UI -> JSON) processed 1 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=1, changed=1, unchanged=0, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: MoMo AI Assistant.

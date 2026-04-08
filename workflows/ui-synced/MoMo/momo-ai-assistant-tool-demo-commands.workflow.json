@@ -1,0 +1,79 @@
+{
+  "name": "MoMo AI Assistant Tool Demo Commands",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "commandType",
+              "type": "string"
+            },
+            {
+              "name": "commandText",
+              "type": "string"
+            },
+            {
+              "name": "channel",
+              "type": "string"
+            },
+            {
+              "name": "sessionId",
+              "type": "string"
+            },
+            {
+              "name": "spaceId",
+              "type": "string"
+            },
+            {
+              "name": "threadKey",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -480,
+        0
+      ],
+      "id": "1",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json || {};\nconst commandType = String(input.commandType || '').trim().toLowerCase();\nconst commandText = String(input.commandText || '').trim();\n\nconst resultByType = {\n  release_sprint: 'Release sprint hiện mới là route demo thôi nha. Tạm thời mình giữ focus vào check sprint để flow chính chạy ổn trước đã.',\n  approve: 'Lệnh approve hiện mới là khung demo thôi nha, chưa có pending action thật nào được gắn vào flow chính lúc này.',\n  reject: 'Lệnh reject hiện mới là khung demo thôi nha, nên thread này chưa có action thật để từ chối đâu.',\n  cancel: 'Lệnh cancel hiện mới là khung demo thôi nha, nên thread này chưa có action thật để huỷ đâu.',\n};\n\nconst normalizedCommandType = Object.prototype.hasOwnProperty.call(resultByType, commandType)\n  ? commandType\n  : 'help';\n\nconst resultText = normalizedCommandType === 'help'\n  ? 'Hiện mình hỗ trợ ổn nhất các lệnh: check sprint, status sprint. Các nhánh demo đang dựng khung để ráp sau: release sprint, approve, reject, cancel.'\n  : resultByType[normalizedCommandType];\n\nreturn {\n  toolName: 'assistantDemoCommand',\n  toolType: 'read',\n  approvalRequired: false,\n  executeMode: 'direct',\n  resultText,\n  resultData: {\n    commandType: normalizedCommandType,\n    originalCommandText: commandText,\n    mode: 'demo',\n  },\n  proposedAction: null,\n  followUpHints: ['check sprint', 'status sprint'],\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        0
+      ],
+      "id": "2",
+      "name": "Build Demo Command Result"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Build Demo Command Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
+}
