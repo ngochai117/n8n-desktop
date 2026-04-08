@@ -63,9 +63,11 @@ Guide nay danh cho truong hop them moi hoac chinh sua subworkflow cua `MoMo AI A
 - Top-level chi con doc contract va delivery generic.
 
 ### `deliveryPlan.thread`
-- `mode`: cach xu ly thread.
-  - `singleThread`: top-level tao/gom message vao cung mot thread push.
-- `threadKeyHint`: chuoi goi y de top-level sinh `threadKey` on dinh va de trace. Vi du: `sprint-healthcheck-12345`.
+- `threadKey`: thread key uu tien cao nhat. Neu co, top-level se dung truc tiep.
+- Thu tu uu tien hien tai o top-level:
+  - `deliveryPlan.thread.threadKey`
+  - `threadKey` tu event (`Config Main`)
+  - fallback key do delivery layer tu sinh
 
 ### `deliveryPlan.destinations[]`
 - Moi phan tu la 1 dich giao message.
@@ -90,8 +92,7 @@ Guide nay danh cho truong hop them moi hoac chinh sua subworkflow cua `MoMo AI A
 ```json
 {
   "thread": {
-    "mode": "singleThread",
-    "threadKeyHint": "sprint-healthcheck-490206"
+    "threadKey": "sprint-healthcheck-490206"
   },
   "destinations": [
     { "type": "reply" },

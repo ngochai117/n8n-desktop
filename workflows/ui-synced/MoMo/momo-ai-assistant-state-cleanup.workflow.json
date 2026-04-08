@@ -50,9 +50,9 @@
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "__MOMO_AI_ASSISTANT_STATE_STORE_ID__",
+          "value": "buH9JMCFNDnD3ZWU",
           "mode": "list",
-          "cachedResultUrl": "",
+          "cachedResultUrl": "/workflow/buH9JMCFNDnD3ZWU",
           "cachedResultName": "MoMo AI Assistant State Store"
         },
         "workflowInputs": {
@@ -201,8 +201,6 @@
     }
   },
   "settings": {
-    "executionOrder": "v1",
-    "binaryMode": "separate",
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   }

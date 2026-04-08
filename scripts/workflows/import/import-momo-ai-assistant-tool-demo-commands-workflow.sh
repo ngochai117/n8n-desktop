@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # SYNC_MANAGED_WRAPPER=1
+# SYNC_WORKFLOW_ID=qbbI1Mu3JR3tPhZi
+# SYNC_MANAGED_WRAPPER=1
 
 ROOT_DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
 N8N_ENV_FILE="${1:-$ROOT_DIR/env.n8n.local}"

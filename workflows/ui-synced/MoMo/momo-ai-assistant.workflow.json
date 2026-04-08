@@ -153,8 +153,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        -784,
-        108
+        -1008,
+        256
       ],
       "id": "9",
       "name": "Load Session"
@@ -168,8 +168,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -560,
-        108
+        -784,
+        256
       ]
     },
     {
@@ -183,8 +183,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        -280,
-        4
+        -560,
+        256
       ],
       "id": "35",
       "name": "AI Agent",
@@ -204,8 +204,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        -336,
-        228
+        -552,
+        480
       ],
       "id": "36",
       "name": "Assistant Agent Model",
@@ -340,21 +340,21 @@
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2,
       "position": [
-        -160,
-        244
+        -424,
+        480
       ],
       "id": "37",
       "name": "Assistant Command Router Workflow Tool"
     },
     {
       "parameters": {
-        "jsCode": "const context = $('Build Assistant Context').first().json || {};\nconst event = $('Config Main').first().json || {};\nconst config = event.config || {};\nconst agent = $input.first()?.json || {};\n\nconst stableCommands = Array.isArray(config.stableCommands)\n  ? config.stableCommands\n  : ['check sprint', 'status sprint'];\nconst demoCommands = Array.isArray(config.demoCommands)\n  ? config.demoCommands\n  : ['release sprint', 'approve', 'reject', 'cancel'];\nconst memoryMaxTurns = Math.max(1, Number(config.memoryMaxTurns || 10));\nconst memoryUserChars = Math.max(40, Number(config.memoryUserChars || 180));\nconst memoryAssistantChars = Math.max(40, Number(config.memoryAssistantChars || 280));\nconst configuredGgChatWebhookUrl = toText(config.ggChatWebhookUrl || '');\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  if (typeof value === 'object') return JSON.stringify(value);\n  return String(value).trim();\n}\n\nfunction trimText(value, maxLen) {\n  const text = toText(value).replace(/\\s+/g, ' ');\n  if (!text) return '';\n  if (!maxLen || text.length <= maxLen) return text;\n  return `${text.slice(0, maxLen - 3).trimEnd()}...`;\n}\n\nfunction normalizeTurns(rawTurns) {\n  if (!Array.isArray(rawTurns)) return [];\n\n  return rawTurns\n    .map((turn) => ({\n      user: trimText(turn?.user || '', memoryUserChars),\n      assistant: trimText(turn?.assistant || '', memoryAssistantChars),\n      at: toText(turn?.at || ''),\n    }))\n    .filter((turn) => turn.user || turn.assistant)\n    .slice(-memoryMaxTurns);\n}\n\nfunction detectIntent(commandText) {\n  const normalized = String(commandText || '').trim().toLowerCase();\n\n  if (/release\\s+sprint|close\\s+sprint|release\\s+status/.test(normalized)) return 'releaseDemo';\n  if (/(^|\\b)(approve|ok|dong y|đồng ý|xac nhan|xác nhận)(\\b|$)/i.test(normalized)) return 'approveDemo';\n  if (/(^|\\b)(reject|tu choi|từ chối)(\\b|$)/i.test(normalized)) return 'rejectDemo';\n  if (/(^|\\b)(cancel|huy|hủy)(\\b|$)/i.test(normalized)) return 'cancelDemo';\n  if (/check\\s+sprint|status\\s+sprint|sprint\\s+status|healthcheck/.test(normalized)) return 'checkSprint';\n  if (/(^|\\b)(hello|hi|alo|chào|xin chào|cảm ơn|thanks|thank you)(\\b|$)/i.test(normalized)) return 'smallTalk';\n\n  return 'help';\n}\n\nfunction extractJsonText(value) {\n  const text = toText(value);\n  if (!text) return '';\n\n  const fencedMatch = text.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);\n  if (fencedMatch?.[1]) return fencedMatch[1].trim();\n\n  if (text.startsWith('{') || text.startsWith('[')) return text;\n\n  const firstBraceIndex = text.indexOf('{');\n  const lastBraceIndex = text.lastIndexOf('}');\n  if (firstBraceIndex >= 0 && lastBraceIndex > firstBraceIndex) {\n    return text.slice(firstBraceIndex, lastBraceIndex + 1).trim();\n  }\n\n  const firstBracketIndex = text.indexOf('[');\n  const lastBracketIndex = text.lastIndexOf(']');\n  if (firstBracketIndex >= 0 && lastBracketIndex > firstBracketIndex) {\n    return text.slice(firstBracketIndex, lastBracketIndex + 1).trim();\n  }\n\n  return '';\n}\n\nfunction tryParseJson(value) {\n  const text = extractJsonText(value);\n  if (!text || (!text.startsWith('{') && !text.startsWith('['))) return null;\n\n  try {\n    return JSON.parse(text);\n  } catch (error) {\n    return null;\n  }\n}\n\nfunction normalizeStructuredCandidate(candidate) {\n  if (!candidate) return null;\n  if (typeof candidate === 'string') return tryParseJson(candidate);\n  if (typeof candidate === 'object') return candidate;\n  return null;\n}\n\nfunction isStructuredToolResult(candidate) {\n  return Boolean(\n    candidate &&\n      typeof candidate === 'object' &&\n      (candidate.deliveryPlan || candidate.resultText || candidate.toolName)\n  );\n}\n\nfunction normalizeDestinationList(rawDestinations) {\n  if (!Array.isArray(rawDestinations)) return [];\n\n  const normalized = [];\n  const seen = new Set();\n  for (const rawDestination of rawDestinations) {\n    const type = toText(rawDestination?.type || rawDestination);\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    normalized.push({ type });\n  }\n\n  return normalized;\n}\n\nfunction defaultDestinationsForChannel(channel) {\n  if (toText(channel) === 'system') {\n    return [{ type: 'pushGoogleChat' }];\n  }\n\n  return [{ type: 'reply' }];\n}\n\nfunction filterAvailableDestinations(destinations) {\n  const filtered = destinations.filter((destination) => {\n    if (destination.type === 'pushGoogleChat' && !configuredGgChatWebhookUrl) return false;\n    return true;\n  });\n\n  if (filtered.length > 0) return filtered;\n  return [{ type: 'reply' }];\n}\n\nfunction normalizeMessageDestinations(rawDestinations, allowedTypes) {\n  if (!Array.isArray(rawDestinations)) return allowedTypes;\n\n  const requested = [];\n  const seen = new Set();\n  for (const rawDestination of rawDestinations) {\n    const type = toText(rawDestination);\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    requested.push(type);\n  }\n\n  if (requested.length === 0) return allowedTypes;\n  return requested.filter((type) => allowedTypes.includes(type));\n}\n\nfunction normalizeMessage(message, fallbackText, allowedTypes) {\n  if (!message || typeof message !== 'object') return null;\n\n  const payload = message.payload && typeof message.payload === 'object'\n    ? message.payload\n    : (toText(message.text || fallbackText) ? { text: toText(message.text || fallbackText) } : null);\n\n  if (!payload) return null;\n\n  const destinations = normalizeMessageDestinations(\n    Array.isArray(message.destinations) ? message.destinations : message.destinationTypes,\n    allowedTypes,\n  );\n\n  if (destinations.length === 0) return null;\n\n  return {\n    messageKey: toText(message.messageKey || message.key || 'reply') || 'reply',\n    type: toText(message.type || (payload.cardsV2 ? 'googleChatCardV2' : 'text')) || 'text',\n    destinations,\n    payload,\n  };\n}\n\nfunction normalizeDeliveryPlan(rawPlan, fallbackText) {\n  const requestedDestinations = normalizeDestinationList(rawPlan?.destinations);\n  const baseDestinations = requestedDestinations.length > 0\n    ? requestedDestinations\n    : defaultDestinationsForChannel(event.channel || 'googleChat');\n  const destinations = filterAvailableDestinations(baseDestinations);\n  const allowedTypes = destinations.map((destination) => destination.type);\n\n  const messages = Array.isArray(rawPlan?.messages)\n    ? rawPlan.messages\n        .map((message) => normalizeMessage(message, fallbackText, allowedTypes))\n        .filter(Boolean)\n    : [];\n\n  if (messages.length === 0 && allowedTypes.length > 0) {\n    messages.push({\n      messageKey: 'reply',\n      type: 'text',\n      destinations: allowedTypes,\n      payload: { text: fallbackText },\n    });\n  }\n\n  const thread = rawPlan?.thread && typeof rawPlan.thread === 'object'\n    ? rawPlan.thread\n    : (toText(event.channel) === 'system'\n      ? { mode: 'singleThread', threadKeyHint: 'momo-ai-assistant-system' }\n      : { mode: 'reply' });\n\n  return {\n    thread,\n    destinations,\n    messages,\n  };\n}\n\nfunction getExecutedNodeJson(nodeName) {\n  try {\n    const nodeOutput = $(nodeName).first();\n    return nodeOutput?.json && typeof nodeOutput.json === 'object' ? nodeOutput.json : null;\n  } catch (error) {\n    return null;\n  }\n}\n\nconst rawOutput =\n  agent.output ??\n  agent.response ??\n  agent.result ??\n  agent.text ??\n  agent.message?.content ??\n  '';\nconst routerToolOutput = getExecutedNodeJson('Assistant Command Router Workflow Tool');\nconst structuredOutput = [\n  routerToolOutput,\n  agent.output,\n  agent.response,\n  agent.result,\n  agent.text,\n  agent.message?.content,\n]\n  .map((candidate) => normalizeStructuredCandidate(candidate))\n  .find((candidate) => isStructuredToolResult(candidate)) || null;\n\nconst detectedIntent = detectIntent(event.commandText || '');\nlet resultText = toText(structuredOutput?.resultText || rawOutput);\n\nif (!resultText) {\n  if (detectedIntent === 'smallTalk') {\n    resultText = `Mình đây nè. Bạn có thể thử: ${stableCommands.join(', ')}.`;\n  } else {\n    resultText = `Hiện mình hỗ trợ ổn nhất các lệnh: ${stableCommands.join(', ')}. Nhóm demo: ${demoCommands.join(', ')}.`;\n  }\n}\n\nconst previousTurns = normalizeTurns(context.memory?.turns || []);\nconst nowIso = toText(config.nowIso || new Date().toISOString());\nconst newTurn = {\n  user: trimText(event.commandText || '', memoryUserChars),\n  assistant: trimText(resultText, memoryAssistantChars),\n  at: nowIso,\n};\nconst turns = [...previousTurns, newTurn]\n  .filter((turn) => turn.user || turn.assistant)\n  .slice(-memoryMaxTurns);\n\nconst currentIntent = JSON.stringify({\n  intent: detectedIntent,\n  previousIntent: toText(context.memory?.intent || ''),\n  turns,\n  memoryUpdatedAt: nowIso,\n});\n\nconst deliveryPlan = normalizeDeliveryPlan(structuredOutput?.deliveryPlan, resultText);\n\nreturn [\n  {\n    json: {\n      toolName: toText(structuredOutput?.toolName || ''),\n      resultText,\n      currentIntent,\n      deliveryPlan,\n    },\n  },\n];"
+        "jsCode": "const context = $('Build Assistant Context').first().json || {};\nconst event = $('Config Main').first().json || {};\nconst config = event.config || {};\nconst agent = $input.first()?.json || {};\n\nconst stableCommands = Array.isArray(config.stableCommands)\n  ? config.stableCommands\n  : ['check sprint', 'status sprint'];\nconst demoCommands = Array.isArray(config.demoCommands)\n  ? config.demoCommands\n  : ['release sprint', 'approve', 'reject', 'cancel'];\nconst memoryMaxTurns = Math.max(1, Number(config.memoryMaxTurns || 10));\nconst memoryUserChars = Math.max(40, Number(config.memoryUserChars || 180));\nconst memoryAssistantChars = Math.max(40, Number(config.memoryAssistantChars || 280));\nconst configuredGgChatWebhookUrl = toText(config.ggChatWebhookUrl || '');\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  if (typeof value === 'object') return JSON.stringify(value);\n  return String(value).trim();\n}\n\nfunction trimText(value, maxLen) {\n  const text = toText(value).replace(/\\s+/g, ' ');\n  if (!text) return '';\n  if (!maxLen || text.length <= maxLen) return text;\n  return `${text.slice(0, maxLen - 3).trimEnd()}...`;\n}\n\nfunction normalizeTurns(rawTurns) {\n  if (!Array.isArray(rawTurns)) return [];\n\n  return rawTurns\n    .map((turn) => ({\n      user: trimText(turn?.user || '', memoryUserChars),\n      assistant: trimText(turn?.assistant || '', memoryAssistantChars),\n      at: toText(turn?.at || ''),\n    }))\n    .filter((turn) => turn.user || turn.assistant)\n    .slice(-memoryMaxTurns);\n}\n\nfunction detectIntent(commandText) {\n  const normalized = String(commandText || '').trim().toLowerCase();\n\n  if (/release\\s+sprint|close\\s+sprint|release\\s+status/.test(normalized)) return 'releaseDemo';\n  if (/(^|\\b)(approve|ok|dong y|đồng ý|xac nhan|xác nhận)(\\b|$)/i.test(normalized)) return 'approveDemo';\n  if (/(^|\\b)(reject|tu choi|từ chối)(\\b|$)/i.test(normalized)) return 'rejectDemo';\n  if (/(^|\\b)(cancel|huy|hủy)(\\b|$)/i.test(normalized)) return 'cancelDemo';\n  if (/check\\s+sprint|status\\s+sprint|sprint\\s+status|healthcheck/.test(normalized)) return 'checkSprint';\n  if (/(^|\\b)(hello|hi|alo|chào|xin chào|cảm ơn|thanks|thank you)(\\b|$)/i.test(normalized)) return 'smallTalk';\n\n  return 'help';\n}\n\nfunction extractJsonText(value) {\n  const text = toText(value);\n  if (!text) return '';\n\n  const fencedMatch = text.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);\n  if (fencedMatch?.[1]) return fencedMatch[1].trim();\n\n  if (text.startsWith('{') || text.startsWith('[')) return text;\n\n  const firstBraceIndex = text.indexOf('{');\n  const lastBraceIndex = text.lastIndexOf('}');\n  if (firstBraceIndex >= 0 && lastBraceIndex > firstBraceIndex) {\n    return text.slice(firstBraceIndex, lastBraceIndex + 1).trim();\n  }\n\n  const firstBracketIndex = text.indexOf('[');\n  const lastBracketIndex = text.lastIndexOf(']');\n  if (firstBracketIndex >= 0 && lastBracketIndex > firstBracketIndex) {\n    return text.slice(firstBracketIndex, lastBracketIndex + 1).trim();\n  }\n\n  return '';\n}\n\nfunction tryParseJson(value) {\n  const text = extractJsonText(value);\n  if (!text || (!text.startsWith('{') && !text.startsWith('['))) return null;\n\n  try {\n    return JSON.parse(text);\n  } catch (error) {\n    return null;\n  }\n}\n\nfunction normalizeStructuredCandidate(candidate) {\n  if (!candidate) return null;\n  if (typeof candidate === 'string') return tryParseJson(candidate);\n  if (typeof candidate === 'object') return candidate;\n  return null;\n}\n\nfunction isStructuredToolResult(candidate) {\n  return Boolean(\n    candidate &&\n      typeof candidate === 'object' &&\n      (candidate.deliveryPlan || candidate.resultText || candidate.toolName)\n  );\n}\n\nfunction normalizeDestinationList(rawDestinations) {\n  if (!Array.isArray(rawDestinations)) return [];\n\n  const normalized = [];\n  const seen = new Set();\n  for (const rawDestination of rawDestinations) {\n    const type = toText(rawDestination?.type || rawDestination);\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    normalized.push({ type });\n  }\n\n  return normalized;\n}\n\nfunction defaultDestinationsForChannel(channel) {\n  if (toText(channel) === 'system') {\n    return [{ type: 'pushGoogleChat' }];\n  }\n\n  return [{ type: 'reply' }];\n}\n\nfunction filterAvailableDestinations(destinations) {\n  const filtered = destinations.filter((destination) => {\n    if (destination.type === 'pushGoogleChat' && !configuredGgChatWebhookUrl) return false;\n    return true;\n  });\n\n  if (filtered.length > 0) return filtered;\n  return [{ type: 'reply' }];\n}\n\nfunction normalizeMessageDestinations(rawDestinations, allowedTypes) {\n  if (!Array.isArray(rawDestinations)) return allowedTypes;\n\n  const requested = [];\n  const seen = new Set();\n  for (const rawDestination of rawDestinations) {\n    const type = toText(rawDestination);\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    requested.push(type);\n  }\n\n  if (requested.length === 0) return allowedTypes;\n  return requested.filter((type) => allowedTypes.includes(type));\n}\n\nfunction normalizeMessage(message, fallbackText, allowedTypes) {\n  if (!message || typeof message !== 'object') return null;\n\n  const payload = message.payload && typeof message.payload === 'object'\n    ? message.payload\n    : (toText(message.text || fallbackText) ? { text: toText(message.text || fallbackText) } : null);\n\n  if (!payload) return null;\n\n  const destinations = normalizeMessageDestinations(\n    Array.isArray(message.destinations) ? message.destinations : message.destinationTypes,\n    allowedTypes,\n  );\n\n  if (destinations.length === 0) return null;\n\n  return {\n    messageKey: toText(message.messageKey || message.key || 'reply') || 'reply',\n    type: toText(message.type || (payload.cardsV2 ? 'googleChatCardV2' : 'text')) || 'text',\n    destinations,\n    payload,\n  };\n}\n\nfunction normalizeDeliveryPlan(rawPlan, fallbackText) {\n  const requestedDestinations = normalizeDestinationList(rawPlan?.destinations);\n  const baseDestinations = requestedDestinations.length > 0\n    ? requestedDestinations\n    : defaultDestinationsForChannel(event.channel || 'googleChat');\n  const destinations = filterAvailableDestinations(baseDestinations);\n  const allowedTypes = destinations.map((destination) => destination.type);\n\n  const messages = Array.isArray(rawPlan?.messages)\n    ? rawPlan.messages\n        .map((message) => normalizeMessage(message, fallbackText, allowedTypes))\n        .filter(Boolean)\n    : [];\n\n  if (messages.length === 0 && allowedTypes.length > 0) {\n    messages.push({\n      messageKey: 'reply',\n      type: 'text',\n      destinations: allowedTypes,\n      payload: { text: fallbackText },\n    });\n  }\n\n  const thread = rawPlan?.thread && typeof rawPlan.thread === 'object'\n    ? rawPlan.thread\n    : {};\n\n  return {\n    thread,\n    destinations,\n    messages,\n  };\n}\n\nfunction getExecutedNodeJson(nodeName) {\n  try {\n    const nodeOutput = $(nodeName).first();\n    return nodeOutput?.json && typeof nodeOutput.json === 'object' ? nodeOutput.json : null;\n  } catch (error) {\n    return null;\n  }\n}\n\nconst rawOutput =\n  agent.output ??\n  agent.response ??\n  agent.result ??\n  agent.text ??\n  agent.message?.content ??\n  '';\nconst routerToolOutput = getExecutedNodeJson('Assistant Command Router Workflow Tool');\nconst structuredOutput = [\n  routerToolOutput,\n  agent.output,\n  agent.response,\n  agent.result,\n  agent.text,\n  agent.message?.content,\n]\n  .map((candidate) => normalizeStructuredCandidate(candidate))\n  .find((candidate) => isStructuredToolResult(candidate)) || null;\n\nconst detectedIntent = detectIntent(event.commandText || '');\nlet resultText = toText(structuredOutput?.resultText || rawOutput);\n\nif (!resultText) {\n  if (detectedIntent === 'smallTalk') {\n    resultText = `Mình đây nè. Bạn có thể thử: ${stableCommands.join(', ')}.`;\n  } else {\n    resultText = `Hiện mình hỗ trợ ổn nhất các lệnh: ${stableCommands.join(', ')}. Nhóm demo: ${demoCommands.join(', ')}.`;\n  }\n}\n\nconst previousTurns = normalizeTurns(context.memory?.turns || []);\nconst nowIso = toText(config.nowIso || new Date().toISOString());\nconst newTurn = {\n  user: trimText(event.commandText || '', memoryUserChars),\n  assistant: trimText(resultText, memoryAssistantChars),\n  at: nowIso,\n};\nconst turns = [...previousTurns, newTurn]\n  .filter((turn) => turn.user || turn.assistant)\n  .slice(-memoryMaxTurns);\n\nconst currentIntent = JSON.stringify({\n  intent: detectedIntent,\n  previousIntent: toText(context.memory?.intent || ''),\n  turns,\n  memoryUpdatedAt: nowIso,\n});\n\nconst deliveryPlan = normalizeDeliveryPlan(structuredOutput?.deliveryPlan, resultText);\n\nreturn [\n  {\n    json: {\n      toolName: toText(structuredOutput?.toolName || ''),\n      resultText,\n      currentIntent,\n      deliveryPlan,\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        128,
-        108
+        -208,
+        256
       ],
       "id": "39",
       "name": "Build Agent Delivery Envelope"
@@ -407,8 +407,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        352,
-        108
+        16,
+        256
       ],
       "id": "40",
       "name": "Save Agent Session"
@@ -420,8 +420,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        800,
-        108
+        240,
+        256
       ],
       "id": "30",
       "name": "Build Reply Response"
@@ -446,8 +446,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        800,
-        404
+        1136,
+        184
       ],
       "id": "31",
       "name": "Send GGChat Delivery Message"
@@ -459,8 +459,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1696,
-        108
+        1360,
+        256
       ],
       "id": "34",
       "name": "Build Delivery Ack"
@@ -521,15 +521,15 @@
     },
     {
       "parameters": {
-        "jsCode": "const envelope = $('Build Agent Delivery Envelope').first().json || {};\nconst event = $('Config Main').first().json || {};\nconst config = event.config || {};\nconst deliveryPlan = envelope.deliveryPlan && typeof envelope.deliveryPlan === 'object'\n  ? envelope.deliveryPlan\n  : {};\nconst destinations = Array.isArray(deliveryPlan.destinations) ? deliveryPlan.destinations : [];\nconst rawMessages = Array.isArray(deliveryPlan.messages) ? deliveryPlan.messages : [];\nconst baseUrl = String(config.ggChatWebhookUrl || '').trim();\nconst replyOption = encodeURIComponent(\n  String(config.googleChatReplyOption || 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD').trim() || 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD',\n);\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction slugify(value) {\n  return toText(value)\n    .toLowerCase()\n    .replace(/[^a-z0-9_-]+/g, '-')\n    .replace(/^-+|-+$/g, '');\n}\n\nfunction hasDestination(message, destinationType) {\n  const destinationTypes = Array.isArray(message?.destinations) ? message.destinations : [];\n  return destinationTypes.some((type) => toText(type) === destinationType);\n}\n\nfunction normalizeMessage(message, fallbackText) {\n  if (!message || typeof message !== 'object') return null;\n\n  const payload = message.payload && typeof message.payload === 'object'\n    ? message.payload\n    : (toText(message.text || fallbackText) ? { text: toText(message.text || fallbackText) } : null);\n\n  if (!payload) return null;\n\n  return {\n    messageKey: toText(message.messageKey || message.key || 'message') || 'message',\n    type: toText(message.type || (payload.cardsV2 ? 'googleChatCardV2' : 'text')) || 'text',\n    destinations: Array.isArray(message.destinations) ? message.destinations : [],\n    payload,\n  };\n}\n\nconst fallbackText = toText(envelope.resultText || 'Đã có kết quả xử lý.');\nconst hasPushDestination = destinations.some((destination) => toText(destination?.type || '') === 'pushGoogleChat');\nconst messages = rawMessages\n  .map((message) => normalizeMessage(message, fallbackText))\n  .filter((message) => message && hasDestination(message, 'pushGoogleChat'));\n\nconst threadConfig = deliveryPlan.thread && typeof deliveryPlan.thread === 'object'\n  ? deliveryPlan.thread\n  : {};\nconst seed = slugify(threadConfig.threadKeyHint || event.threadKey || envelope.toolName || 'momo-ai-assistant') || 'momo-ai-assistant';\nconst uniqueSuffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;\nconst finalThreadKey = String(event.threadKey || '').trim() || `${seed}-${uniqueSuffix}`.slice(0, 120);\n\nlet ggChatRequests = [];\nlet ggChatDeliverySkipReason = '';\n\nif (!hasPushDestination) {\n  ggChatDeliverySkipReason = 'No pushGoogleChat destination requested.';\n} else if (!baseUrl) {\n  ggChatDeliverySkipReason = 'ggChatWebhookUrl is not configured.';\n} else if (messages.length === 0) {\n  ggChatDeliverySkipReason = 'No Google Chat messages matched the requested destinations.';\n} else {\n  const separator = baseUrl.includes('?') ? '&' : '?';\n  const requestUrl = `${baseUrl}${separator}threadKey=${encodeURIComponent(finalThreadKey)}&messageReplyOption=${replyOption}`;\n  ggChatRequests = messages.map((message, index) => ({\n    requestIndex: index,\n    messageKey: message.messageKey,\n    messageType: message.type,\n    requestBody: message.payload,\n    requestUrl,\n    finalThreadKey,\n  }));\n}\n\nreturn [\n  {\n    json: {\n      ggChatDeliveryEnabled: ggChatRequests.length > 0,\n      ggChatRequestCount: ggChatRequests.length,\n      ggChatRequests,\n      ggChatDeliverySkipReason,\n      ggChatThreadKey: finalThreadKey,\n    },\n  },\n];"
+        "jsCode": "const envelope = $('Build Agent Delivery Envelope').first().json || {};\nconst event = $('Config Main').first().json || {};\nconst config = event.config || {};\nconst deliveryPlan = envelope.deliveryPlan && typeof envelope.deliveryPlan === 'object'\n  ? envelope.deliveryPlan\n  : {};\nconst destinations = Array.isArray(deliveryPlan.destinations) ? deliveryPlan.destinations : [];\nconst rawMessages = Array.isArray(deliveryPlan.messages) ? deliveryPlan.messages : [];\nconst baseUrl = String(config.ggChatWebhookUrl || '').trim();\nconst replyOption = encodeURIComponent(\n  String(config.googleChatReplyOption || 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD').trim() || 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD',\n);\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction slugify(value) {\n  return toText(value)\n    .toLowerCase()\n    .replace(/[^a-z0-9_-]+/g, '-')\n    .replace(/^-+|-+$/g, '');\n}\n\nfunction hasDestination(message, destinationType) {\n  const destinationTypes = Array.isArray(message?.destinations) ? message.destinations : [];\n  return destinationTypes.some((type) => toText(type) === destinationType);\n}\n\nfunction normalizeMessage(message, fallbackText) {\n  if (!message || typeof message !== 'object') return null;\n\n  const payload = message.payload && typeof message.payload === 'object'\n    ? message.payload\n    : (toText(message.text || fallbackText) ? { text: toText(message.text || fallbackText) } : null);\n\n  if (!payload) return null;\n\n  return {\n    messageKey: toText(message.messageKey || message.key || 'message') || 'message',\n    type: toText(message.type || (payload.cardsV2 ? 'googleChatCardV2' : 'text')) || 'text',\n    destinations: Array.isArray(message.destinations) ? message.destinations : [],\n    payload,\n  };\n}\n\nconst fallbackText = toText(envelope.resultText || 'Đã có kết quả xử lý.');\nconst hasPushDestination = destinations.some((destination) => toText(destination?.type || '') === 'pushGoogleChat');\nconst messages = rawMessages\n  .map((message) => normalizeMessage(message, fallbackText))\n  .filter((message) => message && hasDestination(message, 'pushGoogleChat'));\n\nconst threadConfig = deliveryPlan.thread && typeof deliveryPlan.thread === 'object'\n  ? deliveryPlan.thread\n  : {};\nconst subworkflowThreadKey = toText(threadConfig.threadKey);\nconst configThreadKey = toText(event.threadKey || '');\nconst seed = slugify(envelope.toolName || 'momo-ai-assistant') || 'momo-ai-assistant';\nconst uniqueSuffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;\nconst fallbackThreadKey = `${seed}-${uniqueSuffix}`.slice(0, 120);\nconst finalThreadKey = subworkflowThreadKey || configThreadKey || fallbackThreadKey;\n\nlet ggChatRequests = [];\nlet ggChatDeliverySkipReason = '';\n\nif (!hasPushDestination) {\n  ggChatDeliverySkipReason = 'No pushGoogleChat destination requested.';\n} else if (!baseUrl) {\n  ggChatDeliverySkipReason = 'ggChatWebhookUrl is not configured.';\n} else if (messages.length === 0) {\n  ggChatDeliverySkipReason = 'No Google Chat messages matched the requested destinations.';\n} else {\n  const separator = baseUrl.includes('?') ? '&' : '?';\n  const requestUrl = `${baseUrl}${separator}threadKey=${encodeURIComponent(finalThreadKey)}&messageReplyOption=${replyOption}`;\n  ggChatRequests = messages.map((message, index) => ({\n    requestIndex: index,\n    messageKey: message.messageKey,\n    messageType: message.type,\n    requestBody: message.payload,\n    requestUrl,\n    finalThreadKey,\n  }));\n}\n\nreturn [\n  {\n    json: {\n      ggChatDeliveryEnabled: ggChatRequests.length > 0,\n      ggChatRequestCount: ggChatRequests.length,\n      ggChatRequests,\n      ggChatDeliverySkipReason,\n      ggChatThreadKey: finalThreadKey,\n    },\n  },\n];"
       },
       "id": "51",
       "name": "Prepare GGChat Delivery Messages",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1024,
-        108
+        464,
+        256
       ]
     },
     {
@@ -558,8 +558,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1248,
-        108
+        688,
+        256
       ],
       "id": "c77ffd7f-9678-4892-80c4-e92ca8161c18",
       "name": "If Has GGChat Delivery Messages?"
@@ -571,8 +571,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1472,
-        28
+        912,
+        184
       ],
       "id": "771afc31-4c0e-4249-bfe4-68d070f17810",
       "name": "Split Out GGChat Delivery Messages"
@@ -584,8 +584,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1920,
-        108
+        1584,
+        256
       ],
       "id": "035d4ef1-0998-43c0-ab0a-fe4767d1920d",
       "name": "Build Final Response"

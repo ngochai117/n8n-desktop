@@ -286,6 +286,12 @@ const prepareGgChatDeliveryMessagesCode = String(nodeByName(topLevel, 'Prepare G
 check(prepareGgChatDeliveryMessagesCode.includes('ggChatRequests'), 'Prepare GGChat Delivery Messages builds ggChatRequests');
 check(prepareGgChatDeliveryMessagesCode.includes('ggChatDeliverySkipReason'), 'Prepare GGChat Delivery Messages captures skip reason');
 check(prepareGgChatDeliveryMessagesCode.includes('finalThreadKey'), 'Prepare GGChat Delivery Messages builds finalThreadKey');
+check(
+  prepareGgChatDeliveryMessagesCode.includes('subworkflowThreadKey') &&
+    prepareGgChatDeliveryMessagesCode.includes('configThreadKey'),
+  'Prepare GGChat Delivery Messages prioritizes subworkflow thread key then Config Main thread key',
+);
+check(!prepareGgChatDeliveryMessagesCode.includes('threadKeyHint'), 'top-level delivery no longer reads threadKeyHint');
 
 const splitOutGgChatDeliveryMessagesCode = String(nodeByName(topLevel, 'Split Out GGChat Delivery Messages')?.parameters?.jsCode || '');
 check(splitOutGgChatDeliveryMessagesCode.includes('ggChatRequests'), 'Split Out GGChat Delivery Messages expands ggChatRequests');
@@ -313,7 +319,7 @@ for (const name of [
 }
 
 check(
-  nodeByName(routerTool, 'When Executed by Another Workflow')?.parameters?.inputSource === 'workflowInputs',
+  Array.isArray(nodeByName(routerTool, 'When Executed by Another Workflow')?.parameters?.workflowInputs?.values),
   'router tool trigger uses workflowInputs',
 );
 check(
@@ -344,8 +350,8 @@ check(hasMainConnection(routerTool, 'Switch Resolution Status', 'Build Unsupport
 
 const routerConfigCode = String(nodeByName(routerTool, 'Config Main')?.parameters?.jsCode || '');
 check(routerConfigCode.includes('toolRegistry'), 'router config defines toolRegistry');
-check(routerConfigCode.includes('__REGISTRY__:MoMo AI Assistant Tool Sprint Healthcheck'), 'router config keeps registry token for healthcheck tool');
-check(routerConfigCode.includes('__REGISTRY__:MoMo AI Assistant Tool Demo Commands'), 'router config keeps registry token for demo tool');
+check(routerConfigCode.includes("toolName: 'sprintHealthcheck'"), 'router config keeps healthcheck entry');
+check(routerConfigCode.includes("toolName: 'demoCommand'"), 'router config keeps demo entry');
 check(!routerConfigCode.includes('workflowRegistryKey'), 'router config no longer carries workflowRegistryKey in runtime registry');
 
 const resolveRoutedToolCode = String(nodeByName(routerTool, 'Resolve Routed Tool')?.parameters?.jsCode || '');
@@ -419,12 +425,12 @@ for (const removedNode of [
 }
 
 check(
-  nodeByName(healthcheckTool, 'When Executed by Another Workflow')?.parameters?.inputSource === 'workflowInputs',
+  Array.isArray(nodeByName(healthcheckTool, 'When Executed by Another Workflow')?.parameters?.workflowInputs?.values),
   'healthcheck tool trigger uses workflowInputs',
 );
 check(
   (nodeByName(healthcheckTool, 'When Executed by Another Workflow')?.parameters?.workflowInputs?.values || [])
-    .some((item) => item.name === 'actorId' && item.type === 'string'),
+    .some((item) => item.name === 'actorId'),
   'healthcheck tool trigger accepts actorId input',
 );
 check(
@@ -449,11 +455,15 @@ check(buildHealthcheckResultCode.includes('deliveryPlan'), 'healthcheck tool ret
 check(buildHealthcheckResultCode.includes('destinations'), 'healthcheck tool returns destinations');
 check(buildHealthcheckResultCode.includes('replySummary'), 'healthcheck tool includes replySummary message when reply destination is enabled');
 check(buildHealthcheckResultCode.includes('summaryCardPayload'), 'healthcheck tool still builds summaryCardPayload');
+check(!buildHealthcheckResultCode.includes('mode:'), 'healthcheck tool thread config no longer uses mode');
+check(!buildHealthcheckResultCode.includes('threadKeyHint'), 'healthcheck tool no longer uses threadKeyHint');
 
 const buildNoActiveSprintResultCode = String(nodeByName(healthcheckTool, 'Build No Active Sprint Result')?.parameters?.jsCode || '');
 check(buildNoActiveSprintResultCode.includes('deliveryPlan'), 'no-active-sprint result returns deliveryPlan');
 check(buildNoActiveSprintResultCode.includes('destinations'), 'no-active-sprint result returns destinations');
 check(!buildNoActiveSprintResultCode.includes('resultData'), 'no-active-sprint result drops unused resultData payload');
+check(!buildNoActiveSprintResultCode.includes('mode:'), 'no-active-sprint thread config no longer uses mode');
+check(!buildNoActiveSprintResultCode.includes('threadKeyHint'), 'no-active-sprint result no longer uses threadKeyHint');
 
 for (const name of ['When Executed by Another Workflow', 'Build Demo Command Result']) {
   check(Boolean(nodeByName(demoTool, name)), `demo tool node exists: ${name}`);
@@ -463,6 +473,8 @@ const buildDemoCommandResultCode = String(nodeByName(demoTool, 'Build Demo Comma
 check(buildDemoCommandResultCode.includes('deliveryPlan'), 'demo command tool returns deliveryPlan');
 check(buildDemoCommandResultCode.includes('destinations'), 'demo command tool returns destinations');
 check(!buildDemoCommandResultCode.includes('toolType'), 'demo command tool drops unused toolType metadata');
+check(!buildDemoCommandResultCode.includes('mode:'), 'demo command thread config no longer uses mode');
+check(!buildDemoCommandResultCode.includes('threadKeyHint'), 'demo command thread config no longer uses threadKeyHint');
 check(
   !(nodeByName(demoTool, 'When Executed by Another Workflow')?.parameters?.workflowInputs?.values || [])
     .some((item) => ['resolvedToolName', 'commandType', 'config'].includes(item.name)),
