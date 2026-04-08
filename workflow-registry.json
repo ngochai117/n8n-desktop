@@ -75,19 +75,19 @@
     "MoMo AI Assistant State Store": {
       "id": "buH9JMCFNDnD3ZWU",
       "template": "workflows/ui-synced/MoMo/momo-ai-assistant-state-store.workflow.json",
-      "lastSyncedAt": "2026-04-08T11:19:30Z",
+      "lastSyncedAt": "2026-04-08T16:19:00Z",
       "templateImport": "scripts/workflows/import/import-momo-ai-assistant-state-store-workflow.sh"
     },
     "MoMo AI Assistant Tool Sprint Healthcheck": {
       "id": "KMrBMKLm9ZNezxwx",
       "template": "workflows/ui-synced/MoMo/momo-ai-assistant-tool-sprint-healthcheck.workflow.json",
-      "lastSyncedAt": "2026-04-08T11:19:28Z",
+      "lastSyncedAt": "2026-04-08T13:05:28Z",
       "templateImport": "scripts/workflows/import/import-momo-ai-assistant-tool-sprint-healthcheck-workflow.sh"
     },
     "MoMo AI Assistant": {
       "id": "JffudBpBO0QYjP8K",
       "template": "workflows/ui-synced/MoMo/momo-ai-assistant.workflow.json",
-      "lastSyncedAt": "2026-04-08T11:19:33Z",
+      "lastSyncedAt": "2026-04-08T16:19:04Z",
       "templateImport": "scripts/workflows/import/import-momo-ai-assistant-workflow.sh"
     },
     "MoMo AI Assistant Tool Demo Commands": {
@@ -99,13 +99,13 @@
     "MoMo AI Assistant State Cleanup": {
       "id": "t5WpwGyUw5qprVgS",
       "template": "workflows/ui-synced/MoMo/momo-ai-assistant-state-cleanup.workflow.json",
-      "lastSyncedAt": "2026-04-08T11:19:31Z",
+      "lastSyncedAt": "2026-04-08T16:19:01Z",
       "templateImport": "scripts/workflows/import/import-momo-ai-assistant-state-cleanup-workflow.sh"
     },
     "MoMo AI Assistant Tool Router": {
       "id": "kY5dXvHgZDS3m92L",
       "template": "workflows/ui-synced/MoMo/momo-ai-assistant-tool-router.workflow.json",
-      "lastSyncedAt": "2026-04-08T11:19:32Z",
+      "lastSyncedAt": "2026-04-08T16:19:02Z",
       "templateImport": "scripts/workflows/import/import-momo-ai-assistant-tool-router-workflow.sh"
     }
   }

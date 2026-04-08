@@ -58,6 +58,11 @@ function hasMainConnection(workflow, from, to) {
   return entries.some((entry) => entry?.node === to);
 }
 
+function hasMainConnectionFromOutput(workflow, from, outputIndex, to) {
+  const branch = workflow.connections?.[from]?.main?.[outputIndex] || [];
+  return branch.some((entry) => entry?.node === to);
+}
+
 function hasAiConnection(workflow, from, type, to) {
   const entries = (workflow.connections?.[from]?.[type] || []).flat();
   return entries.some((entry) => entry?.node === to);
@@ -99,9 +104,9 @@ check(
 );
 
 for (const name of [
-  'Manual Trigger',
+  'Manual Trigger Health Check',
   'Build Manual Event',
-  'Schedule Trigger',
+  'Schedule Trigger Health Check',
   'Build Schedule Event',
   'Google Chat Webhook',
   'Build Chat Event',
@@ -117,6 +122,7 @@ for (const name of [
   'Prepare GGChat Delivery Messages',
   'If Has GGChat Delivery Messages?',
   'Split Out GGChat Delivery Messages',
+  'Loop Over GGChat Delivery Messages',
   'Send GGChat Delivery Message',
   'Build Delivery Ack',
   'Build Final Response',
@@ -181,13 +187,13 @@ for (const legacyNode of [
   check(!nodeByName(topLevel, legacyNode), `legacy sprint node removed from top-level: ${legacyNode}`);
 }
 
-check(hasMainConnection(topLevel, 'Manual Trigger', 'Build Manual Event'), 'Manual Trigger routes to Build Manual Event');
+check(hasMainConnection(topLevel, 'Manual Trigger Health Check', 'Build Manual Event'), 'Manual Trigger Health Check routes to Build Manual Event');
 check(hasMainConnection(topLevel, 'Build Manual Event', 'Config Main'), 'Build Manual Event routes to Config Main');
 check(hasMainConnection(topLevel, 'Manual Trigger Release Sprint', 'Build Manual Release Event'), 'Manual Trigger Release Sprint routes to Build Manual Release Event');
 check(hasMainConnection(topLevel, 'Build Manual Release Event', 'Config Main'), 'Build Manual Release Event routes to Config Main');
 check(hasMainConnection(topLevel, 'Local Chat Trigger', 'Build Local Chat Event'), 'Local Chat Trigger routes to Build Local Chat Event');
 check(hasMainConnection(topLevel, 'Build Local Chat Event', 'Config Main'), 'Build Local Chat Event routes to Config Main');
-check(hasMainConnection(topLevel, 'Schedule Trigger', 'Build Schedule Event'), 'Schedule Trigger routes to Build Schedule Event');
+check(hasMainConnection(topLevel, 'Schedule Trigger Health Check', 'Build Schedule Event'), 'Schedule Trigger Health Check routes to Build Schedule Event');
 check(hasMainConnection(topLevel, 'Build Schedule Event', 'Config Main'), 'Build Schedule Event routes to Config Main');
 check(hasMainConnection(topLevel, 'Google Chat Webhook', 'Build Chat Event'), 'Google Chat Webhook routes to Build Chat Event');
 check(hasMainConnection(topLevel, 'Build Chat Event', 'Config Main'), 'Build Chat Event routes to Config Main');
@@ -203,8 +209,16 @@ check(hasMainConnection(topLevel, 'Build Reply Response', 'Prepare GGChat Delive
 check(hasMainConnection(topLevel, 'Prepare GGChat Delivery Messages', 'If Has GGChat Delivery Messages?'), 'Prepare GGChat Delivery Messages routes to GGChat delivery gate');
 check(hasMainConnection(topLevel, 'If Has GGChat Delivery Messages?', 'Split Out GGChat Delivery Messages'), 'GGChat delivery gate routes positive branch to split-out node');
 check(hasMainConnection(topLevel, 'If Has GGChat Delivery Messages?', 'Build Delivery Ack'), 'GGChat delivery gate routes negative branch to delivery ack');
-check(hasMainConnection(topLevel, 'Split Out GGChat Delivery Messages', 'Send GGChat Delivery Message'), 'split-out GGChat delivery routes to Send GGChat Delivery Message');
-check(hasMainConnection(topLevel, 'Send GGChat Delivery Message', 'Build Delivery Ack'), 'Google Chat delivery routes to Build Delivery Ack');
+check(hasMainConnection(topLevel, 'Split Out GGChat Delivery Messages', 'Loop Over GGChat Delivery Messages'), 'split-out GGChat delivery routes to loop-over node');
+check(
+  hasMainConnectionFromOutput(topLevel, 'Loop Over GGChat Delivery Messages', 1, 'Send GGChat Delivery Message'),
+  'loop-over node routes loop output to Send GGChat Delivery Message',
+);
+check(hasMainConnection(topLevel, 'Send GGChat Delivery Message', 'Loop Over GGChat Delivery Messages'), 'Send GGChat Delivery Message routes back to loop-over node');
+check(
+  hasMainConnectionFromOutput(topLevel, 'Loop Over GGChat Delivery Messages', 0, 'Build Delivery Ack'),
+  'loop-over node routes done output to Build Delivery Ack',
+);
 check(hasMainConnection(topLevel, 'Build Delivery Ack', 'Build Final Response'), 'Build Delivery Ack routes to Build Final Response');
 
 const webhookNode = nodeByName(topLevel, 'Google Chat Webhook');
@@ -217,6 +231,7 @@ check(localChatTriggerNode?.type === '@n8n/n8n-nodes-langchain.chatTrigger', 'Lo
 
 const ifHasGgChatDeliveryMessagesNode = nodeByName(topLevel, 'If Has GGChat Delivery Messages?');
 check(ifHasGgChatDeliveryMessagesNode?.type === 'n8n-nodes-base.if', 'If Has GGChat Delivery Messages? uses if node');
+check(nodeByName(topLevel, 'Loop Over GGChat Delivery Messages')?.type === 'n8n-nodes-base.splitInBatches', 'Loop Over GGChat Delivery Messages uses Loop Over Items node');
 
 const agentNode = nodeByName(topLevel, 'AI Agent');
 check(agentNode?.type === '@n8n/n8n-nodes-langchain.agent', 'AI Agent uses langchain agent node');
@@ -247,8 +262,6 @@ check(
 );
 
 const configMainCode = String(nodeByName(topLevel, 'Config Main')?.parameters?.jsCode || '');
-check(configMainCode.includes('stableCommands'), 'Config Main defines stableCommands');
-check(configMainCode.includes('demoCommands'), 'Config Main defines demoCommands');
 check(configMainCode.includes('googleChatReplyOption'), 'Config Main defines Google Chat reply option');
 
 const buildManualEventCode = String(nodeByName(topLevel, 'Build Manual Event')?.parameters?.jsCode || '');
@@ -313,6 +326,8 @@ for (const name of [
   'Resolve Routed Tool',
   'Switch Resolution Status',
   'Run Routed Tool',
+  'AI Agent',
+  'Fallback Agent Model',
   'Build Unsupported Router Result',
 ]) {
   check(Boolean(nodeByName(routerTool, name)), `router tool node exists: ${name}`);
@@ -346,12 +361,14 @@ check(hasMainConnection(routerTool, 'When Executed by Another Workflow', 'Config
 check(hasMainConnection(routerTool, 'Config Main', 'Resolve Routed Tool'), 'router config routes to resolve node');
 check(hasMainConnection(routerTool, 'Resolve Routed Tool', 'Switch Resolution Status'), 'router resolve node routes to switch');
 check(hasMainConnection(routerTool, 'Switch Resolution Status', 'Run Routed Tool'), 'router switch routes to generic runner');
-check(hasMainConnection(routerTool, 'Switch Resolution Status', 'Build Unsupported Router Result'), 'router switch routes to unsupported result');
+check(hasMainConnection(routerTool, 'Switch Resolution Status', 'AI Agent'), 'router switch routes unsupported branch to fallback AI agent');
+check(hasMainConnection(routerTool, 'AI Agent', 'Build Unsupported Router Result'), 'fallback AI agent routes to unsupported result builder');
 
 const routerConfigCode = String(nodeByName(routerTool, 'Config Main')?.parameters?.jsCode || '');
 check(routerConfigCode.includes('toolRegistry'), 'router config defines toolRegistry');
 check(routerConfigCode.includes("toolName: 'sprintHealthcheck'"), 'router config keeps healthcheck entry');
 check(routerConfigCode.includes("toolName: 'demoCommand'"), 'router config keeps demo entry');
+check(routerConfigCode.includes('fallbackAgent'), 'router config defines fallbackAgent settings');
 check(!routerConfigCode.includes('workflowRegistryKey'), 'router config no longer carries workflowRegistryKey in runtime registry');
 
 const resolveRoutedToolCode = String(nodeByName(routerTool, 'Resolve Routed Tool')?.parameters?.jsCode || '');
@@ -394,6 +411,14 @@ check(
 const buildUnsupportedRouterResultCode = String(nodeByName(routerTool, 'Build Unsupported Router Result')?.parameters?.jsCode || '');
 check(buildUnsupportedRouterResultCode.includes('deliveryPlan'), 'unsupported router result returns deliveryPlan');
 check(buildUnsupportedRouterResultCode.includes('destinations'), 'unsupported router result returns destinations');
+check(buildUnsupportedRouterResultCode.includes('assistantGenericFallback'), 'unsupported router result defaults toolName to assistantGenericFallback');
+
+const routerFallbackAgentCode = String(nodeByName(routerTool, 'AI Agent')?.parameters?.options?.systemMessage || '');
+check(routerFallbackAgentCode.includes('AI fallback agent'), 'router fallback AI agent has dedicated system prompt');
+check(
+  hasAiConnection(routerTool, 'Fallback Agent Model', 'ai_languageModel', 'AI Agent'),
+  'router fallback model connects to fallback AI agent',
+);
 
 const healthcheckConfigCode = String(nodeByName(healthcheckTool, 'Config Main')?.parameters?.jsCode || '');
 check(!healthcheckConfigCode.includes('ggChatWebhookUrl'), 'healthcheck tool no longer duplicates ggChatWebhookUrl config');

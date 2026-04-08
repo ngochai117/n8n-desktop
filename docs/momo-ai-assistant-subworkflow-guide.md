@@ -87,6 +87,9 @@ Guide nay danh cho truong hop them moi hoac chinh sua subworkflow cua `MoMo AI A
   - `destinations`: danh sach `destination.type` ma message nay duoc phep di toi.
     - Vi du: `["reply"]`, `["pushGoogleChat"]`, hoac `["reply", "pushGoogleChat"]`.
   - `payload`: body that se gui.
+- Thu tu trong mang `messages[]` la quan trong cho `pushGoogleChat`.
+  - Main flow gui theo thu tu item cua mang nay.
+  - Muon card summary len truoc, hay dat `summaryCard` truoc `warningDetails`.
 
 ### Vi du `deliveryPlan`
 ```json
@@ -126,17 +129,30 @@ Guide nay danh cho truong hop them moi hoac chinh sua subworkflow cua `MoMo AI A
 - Khong duplicate webhook URL trong business subworkflow.
 - Top-level loc destination `pushGoogleChat` theo config kha dung.
 - Neu tool yeu cau `pushGoogleChat` ma `ggChatWebhookUrl` rong:
-  - top-level bo push destination
+  - top-level skip push delivery va gan `ggChatDeliverySkipReason`
   - workflow van tiep tuc binh thuong (khong fail cung)
 
-## 6. Router config (`toolRegistry`)
+## 6. Delivery execution o main flow (quan trong)
+- Main flow delivery theo pattern:
+  - `Prepare GGChat Delivery Messages`
+  - `Split Out GGChat Delivery Messages`
+  - `Loop Over GGChat Delivery Messages` (`batchSize = 1`)
+  - `Send GGChat Delivery Message`
+  - quay lai `Loop Over GGChat Delivery Messages` den khi het item
+  - output `done` cua loop moi sang `Build Delivery Ack`
+- Y nghia:
+  - khong can node `Wait` de ep thu tu
+  - moi request GGChat duoc gui lan luot, request truoc xong roi moi sang request sau
+  - `Build Delivery Ack` tong hop trang thai tu toan bo response cua node `Send GGChat Delivery Message`
+
+## 7. Router config (`toolRegistry`)
 - Moi tool moi phai duoc khai bao trong `Config Main` cua `MoMo AI Assistant Tool Router`.
 - 1 entry trong `toolRegistry` hien co dang:
 
 ```json
 {
   "toolName": "sprintHealthcheck",
-  "workflowId": "__REGISTRY__:MoMo AI Assistant Tool Sprint Healthcheck",
+  "workflowId": "KMrBMKLm9ZNezxwx",
   "enabled": true,
   "matchers": [
     { "pattern": "check\\s+sprint", "flags": "i" }
@@ -147,7 +163,9 @@ Guide nay danh cho truong hop them moi hoac chinh sua subworkflow cua `MoMo AI A
 
 ### Y nghia field trong `toolRegistry`
 - `toolName`: ten logic cua tool.
-- `workflowId`: token se duoc wrapper import patch sang workflow ID that.
+- `workflowId`: workflow ID that cua subworkflow (`mode=id`).
+  - Co the dung token dang `__REGISTRY__:Ten Workflow` neu ban muon de import wrapper tu patch.
+  - Hoac hard-code workflow ID nhu runtime hien tai.
 - `enabled`: bat/tat tool.
 - `matchers`: danh sach regex route command.
   - `pattern`: regex pattern.
@@ -158,16 +176,24 @@ Guide nay danh cho truong hop them moi hoac chinh sua subworkflow cua `MoMo AI A
   - co the dung de mo rong hanh vi delivery ma khong sua top-level. Vi du:
     - `additionalDestinations: [{ "type": "pushGoogleChat" }]`
 
-## 7. Neu la tool moi
+### Single source of truth khi them/sua tool
+- Muc tieu hien tai: han che sua nhieu noi.
+- Khi them tool moi hoac sua route command:
+  - CHINH: `toolRegistry` trong `MoMo AI Assistant Tool Router`.
+  - KHONG can sua system prompt cua AI Agent cho tung command cu the.
+  - KHONG can sua description cua `assistant_command_router` cho tung tool.
+- System prompt va tool description da de o dang generic de dung lai cho nhieu tool.
+
+## 8. Neu la tool moi
 - Tao subworkflow moi.
 - Them 1 entry moi trong `toolRegistry` cua `MoMo AI Assistant Tool Router`.
-- Giu `workflowId` dang token:
+- Neu chon dung token registry, giu `workflowId` dang token:
 
 ```text
 __REGISTRY__:Ten Workflow
 ```
 
-## 8. Import lai
+## 9. Import lai
 - Neu sua router hoac tool, chay:
 
 ```bash
@@ -175,7 +201,7 @@ bash scripts/workflows/import/import-momo-ai-assistant-tool-router-workflow.sh
 bash scripts/workflows/import/import-momo-ai-assistant-workflow.sh
 ```
 
-## 9. Neu sua tren UI
+## 10. Neu sua tren UI
 - Sync nguoc ve repo:
 
 ```bash
@@ -184,16 +210,17 @@ bash scripts/workflows/sync/sync-workflows-from-n8n.sh --name "MoMo AI Assistant
 
 - Thay ten workflow neu ban sua tool khac.
 
-## 10. Verify
+## 11. Verify
 - Chay checklist:
 
 ```bash
 bash scripts/workflows/tests/test-momo-ai-assistant-checklist.sh
 ```
 
-## 11. Rule nho nhanh
+## 12. Rule nho nhanh
 - Them tool moi: sua `subworkflow` + `toolRegistry`.
 - Tool tu tra `deliveryPlan.destinations[]` + `messages[]`.
+- `pushGoogleChat` gui tuan tu theo thu tu `messages[]`.
 - Import xong moi test.
 - Neu loi runtime workflow tool, check truoc: workflow co `active` chua.
 - Trong cung workflow, uu tien doc truc tiep field tu node goc (`$('Ten node')`) thay vi pass-through qua nhieu node trung gian.

@@ -42,19 +42,19 @@
       "typeVersion": 1.1,
       "position": [
         -1184,
-        208
+        176
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $('When Executed by Another Workflow').first().json || $json || {};\n\nconst config = {\n  boardId: 1041,\n  jiraBaseUrl: 'https://atlassiansuite.mservice.com.vn:8443',\n  timeZone: 'Asia/Ho_Chi_Minh',\n  storyPointFieldKey: 'customfield_10107',\n  qcsFieldKey: 'customfield_10201',\n  spreadsheetId: '1uLVZ2b6Ra-r2KCbLHcOL68V6smtxymfTCNNQnWPG8mI',\n  spreadsheetSheetName: 'MoMoer',\n  devStaleBusinessDays: 7,\n  waitQcBusinessDays: 1,\n  qcStaleBusinessDays: 7,\n  nearEndBusinessDays: 2,\n  passedStatuses: ['Ready For Review', 'In Review', 'Ready For Release', 'Close', 'Closed'],\n  nowIso: $now.setZone('Asia/Ho_Chi_Minh').toISO(),\n};\n\nreturn {\n  ...input,\n  config,\n};"
+        "jsCode": "const input = $('When Executed by Another Workflow').first().json || $json || {};\n\nconst config = {\n  boardId: 1041,\n  jiraBaseUrl: 'https://atlassiansuite.mservice.com.vn:8443',\n  timeZone: 'Asia/Ho_Chi_Minh',\n  storyPointFieldKey: 'customfield_10107',\n  qcsFieldKey: 'customfield_10201',\n  spreadsheetId: '1uLVZ2b6Ra-r2KCbLHcOL68V6smtxymfTCNNQnWPG8mI',\n  spreadsheetSheetName: 'MoMoer',\n  devStaleBusinessDays: 5,\n  waitQcBusinessDays: 1,\n  qcStaleBusinessDays: 5,\n  nearEndBusinessDays: 2,\n  passedStatuses: ['Ready For Review', 'In Review', 'Ready For Release', 'Close', 'Closed'],\n  nowIso: $now.setZone('Asia/Ho_Chi_Minh').toISO(),\n};\n\nreturn {\n  ...input,\n  config,\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         -960,
-        208
+        176
       ],
       "id": "2",
       "name": "Config Main"
@@ -81,7 +81,7 @@
       "typeVersion": 4.3,
       "position": [
         -736,
-        208
+        176
       ],
       "id": "3",
       "name": "Get Active Sprint",
@@ -102,7 +102,7 @@
       "typeVersion": 2,
       "position": [
         -512,
-        208
+        176
       ],
       "id": "4",
       "name": "Pick Active Sprint"
@@ -135,7 +135,7 @@
       "typeVersion": 2.3,
       "position": [
         -288,
-        208
+        176
       ],
       "id": "5",
       "name": "If Active Sprint?"
@@ -247,7 +247,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        688,
+        680,
         304
       ],
       "id": "10",
@@ -279,8 +279,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        608,
-        336
+        -64,
+        272
       ],
       "id": "12",
       "name": "Build No Active Sprint Result"

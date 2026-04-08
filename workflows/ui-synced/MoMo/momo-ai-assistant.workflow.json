@@ -2,17 +2,6 @@
   "name": "MoMo AI Assistant",
   "nodes": [
     {
-      "parameters": {},
-      "id": "1",
-      "name": "Manual Trigger",
-      "type": "n8n-nodes-base.manualTrigger",
-      "typeVersion": 1,
-      "position": [
-        -1680,
-        -128
-      ]
-    },
-    {
       "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "return {\n  triggerSource: 'manual',\n  channel: 'manualTrigger',\n  commandText: 'status sprint',\n  actorId: 'manual-trigger',\n  actorDisplayName: 'Manual Trigger',\n  spaceId: 'manual-trigger-space',\n  threadKey: 'manual-check-sprint',\n  sessionId: 'manual-trigger-space:manual-check-sprint',\n};"
@@ -24,26 +13,6 @@
       "position": [
         -1456,
         -128
-      ]
-    },
-    {
-      "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "cronExpression",
-              "expression": "0 10 * * 2,4"
-            }
-          ]
-        }
-      },
-      "id": "3",
-      "name": "Schedule Trigger",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [
-        -1680,
-        64
       ]
     },
     {
@@ -80,7 +49,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const body = $json.body && typeof $json.body === 'object' ? $json.body : $json;\nconst message = body.message && typeof body.message === 'object' ? body.message : {};\nconst space = body.space && typeof body.space === 'object' ? body.space : (message.space || {});\nconst thread = message.thread && typeof message.thread === 'object' ? message.thread : (body.thread || {});\nconst threadName = String(thread.name || '').trim();\nconst threadKey = threadName\n  ? threadName.split('/').pop()\n  : String(message.name || body.messageId || body.eventTime || 'google-chat-thread').trim();\n\nlet commandText = String(\n  message.argumentText ||\n    message.slashCommand?.commandName ||\n    message.text ||\n    ''\n).trim();\n\ncommandText = commandText\n  .replace(/<users\\/[^>]+>/g, ' ')\n  .replace(/\\s+/g, ' ')\n  .trim();\n\nconst spaceId = String(space.name || '').trim();\nconst sessionId = `${spaceId || 'google-chat'}:${threadKey || 'thread'}`;\n\nreturn {\n  triggerSource: 'chat',\n  channel: 'googleChat',\n  commandText,\n  actorId: String(body.user?.name || message.sender?.name || '').trim(),\n  actorDisplayName: String(body.user?.displayName || message.sender?.displayName || '').trim(),\n  spaceId,\n  threadKey,\n  sessionId,\n};"
+        "jsCode": "const body = $json.body && typeof $json.body === 'object' ? $json.body : $json;\nconst message = body.message && typeof body.message === 'object' ? body.message : {};\nconst space = body.space && typeof body.space === 'object' ? body.space : (message.space || {});\nconst thread = message.thread && typeof message.thread === 'object' ? message.thread : (body.thread || {});\nconst threadName = String(thread.name || '').trim();\nconst threadKey = threadName\n  ? threadName.split('/').pop()\n  : String(message.name || body.messageId || body.eventTime || 'google-chat-thread').trim();\n\nlet commandText = String(\n  message.argumentText ||\n    message.slashCommand?.commandName ||\n    message.text ||\n    ''\n).trim();\n\ncommandText = commandText\n  .replace(/<users\\/[^>]+>/g, ' ')\n  .trim();\n\nconst spaceId = String(space.name || '').trim();\nconst sessionId = `${spaceId || 'google-chat'}:${threadKey || 'thread'}`;\n\nreturn {\n  triggerSource: 'chat',\n  channel: 'googleChat',\n  commandText,\n  actorId: String(body.user?.name || message.sender?.name || '').trim(),\n  actorDisplayName: String(body.user?.displayName || message.sender?.displayName || '').trim(),\n  spaceId,\n  threadKey,\n  sessionId,\n};"
       },
       "id": "6",
       "name": "Build Chat Event",
@@ -94,7 +63,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const config = {\n  boardId: 1041,\n  jiraBaseUrl: 'https://atlassiansuite.mservice.com.vn:8443',\n  timeZone: 'Asia/Ho_Chi_Minh',\n  storyPointFieldKey: 'customfield_10107',\n  qcsFieldKey: 'customfield_10201',\n  spreadsheetId: '1uLVZ2b6Ra-r2KCbLHcOL68V6smtxymfTCNNQnWPG8mI',\n  spreadsheetSheetName: 'MoMoer',\n  ggChatWebhookUrl: 'https://chat.googleapis.com/v1/spaces/AAQAcu_P8pI/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=hi3fzzGkR1ri4uotTO2hoa08WxQjdbJbNHPHSJ1S71o',\n  googleChatReplyOption: 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD',\n  devStaleBusinessDays: 7,\n  waitQcBusinessDays: 1,\n  qcStaleBusinessDays: 7,\n  nearEndBusinessDays: 2,\n  passedStatuses: ['Ready For Review', 'In Review', 'Ready For Release', 'Close', 'Closed'],\n  stableCommands: ['check sprint', 'status sprint'],\n  demoCommands: ['release sprint', 'approve', 'reject', 'cancel'],\n  memoryMaxTurns: 10,\n  memoryUserChars: 180,\n  memoryAssistantChars: 280,\n  nowIso: $now.setZone('Asia/Ho_Chi_Minh').toISO(),\n};\n\nreturn {\n  ...$json,\n  config,\n};"
+        "jsCode": "const config = {\n  boardId: 1041,\n  jiraBaseUrl: 'https://atlassiansuite.mservice.com.vn:8443',\n  timeZone: 'Asia/Ho_Chi_Minh',\n  storyPointFieldKey: 'customfield_10107',\n  qcsFieldKey: 'customfield_10201',\n  spreadsheetId: '1uLVZ2b6Ra-r2KCbLHcOL68V6smtxymfTCNNQnWPG8mI',\n  spreadsheetSheetName: 'MoMoer',\n  ggChatWebhookUrl: 'https://chat.googleapis.com/v1/spaces/AAQAcu_P8pI/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=hi3fzzGkR1ri4uotTO2hoa08WxQjdbJbNHPHSJ1S71o',\n  googleChatReplyOption: 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD',\n  devStaleBusinessDays: 7,\n  waitQcBusinessDays: 1,\n  qcStaleBusinessDays: 7,\n  nearEndBusinessDays: 2,\n  passedStatuses: ['Ready For Review', 'In Review', 'Ready For Release', 'Close', 'Closed'],\n  memoryMaxTurns: 10,\n  memoryUserChars: 180,\n  memoryAssistantChars: 280,\n  nowIso: $now.setZone('Asia/Ho_Chi_Minh').toISO(),\n};\n\nreturn {\n  ...$json,\n  config,\n};"
       },
       "id": "7",
       "name": "Config Main",
@@ -161,7 +130,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const event = $('Config Main').first().json || {};\nconst sessionResult = $input.first()?.json || {};\nconst session = sessionResult.found ? sessionResult.row : null;\nconst config = event.config || {};\nconst stableCommands = Array.isArray(config.stableCommands)\n  ? config.stableCommands\n  : ['check sprint', 'status sprint'];\nconst demoCommands = Array.isArray(config.demoCommands)\n  ? config.demoCommands\n  : ['release sprint', 'approve', 'reject', 'cancel'];\nconst memoryMaxTurns = Math.max(1, Number(config.memoryMaxTurns || 10));\nconst memoryUserChars = Math.max(40, Number(config.memoryUserChars || 180));\nconst memoryAssistantChars = Math.max(40, Number(config.memoryAssistantChars || 280));\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  if (typeof value === 'object') return JSON.stringify(value);\n  return String(value).trim();\n}\n\nfunction trimText(value, maxLen) {\n  const text = toText(value).replace(/\\s+/g, ' ');\n  if (!text) return '';\n  if (!maxLen || text.length <= maxLen) return text;\n  return `${text.slice(0, maxLen - 3).trimEnd()}...`;\n}\n\nfunction normalizeTurns(rawTurns) {\n  if (!Array.isArray(rawTurns)) return [];\n\n  return rawTurns\n    .map((turn) => ({\n      user: trimText(turn?.user || '', memoryUserChars),\n      assistant: trimText(turn?.assistant || '', memoryAssistantChars),\n      at: toText(turn?.at || ''),\n    }))\n    .filter((turn) => turn.user || turn.assistant)\n    .slice(-memoryMaxTurns);\n}\n\nfunction parseMemory(rawCurrentIntent) {\n  const raw = toText(rawCurrentIntent);\n  if (!raw) {\n    return {\n      intent: '',\n      previousIntent: '',\n      turns: [],\n      memoryUpdatedAt: '',\n    };\n  }\n\n  try {\n    const parsed = JSON.parse(raw);\n    if (!parsed || typeof parsed !== 'object') {\n      return {\n        intent: '',\n        previousIntent: '',\n        turns: [],\n        memoryUpdatedAt: '',\n      };\n    }\n\n    return {\n      intent: toText(parsed.intent),\n      previousIntent: toText(parsed.previousIntent),\n      turns: normalizeTurns(parsed.turns),\n      memoryUpdatedAt: toText(parsed.memoryUpdatedAt),\n    };\n  } catch (error) {\n    return {\n      intent: '',\n      previousIntent: '',\n      turns: [],\n      memoryUpdatedAt: '',\n    };\n  }\n}\n\nconst memory = parseMemory(session?.currentIntent || '');\nconst sessionSummaryLines = session\n  ? [\n      `- currentIntent: ${memory.intent || 'unknown'}`,\n      `- turnCount: ${memory.turns.length}`,\n      `- activePendingActionId: ${toText(session.activePendingActionId) || 'none'}`,\n      `- updatedAt: ${toText(session.updatedAt) || 'unknown'}`,\n    ]\n  : ['- no existing session state'];\n\nconst recentTurnsForPrompt = memory.turns.slice(-memoryMaxTurns).map((turn, index) => {\n  const user = trimText(turn.user, 120) || '-';\n  const assistant = trimText(turn.assistant, 160) || '-';\n  return `${index + 1}. U: ${user} | A: ${assistant}`;\n});\n\nconst chatInput = [\n  `User: ${toText(event.actorDisplayName || event.actorId || 'Unknown')}`,\n  `Channel: ${toText(event.channel || 'googleChat')}`,\n  `Thread: ${toText(event.threadKey || 'thread')}`,\n  `Message: ${toText(event.commandText)}`,\n  '',\n  'Current session state:',\n  sessionSummaryLines.join('\\n'),\n  '',\n  'Simple memory:',\n  `- intent: ${memory.intent || 'none'}`,\n  `- previousIntent: ${memory.previousIntent || 'none'}`,\n  `- memoryUpdatedAt: ${memory.memoryUpdatedAt || 'none'}`,\n  `- turnCount: ${memory.turns.length}`,\n  '- recentTurns:',\n  recentTurnsForPrompt.length ? recentTurnsForPrompt.join('\\n') : 'none',\n  '',\n  `Stable commands: ${stableCommands.join(', ')}`,\n  `Demo commands: ${demoCommands.join(', ')}`,\n].join('\\n');\n\nreturn [\n  {\n    json: {\n      sessionId: event.sessionId || session?.sessionId || '',\n      session,\n      memory,\n      chatInput,\n    },\n  },\n];"
+        "jsCode": "const event = $('Config Main').first().json || {};\nconst sessionResult = $input.first()?.json || {};\nconst session = sessionResult.found ? sessionResult.row : null;\nconst config = event.config || {};\nconst memoryMaxTurns = Math.max(1, Number(config.memoryMaxTurns || 10));\nconst memoryUserChars = Math.max(40, Number(config.memoryUserChars || 180));\nconst memoryAssistantChars = Math.max(40, Number(config.memoryAssistantChars || 280));\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  if (typeof value === 'object') return JSON.stringify(value);\n  return String(value).trim();\n}\n\nfunction trimText(value, maxLen) {\n  const text = toText(value).replace(/\\s+/g, ' ');\n  if (!text) return '';\n  if (!maxLen || text.length <= maxLen) return text;\n  return `${text.slice(0, maxLen - 3).trimEnd()}...`;\n}\n\nfunction normalizeTurns(rawTurns) {\n  if (!Array.isArray(rawTurns)) return [];\n\n  return rawTurns\n    .map((turn) => ({\n      user: trimText(turn?.user || '', memoryUserChars),\n      assistant: trimText(turn?.assistant || '', memoryAssistantChars),\n      at: toText(turn?.at || ''),\n    }))\n    .filter((turn) => turn.user || turn.assistant)\n    .slice(-memoryMaxTurns);\n}\n\nfunction parseMemory(rawCurrentIntent) {\n  const raw = toText(rawCurrentIntent);\n  if (!raw) {\n    return {\n      intent: '',\n      previousIntent: '',\n      turns: [],\n      memoryUpdatedAt: '',\n    };\n  }\n\n  try {\n    const parsed = JSON.parse(raw);\n    if (!parsed || typeof parsed !== 'object') {\n      return {\n        intent: '',\n        previousIntent: '',\n        turns: [],\n        memoryUpdatedAt: '',\n      };\n    }\n\n    return {\n      intent: toText(parsed.intent),\n      previousIntent: toText(parsed.previousIntent),\n      turns: normalizeTurns(parsed.turns),\n      memoryUpdatedAt: toText(parsed.memoryUpdatedAt),\n    };\n  } catch (error) {\n    return {\n      intent: '',\n      previousIntent: '',\n      turns: [],\n      memoryUpdatedAt: '',\n    };\n  }\n}\n\nconst memory = parseMemory(session?.currentIntent || '');\nconst sessionSummaryLines = session\n  ? [\n      `- currentIntent: ${memory.intent || 'unknown'}`,\n      `- turnCount: ${memory.turns.length}`,\n      `- activePendingActionId: ${toText(session.activePendingActionId) || 'none'}`,\n      `- updatedAt: ${toText(session.updatedAt) || 'unknown'}`,\n    ]\n  : ['- no existing session state'];\n\nconst recentTurnsForPrompt = memory.turns.slice(-memoryMaxTurns).map((turn, index) => {\n  const user = trimText(turn.user, 120) || '-';\n  const assistant = trimText(turn.assistant, 160) || '-';\n  return `${index + 1}. U: ${user} | A: ${assistant}`;\n});\n\nconst chatInput = [\n  `User: ${toText(event.actorDisplayName || event.actorId || 'Unknown')}`,\n  `Channel: ${toText(event.channel || 'googleChat')}`,\n  `Thread: ${toText(event.threadKey || 'thread')}`,\n  `Message: ${toText(event.commandText)}`,\n  '',\n  'Current session state:',\n  sessionSummaryLines.join('\\n'),\n  '',\n  'Simple memory:',\n  `- intent: ${memory.intent || 'none'}`,\n  `- previousIntent: ${memory.previousIntent || 'none'}`,\n  `- memoryUpdatedAt: ${memory.memoryUpdatedAt || 'none'}`,\n  `- turnCount: ${memory.turns.length}`,\n  '- recentTurns:',\n  recentTurnsForPrompt.length ? recentTurnsForPrompt.join('\\n') : 'none',\n  '',\n].join('\\n');\n\nreturn [\n  {\n    json: {\n      sessionId: event.sessionId || session?.sessionId || '',\n      session,\n      memory,\n      chatInput,\n    },\n  },\n];"
       },
       "id": "10",
       "name": "Build Assistant Context",
@@ -177,7 +146,7 @@
         "promptType": "define",
         "text": "={{ $json.chatInput }}",
         "options": {
-          "systemMessage": "Bạn là trợ lý AI vận hành của MoMo AI Assistant.\nMục tiêu: trả lời như một trợ lý thân thiện, ngắn gọn, và biết khi nào cần gọi workflow router.\nQuy tắc bắt buộc:\n- Với yêu cầu vận hành như check sprint, status sprint, sprint status, healthcheck, FE/BE passed, warning, issue ngâm, release sprint, close sprint, approve, reject, cancel: bắt buộc gọi tool assistant_command_router.\n- Tool router sẽ tự chọn business subworkflow phù hợp; bạn không cần tự mô phỏng kết quả.\n- Với yêu cầu vận hành, chỉ gọi tool nhiều nhất 1 lần trong mỗi lượt.\n- Sau khi tool trả về cho yêu cầu vận hành, phản hồi cuối cùng PHẢI là đúng 1 JSON object hợp lệ gồm các field: toolName, resultText, deliveryPlan.\n- Không thêm giải thích ngoài JSON, không markdown, không code block, không tự đổi deliveryPlan.\n- Nếu tool lỗi, không khả dụng, hoặc không trả dữ liệu hữu ích: xin lỗi ngắn gọn và dừng, không gọi lại tool lặp đi lặp lại.\n- Không bao giờ khẳng định đã release/approve/reject/cancel thật nếu tool chưa nói vậy.\n- Nếu user chỉ chào hỏi, cảm ơn, hoặc hỏi chung không phải lệnh: trả lời tự nhiên 1-2 câu, rồi gợi ý lệnh dùng được.\n- Hãy đọc phần Simple memory trong chatInput để giữ mạch hội thoại giữa các lượt.\n- Chỉ trả về text thuần, không markdown code block."
+          "systemMessage": "Bạn là trợ lý AI vận hành của MoMo AI Assistant.\nMục tiêu: trả lời ngắn gọn, rõ ràng, thân thiện và không bịa kết quả nghiệp vụ.\nQuy tắc bắt buộc:\n- Nếu user chỉ chào hỏi, cảm ơn, hoặc hỏi chuyện chung không phải tác vụ hệ thống: trả lời tự nhiên 1-2 câu, không gọi tool.\n- Với mọi yêu cầu vận hành/hệ thống (tra cứu trạng thái, sprint/Jira/task, release, approve/reject/cancel, hoặc lệnh nghiệp vụ tương tự): bắt buộc gọi tool assistant_command_router đúng 1 lần.\n- Router sẽ tự chọn business subworkflow phù hợp; không tự mô phỏng kết quả.\n- Sau khi tool trả về cho yêu cầu vận hành, phản hồi cuối cùng PHẢI là đúng 1 JSON object hợp lệ gồm: toolName, resultText, deliveryPlan.\n- Không thêm giải thích ngoài JSON, không markdown, không code block, không tự đổi deliveryPlan.\n- Nếu tool lỗi/không khả dụng/không trả dữ liệu hữu ích: xin lỗi ngắn gọn và dừng, không gọi lặp lại.\n- Không bao giờ khẳng định đã release/approve/reject/cancel thật nếu tool chưa nói vậy.\n- Hãy đọc phần Simple memory trong chatInput để giữ mạch hội thoại giữa các lượt.\n- Chỉ trả về text thuần, không markdown code block."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -219,7 +188,7 @@
     {
       "parameters": {
         "name": "assistant_command_router",
-        "description": "Use this tool for any MoMo assistant operational command. It routes the current request to the correct business subworkflow such as sprint healthcheck or demo approval/release commands, and returns JSON where resultText is the exact user-facing answer.",
+        "description": "Use this tool for any MoMo operational/system request. It routes to the correct business subworkflow and returns resultText plus deliveryPlan JSON for final response.",
         "workflowId": {
           "__rl": true,
           "value": "kY5dXvHgZDS3m92L",
@@ -348,7 +317,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const context = $('Build Assistant Context').first().json || {};\nconst event = $('Config Main').first().json || {};\nconst config = event.config || {};\nconst agent = $input.first()?.json || {};\n\nconst stableCommands = Array.isArray(config.stableCommands)\n  ? config.stableCommands\n  : ['check sprint', 'status sprint'];\nconst demoCommands = Array.isArray(config.demoCommands)\n  ? config.demoCommands\n  : ['release sprint', 'approve', 'reject', 'cancel'];\nconst memoryMaxTurns = Math.max(1, Number(config.memoryMaxTurns || 10));\nconst memoryUserChars = Math.max(40, Number(config.memoryUserChars || 180));\nconst memoryAssistantChars = Math.max(40, Number(config.memoryAssistantChars || 280));\nconst configuredGgChatWebhookUrl = toText(config.ggChatWebhookUrl || '');\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  if (typeof value === 'object') return JSON.stringify(value);\n  return String(value).trim();\n}\n\nfunction trimText(value, maxLen) {\n  const text = toText(value).replace(/\\s+/g, ' ');\n  if (!text) return '';\n  if (!maxLen || text.length <= maxLen) return text;\n  return `${text.slice(0, maxLen - 3).trimEnd()}...`;\n}\n\nfunction normalizeTurns(rawTurns) {\n  if (!Array.isArray(rawTurns)) return [];\n\n  return rawTurns\n    .map((turn) => ({\n      user: trimText(turn?.user || '', memoryUserChars),\n      assistant: trimText(turn?.assistant || '', memoryAssistantChars),\n      at: toText(turn?.at || ''),\n    }))\n    .filter((turn) => turn.user || turn.assistant)\n    .slice(-memoryMaxTurns);\n}\n\nfunction detectIntent(commandText) {\n  const normalized = String(commandText || '').trim().toLowerCase();\n\n  if (/release\\s+sprint|close\\s+sprint|release\\s+status/.test(normalized)) return 'releaseDemo';\n  if (/(^|\\b)(approve|ok|dong y|đồng ý|xac nhan|xác nhận)(\\b|$)/i.test(normalized)) return 'approveDemo';\n  if (/(^|\\b)(reject|tu choi|từ chối)(\\b|$)/i.test(normalized)) return 'rejectDemo';\n  if (/(^|\\b)(cancel|huy|hủy)(\\b|$)/i.test(normalized)) return 'cancelDemo';\n  if (/check\\s+sprint|status\\s+sprint|sprint\\s+status|healthcheck/.test(normalized)) return 'checkSprint';\n  if (/(^|\\b)(hello|hi|alo|chào|xin chào|cảm ơn|thanks|thank you)(\\b|$)/i.test(normalized)) return 'smallTalk';\n\n  return 'help';\n}\n\nfunction extractJsonText(value) {\n  const text = toText(value);\n  if (!text) return '';\n\n  const fencedMatch = text.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);\n  if (fencedMatch?.[1]) return fencedMatch[1].trim();\n\n  if (text.startsWith('{') || text.startsWith('[')) return text;\n\n  const firstBraceIndex = text.indexOf('{');\n  const lastBraceIndex = text.lastIndexOf('}');\n  if (firstBraceIndex >= 0 && lastBraceIndex > firstBraceIndex) {\n    return text.slice(firstBraceIndex, lastBraceIndex + 1).trim();\n  }\n\n  const firstBracketIndex = text.indexOf('[');\n  const lastBracketIndex = text.lastIndexOf(']');\n  if (firstBracketIndex >= 0 && lastBracketIndex > firstBracketIndex) {\n    return text.slice(firstBracketIndex, lastBracketIndex + 1).trim();\n  }\n\n  return '';\n}\n\nfunction tryParseJson(value) {\n  const text = extractJsonText(value);\n  if (!text || (!text.startsWith('{') && !text.startsWith('['))) return null;\n\n  try {\n    return JSON.parse(text);\n  } catch (error) {\n    return null;\n  }\n}\n\nfunction normalizeStructuredCandidate(candidate) {\n  if (!candidate) return null;\n  if (typeof candidate === 'string') return tryParseJson(candidate);\n  if (typeof candidate === 'object') return candidate;\n  return null;\n}\n\nfunction isStructuredToolResult(candidate) {\n  return Boolean(\n    candidate &&\n      typeof candidate === 'object' &&\n      (candidate.deliveryPlan || candidate.resultText || candidate.toolName)\n  );\n}\n\nfunction normalizeDestinationList(rawDestinations) {\n  if (!Array.isArray(rawDestinations)) return [];\n\n  const normalized = [];\n  const seen = new Set();\n  for (const rawDestination of rawDestinations) {\n    const type = toText(rawDestination?.type || rawDestination);\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    normalized.push({ type });\n  }\n\n  return normalized;\n}\n\nfunction defaultDestinationsForChannel(channel) {\n  if (toText(channel) === 'system') {\n    return [{ type: 'pushGoogleChat' }];\n  }\n\n  return [{ type: 'reply' }];\n}\n\nfunction filterAvailableDestinations(destinations) {\n  const filtered = destinations.filter((destination) => {\n    if (destination.type === 'pushGoogleChat' && !configuredGgChatWebhookUrl) return false;\n    return true;\n  });\n\n  if (filtered.length > 0) return filtered;\n  return [{ type: 'reply' }];\n}\n\nfunction normalizeMessageDestinations(rawDestinations, allowedTypes) {\n  if (!Array.isArray(rawDestinations)) return allowedTypes;\n\n  const requested = [];\n  const seen = new Set();\n  for (const rawDestination of rawDestinations) {\n    const type = toText(rawDestination);\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    requested.push(type);\n  }\n\n  if (requested.length === 0) return allowedTypes;\n  return requested.filter((type) => allowedTypes.includes(type));\n}\n\nfunction normalizeMessage(message, fallbackText, allowedTypes) {\n  if (!message || typeof message !== 'object') return null;\n\n  const payload = message.payload && typeof message.payload === 'object'\n    ? message.payload\n    : (toText(message.text || fallbackText) ? { text: toText(message.text || fallbackText) } : null);\n\n  if (!payload) return null;\n\n  const destinations = normalizeMessageDestinations(\n    Array.isArray(message.destinations) ? message.destinations : message.destinationTypes,\n    allowedTypes,\n  );\n\n  if (destinations.length === 0) return null;\n\n  return {\n    messageKey: toText(message.messageKey || message.key || 'reply') || 'reply',\n    type: toText(message.type || (payload.cardsV2 ? 'googleChatCardV2' : 'text')) || 'text',\n    destinations,\n    payload,\n  };\n}\n\nfunction normalizeDeliveryPlan(rawPlan, fallbackText) {\n  const requestedDestinations = normalizeDestinationList(rawPlan?.destinations);\n  const baseDestinations = requestedDestinations.length > 0\n    ? requestedDestinations\n    : defaultDestinationsForChannel(event.channel || 'googleChat');\n  const destinations = filterAvailableDestinations(baseDestinations);\n  const allowedTypes = destinations.map((destination) => destination.type);\n\n  const messages = Array.isArray(rawPlan?.messages)\n    ? rawPlan.messages\n        .map((message) => normalizeMessage(message, fallbackText, allowedTypes))\n        .filter(Boolean)\n    : [];\n\n  if (messages.length === 0 && allowedTypes.length > 0) {\n    messages.push({\n      messageKey: 'reply',\n      type: 'text',\n      destinations: allowedTypes,\n      payload: { text: fallbackText },\n    });\n  }\n\n  const thread = rawPlan?.thread && typeof rawPlan.thread === 'object'\n    ? rawPlan.thread\n    : {};\n\n  return {\n    thread,\n    destinations,\n    messages,\n  };\n}\n\nfunction getExecutedNodeJson(nodeName) {\n  try {\n    const nodeOutput = $(nodeName).first();\n    return nodeOutput?.json && typeof nodeOutput.json === 'object' ? nodeOutput.json : null;\n  } catch (error) {\n    return null;\n  }\n}\n\nconst rawOutput =\n  agent.output ??\n  agent.response ??\n  agent.result ??\n  agent.text ??\n  agent.message?.content ??\n  '';\nconst routerToolOutput = getExecutedNodeJson('Assistant Command Router Workflow Tool');\nconst structuredOutput = [\n  routerToolOutput,\n  agent.output,\n  agent.response,\n  agent.result,\n  agent.text,\n  agent.message?.content,\n]\n  .map((candidate) => normalizeStructuredCandidate(candidate))\n  .find((candidate) => isStructuredToolResult(candidate)) || null;\n\nconst detectedIntent = detectIntent(event.commandText || '');\nlet resultText = toText(structuredOutput?.resultText || rawOutput);\n\nif (!resultText) {\n  if (detectedIntent === 'smallTalk') {\n    resultText = `Mình đây nè. Bạn có thể thử: ${stableCommands.join(', ')}.`;\n  } else {\n    resultText = `Hiện mình hỗ trợ ổn nhất các lệnh: ${stableCommands.join(', ')}. Nhóm demo: ${demoCommands.join(', ')}.`;\n  }\n}\n\nconst previousTurns = normalizeTurns(context.memory?.turns || []);\nconst nowIso = toText(config.nowIso || new Date().toISOString());\nconst newTurn = {\n  user: trimText(event.commandText || '', memoryUserChars),\n  assistant: trimText(resultText, memoryAssistantChars),\n  at: nowIso,\n};\nconst turns = [...previousTurns, newTurn]\n  .filter((turn) => turn.user || turn.assistant)\n  .slice(-memoryMaxTurns);\n\nconst currentIntent = JSON.stringify({\n  intent: detectedIntent,\n  previousIntent: toText(context.memory?.intent || ''),\n  turns,\n  memoryUpdatedAt: nowIso,\n});\n\nconst deliveryPlan = normalizeDeliveryPlan(structuredOutput?.deliveryPlan, resultText);\n\nreturn [\n  {\n    json: {\n      toolName: toText(structuredOutput?.toolName || ''),\n      resultText,\n      currentIntent,\n      deliveryPlan,\n    },\n  },\n];"
+        "jsCode": "const context = $('Build Assistant Context').first().json || {};\nconst event = $('Config Main').first().json || {};\nconst config = event.config || {};\nconst agent = $input.first()?.json || {};\n\nconst memoryMaxTurns = Math.max(1, Number(config.memoryMaxTurns || 10));\nconst memoryUserChars = Math.max(40, Number(config.memoryUserChars || 180));\nconst memoryAssistantChars = Math.max(40, Number(config.memoryAssistantChars || 280));\nconst configuredGgChatWebhookUrl = toText(config.ggChatWebhookUrl || '');\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  if (typeof value === 'object') return JSON.stringify(value);\n  return String(value).trim();\n}\n\nfunction trimText(value, maxLen) {\n  const text = toText(value).replace(/\\s+/g, ' ');\n  if (!text) return '';\n  if (!maxLen || text.length <= maxLen) return text;\n  return `${text.slice(0, maxLen - 3).trimEnd()}...`;\n}\n\nfunction normalizeTurns(rawTurns) {\n  if (!Array.isArray(rawTurns)) return [];\n\n  return rawTurns\n    .map((turn) => ({\n      user: trimText(turn?.user || '', memoryUserChars),\n      assistant: trimText(turn?.assistant || '', memoryAssistantChars),\n      at: toText(turn?.at || ''),\n    }))\n    .filter((turn) => turn.user || turn.assistant)\n    .slice(-memoryMaxTurns);\n}\n\nfunction detectIntent(commandText) {\n  const normalized = String(commandText || '').trim().toLowerCase();\n\n  if (/release\\s+sprint|close\\s+sprint|release\\s+status/.test(normalized)) return 'releaseDemo';\n  if (/(^|\\b)(approve|ok|dong y|đồng ý|xac nhan|xác nhận)(\\b|$)/i.test(normalized)) return 'approveDemo';\n  if (/(^|\\b)(reject|tu choi|từ chối)(\\b|$)/i.test(normalized)) return 'rejectDemo';\n  if (/(^|\\b)(cancel|huy|hủy)(\\b|$)/i.test(normalized)) return 'cancelDemo';\n  if (/check\\s+sprint|status\\s+sprint|sprint\\s+status|healthcheck/.test(normalized)) return 'checkSprint';\n  if (/(^|\\b)(hello|hi|alo|chào|xin chào|cảm ơn|thanks|thank you)(\\b|$)/i.test(normalized)) return 'smallTalk';\n\n  return 'help';\n}\n\nfunction extractJsonText(value) {\n  const text = toText(value);\n  if (!text) return '';\n\n  const fencedMatch = text.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);\n  if (fencedMatch?.[1]) return fencedMatch[1].trim();\n\n  if (text.startsWith('{') || text.startsWith('[')) return text;\n\n  const firstBraceIndex = text.indexOf('{');\n  const lastBraceIndex = text.lastIndexOf('}');\n  if (firstBraceIndex >= 0 && lastBraceIndex > firstBraceIndex) {\n    return text.slice(firstBraceIndex, lastBraceIndex + 1).trim();\n  }\n\n  const firstBracketIndex = text.indexOf('[');\n  const lastBracketIndex = text.lastIndexOf(']');\n  if (firstBracketIndex >= 0 && lastBracketIndex > firstBracketIndex) {\n    return text.slice(firstBracketIndex, lastBracketIndex + 1).trim();\n  }\n\n  return '';\n}\n\nfunction tryParseJson(value) {\n  const text = extractJsonText(value);\n  if (!text || (!text.startsWith('{') && !text.startsWith('['))) return null;\n\n  try {\n    return JSON.parse(text);\n  } catch (error) {\n    return null;\n  }\n}\n\nfunction normalizeStructuredCandidate(candidate) {\n  if (!candidate) return null;\n  if (typeof candidate === 'string') return tryParseJson(candidate);\n  if (typeof candidate === 'object') return candidate;\n  return null;\n}\n\nfunction isStructuredToolResult(candidate) {\n  return Boolean(\n    candidate &&\n      typeof candidate === 'object' &&\n      (candidate.deliveryPlan || candidate.resultText || candidate.toolName)\n  );\n}\n\nfunction normalizeDestinationList(rawDestinations) {\n  if (!Array.isArray(rawDestinations)) return [];\n\n  const normalized = [];\n  const seen = new Set();\n  for (const rawDestination of rawDestinations) {\n    const type = toText(rawDestination?.type || rawDestination);\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    normalized.push({ type });\n  }\n\n  return normalized;\n}\n\nfunction defaultDestinationsForChannel(channel) {\n  if (toText(channel) === 'system') {\n    return [{ type: 'pushGoogleChat' }];\n  }\n\n  return [{ type: 'reply' }];\n}\n\nfunction filterAvailableDestinations(destinations) {\n  const filtered = destinations.filter((destination) => {\n    if (destination.type === 'pushGoogleChat' && !configuredGgChatWebhookUrl) return false;\n    return true;\n  });\n\n  if (filtered.length > 0) return filtered;\n  return [{ type: 'reply' }];\n}\n\nfunction normalizeMessageDestinations(rawDestinations, allowedTypes) {\n  if (!Array.isArray(rawDestinations)) return allowedTypes;\n\n  const requested = [];\n  const seen = new Set();\n  for (const rawDestination of rawDestinations) {\n    const type = toText(rawDestination);\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    requested.push(type);\n  }\n\n  if (requested.length === 0) return allowedTypes;\n  return requested.filter((type) => allowedTypes.includes(type));\n}\n\nfunction normalizeMessage(message, fallbackText, allowedTypes) {\n  if (!message || typeof message !== 'object') return null;\n\n  const payload = message.payload && typeof message.payload === 'object'\n    ? message.payload\n    : (toText(message.text || fallbackText) ? { text: toText(message.text || fallbackText) } : null);\n\n  if (!payload) return null;\n\n  const destinations = normalizeMessageDestinations(\n    Array.isArray(message.destinations) ? message.destinations : message.destinationTypes,\n    allowedTypes,\n  );\n\n  if (destinations.length === 0) return null;\n\n  return {\n    messageKey: toText(message.messageKey || message.key || 'reply') || 'reply',\n    type: toText(message.type || (payload.cardsV2 ? 'googleChatCardV2' : 'text')) || 'text',\n    destinations,\n    payload,\n  };\n}\n\nfunction normalizeDeliveryPlan(rawPlan, fallbackText) {\n  const requestedDestinations = normalizeDestinationList(rawPlan?.destinations);\n  const baseDestinations = requestedDestinations.length > 0\n    ? requestedDestinations\n    : defaultDestinationsForChannel(event.channel || 'googleChat');\n  const destinations = filterAvailableDestinations(baseDestinations);\n  const allowedTypes = destinations.map((destination) => destination.type);\n\n  const messages = Array.isArray(rawPlan?.messages)\n    ? rawPlan.messages\n        .map((message) => normalizeMessage(message, fallbackText, allowedTypes))\n        .filter(Boolean)\n    : [];\n\n  if (messages.length === 0 && allowedTypes.length > 0) {\n    messages.push({\n      messageKey: 'reply',\n      type: 'text',\n      destinations: allowedTypes,\n      payload: { text: fallbackText },\n    });\n  }\n\n  const thread = rawPlan?.thread && typeof rawPlan.thread === 'object'\n    ? rawPlan.thread\n    : {};\n\n  return {\n    thread,\n    destinations,\n    messages,\n  };\n}\n\nfunction getExecutedNodeJson(nodeName) {\n  try {\n    const nodeOutput = $(nodeName).first();\n    return nodeOutput?.json && typeof nodeOutput.json === 'object' ? nodeOutput.json : null;\n  } catch (error) {\n    return null;\n  }\n}\n\nconst rawOutput =\n  agent.output ??\n  agent.response ??\n  agent.result ??\n  agent.text ??\n  agent.message?.content ??\n  '';\nconst routerToolOutput = getExecutedNodeJson('Assistant Command Router Workflow Tool');\nconst structuredOutput = [\n  routerToolOutput,\n  agent.output,\n  agent.response,\n  agent.result,\n  agent.text,\n  agent.message?.content,\n]\n  .map((candidate) => normalizeStructuredCandidate(candidate))\n  .find((candidate) => isStructuredToolResult(candidate)) || null;\n\nconst detectedIntent = detectIntent(event.commandText || '');\nlet resultText = toText(structuredOutput?.resultText || rawOutput);\n\nif (!resultText) {\n  resultText = detectedIntent === 'smallTalk'\n    ? 'Mình đây nè. Cần mình check gì cho sprint thì cứ nói.'\n    : 'Mình đã nhận yêu cầu nhưng chưa lấy được kết quả từ tool, bạn thử lại giúp mình nhé.';\n}\n\nconst previousTurns = normalizeTurns(context.memory?.turns || []);\nconst nowIso = toText(config.nowIso || new Date().toISOString());\nconst newTurn = {\n  user: trimText(event.commandText || '', memoryUserChars),\n  assistant: trimText(resultText, memoryAssistantChars),\n  at: nowIso,\n};\nconst turns = [...previousTurns, newTurn]\n  .filter((turn) => turn.user || turn.assistant)\n  .slice(-memoryMaxTurns);\n\nconst currentIntent = JSON.stringify({\n  intent: detectedIntent,\n  previousIntent: toText(context.memory?.intent || ''),\n  turns,\n  memoryUpdatedAt: nowIso,\n});\n\nconst deliveryPlan = normalizeDeliveryPlan(structuredOutput?.deliveryPlan, resultText);\n\nreturn [\n  {\n    json: {\n      toolName: toText(structuredOutput?.toolName || ''),\n      resultText,\n      currentIntent,\n      deliveryPlan,\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -446,21 +415,21 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        1136,
-        184
+        1360,
+        160
       ],
       "id": "31",
       "name": "Send GGChat Delivery Message"
     },
     {
       "parameters": {
-        "jsCode": "const prepare = $('Prepare GGChat Delivery Messages').first().json || {};\nconst responses = $input.all();\nconst requestCount = Number(prepare.ggChatRequestCount || 0);\nconst responseItems = requestCount > 0\n  ? responses.filter((item) => Number(item.json?.statusCode || 0) > 0)\n  : [];\n\nconst successCount = responseItems.filter((item) => Number(item.json?.statusCode || 0) < 400).length;\nconst failureCount = responseItems.filter((item) => Number(item.json?.statusCode || 0) >= 400).length;\nconst missingCount = Math.max(0, requestCount - responseItems.length);\n\nlet ggChatDeliveryStatus = 'skipped';\nif (requestCount === 0) {\n  ggChatDeliveryStatus = 'skipped';\n} else if (successCount === requestCount) {\n  ggChatDeliveryStatus = 'delivered';\n} else if (successCount > 0) {\n  ggChatDeliveryStatus = 'partial';\n} else {\n  ggChatDeliveryStatus = 'failed';\n}\n\nreturn [\n  {\n    json: {\n      ggChatDeliveryStatus,\n      ggChatMessageCount: requestCount,\n      ggChatSuccessCount: successCount,\n      ggChatFailureCount: failureCount,\n      ggChatMissingCount: missingCount,\n      ggChatThreadKey: String(prepare.ggChatThreadKey || '').trim(),\n      ggChatDeliverySkipReason: String(prepare.ggChatDeliverySkipReason || '').trim(),\n    },\n  },\n];"
+        "jsCode": "const prepare = $('Prepare GGChat Delivery Messages').first().json || {};\nconst requestCount = Number(prepare.ggChatRequestCount || 0);\n\nlet responseItems = [];\nif (requestCount > 0) {\n  try {\n    responseItems = $('Send GGChat Delivery Message').all();\n  } catch (error) {\n    responseItems = [];\n  }\n}\n\nconst statusCodes = responseItems\n  .map((item) => Number(item?.json?.statusCode || 0))\n  .filter((statusCode) => statusCode > 0);\n\nconst successCount = statusCodes.filter((statusCode) => statusCode < 400).length;\nconst failureCount = statusCodes.filter((statusCode) => statusCode >= 400).length;\nconst missingCount = Math.max(0, requestCount - statusCodes.length);\n\nlet ggChatDeliveryStatus = 'skipped';\nif (requestCount === 0) {\n  ggChatDeliveryStatus = 'skipped';\n} else if (successCount === requestCount) {\n  ggChatDeliveryStatus = 'delivered';\n} else if (successCount > 0) {\n  ggChatDeliveryStatus = 'partial';\n} else {\n  ggChatDeliveryStatus = 'failed';\n}\n\nreturn [\n  {\n    json: {\n      ggChatDeliveryStatus,\n      ggChatMessageCount: requestCount,\n      ggChatSuccessCount: successCount,\n      ggChatFailureCount: failureCount,\n      ggChatMissingCount: missingCount,\n      ggChatThreadKey: String(prepare.ggChatThreadKey || '').trim(),\n      ggChatDeliverySkipReason: String(prepare.ggChatDeliverySkipReason || '').trim(),\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         1360,
-        256
+        352
       ],
       "id": "34",
       "name": "Build Delivery Ack"
@@ -572,7 +541,7 @@
       "typeVersion": 2,
       "position": [
         912,
-        184
+        160
       ],
       "id": "771afc31-4c0e-4249-bfe4-68d070f17810",
       "name": "Split Out GGChat Delivery Messages"
@@ -585,40 +554,62 @@
       "typeVersion": 2,
       "position": [
         1584,
-        256
+        352
       ],
       "id": "035d4ef1-0998-43c0-ab0a-fe4767d1920d",
       "name": "Build Final Response"
+    },
+    {
+      "parameters": {},
+      "id": "1",
+      "name": "Manual Trigger Health Check",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1680,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * 2,4"
+            }
+          ]
+        }
+      },
+      "id": "3",
+      "name": "Schedule Trigger Health Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1680,
+        64
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "d0bcb7d1-9f65-4b79-9343-f41d65f18f4f",
+      "name": "Loop Over GGChat Delivery Messages",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1136,
+        160
+      ]
     }
   ],
   "connections": {
-    "Manual Trigger": {
-      "main": [
-        [
-          {
-            "node": "Build Manual Event",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Build Manual Event": {
       "main": [
         [
           {
             "node": "Config Main",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Schedule Trigger": {
-      "main": [
-        [
-          {
-            "node": "Build Schedule Event",
             "type": "main",
             "index": 0
           }
@@ -805,7 +796,7 @@
       "main": [
         [
           {
-            "node": "Build Delivery Ack",
+            "node": "Loop Over GGChat Delivery Messages",
             "type": "main",
             "index": 0
           }
@@ -845,7 +836,7 @@
       "main": [
         [
           {
-            "node": "Send GGChat Delivery Message",
+            "node": "Loop Over GGChat Delivery Messages",
             "type": "main",
             "index": 0
           }
@@ -857,6 +848,46 @@
         [
           {
             "node": "Build Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger Health Check": {
+      "main": [
+        [
+          {
+            "node": "Build Manual Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger Health Check": {
+      "main": [
+        [
+          {
+            "node": "Build Schedule Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over GGChat Delivery Messages": {
+      "main": [
+        [
+          {
+            "node": "Build Delivery Ack",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send GGChat Delivery Message",
             "type": "main",
             "index": 0
           }

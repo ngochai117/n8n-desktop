@@ -3,7 +3,6 @@
   "nodes": [
     {
       "parameters": {
-        "inputSource": "workflowInputs",
         "workflowInputs": {
           "values": [
             {
@@ -43,7 +42,8 @@
               "type": "object"
             }
           ]
-        }
+        },
+        "inputSource": "workflowInputs"
       },
       "id": "1",
       "name": "When Executed by Another Workflow",
@@ -51,12 +51,12 @@
       "typeVersion": 1.1,
       "position": [
         -1184,
-        240
+        304
       ]
     },
     {
       "parameters": {
-        "jsCode": "const config = {\n  toolRegistry: [\n    {\n      toolName: 'sprintHealthcheck',\n      workflowId: 'KMrBMKLm9ZNezxwx',\n      enabled: true,\n      matchers: [\n        { pattern: 'check\\\\s+sprint', flags: 'i' },\n        {\n          pattern: 'status\\\\s+sprint',\n          flags: 'i',\n          args: {\n            additionalDestinations: [{ type: 'pushGoogleChat' }],\n          },\n        },\n        { pattern: 'sprint\\\\s+status', flags: 'i' },\n        { pattern: 'healthcheck', flags: 'i' },\n      ],\n    },\n    {\n      toolName: 'demoCommand',\n      workflowId: 'qbbI1Mu3JR3tPhZi',\n      enabled: true,\n      matchers: [\n        {\n          pattern: 'release\\\\s+sprint|close\\\\s+sprint|release\\\\s+status',\n          flags: 'i',\n          args: { commandType: 'release_sprint' },\n        },\n        {\n          pattern: '(^|\\\\b)(approve|ok|dong y|đồng ý|xac nhan|xác nhận)(\\\\b|$)',\n          flags: 'i',\n          args: { commandType: 'approve' },\n        },\n        {\n          pattern: '(^|\\\\b)(reject|tu choi|từ chối)(\\\\b|$)',\n          flags: 'i',\n          args: { commandType: 'reject' },\n        },\n        {\n          pattern: '(^|\\\\b)(cancel|huy|hủy)(\\\\b|$)',\n          flags: 'i',\n          args: { commandType: 'cancel' },\n        },\n      ],\n    },\n  ],\n};\n\nreturn [\n  {\n    json: {\n      ...$json,\n      config,\n    },\n  },\n];"
+        "jsCode": "const config = {\n  toolRegistry: [\n    {\n      toolName: 'sprintHealthcheck',\n      workflowId: 'KMrBMKLm9ZNezxwx',\n      enabled: true,\n      matchers: [\n        { pattern: 'check\\\\s+sprint', flags: 'i' },\n        {\n          pattern: 'status\\\\s+sprint',\n          flags: 'i',\n          args: {\n            additionalDestinations: [{ type: 'pushGoogleChat' }],\n          },\n        },\n        { pattern: 'sprint\\\\s+status', flags: 'i' },\n        { pattern: 'healthcheck', flags: 'i' },\n      ],\n    },\n    {\n      toolName: 'demoCommand',\n      workflowId: 'qbbI1Mu3JR3tPhZi',\n      enabled: true,\n      matchers: [\n        {\n          pattern: 'release\\\\s+sprint|close\\\\s+sprint|release\\\\s+status',\n          flags: 'i',\n          args: { commandType: 'release_sprint' },\n        },\n        {\n          pattern: '(^|\\\\b)(approve|ok|dong y|đồng ý|xac nhan|xác nhận)(\\\\b|$)',\n          flags: 'i',\n          args: { commandType: 'approve' },\n        },\n        {\n          pattern: '(^|\\\\b)(reject|tu choi|từ chối)(\\\\b|$)',\n          flags: 'i',\n          args: { commandType: 'reject' },\n        },\n        {\n          pattern: '(^|\\\\b)(cancel|huy|hủy)(\\\\b|$)',\n          flags: 'i',\n          args: { commandType: 'cancel' },\n        },\n      ],\n    },\n  ],\n  fallbackAgent: {\n    enabled: true,\n    model: 'cx/gpt-5.4',\n    defaultToolName: 'assistantGenericFallback',\n    maxResultTextChars: 700,\n    maxMessageTextChars: 3500,\n    allowedDestinationTypes: ['reply', 'pushGoogleChat'],\n    defaultDestinationsByChannel: {\n      default: ['reply'],\n      system: ['pushGoogleChat'],\n    },\n  },\n};\n\nreturn [\n  {\n    json: {\n      ...$json,\n      config,\n    },\n  },\n];"
       },
       "id": "2",
       "name": "Config Main",
@@ -64,12 +64,12 @@
       "typeVersion": 2,
       "position": [
         -960,
-        240
+        304
       ]
     },
     {
       "parameters": {
-        "jsCode": "const input = $('Config Main').first().json || {};\nconst config = input.config || {};\nconst toolRegistry = Array.isArray(config.toolRegistry) ? config.toolRegistry : [];\nconst commandText = String(input.commandText || '').trim();\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction toObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction mergeObjects(...objects) {\n  return objects.reduce((acc, object) => ({ ...acc, ...toObject(object) }), {});\n}\n\nfunction buildRegex(matcher) {\n  const pattern = toText(matcher?.pattern || '');\n  if (!pattern) return null;\n\n  try {\n    return new RegExp(pattern, toText(matcher?.flags || 'i') || 'i');\n  } catch (error) {\n    return null;\n  }\n}\n\nconst incomingArgs = toObject(input.args);\nlet resolvedTool = null;\n\nfor (const tool of toolRegistry) {\n  if (!tool || tool.enabled === false) continue;\n  const matchers = Array.isArray(tool.matchers) ? tool.matchers : [];\n\n  for (const matcher of matchers) {\n    const regex = buildRegex(matcher);\n    if (!regex || !regex.test(commandText)) continue;\n\n    resolvedTool = {\n      toolName: toText(tool.toolName),\n      workflowId: toText(tool.workflowId),\n      args: mergeObjects(incomingArgs, tool.args, matcher.args),\n    };\n    break;\n  }\n\n  if (resolvedTool) break;\n}\n\nconst toolInput = {\n  triggerSource: toText(input.triggerSource || 'chat'),\n  commandText,\n  channel: toText(input.channel || 'googleChat'),\n  sessionId: toText(input.sessionId),\n  spaceId: toText(input.spaceId),\n  threadKey: toText(input.threadKey),\n  actorId: toText(input.actorId),\n  actorDisplayName: toText(input.actorDisplayName),\n  args: toObject(resolvedTool?.args || incomingArgs),\n};\n\nreturn [\n  {\n    json: {\n      commandText,\n      resolutionStatus: resolvedTool ? 'matched' : 'unsupported',\n      resolvedTool,\n      toolInput,\n      args: toolInput.args,\n    },\n  },\n];"
+        "jsCode": "const input = $('Config Main').first().json || {};\nconst config = input.config || {};\nconst toolRegistry = Array.isArray(config.toolRegistry) ? config.toolRegistry : [];\nconst commandText = String(input.commandText || '').trim();\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction toObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction mergeObjects(...objects) {\n  return objects.reduce((acc, object) => ({ ...acc, ...toObject(object) }), {});\n}\n\nfunction buildRegex(matcher) {\n  const pattern = toText(matcher?.pattern || '');\n  if (!pattern) return null;\n\n  try {\n    return new RegExp(pattern, toText(matcher?.flags || 'i') || 'i');\n  } catch (error) {\n    return null;\n  }\n}\n\nconst incomingArgs = toObject(input.args);\nlet resolvedTool = null;\n\nfor (const tool of toolRegistry) {\n  if (!tool || tool.enabled === false) continue;\n  const matchers = Array.isArray(tool.matchers) ? tool.matchers : [];\n\n  for (const matcher of matchers) {\n    const regex = buildRegex(matcher);\n    if (!regex || !regex.test(commandText)) continue;\n\n    resolvedTool = {\n      toolName: toText(tool.toolName),\n      workflowId: toText(tool.workflowId),\n      args: mergeObjects(incomingArgs, tool.args, matcher.args),\n    };\n    break;\n  }\n\n  if (resolvedTool) break;\n}\n\nconst toolInput = {\n  triggerSource: toText(input.triggerSource || 'chat'),\n  commandText,\n  channel: toText(input.channel || 'googleChat'),\n  sessionId: toText(input.sessionId),\n  spaceId: toText(input.spaceId),\n  threadKey: toText(input.threadKey),\n  actorId: toText(input.actorId),\n  actorDisplayName: toText(input.actorDisplayName),\n  args: toObject(resolvedTool?.args || incomingArgs),\n};\n\nconst enabledTools = toolRegistry\n  .filter((tool) => tool && tool.enabled !== false)\n  .map((tool) => ({\n    toolName: toText(tool.toolName),\n    workflowId: toText(tool.workflowId),\n    matcherPatterns: (Array.isArray(tool.matchers) ? tool.matchers : [])\n      .map((matcher) => toText(matcher?.pattern))\n      .filter(Boolean),\n  }));\n\nreturn [\n  {\n    json: {\n      commandText,\n      resolutionStatus: resolvedTool ? 'matched' : 'unsupported',\n      resolvedTool,\n      toolInput,\n      args: toolInput.args,\n      routerContext: {\n        enabledTools,\n        fallbackAgentEnabled: Boolean(config.fallbackAgent?.enabled),\n      },\n      fallbackAgent: toObject(config.fallbackAgent),\n    },\n  },\n];"
       },
       "id": "3",
       "name": "Resolve Routed Tool",
@@ -77,7 +77,7 @@
       "typeVersion": 2,
       "position": [
         -736,
-        240
+        304
       ]
     },
     {
@@ -121,7 +121,7 @@
       "typeVersion": 3.4,
       "position": [
         -512,
-        240
+        304
       ]
     },
     {
@@ -251,22 +251,134 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        -256,
+        -176,
         144
       ]
     },
     {
       "parameters": {
-        "jsCode": "const input = $('Resolve Routed Tool').first().json || {};\nconst commandText = String(input.commandText || '').trim();\nconst additionalDestinations = Array.isArray(input.args?.additionalDestinations)\n  ? input.args.additionalDestinations\n  : [];\nconst resultText = commandText\n  ? `Hiện mình chưa map command \"${commandText}\" vào business tool nào cả.`\n  : 'Hiện mình chưa nhận ra command nào để route sang business tool.';\n\nfunction normalizeDestinations(rawDestinations) {\n  if (!Array.isArray(rawDestinations)) return [];\n\n  const normalized = [];\n  const seen = new Set();\n  for (const rawDestination of rawDestinations) {\n    const type = typeof rawDestination === 'string'\n      ? rawDestination.trim()\n      : String(rawDestination?.type || '').trim();\n\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    normalized.push({ type });\n  }\n\n  return normalized;\n}\n\nconst destinations = normalizeDestinations([\n  { type: 'reply' },\n  ...additionalDestinations,\n]);\nconst destinationTypes = destinations.map((destination) => destination.type);\n\nreturn [{\n  json: {\n    toolName: 'assistantCommandRouter',\n    resultText,\n    deliveryPlan: {\n      thread: {\n        threadKey: 'assistant-router-unsupported',\n      },\n      destinations,\n      messages: [\n        {\n          messageKey: 'unsupported',\n          type: 'text',\n          destinations: destinationTypes,\n          payload: { text: resultText },\n        },\n      ],\n    },\n  },\n}];"
+        "jsCode": "const resolved = $('Resolve Routed Tool').first().json || {};\nconst config = $('Config Main').first().json?.config || {};\nconst ai = $input.first()?.json || {};\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction toObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction toArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nfunction unique(items) {\n  return Array.from(new Set(items.filter(Boolean)));\n}\n\nfunction toPositiveNumber(value, fallback) {\n  const parsed = Number(value);\n  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;\n}\n\nfunction truncate(value, maxChars) {\n  const text = toText(value);\n  if (!text || text.length <= maxChars) return text;\n  return `${text.slice(0, Math.max(0, maxChars - 3)).trimEnd()}...`;\n}\n\nfunction normalizeLineBreaks(value) {\n  const text = toText(value);\n  if (!text) return '';\n\n  if (text.includes('\\\\n') && !text.includes('\\n')) {\n    return text.replace(/\\\\n/g, '\\n');\n  }\n\n  return text;\n}\n\nfunction extractJsonText(value) {\n  const text = toText(value);\n  if (!text) return '';\n\n  const fencedMatch = text.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);\n  if (fencedMatch?.[1]) return fencedMatch[1].trim();\n\n  if (text.startsWith('{') || text.startsWith('[')) return text;\n\n  const firstBraceIndex = text.indexOf('{');\n  const lastBraceIndex = text.lastIndexOf('}');\n  if (firstBraceIndex >= 0 && lastBraceIndex > firstBraceIndex) {\n    return text.slice(firstBraceIndex, lastBraceIndex + 1).trim();\n  }\n\n  return '';\n}\n\nfunction tryParseJson(value) {\n  const jsonText = extractJsonText(value);\n  if (!jsonText || !jsonText.startsWith('{')) return null;\n\n  try {\n    return JSON.parse(jsonText);\n  } catch (error) {\n    return null;\n  }\n}\n\nfunction normalizeStructuredCandidate(candidate) {\n  if (!candidate) return null;\n  if (typeof candidate === 'string') return tryParseJson(candidate);\n  if (typeof candidate === 'object') return candidate;\n  return null;\n}\n\nfunction normalizeDestinationTypes(rawDestinations, allowedTypes) {\n  const requestedTypes = toArray(rawDestinations)\n    .map((destination) => {\n      if (typeof destination === 'string') return toText(destination);\n      return toText(destination?.type || '');\n    })\n    .filter(Boolean);\n\n  const filtered = requestedTypes.filter((type) => allowedTypes.includes(type));\n  return unique(filtered);\n}\n\nfunction normalizeMessage(message, fallbackText, allowedTypes, maxMessageTextChars) {\n  const messageObject = toObject(message);\n  if (!Object.keys(messageObject).length) return null;\n\n  const messageDestinations = normalizeDestinationTypes(messageObject.destinations, allowedTypes);\n  const destinations = messageDestinations.length > 0 ? messageDestinations : allowedTypes;\n  if (destinations.length === 0) return null;\n\n  const rawPayload = toObject(messageObject.payload);\n  const hasCardPayload = Array.isArray(rawPayload.cardsV2) && rawPayload.cardsV2.length > 0;\n  const messageType = toText(messageObject.type || (hasCardPayload ? 'googleChatCardV2' : 'text')) || 'text';\n\n  let payload = rawPayload;\n  if (!Object.keys(payload).length) {\n    const textFromMessage = truncate(normalizeLineBreaks(messageObject.text || fallbackText), maxMessageTextChars);\n    if (!textFromMessage) return null;\n    payload = { text: textFromMessage };\n  }\n\n  if (messageType === 'googleChatCardV2' && !Array.isArray(payload.cardsV2)) {\n    const fallbackMessageText = truncate(normalizeLineBreaks(payload.text || fallbackText), maxMessageTextChars);\n    if (!fallbackMessageText) return null;\n    payload = { text: fallbackMessageText };\n  }\n\n  if (messageType === 'text') {\n    const textPayload = truncate(normalizeLineBreaks(payload.text || fallbackText), maxMessageTextChars);\n    if (!textPayload) return null;\n    payload = { text: textPayload };\n  }\n\n  return {\n    messageKey: toText(messageObject.messageKey || messageObject.key || 'fallbackReply') || 'fallbackReply',\n    type: messageType,\n    destinations,\n    payload,\n  };\n}\n\nconst fallbackConfig = toObject(config.fallbackAgent);\nconst allowedSeeds = ['reply', 'pushGoogleChat'];\nconst configuredDestinationTypes = normalizeDestinationTypes(\n  fallbackConfig.allowedDestinationTypes,\n  allowedSeeds,\n);\nconst allowedDestinationTypes = configuredDestinationTypes.length > 0\n  ? configuredDestinationTypes\n  : allowedSeeds;\nconst resultTextMaxChars = toPositiveNumber(fallbackConfig.maxResultTextChars, 700);\nconst messageTextMaxChars = toPositiveNumber(fallbackConfig.maxMessageTextChars, 3500);\nconst defaultToolName = toText(fallbackConfig.defaultToolName || 'assistantGenericFallback') || 'assistantGenericFallback';\n\nconst toolInput = toObject(resolved.toolInput);\nconst commandText = toText(toolInput.commandText || resolved.commandText || '');\nconst rawAiText = toText(ai.output ?? ai.response ?? ai.result ?? ai.text ?? ai.message?.content ?? '');\n\nconst structuredOutput = [\n  ai,\n  ai.output,\n  ai.response,\n  ai.result,\n  ai.text,\n  ai.message?.content,\n]\n  .map((candidate) => normalizeStructuredCandidate(candidate))\n  .find((candidate) => candidate && typeof candidate === 'object') || {};\n\nconst fallbackResultText = commandText\n  ? `Mình chưa map command \"${commandText}\" vào tool cố định nên đã xử lý bằng AI fallback.`\n  : 'Mình chưa map command này vào tool cố định nên đã xử lý bằng AI fallback.';\n\nconst resultText = truncate(\n  normalizeLineBreaks(toText(structuredOutput.resultText || structuredOutput.text || rawAiText) || fallbackResultText),\n  resultTextMaxChars,\n);\n\nconst defaultDestinationsByChannel = toObject(fallbackConfig.defaultDestinationsByChannel);\nconst channel = toText(toolInput.channel || 'googleChat');\nconst defaultTypesByChannel = channel === 'system'\n  ? toArray(defaultDestinationsByChannel.system)\n  : toArray(defaultDestinationsByChannel.default);\nconst defaultDestinationTypes = normalizeDestinationTypes(\n  defaultTypesByChannel.length > 0 ? defaultTypesByChannel : ['reply'],\n  allowedDestinationTypes,\n);\n\nconst aiDeliveryPlan = toObject(structuredOutput.deliveryPlan);\nconst aiDestinationTypes = normalizeDestinationTypes(aiDeliveryPlan.destinations, allowedDestinationTypes);\nconst additionalDestinationTypes = normalizeDestinationTypes(\n  toolInput.args?.additionalDestinations,\n  allowedDestinationTypes,\n);\n\nlet destinationTypes = unique([\n  ...defaultDestinationTypes,\n  ...aiDestinationTypes,\n  ...additionalDestinationTypes,\n]);\n\nif (destinationTypes.length === 0) {\n  destinationTypes = ['reply'];\n}\n\nconst messages = toArray(aiDeliveryPlan.messages)\n  .map((message) => normalizeMessage(message, resultText, destinationTypes, messageTextMaxChars))\n  .filter(Boolean);\n\nif (messages.length === 0) {\n  messages.push({\n    messageKey: 'fallbackReply',\n    type: 'text',\n    destinations: destinationTypes,\n    payload: {\n      text: truncate(resultText, messageTextMaxChars),\n    },\n  });\n}\n\nconst inputThreadKey = toText(toolInput.threadKey);\nconst aiThreadKey = toText(aiDeliveryPlan.thread?.threadKey);\nconst commandSeed = (commandText || 'generic')\n  .toLowerCase()\n  .replace(/[^a-z0-9_-]+/g, '-')\n  .replace(/^-+|-+$/g, '')\n  .slice(0, 40) || 'generic';\nconst generatedThreadKey = `assistant-fallback-${commandSeed}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;\nconst threadKey = aiThreadKey || inputThreadKey || generatedThreadKey;\n\nreturn [\n  {\n    json: {\n      toolName: toText(structuredOutput.toolName || defaultToolName) || defaultToolName,\n      resultText,\n      deliveryPlan: {\n        thread: {\n          threadKey,\n        },\n        destinations: destinationTypes.map((type) => ({ type })),\n        messages,\n      },\n      fallbackMeta: {\n        resolutionStatus: toText(resolved.resolutionStatus || 'unsupported'),\n        fallbackAgentEnabled: Boolean(fallbackConfig.enabled ?? true),\n      },\n    },\n  },\n];"
       },
       "id": "6",
       "name": "Build Unsupported Router Result",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -256,
-        336
+        176,
+        448
       ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "={{ $(\"Config Main\").first().json.config.fallbackAgent.model || \"cx/gpt-5.4\" }}",
+          "mode": "list",
+          "cachedResultName": "cx/gpt-5.4"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -288,
+        672
+      ],
+      "id": "0d0ec21d-2e96-4af7-81f9-2b18805dc176",
+      "name": "Fallback Agent Model",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "openAiApi": {
+          "id": "nmpOof7gCtDCf1BD",
+          "name": "Local OpenAI Proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Đọc sheet này để mapping userId mục đích tag đúng user google chat",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1uLVZ2b6Ra-r2KCbLHcOL68V6smtxymfTCNNQnWPG8mI/edit?usp=drive_web&ouid=117576252668331810710",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "MoMoer",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -160,
+        672
+      ],
+      "id": "d0bda646-bacd-4faa-8a71-0ee7bf70223a",
+      "name": "Get MoMoer",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3i6vDJxzaxXLHIWl",
+          "name": "Google account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Bắt buộc sử dụng HTTP này để thực thi Jira.\nBase URL: https://atlassiansuite.mservice.com.vn:8443\nYêu cầu: Sử dụng Jira REST API v2.\n",
+        "method": "={{ $fromAI('method', 'HTTP method to use (GET, POST, PUT, DELETE)', 'string') }}",
+        "url": "={{ $fromAI('url', 'The full Jira API URL', 'string') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "jiraSoftwareServerPatApi",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={{ JSON.stringify($fromAI('queryParams', 'JSON object for query strings', 'json') || {}) }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $fromAI('body', 'JSON object for the request body', 'json') || {} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        -32,
+        672
+      ],
+      "id": "738d878f-3590-4828-976c-a1e9c30634e5",
+      "name": "HTTP Generic",
+      "credentials": {
+        "jiraSoftwareServerPatApi": {
+          "id": "3TLwUpSgsJhbG45A",
+          "name": "Jira MoMo account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{\n[\n  \"Bạn đang xử lý nhánh fallback của Router vì command chưa match toolRegistry.\",\n  \"Hãy phân tích yêu cầu và dùng tools khi cần để trả lời đúng ngữ cảnh vận hành.\",\n  \"Input context:\",\n  JSON.stringify({\n    commandText: $json.toolInput?.commandText || $json.commandText || \"\",\n    triggerSource: $json.toolInput?.triggerSource || \"\",\n    channel: $json.toolInput?.channel || \"\",\n    spaceId: $json.toolInput?.spaceId || \"\",\n    threadKey: $json.toolInput?.threadKey || \"\",\n    actorId: $json.toolInput?.actorId || \"\",\n    actorDisplayName: $json.toolInput?.actorDisplayName || \"\",\n    args: $json.toolInput?.args || {},\n    enabledTools: $json.routerContext?.enabledTools || [],\n    fallbackAgent: $json.fallbackAgent || {}\n  }, null, 2),\n].join(\"\\n\")\n}}",
+        "options": {
+          "systemMessage": "Bạn là AI fallback agent của MoMo AI Assistant Tool Router.\nMục tiêu: xử lý command chưa được map trong toolRegistry mà không làm sai side-effect.\n\nQuy tắc bắt buộc:\n- Được phép dùng các tool gắn vào node này khi cần tra cứu dữ liệu (Jira, sheet user mapping...).\n- Không bịa dữ liệu. Nếu thiếu dữ liệu thì nói rõ thiếu gì.\n- Nếu user yêu cầu side-effect (release/approve/reject/cancel...) nhưng chưa có tool chuyên biệt: KHÔNG khẳng định đã thực thi, chỉ trả lời an toàn.\n- Luôn ưu tiên tiếng Việt ngắn gọn, rõ ràng, đúng ngữ cảnh vận hành.\n- GIỮ nguyên formatting khi cần: newline, bullet markdown (`-`, `*`, `•`), inline markdown (`*bold*`, `_italic_`, link).\n- Không tự flatten whitespace; không ép mọi nội dung thành 1 dòng.\n- Nếu có từ 2 ý trở lên thì ưu tiên xuống dòng để dễ đọc.\n- Trả về DUY NHẤT 1 JSON object hợp lệ, không markdown/code block, schema:\n  {\n    \"toolName\": \"assistantGenericFallback\",\n    \"resultText\": \"...\",\n    \"deliveryPlan\": {\n      \"thread\": { \"threadKey\": \"...\" },\n      \"destinations\": [{ \"type\": \"reply\" }],\n      \"messages\": [\n        {\n          \"messageKey\": \"fallbackReply\",\n          \"type\": \"text\",\n          \"destinations\": [\"reply\"],\n          \"payload\": { \"text\": \"...\" }\n        }\n      ]\n    }\n  }\n- destinations chỉ dùng: reply, pushGoogleChat.\n- Nếu không chắc destination thì mặc định reply.\n- Nếu channel là system hoặc có yêu cầu push thì thêm pushGoogleChat.\n- resultText tối đa khoảng 700 ký tự."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -240,
+        448
+      ],
+      "id": "3a8ce49b-77e0-4976-86ab-ba499a4af1a9",
+      "name": "AI Agent",
+      "executeOnce": false,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 3000
     }
   ],
   "connections": {
@@ -314,8 +426,57 @@
         ],
         [
           {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Unsupported Router Result": {
+      "main": [
+        []
+      ]
+    },
+    "Get MoMoer": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Generic": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
             "node": "Build Unsupported Router Result",
             "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fallback Agent Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
             "index": 0
           }
         ]
