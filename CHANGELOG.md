@@ -2,14 +2,38 @@
 
 ## 2026-04-08
 
+- `MoMo AI Assistant Tool Router` matcher `status sprint` hien inject `additionalDestinations: [{ type: 'pushGoogleChat' }]` de test luong vua reply, vua push Google Chat theo kieu card summary + warning detail cung thread.
+- `MoMo AI Assistant` cutover delivery contract sang `deliveryPlan` V2: them `destinations[]` o cap plan va `destinations[]` o tung message, bo hard-code `deliveryTarget` khoi cac trigger builders.
+- `MoMo AI Assistant` bo `Switch Delivery Target`; top-level delivery engine gio di theo chuoi generic `Build Reply Response -> Prepare GGChat Delivery Messages -> If Has GGChat Delivery Messages? -> Split Out GGChat Delivery Messages -> Build Delivery Ack -> Build Final Response`.
+- `MoMo AI Assistant Tool Sprint Healthcheck`, `MoMo AI Assistant Tool Demo Commands`, va `MoMo AI Assistant Tool Router` unsupported result deu tra `deliveryPlan` V2 (`thread` + `destinations[]` + `messages[]`) de moi tool tu quyet dinh dich giao.
+- `MoMo AI Assistant Tool Router` nang cap `Resolve Routed Tool` de merge `tool.args` + `matcher.args`, tao duong mo rong delivery qua config 1 noi (`toolRegistry`) ma khong can sua top-level.
+- `MoMo AI Assistant` them `defaultAssistantDestinationsByChannel` trong `Config Main` de lam fallback duy nhat cho direct assistant replies; interactive channels fallback ve `reply`, con `system` uu tien `pushGoogleChat`.
+- Fix runtime `MoMo AI Assistant`: `MoMo AI Assistant Tool Router` nay duoc auto-activate sau import (wrapper `import-momo-ai-assistant-tool-router-workflow.sh` + opt-in `WORKFLOW_AUTO_ACTIVATE` trong `import-workflow.sh`) de tranh loi `Workflow is not active and cannot be executed`.
+- `MoMo AI Assistant` tat `retryOnFail` tren node `AI Agent` va prompt agent duoc bo sung guard "goi tool toi da 1 lan / dung gon khi tool loi" de tranh loop khi workflow tool gap su co.
+- `MoMo AI Assistant` them node `Restore Delivery Envelope` sau `Save Agent Session` de giu lai `deliveryTarget/config/deliveryPlan` truoc khi switch delivery; fix case chat `hello` bi roi nham qua nhanh `pushGoogleChat`.
+- `MoMo AI Assistant` fallback tu `pushGoogleChat` ve `reply` khi `ggChatWebhookUrl` rong, thay vi fail cung voi loi `ggChatWebhookUrl is required for push delivery`.
+- `MoMo AI Assistant Tool Sprint Healthcheck` bo duplicate `ggChatWebhookUrl`; webhook Google Chat hien chi config 1 noi o top-level `Config Main`.
+- Them guide ngan [docs/momo-ai-assistant-subworkflow-guide.md] cho quy trinh them/chinh subworkflow cua `MoMo AI Assistant`.
+- `MoMo AI Assistant Tool Router` duoc chuan hoa theo `Config Main.toolRegistry`: moi command route/subworkflow mapping nam cung 1 noi, khong con hardcode business route o nhieu node.
+- `MoMo AI Assistant Tool Router` them `Resolve Routed Tool` + `Run Routed Tool` generic (dynamic `workflowId`), bo cap execute node rieng cho tung business tool.
+- `MoMo AI Assistant Tool Sprint Healthcheck` va `MoMo AI Assistant Tool Demo Commands` duoc chuan hoa input schema ve envelope chung (`triggerSource`, `commandText`, `channel`, `sessionId`, `spaceId`, `threadKey`, `resolvedToolName`, `commandType`, `args`) de router co the goi generic.
+- `import-momo-ai-assistant-tool-router-workflow.sh` duoc chuan hoa theo token `__REGISTRY__:<workflow name>`: wrapper nay tu quet router config, import dependency tu `workflow-registry.json`, va patch workflow IDs luc import thay vi hardcode healthcheck/demo.
+- `MoMo AI Assistant` duoc don tiep theo huong thin-main: bo toan bo nhanh direct tool runner o top-level, de moi trigger (`manual`, `schedule`, `webhook`, `local chat`) deu di chung luong `Load Session -> Build Assistant Context -> AI Agent -> delivery`.
+- Them subworkflow moi `MoMo AI Assistant Tool Router` de lam lop route business command giua `AI Agent` va cac business tools; top-level nay chi con 1 tool node `Assistant Command Router Workflow Tool`.
+- `MoMo AI Assistant Tool Router` hien route deterministic sang `MoMo AI Assistant Tool Sprint Healthcheck` hoac `MoMo AI Assistant Tool Demo Commands`, va tra ve unsupported result co `deliveryPlan` neu command chua duoc map.
+- Wrapper import/checklist/docs cua `MoMo AI Assistant` duoc cap nhat theo topology moi co router tool, de viec them/sua business subworkflow khong con can don canvas chinh theo direct branch.
+- `MoMo AI Assistant` refactor top-level theo contract delivery chung: trigger/event builders -> `Load Session` -> `Build Assistant Context` -> `AI Agent` -> `Switch Delivery Target` -> generic delivery.
+- `MoMo AI Assistant` bo special-case Google Chat cho healthcheck o top-level; thay bang `Prepare GGChat Delivery Messages` + `Send GGChat Delivery Message` de gui bat ky `deliveryPlan.messages[]` nao tool tra ve.
+- `MoMo AI Assistant` chot lop route con lai o top-level theo huong generic delivery: `Switch Delivery Target`; route business command duoc day xuong `MoMo AI Assistant Tool Router`.
+- `MoMo AI Assistant Tool Sprint Healthcheck` va `MoMo AI Assistant Tool Demo Commands` nay tra ve `deliveryPlan` V1 (`thread` + `messages[]`) cung voi `resultText/resultData`, de top-level co the delivery generic va tai su dung cho schedule/chat ve sau.
+- Checklist `test-momo-ai-assistant-checklist.mjs` duoc cap nhat theo topology moi, verify cac node switch/delivery-plan contract thay cho cum node healthcheck-specific cu.
 - `MoMo AI Assistant` bo backward-compatible memory parser cu (`lastUserMessage`, `lastAssistantMessage`), chot clean-slate memory schema theo `turns[]` (toi da 10 turn) trong `currentIntent`.
 - `MoMo AI Assistant State Store` them operation moi `purgeAllState`, route qua `Switch Operation` de xoa va recreate 3 data tables state (`assistantSessions`, `assistantPendingActions`, `assistantToolRuns`).
 - Them workflow moi `MoMo AI Assistant State Cleanup` (Manual + Schedule) de goi `purgeAllState` dinh ky; lich mac dinh `0 3 * * *`.
 - Them wrapper import `scripts/workflows/import/import-momo-ai-assistant-state-cleanup-workflow.sh` va wire vao `import-momo-ai-assistant-workflow.sh`.
 - `MoMo AI Assistant Tool Sprint Healthcheck` harden khi Jira host loi DNS/network: `Get Active Sprint` + `Get Sprint Issues` nay `continueOnFail`, va `Pick Active Sprint`/`Prepare AI Input` tra ve `failureReason` ro nghia thay vi fail cung workflow.
-
-- `MoMo AI Assistant` refactor entry routing qua `Switch Entry Route` thay cho `if` long de mo rong sau nay; `Manual Trigger` va `Manual Trigger Release Sprint` nay duoc route ve nhanh `chat -> AI Agent -> tool` (command fix cung) de test orchestration giong luong chat.
-- Them `Local Chat Trigger` + `Build Local Chat Event` de test truc tiep luong `chat -> AI Agent -> tool` ngay tren khung chat n8n editor, khong phu thuoc Google Chat trigger.
+- `MoMo AI Assistant` chuyen manual triggers sang event builder de dua ve cung luong `chat -> AI Agent -> router tool` (command fix cung) va test orchestration giong luong chat that.
+- Them `Local Chat Trigger` + `Build Local Chat Event` de test truc tiep luong `chat -> AI Agent -> router tool` ngay tren khung chat n8n editor, khong phu thuoc Google Chat trigger.
 - Nang cap `AI Agent` prompt theo huong tro ly hoi thoai (chao hoi/cam on/hoi chung) va bo sung simple memory qua session bang cach serialize vao `currentIntent` (`intent`, `turns[]`, `memoryUpdatedAt`).
 
 ## 2026-04-07

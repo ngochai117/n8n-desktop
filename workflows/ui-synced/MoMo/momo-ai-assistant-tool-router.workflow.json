@@ -1,0 +1,331 @@
+{
+  "name": "MoMo AI Assistant Tool Router",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "triggerSource",
+              "type": "string"
+            },
+            {
+              "name": "commandText",
+              "type": "string"
+            },
+            {
+              "name": "channel",
+              "type": "string"
+            },
+            {
+              "name": "sessionId",
+              "type": "string"
+            },
+            {
+              "name": "spaceId",
+              "type": "string"
+            },
+            {
+              "name": "threadKey",
+              "type": "string"
+            },
+            {
+              "name": "resolvedToolName",
+              "type": "string"
+            },
+            {
+              "name": "commandType",
+              "type": "string"
+            },
+            {
+              "name": "args",
+              "type": "object"
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1184,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const config = {\n  toolRegistry: [\n    {\n      toolName: 'sprintHealthcheck',\n      workflowRegistryKey: 'MoMo AI Assistant Tool Sprint Healthcheck',\n      workflowId: '__REGISTRY__:MoMo AI Assistant Tool Sprint Healthcheck',\n      enabled: true,\n      matchers: [\n        { pattern: 'check\\\\s+sprint', flags: 'i' },\n        {\n          pattern: 'status\\\\s+sprint',\n          flags: 'i',\n          args: {\n            additionalDestinations: [{ type: 'pushGoogleChat' }],\n          },\n        },\n        { pattern: 'sprint\\\\s+status', flags: 'i' },\n        { pattern: 'healthcheck', flags: 'i' },\n      ],\n      args: {},\n    },\n    {\n      toolName: 'demoCommand',\n      workflowRegistryKey: 'MoMo AI Assistant Tool Demo Commands',\n      workflowId: '__REGISTRY__:MoMo AI Assistant Tool Demo Commands',\n      enabled: true,\n      matchers: [\n        { pattern: 'release\\\\s+sprint|close\\\\s+sprint|release\\\\s+status', flags: 'i', commandType: 'release_sprint' },\n        { pattern: '(^|\\\\b)(approve|ok|dong y|đồng ý|xac nhan|xác nhận)(\\\\b|$)', flags: 'i', commandType: 'approve' },\n        { pattern: '(^|\\\\b)(reject|tu choi|từ chối)(\\\\b|$)', flags: 'i', commandType: 'reject' },\n        { pattern: '(^|\\\\b)(cancel|huy|hủy)(\\\\b|$)', flags: 'i', commandType: 'cancel' },\n      ],\n      args: {},\n    },\n  ],\n};\n\nreturn [\n  {\n    json: {\n      ...$json,\n      config,\n    },\n  },\n];"
+      },
+      "id": "2",
+      "name": "Config Main",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('Config Main').first().json || {};\nconst config = input.config || {};\nconst toolRegistry = Array.isArray(config.toolRegistry) ? config.toolRegistry : [];\nconst commandText = String(input.commandText || '').trim();\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction toObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction mergeObjects(...objects) {\n  return objects.reduce((acc, object) => ({ ...acc, ...toObject(object) }), {});\n}\n\nfunction buildRegex(matcher) {\n  const pattern = toText(matcher?.pattern || '');\n  if (!pattern) return null;\n\n  try {\n    return new RegExp(pattern, toText(matcher?.flags || 'i') || 'i');\n  } catch (error) {\n    return null;\n  }\n}\n\nlet resolvedTool = null;\n\nfor (const tool of toolRegistry) {\n  if (!tool || tool.enabled === false) continue;\n  const matchers = Array.isArray(tool.matchers) ? tool.matchers : [];\n\n  for (const matcher of matchers) {\n    const regex = buildRegex(matcher);\n    if (!regex || !regex.test(commandText)) continue;\n\n    resolvedTool = {\n      toolName: toText(tool.toolName),\n      workflowRegistryKey: toText(tool.workflowRegistryKey),\n      workflowId: toText(tool.workflowId),\n      commandType: toText(matcher.commandType || tool.commandType),\n      args: mergeObjects(tool.args, matcher.args),\n      matchedPattern: toText(matcher.pattern),\n    };\n    break;\n  }\n\n  if (resolvedTool) break;\n}\n\nconst toolInput = {\n  triggerSource: toText(input.triggerSource || 'chat'),\n  commandText,\n  channel: toText(input.channel || 'googleChat'),\n  sessionId: toText(input.sessionId),\n  spaceId: toText(input.spaceId),\n  threadKey: toText(input.threadKey),\n  resolvedToolName: toText(resolvedTool?.toolName || ''),\n  commandType: toText(resolvedTool?.commandType || ''),\n  args: toObject(resolvedTool?.args),\n};\n\nreturn [\n  {\n    json: {\n      ...input,\n      config,\n      resolutionStatus: resolvedTool ? 'matched' : 'unsupported',\n      resolvedTool,\n      toolInput,\n      args: toObject(resolvedTool?.args),\n    },\n  },\n];"
+      },
+      "id": "3",
+      "name": "Resolve Routed Tool",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -736,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.resolutionStatus }}",
+                    "rightValue": "matched",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "matched"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "unsupported",
+          "allMatchingOutputs": false
+        }
+      },
+      "id": "4",
+      "name": "Switch Resolution Status",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -512,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "={{ $json.resolvedTool.workflowId || \"\" }}",
+          "mode": "id",
+          "cachedResultUrl": "",
+          "cachedResultName": ""
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "triggerSource": "={{ $json.toolInput.triggerSource || \"\" }}",
+            "commandText": "={{ $json.toolInput.commandText || \"\" }}",
+            "channel": "={{ $json.toolInput.channel || \"\" }}",
+            "sessionId": "={{ $json.toolInput.sessionId || \"\" }}",
+            "spaceId": "={{ $json.toolInput.spaceId || \"\" }}",
+            "threadKey": "={{ $json.toolInput.threadKey || \"\" }}",
+            "resolvedToolName": "={{ $json.toolInput.resolvedToolName || \"\" }}",
+            "commandType": "={{ $json.toolInput.commandType || \"\" }}",
+            "args": "={{ $json.toolInput.args || {} }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "triggerSource",
+              "displayName": "triggerSource",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "commandText",
+              "displayName": "commandText",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "channel",
+              "displayName": "channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "sessionId",
+              "displayName": "sessionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "spaceId",
+              "displayName": "spaceId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "threadKey",
+              "displayName": "threadKey",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "resolvedToolName",
+              "displayName": "resolvedToolName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "commandType",
+              "displayName": "commandType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "args",
+              "displayName": "args",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "5",
+      "name": "Run Routed Tool",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -256,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $('Resolve Routed Tool').first().json || {};\nconst commandText = String(input.commandText || '').trim();\nconst additionalDestinations = Array.isArray(input.args?.additionalDestinations)\n  ? input.args.additionalDestinations\n  : [];\nconst resultText = commandText\n  ? `Hiện mình chưa map command \"${commandText}\" vào business tool nào cả.`\n  : 'Hiện mình chưa nhận ra command nào để route sang business tool.';\n\nfunction normalizeDestinations(rawDestinations) {\n  if (!Array.isArray(rawDestinations)) return [];\n\n  const normalized = [];\n  const seen = new Set();\n  for (const rawDestination of rawDestinations) {\n    const type = typeof rawDestination === 'string'\n      ? rawDestination.trim()\n      : String(rawDestination?.type || '').trim();\n\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    normalized.push({ type });\n  }\n\n  return normalized;\n}\n\nconst destinations = normalizeDestinations([\n  { type: 'reply' },\n  ...additionalDestinations,\n]);\nconst destinationTypes = destinations.map((destination) => destination.type);\n\nreturn [{\n  json: {\n    toolName: 'assistantCommandRouter',\n    toolType: 'read',\n    approvalRequired: false,\n    executeMode: 'direct',\n    resultText,\n    resultData: { route: 'unsupported', commandText },\n    deliveryPlan: {\n      version: 'v2',\n      thread: {\n        mode: 'singleThread',\n        threadKeyHint: 'assistant-router-unsupported',\n      },\n      destinations,\n      messages: [\n        {\n          messageKey: 'unsupported',\n          type: 'text',\n          destinations: destinationTypes,\n          payload: { text: resultText },\n        },\n      ],\n    },\n    followUpHints: ['check sprint', 'status sprint', 'release sprint'],\n  },\n}];\n"
+      },
+      "id": "6",
+      "name": "Build Unsupported Router Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        336
+      ]
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Config Main",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config Main": {
+      "main": [
+        [
+          {
+            "node": "Resolve Routed Tool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Routed Tool": {
+      "main": [
+        [
+          {
+            "node": "Switch Resolution Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Resolution Status": {
+      "main": [
+        [
+          {
+            "node": "Run Routed Tool",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Unsupported Router Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
+}

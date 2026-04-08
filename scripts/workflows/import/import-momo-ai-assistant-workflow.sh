@@ -17,11 +17,7 @@ bash "$ROOT_DIR/scripts/workflows/import/import-momo-ai-assistant-state-cleanup-
   "$N8N_ENV_FILE" \
   "$PROXY_ENV_FILE"
 
-bash "$ROOT_DIR/scripts/workflows/import/import-momo-ai-assistant-tool-sprint-healthcheck-workflow.sh" \
-  "$N8N_ENV_FILE" \
-  "$PROXY_ENV_FILE"
-
-bash "$ROOT_DIR/scripts/workflows/import/import-momo-ai-assistant-tool-demo-commands-workflow.sh" \
+bash "$ROOT_DIR/scripts/workflows/import/import-momo-ai-assistant-tool-router-workflow.sh" \
   "$N8N_ENV_FILE" \
   "$PROXY_ENV_FILE"
 
@@ -29,28 +25,21 @@ STATE_STORE_ID="$(
   jq -r '.workflows["MoMo AI Assistant State Store"].id // empty' "$WORKFLOW_REGISTRY_FILE"
 )"
 
-HEALTHCHECK_TOOL_ID="$(
-  jq -r '.workflows["MoMo AI Assistant Tool Sprint Healthcheck"].id // empty' "$WORKFLOW_REGISTRY_FILE"
-)"
-
-DEMO_TOOL_ID="$(
-  jq -r '.workflows["MoMo AI Assistant Tool Demo Commands"].id // empty' "$WORKFLOW_REGISTRY_FILE"
+ROUTER_TOOL_ID="$(
+  jq -r '.workflows["MoMo AI Assistant Tool Router"].id // empty' "$WORKFLOW_REGISTRY_FILE"
 )"
 
 [ -n "$STATE_STORE_ID" ] || { echo "Missing registry ID for MoMo AI Assistant State Store" >&2; exit 1; }
-[ -n "$HEALTHCHECK_TOOL_ID" ] || { echo "Missing registry ID for MoMo AI Assistant Tool Sprint Healthcheck" >&2; exit 1; }
-[ -n "$DEMO_TOOL_ID" ] || { echo "Missing registry ID for MoMo AI Assistant Tool Demo Commands" >&2; exit 1; }
+[ -n "$ROUTER_TOOL_ID" ] || { echo "Missing registry ID for MoMo AI Assistant Tool Router" >&2; exit 1; }
 
 TMP_TEMPLATE="$(mktemp)"
 
 jq \
   --arg stateStoreId "$STATE_STORE_ID" \
-  --arg healthcheckToolId "$HEALTHCHECK_TOOL_ID" \
-  --arg demoToolId "$DEMO_TOOL_ID" \
+  --arg routerToolId "$ROUTER_TOOL_ID" \
   '
   (.nodes[] | select(
     .name == "Load Session"
-    or .name == "Log Healthcheck Tool Run"
     or .name == "Save Agent Session"
   ) | .parameters.workflowId) = {
     "__rl": true,
@@ -59,33 +48,12 @@ jq \
     "cachedResultUrl": ("/workflow/" + $stateStoreId),
     "cachedResultName": "MoMo AI Assistant State Store"
   }
-  | (.nodes[] | select(.name == "Run Sprint Healthcheck Tool") | .parameters.workflowId) = {
+  | (.nodes[] | select(.name == "Assistant Command Router Workflow Tool") | .parameters.workflowId) = {
     "__rl": true,
-    "value": $healthcheckToolId,
+    "value": $routerToolId,
     "mode": "list",
-    "cachedResultUrl": ("/workflow/" + $healthcheckToolId),
-    "cachedResultName": "MoMo AI Assistant Tool Sprint Healthcheck"
-  }
-  | (.nodes[] | select(.name == "Sprint Healthcheck Workflow Tool") | .parameters.workflowId) = {
-    "__rl": true,
-    "value": $healthcheckToolId,
-    "mode": "list",
-    "cachedResultUrl": ("/workflow/" + $healthcheckToolId),
-    "cachedResultName": "MoMo AI Assistant Tool Sprint Healthcheck"
-  }
-  | (.nodes[] | select(.name == "Demo Command Workflow Tool") | .parameters.workflowId) = {
-    "__rl": true,
-    "value": $demoToolId,
-    "mode": "list",
-    "cachedResultUrl": ("/workflow/" + $demoToolId),
-    "cachedResultName": "MoMo AI Assistant Tool Demo Commands"
-  }
-  | (.nodes[] | select(.name == "Run Demo Command Tool") | .parameters.workflowId) = {
-    "__rl": true,
-    "value": $demoToolId,
-    "mode": "list",
-    "cachedResultUrl": ("/workflow/" + $demoToolId),
-    "cachedResultName": "MoMo AI Assistant Tool Demo Commands"
+    "cachedResultUrl": ("/workflow/" + $routerToolId),
+    "cachedResultName": "MoMo AI Assistant Tool Router"
   }
   ' "$WORKFLOW_TEMPLATE" > "$TMP_TEMPLATE"
 

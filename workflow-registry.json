@@ -75,32 +75,38 @@
     "MoMo AI Assistant State Store": {
       "id": "buH9JMCFNDnD3ZWU",
       "template": "workflows/ui-synced/MoMo/momo-ai-assistant-state-store.workflow.json",
-      "lastSyncedAt": "2026-04-08T00:12:57Z",
+      "lastSyncedAt": "2026-04-08T08:48:36Z",
       "templateImport": "scripts/workflows/import/import-momo-ai-assistant-state-store-workflow.sh"
     },
     "MoMo AI Assistant Tool Sprint Healthcheck": {
       "id": "KMrBMKLm9ZNezxwx",
       "template": "workflows/ui-synced/MoMo/momo-ai-assistant-tool-sprint-healthcheck.workflow.json",
-      "lastSyncedAt": "2026-04-08T00:12:59Z",
+      "lastSyncedAt": "2026-04-08T08:48:39Z",
       "templateImport": "scripts/workflows/import/import-momo-ai-assistant-tool-sprint-healthcheck-workflow.sh"
     },
     "MoMo AI Assistant": {
       "id": "JffudBpBO0QYjP8K",
       "template": "workflows/ui-synced/MoMo/momo-ai-assistant.workflow.json",
-      "lastSyncedAt": "2026-04-08T00:18:18Z",
+      "lastSyncedAt": "2026-04-08T08:48:41Z",
       "templateImport": "scripts/workflows/import/import-momo-ai-assistant-workflow.sh"
     },
     "MoMo AI Assistant Tool Demo Commands": {
       "id": "qbbI1Mu3JR3tPhZi",
       "template": "workflows/ui-synced/MoMo/momo-ai-assistant-tool-demo-commands.workflow.json",
-      "lastSyncedAt": "2026-04-08T00:12:59Z",
+      "lastSyncedAt": "2026-04-08T08:48:38Z",
       "templateImport": "scripts/workflows/import/import-momo-ai-assistant-tool-demo-commands-workflow.sh"
     },
     "MoMo AI Assistant State Cleanup": {
       "id": "t5WpwGyUw5qprVgS",
       "template": "workflows/ui-synced/MoMo/momo-ai-assistant-state-cleanup.workflow.json",
-      "lastSyncedAt": "2026-04-08T00:12:58Z",
+      "lastSyncedAt": "2026-04-08T08:48:37Z",
       "templateImport": "scripts/workflows/import/import-momo-ai-assistant-state-cleanup-workflow.sh"
+    },
+    "MoMo AI Assistant Tool Router": {
+      "id": "kY5dXvHgZDS3m92L",
+      "template": "workflows/ui-synced/MoMo/momo-ai-assistant-tool-router.workflow.json",
+      "lastSyncedAt": "2026-04-08T08:48:40Z",
+      "templateImport": "scripts/workflows/import/import-momo-ai-assistant-tool-router-workflow.sh"
     }
   }
 }

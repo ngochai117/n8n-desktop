@@ -11,6 +11,7 @@ WORKFLOW_REGISTRY_FILE="${WORKFLOW_REGISTRY_FILE:-$ROOT_DIR/workflow-registry.js
 N8N_WORKFLOW_LIST_LIMIT="${N8N_WORKFLOW_LIST_LIMIT:-250}"
 N8N_API_RETRY_MAX="${N8N_API_RETRY_MAX:-6}"
 N8N_API_RETRY_DELAY_SECONDS="${N8N_API_RETRY_DELAY_SECONDS:-1}"
+WORKFLOW_AUTO_ACTIVATE="${WORKFLOW_AUTO_ACTIVATE:-false}"
 
 resolve_path() {
   local path_input="$1"
@@ -149,6 +150,24 @@ api_request() {
     sleep "$retry_after"
     attempt=$((attempt + 1))
   done
+}
+
+activate_workflow() {
+  local workflow_id="$1"
+  local version_id="${2:-}"
+  local payload=""
+
+  if [ -n "$version_id" ]; then
+    payload="$(jq -n --arg versionId "$version_id" '{versionId: $versionId}')"
+  fi
+
+  api_request POST "$N8N_API_URL/api/v1/workflows/$workflow_id/activate" "$payload"
+
+  if [ "$API_LAST_HTTP_CODE" != "200" ]; then
+    echo "Failed to activate workflow $workflow_id (HTTP $API_LAST_HTTP_CODE)." >&2
+    echo "$API_LAST_BODY" | jq . >&2 || echo "$API_LAST_BODY" >&2
+    exit 1
+  fi
 }
 
 workflow_exists_by_id() {
@@ -486,6 +505,9 @@ if [ -z "$workflow_id" ]; then
   exit 1
 fi
 
+workflow_active="$(echo "$response" | jq -r '.active // false')"
+workflow_version_id="$(echo "$response" | jq -r '.versionId // empty')"
+
 tmp_registry="$(mktemp)"
 jq \
   --arg name "$workflow_name" \
@@ -511,6 +533,11 @@ jq \
   )
   ' "$WORKFLOW_REGISTRY_FILE" > "$tmp_registry"
 mv "$tmp_registry" "$WORKFLOW_REGISTRY_FILE"
+
+if [ "$WORKFLOW_AUTO_ACTIVATE" = "true" ] && [ "$workflow_active" != "true" ]; then
+  activate_workflow "$workflow_id" "$workflow_version_id"
+  log "Activated workflow: $workflow_name"
+fi
 
 log "$(tr '[:lower:]' '[:upper:]' <<<"${action:0:1}")${action:1} workflow: $workflow_name"
 log "Workflow ID: $workflow_id"

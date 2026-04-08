@@ -9,6 +9,7 @@
 - `import-momo-ai-assistant-workflow.sh`: import workflow `MoMo AI Assistant`
 - `import-momo-ai-assistant-state-store-workflow.sh`: import subworkflow state store explicit cho `MoMo AI Assistant`
 - `import-momo-ai-assistant-state-cleanup-workflow.sh`: import subworkflow cleanup state (`purgeAllState`) cho `MoMo AI Assistant`
+- `import-momo-ai-assistant-tool-router-workflow.sh`: import subworkflow router tool cho `MoMo AI Assistant`; wrapper nay tu scan token `__REGISTRY__:<workflow name>` trong router config de import dependency, patch workflow IDs, va auto-activate router luc import
 - `import-momo-ai-assistant-tool-sprint-healthcheck-workflow.sh`: import subworkflow read-only sprint healthcheck cho `MoMo AI Assistant`
 - `import-momo-ai-assistant-tool-demo-commands-workflow.sh`: import subworkflow demo command tool cho `MoMo AI Assistant`
 - `import-data-table-store-workflow.sh`: import subworkflow Data Table generic cho session state
@@ -32,7 +33,7 @@
 - `test-tts-vrex-checklist.sh`: wrapper chay checklist cho `TTS VREX`
 - `test-tts-vrex-checklist.mjs`: static topology/contract checklist cho workflow `TTS VREX`
 - `test-momo-ai-assistant-checklist.sh`: wrapper chay checklist cho `MoMo AI Assistant`
-- `test-momo-ai-assistant-checklist.mjs`: static topology/contract checklist cho top-level + state store + state cleanup + healthcheck tool + demo command tool cua `MoMo AI Assistant`
+- `test-momo-ai-assistant-checklist.mjs`: static topology/contract checklist cho top-level + state store + state cleanup + router tool + healthcheck tool + demo command tool cua `MoMo AI Assistant`
 
 ## Book Review notes
 - Workflow canonical: `workflows/book-review/book-review.workflow.json`
