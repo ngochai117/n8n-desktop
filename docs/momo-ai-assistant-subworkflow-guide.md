@@ -16,8 +16,8 @@ Guide nay danh cho truong hop them moi hoac chinh sua subworkflow cua `MoMo AI A
   - `sessionId`
   - `spaceId`
   - `threadKey`
-  - `resolvedToolName`
-  - `commandType`
+  - `actorId`
+  - `actorDisplayName`
   - `args`
 
 ### Y nghia tung field input
@@ -27,13 +27,14 @@ Guide nay danh cho truong hop them moi hoac chinh sua subworkflow cua `MoMo AI A
 - `sessionId`: session key duy nhat de luu memory/state. Thuong theo dang `spaceId:threadKey`.
 - `spaceId`: ID cua space/chat room. Huu ich khi sau nay can scope session theo room.
 - `threadKey`: thread hien tai. Dung de giu context hoi thoai va reply dung thread.
-- `resolvedToolName`: ten tool ma router da chon. Vi du: `sprintHealthcheck`.
-- `commandType`: loai lenh con cua tool. Vi du voi demo command co the la `approve`, `reject`, `cancel`, `release_sprint`.
-- `args`: object mo rong cho tham so rieng cua tool. Hien tai thuong rong `{}`, nhung day la cho de mo rong ve sau.
+- `actorId`: dinh danh actor goi lenh (chat sender/manual/schedule pseudo user).
+- `actorDisplayName`: ten hien thi cua actor.
+- `args`: object mo rong cho tham so rieng cua tool (vi du `additionalDestinations`, `commandType` cho demo command).
 
 ### Ghi chu input
 - Subworkflow business nen doc tu dung contract nay, khong tu y doi ten field.
 - Neu can them field moi, uu tien them vao `args` truoc. Chi nang cap schema chung khi field do that su dung cho nhieu tool.
+- Khong pass-through runtime config qua boundary. Moi business subworkflow tu giu `Config Main` local lam source of truth.
 
 ## 3. Output contract cua subworkflow
 - Tra ve toi thieu:
@@ -41,38 +42,22 @@ Guide nay danh cho truong hop them moi hoac chinh sua subworkflow cua `MoMo AI A
 ```json
 {
   "toolName": "...",
-  "toolType": "read",
-  "approvalRequired": false,
-  "executeMode": "direct",
   "resultText": "...",
-  "resultData": {},
   "deliveryPlan": {
-    "version": "v2",
     "thread": {},
     "destinations": [],
     "messages": []
-  },
-  "followUpHints": []
+  }
 }
 ```
 
 ### Y nghia tung field output
 - `toolName`: ten chuan cua tool dang tra ket qua. Vi du: `sprintHealthcheck`.
-- `toolType`: nhom tool.
-  - `read`: chi doc/phan tich, khong gay side effect.
-  - `proposal`: tao de xuat, thuong dung truoc buoc approve.
-  - `action`: co kha nang gay side effect.
-- `approvalRequired`: `true` neu tool nay phai cho approve truoc khi action that.
-- `executeMode`:
-  - `direct`: tra ket qua ngay.
-  - `afterApproval`: chi duoc chay sau khi da duoc approve.
 - `resultText`: cau tra loi text de AI/top-level co the dung ngay.
-- `resultData`: payload co cau truc cho phan render, logging, hoac xu ly tiep.
 - `deliveryPlan`: huong dan top-level phai gui ket qua nhu the nao.
-- `followUpHints`: cac lenh goi y tiep theo, de sau nay co the dung cho UX/goi y.
 
 ## 4. Delivery plan contract
-- `deliveryPlan` hien theo chuan `v2`.
+- `deliveryPlan` khong can marker version o runtime.
 - Trigger chi con mo ta nguon vao (`channel`, `triggerSource`).
 - Subworkflow/tool moi la noi quyet dinh gui di dau qua `deliveryPlan.destinations[]`.
 - Top-level chi con doc contract va delivery generic.
@@ -104,7 +89,6 @@ Guide nay danh cho truong hop them moi hoac chinh sua subworkflow cua `MoMo AI A
 ### Vi du `deliveryPlan`
 ```json
 {
-  "version": "v2",
   "thread": {
     "mode": "singleThread",
     "threadKeyHint": "sprint-healthcheck-490206"
@@ -139,10 +123,10 @@ Guide nay danh cho truong hop them moi hoac chinh sua subworkflow cua `MoMo AI A
 ## 5. Config Google Chat
 - `ggChatWebhookUrl` giu o top-level `MoMo AI Assistant` -> node `Config Main`.
 - Khong duplicate webhook URL trong business subworkflow.
-- Top-level loc `destinations[]` theo config kha dung.
+- Top-level loc destination `pushGoogleChat` theo config kha dung.
 - Neu tool yeu cau `pushGoogleChat` ma `ggChatWebhookUrl` rong:
-  - kenh interactive (`googleChat`, `n8nChatTrigger`, `manualTrigger`) se fallback theo default destinations cua top-level, thuong la `reply`
-  - kenh `system/schedule` se skip push, khong fail cung workflow
+  - top-level bo push destination
+  - workflow van tiep tuc binh thuong (khong fail cung)
 
 ## 6. Router config (`toolRegistry`)
 - Moi tool moi phai duoc khai bao trong `Config Main` cua `MoMo AI Assistant Tool Router`.
@@ -151,7 +135,6 @@ Guide nay danh cho truong hop them moi hoac chinh sua subworkflow cua `MoMo AI A
 ```json
 {
   "toolName": "sprintHealthcheck",
-  "workflowRegistryKey": "MoMo AI Assistant Tool Sprint Healthcheck",
   "workflowId": "__REGISTRY__:MoMo AI Assistant Tool Sprint Healthcheck",
   "enabled": true,
   "matchers": [
@@ -163,7 +146,6 @@ Guide nay danh cho truong hop them moi hoac chinh sua subworkflow cua `MoMo AI A
 
 ### Y nghia field trong `toolRegistry`
 - `toolName`: ten logic cua tool.
-- `workflowRegistryKey`: key de map vao `workflow-registry.json`.
 - `workflowId`: token se duoc wrapper import patch sang workflow ID that.
 - `enabled`: bat/tat tool.
 - `matchers`: danh sach regex route command.
@@ -213,3 +195,4 @@ bash scripts/workflows/tests/test-momo-ai-assistant-checklist.sh
 - Tool tu tra `deliveryPlan.destinations[]` + `messages[]`.
 - Import xong moi test.
 - Neu loi runtime workflow tool, check truoc: workflow co `active` chua.
+- Trong cung workflow, uu tien doc truc tiep field tu node goc (`$('Ten node')`) thay vi pass-through qua nhieu node trung gian.

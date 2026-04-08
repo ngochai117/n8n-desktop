@@ -113,7 +113,6 @@ for (const name of [
   'Assistant Command Router Workflow Tool',
   'Build Agent Delivery Envelope',
   'Save Agent Session',
-  'Restore Delivery Envelope',
   'Build Reply Response',
   'Prepare GGChat Delivery Messages',
   'If Has GGChat Delivery Messages?',
@@ -199,8 +198,7 @@ check(hasAiConnection(topLevel, 'Assistant Agent Model', 'ai_languageModel', 'AI
 check(hasAiConnection(topLevel, 'Assistant Command Router Workflow Tool', 'ai_tool', 'AI Agent'), 'router workflow tool connects to AI Agent');
 check(hasMainConnection(topLevel, 'AI Agent', 'Build Agent Delivery Envelope'), 'AI Agent routes to Build Agent Delivery Envelope');
 check(hasMainConnection(topLevel, 'Build Agent Delivery Envelope', 'Save Agent Session'), 'Build Agent Delivery Envelope routes to Save Agent Session');
-check(hasMainConnection(topLevel, 'Save Agent Session', 'Restore Delivery Envelope'), 'Save Agent Session routes to Restore Delivery Envelope');
-check(hasMainConnection(topLevel, 'Restore Delivery Envelope', 'Build Reply Response'), 'Restore Delivery Envelope routes to Build Reply Response');
+check(hasMainConnection(topLevel, 'Save Agent Session', 'Build Reply Response'), 'Save Agent Session routes to Build Reply Response');
 check(hasMainConnection(topLevel, 'Build Reply Response', 'Prepare GGChat Delivery Messages'), 'Build Reply Response routes to Prepare GGChat Delivery Messages');
 check(hasMainConnection(topLevel, 'Prepare GGChat Delivery Messages', 'If Has GGChat Delivery Messages?'), 'Prepare GGChat Delivery Messages routes to GGChat delivery gate');
 check(hasMainConnection(topLevel, 'If Has GGChat Delivery Messages?', 'Split Out GGChat Delivery Messages'), 'GGChat delivery gate routes positive branch to split-out node');
@@ -231,12 +229,26 @@ check(
   String(routerToolNode?.parameters?.workflowId?.value || '').trim().length > 0,
   'AI workflow-tool workflowId is configured on Assistant Command Router Workflow Tool',
 );
+check(
+  String(routerToolNode?.parameters?.workflowInputs?.value?.actorId || '').includes('$("Config Main").first().json.actorId'),
+  'Assistant Command Router Workflow Tool passes actorId from Config Main',
+);
+check(
+  String(routerToolNode?.parameters?.workflowInputs?.value?.actorDisplayName || '').includes('$("Config Main").first().json.actorDisplayName'),
+  'Assistant Command Router Workflow Tool passes actorDisplayName from Config Main',
+);
+check(
+  String(routerToolNode?.parameters?.workflowInputs?.value?.args || '').includes('$("Config Main").first().json.args'),
+  'Assistant Command Router Workflow Tool passes args from Config Main',
+);
+check(
+  !Object.prototype.hasOwnProperty.call(routerToolNode?.parameters?.workflowInputs?.value || {}, 'runtimeConfig'),
+  'Assistant Command Router Workflow Tool no longer passes runtimeConfig',
+);
 
 const configMainCode = String(nodeByName(topLevel, 'Config Main')?.parameters?.jsCode || '');
 check(configMainCode.includes('stableCommands'), 'Config Main defines stableCommands');
 check(configMainCode.includes('demoCommands'), 'Config Main defines demoCommands');
-check(configMainCode.includes('deliveryPlanVersion'), 'Config Main defines deliveryPlanVersion');
-check(configMainCode.includes('defaultAssistantDestinationsByChannel'), 'Config Main defines defaultAssistantDestinationsByChannel');
 check(configMainCode.includes('googleChatReplyOption'), 'Config Main defines Google Chat reply option');
 
 const buildManualEventCode = String(nodeByName(topLevel, 'Build Manual Event')?.parameters?.jsCode || '');
@@ -264,11 +276,7 @@ for (const name of ['Load Session', 'Save Agent Session']) {
 const buildAgentDeliveryEnvelopeCode = String(nodeByName(topLevel, 'Build Agent Delivery Envelope')?.parameters?.jsCode || '');
 check(buildAgentDeliveryEnvelopeCode.includes('deliveryPlan'), 'Build Agent Delivery Envelope builds deliveryPlan');
 check(buildAgentDeliveryEnvelopeCode.includes("$('Build Assistant Context')"), 'Build Agent Delivery Envelope reads Build Assistant Context');
-check(buildAgentDeliveryEnvelopeCode.includes('defaultAssistantDestinationsByChannel'), 'Build Agent Delivery Envelope reads defaultAssistantDestinationsByChannel');
 check(buildAgentDeliveryEnvelopeCode.includes('destinations'), 'Build Agent Delivery Envelope normalizes destinations');
-
-const restoreDeliveryEnvelopeCode = String(nodeByName(topLevel, 'Restore Delivery Envelope')?.parameters?.jsCode || '');
-check(restoreDeliveryEnvelopeCode.includes("$('Build Agent Delivery Envelope')"), 'Restore Delivery Envelope reloads the canonical envelope after saving session');
 
 const buildReplyResponseCode = String(nodeByName(topLevel, 'Build Reply Response')?.parameters?.jsCode || '');
 check(buildReplyResponseCode.includes('hasReplyDestination'), 'Build Reply Response computes hasReplyDestination');
@@ -308,6 +316,26 @@ check(
   nodeByName(routerTool, 'When Executed by Another Workflow')?.parameters?.inputSource === 'workflowInputs',
   'router tool trigger uses workflowInputs',
 );
+check(
+  (nodeByName(routerTool, 'When Executed by Another Workflow')?.parameters?.workflowInputs?.values || [])
+    .some((item) => item.name === 'actorId' && item.type === 'string'),
+  'router tool trigger accepts actorId input',
+);
+check(
+  (nodeByName(routerTool, 'When Executed by Another Workflow')?.parameters?.workflowInputs?.values || [])
+    .some((item) => item.name === 'actorDisplayName' && item.type === 'string'),
+  'router tool trigger accepts actorDisplayName input',
+);
+check(
+  (nodeByName(routerTool, 'When Executed by Another Workflow')?.parameters?.workflowInputs?.values || [])
+    .some((item) => item.name === 'args' && item.type === 'object'),
+  'router tool trigger accepts args object input',
+);
+check(
+  !(nodeByName(routerTool, 'When Executed by Another Workflow')?.parameters?.workflowInputs?.values || [])
+    .some((item) => ['runtimeConfig', 'resolvedToolName', 'commandType'].includes(item.name)),
+  'router tool trigger keeps minimal input contract',
+);
 check(hasMainConnection(routerTool, 'When Executed by Another Workflow', 'Config Main'), 'router tool trigger routes to Config Main');
 check(hasMainConnection(routerTool, 'Config Main', 'Resolve Routed Tool'), 'router config routes to resolve node');
 check(hasMainConnection(routerTool, 'Resolve Routed Tool', 'Switch Resolution Status'), 'router resolve node routes to switch');
@@ -318,6 +346,7 @@ const routerConfigCode = String(nodeByName(routerTool, 'Config Main')?.parameter
 check(routerConfigCode.includes('toolRegistry'), 'router config defines toolRegistry');
 check(routerConfigCode.includes('__REGISTRY__:MoMo AI Assistant Tool Sprint Healthcheck'), 'router config keeps registry token for healthcheck tool');
 check(routerConfigCode.includes('__REGISTRY__:MoMo AI Assistant Tool Demo Commands'), 'router config keeps registry token for demo tool');
+check(!routerConfigCode.includes('workflowRegistryKey'), 'router config no longer carries workflowRegistryKey in runtime registry');
 
 const resolveRoutedToolCode = String(nodeByName(routerTool, 'Resolve Routed Tool')?.parameters?.jsCode || '');
 check(resolveRoutedToolCode.includes('resolvedTool'), 'router resolve node builds resolvedTool');
@@ -332,6 +361,18 @@ check(
 check(
   String(nodeByName(routerTool, 'Run Routed Tool')?.parameters?.workflowId?.value || '').trim() === '={{ $json.resolvedTool.workflowId || "" }}',
   'router generic runner uses dynamic resolvedTool.workflowId',
+);
+check(
+  String(nodeByName(routerTool, 'Run Routed Tool')?.parameters?.workflowInputs?.value?.args || '').includes('toolInput.args'),
+  'router generic runner passes toolInput.args to business tool',
+);
+check(
+  String(nodeByName(routerTool, 'Run Routed Tool')?.parameters?.workflowInputs?.value?.actorId || '').includes('toolInput.actorId'),
+  'router generic runner passes toolInput.actorId to business tool',
+);
+check(
+  !Object.prototype.hasOwnProperty.call(nodeByName(routerTool, 'Run Routed Tool')?.parameters?.workflowInputs?.value || {}, 'config'),
+  'router generic runner no longer passes config to business tool',
 );
 
 const routerWrapperPath = path.join(
@@ -381,6 +422,27 @@ check(
   nodeByName(healthcheckTool, 'When Executed by Another Workflow')?.parameters?.inputSource === 'workflowInputs',
   'healthcheck tool trigger uses workflowInputs',
 );
+check(
+  (nodeByName(healthcheckTool, 'When Executed by Another Workflow')?.parameters?.workflowInputs?.values || [])
+    .some((item) => item.name === 'actorId' && item.type === 'string'),
+  'healthcheck tool trigger accepts actorId input',
+);
+check(
+  (nodeByName(healthcheckTool, 'When Executed by Another Workflow')?.parameters?.workflowInputs?.values || [])
+    .some((item) => item.name === 'args' && item.type === 'object'),
+  'healthcheck tool trigger accepts args object input',
+);
+check(
+  !(nodeByName(healthcheckTool, 'When Executed by Another Workflow')?.parameters?.workflowInputs?.values || [])
+    .some((item) => ['config', 'resolvedToolName', 'commandType'].includes(item.name)),
+  'healthcheck tool trigger keeps minimal input contract',
+);
+
+const healthcheckToolConfigMainCode = String(nodeByName(healthcheckTool, 'Config Main')?.parameters?.jsCode || '');
+check(
+  healthcheckToolConfigMainCode.includes('const config = {'),
+  'healthcheck tool Config Main defines local config source-of-truth',
+);
 
 const buildHealthcheckResultCode = String(nodeByName(healthcheckTool, 'Build Healthcheck Result')?.parameters?.jsCode || '');
 check(buildHealthcheckResultCode.includes('deliveryPlan'), 'healthcheck tool returns deliveryPlan');
@@ -391,6 +453,7 @@ check(buildHealthcheckResultCode.includes('summaryCardPayload'), 'healthcheck to
 const buildNoActiveSprintResultCode = String(nodeByName(healthcheckTool, 'Build No Active Sprint Result')?.parameters?.jsCode || '');
 check(buildNoActiveSprintResultCode.includes('deliveryPlan'), 'no-active-sprint result returns deliveryPlan');
 check(buildNoActiveSprintResultCode.includes('destinations'), 'no-active-sprint result returns destinations');
+check(!buildNoActiveSprintResultCode.includes('resultData'), 'no-active-sprint result drops unused resultData payload');
 
 for (const name of ['When Executed by Another Workflow', 'Build Demo Command Result']) {
   check(Boolean(nodeByName(demoTool, name)), `demo tool node exists: ${name}`);
@@ -399,6 +462,12 @@ for (const name of ['When Executed by Another Workflow', 'Build Demo Command Res
 const buildDemoCommandResultCode = String(nodeByName(demoTool, 'Build Demo Command Result')?.parameters?.jsCode || '');
 check(buildDemoCommandResultCode.includes('deliveryPlan'), 'demo command tool returns deliveryPlan');
 check(buildDemoCommandResultCode.includes('destinations'), 'demo command tool returns destinations');
+check(!buildDemoCommandResultCode.includes('toolType'), 'demo command tool drops unused toolType metadata');
+check(
+  !(nodeByName(demoTool, 'When Executed by Another Workflow')?.parameters?.workflowInputs?.values || [])
+    .some((item) => ['resolvedToolName', 'commandType', 'config'].includes(item.name)),
+  'demo tool trigger keeps minimal input contract',
+);
 
 check(Boolean(nodeByName(stateCleanup, 'Schedule Trigger')), 'state cleanup workflow has Schedule Trigger');
 check(

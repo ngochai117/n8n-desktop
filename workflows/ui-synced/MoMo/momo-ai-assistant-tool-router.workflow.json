@@ -31,11 +31,11 @@
               "type": "string"
             },
             {
-              "name": "resolvedToolName",
+              "name": "actorId",
               "type": "string"
             },
             {
-              "name": "commandType",
+              "name": "actorDisplayName",
               "type": "string"
             },
             {
@@ -56,7 +56,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const config = {\n  toolRegistry: [\n    {\n      toolName: 'sprintHealthcheck',\n      workflowRegistryKey: 'MoMo AI Assistant Tool Sprint Healthcheck',\n      workflowId: '__REGISTRY__:MoMo AI Assistant Tool Sprint Healthcheck',\n      enabled: true,\n      matchers: [\n        { pattern: 'check\\\\s+sprint', flags: 'i' },\n        {\n          pattern: 'status\\\\s+sprint',\n          flags: 'i',\n          args: {\n            additionalDestinations: [{ type: 'pushGoogleChat' }],\n          },\n        },\n        { pattern: 'sprint\\\\s+status', flags: 'i' },\n        { pattern: 'healthcheck', flags: 'i' },\n      ],\n      args: {},\n    },\n    {\n      toolName: 'demoCommand',\n      workflowRegistryKey: 'MoMo AI Assistant Tool Demo Commands',\n      workflowId: '__REGISTRY__:MoMo AI Assistant Tool Demo Commands',\n      enabled: true,\n      matchers: [\n        { pattern: 'release\\\\s+sprint|close\\\\s+sprint|release\\\\s+status', flags: 'i', commandType: 'release_sprint' },\n        { pattern: '(^|\\\\b)(approve|ok|dong y|đồng ý|xac nhan|xác nhận)(\\\\b|$)', flags: 'i', commandType: 'approve' },\n        { pattern: '(^|\\\\b)(reject|tu choi|từ chối)(\\\\b|$)', flags: 'i', commandType: 'reject' },\n        { pattern: '(^|\\\\b)(cancel|huy|hủy)(\\\\b|$)', flags: 'i', commandType: 'cancel' },\n      ],\n      args: {},\n    },\n  ],\n};\n\nreturn [\n  {\n    json: {\n      ...$json,\n      config,\n    },\n  },\n];"
+        "jsCode": "const config = {\n  toolRegistry: [\n    {\n      toolName: 'sprintHealthcheck',\n      workflowId: '__REGISTRY__:MoMo AI Assistant Tool Sprint Healthcheck',\n      enabled: true,\n      matchers: [\n        { pattern: 'check\\\\s+sprint', flags: 'i' },\n        {\n          pattern: 'status\\\\s+sprint',\n          flags: 'i',\n          args: {\n            additionalDestinations: [{ type: 'pushGoogleChat' }],\n          },\n        },\n        { pattern: 'sprint\\\\s+status', flags: 'i' },\n        { pattern: 'healthcheck', flags: 'i' },\n      ],\n    },\n    {\n      toolName: 'demoCommand',\n      workflowId: '__REGISTRY__:MoMo AI Assistant Tool Demo Commands',\n      enabled: true,\n      matchers: [\n        {\n          pattern: 'release\\\\s+sprint|close\\\\s+sprint|release\\\\s+status',\n          flags: 'i',\n          args: { commandType: 'release_sprint' },\n        },\n        {\n          pattern: '(^|\\\\b)(approve|ok|dong y|đồng ý|xac nhan|xác nhận)(\\\\b|$)',\n          flags: 'i',\n          args: { commandType: 'approve' },\n        },\n        {\n          pattern: '(^|\\\\b)(reject|tu choi|từ chối)(\\\\b|$)',\n          flags: 'i',\n          args: { commandType: 'reject' },\n        },\n        {\n          pattern: '(^|\\\\b)(cancel|huy|hủy)(\\\\b|$)',\n          flags: 'i',\n          args: { commandType: 'cancel' },\n        },\n      ],\n    },\n  ],\n};\n\nreturn [\n  {\n    json: {\n      ...$json,\n      config,\n    },\n  },\n];"
       },
       "id": "2",
       "name": "Config Main",
@@ -69,7 +69,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $('Config Main').first().json || {};\nconst config = input.config || {};\nconst toolRegistry = Array.isArray(config.toolRegistry) ? config.toolRegistry : [];\nconst commandText = String(input.commandText || '').trim();\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction toObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction mergeObjects(...objects) {\n  return objects.reduce((acc, object) => ({ ...acc, ...toObject(object) }), {});\n}\n\nfunction buildRegex(matcher) {\n  const pattern = toText(matcher?.pattern || '');\n  if (!pattern) return null;\n\n  try {\n    return new RegExp(pattern, toText(matcher?.flags || 'i') || 'i');\n  } catch (error) {\n    return null;\n  }\n}\n\nlet resolvedTool = null;\n\nfor (const tool of toolRegistry) {\n  if (!tool || tool.enabled === false) continue;\n  const matchers = Array.isArray(tool.matchers) ? tool.matchers : [];\n\n  for (const matcher of matchers) {\n    const regex = buildRegex(matcher);\n    if (!regex || !regex.test(commandText)) continue;\n\n    resolvedTool = {\n      toolName: toText(tool.toolName),\n      workflowRegistryKey: toText(tool.workflowRegistryKey),\n      workflowId: toText(tool.workflowId),\n      commandType: toText(matcher.commandType || tool.commandType),\n      args: mergeObjects(tool.args, matcher.args),\n      matchedPattern: toText(matcher.pattern),\n    };\n    break;\n  }\n\n  if (resolvedTool) break;\n}\n\nconst toolInput = {\n  triggerSource: toText(input.triggerSource || 'chat'),\n  commandText,\n  channel: toText(input.channel || 'googleChat'),\n  sessionId: toText(input.sessionId),\n  spaceId: toText(input.spaceId),\n  threadKey: toText(input.threadKey),\n  resolvedToolName: toText(resolvedTool?.toolName || ''),\n  commandType: toText(resolvedTool?.commandType || ''),\n  args: toObject(resolvedTool?.args),\n};\n\nreturn [\n  {\n    json: {\n      ...input,\n      config,\n      resolutionStatus: resolvedTool ? 'matched' : 'unsupported',\n      resolvedTool,\n      toolInput,\n      args: toObject(resolvedTool?.args),\n    },\n  },\n];"
+        "jsCode": "const input = $('Config Main').first().json || {};\nconst config = input.config || {};\nconst toolRegistry = Array.isArray(config.toolRegistry) ? config.toolRegistry : [];\nconst commandText = String(input.commandText || '').trim();\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction toObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction mergeObjects(...objects) {\n  return objects.reduce((acc, object) => ({ ...acc, ...toObject(object) }), {});\n}\n\nfunction buildRegex(matcher) {\n  const pattern = toText(matcher?.pattern || '');\n  if (!pattern) return null;\n\n  try {\n    return new RegExp(pattern, toText(matcher?.flags || 'i') || 'i');\n  } catch (error) {\n    return null;\n  }\n}\n\nconst incomingArgs = toObject(input.args);\nlet resolvedTool = null;\n\nfor (const tool of toolRegistry) {\n  if (!tool || tool.enabled === false) continue;\n  const matchers = Array.isArray(tool.matchers) ? tool.matchers : [];\n\n  for (const matcher of matchers) {\n    const regex = buildRegex(matcher);\n    if (!regex || !regex.test(commandText)) continue;\n\n    resolvedTool = {\n      toolName: toText(tool.toolName),\n      workflowId: toText(tool.workflowId),\n      args: mergeObjects(incomingArgs, tool.args, matcher.args),\n    };\n    break;\n  }\n\n  if (resolvedTool) break;\n}\n\nconst toolInput = {\n  triggerSource: toText(input.triggerSource || 'chat'),\n  commandText,\n  channel: toText(input.channel || 'googleChat'),\n  sessionId: toText(input.sessionId),\n  spaceId: toText(input.spaceId),\n  threadKey: toText(input.threadKey),\n  actorId: toText(input.actorId),\n  actorDisplayName: toText(input.actorDisplayName),\n  args: toObject(resolvedTool?.args || incomingArgs),\n};\n\nreturn [\n  {\n    json: {\n      commandText,\n      resolutionStatus: resolvedTool ? 'matched' : 'unsupported',\n      resolvedTool,\n      toolInput,\n      args: toolInput.args,\n    },\n  },\n];"
       },
       "id": "3",
       "name": "Resolve Routed Tool",
@@ -142,8 +142,8 @@
             "sessionId": "={{ $json.toolInput.sessionId || \"\" }}",
             "spaceId": "={{ $json.toolInput.spaceId || \"\" }}",
             "threadKey": "={{ $json.toolInput.threadKey || \"\" }}",
-            "resolvedToolName": "={{ $json.toolInput.resolvedToolName || \"\" }}",
-            "commandType": "={{ $json.toolInput.commandType || \"\" }}",
+            "actorId": "={{ $json.toolInput.actorId || \"\" }}",
+            "actorDisplayName": "={{ $json.toolInput.actorDisplayName || \"\" }}",
             "args": "={{ $json.toolInput.args || {} }}"
           },
           "matchingColumns": [],
@@ -209,8 +209,8 @@
               "removed": false
             },
             {
-              "id": "resolvedToolName",
-              "displayName": "resolvedToolName",
+              "id": "actorId",
+              "displayName": "actorId",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -219,8 +219,8 @@
               "removed": false
             },
             {
-              "id": "commandType",
-              "displayName": "commandType",
+              "id": "actorDisplayName",
+              "displayName": "actorDisplayName",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -257,7 +257,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $('Resolve Routed Tool').first().json || {};\nconst commandText = String(input.commandText || '').trim();\nconst additionalDestinations = Array.isArray(input.args?.additionalDestinations)\n  ? input.args.additionalDestinations\n  : [];\nconst resultText = commandText\n  ? `Hiện mình chưa map command \"${commandText}\" vào business tool nào cả.`\n  : 'Hiện mình chưa nhận ra command nào để route sang business tool.';\n\nfunction normalizeDestinations(rawDestinations) {\n  if (!Array.isArray(rawDestinations)) return [];\n\n  const normalized = [];\n  const seen = new Set();\n  for (const rawDestination of rawDestinations) {\n    const type = typeof rawDestination === 'string'\n      ? rawDestination.trim()\n      : String(rawDestination?.type || '').trim();\n\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    normalized.push({ type });\n  }\n\n  return normalized;\n}\n\nconst destinations = normalizeDestinations([\n  { type: 'reply' },\n  ...additionalDestinations,\n]);\nconst destinationTypes = destinations.map((destination) => destination.type);\n\nreturn [{\n  json: {\n    toolName: 'assistantCommandRouter',\n    toolType: 'read',\n    approvalRequired: false,\n    executeMode: 'direct',\n    resultText,\n    resultData: { route: 'unsupported', commandText },\n    deliveryPlan: {\n      version: 'v2',\n      thread: {\n        mode: 'singleThread',\n        threadKeyHint: 'assistant-router-unsupported',\n      },\n      destinations,\n      messages: [\n        {\n          messageKey: 'unsupported',\n          type: 'text',\n          destinations: destinationTypes,\n          payload: { text: resultText },\n        },\n      ],\n    },\n    followUpHints: ['check sprint', 'status sprint', 'release sprint'],\n  },\n}];\n"
+        "jsCode": "const input = $('Resolve Routed Tool').first().json || {};\nconst commandText = String(input.commandText || '').trim();\nconst additionalDestinations = Array.isArray(input.args?.additionalDestinations)\n  ? input.args.additionalDestinations\n  : [];\nconst resultText = commandText\n  ? `Hiện mình chưa map command \"${commandText}\" vào business tool nào cả.`\n  : 'Hiện mình chưa nhận ra command nào để route sang business tool.';\n\nfunction normalizeDestinations(rawDestinations) {\n  if (!Array.isArray(rawDestinations)) return [];\n\n  const normalized = [];\n  const seen = new Set();\n  for (const rawDestination of rawDestinations) {\n    const type = typeof rawDestination === 'string'\n      ? rawDestination.trim()\n      : String(rawDestination?.type || '').trim();\n\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    normalized.push({ type });\n  }\n\n  return normalized;\n}\n\nconst destinations = normalizeDestinations([\n  { type: 'reply' },\n  ...additionalDestinations,\n]);\nconst destinationTypes = destinations.map((destination) => destination.type);\n\nreturn [{\n  json: {\n    toolName: 'assistantCommandRouter',\n    resultText,\n    deliveryPlan: {\n      thread: {\n        mode: 'singleThread',\n        threadKeyHint: 'assistant-router-unsupported',\n      },\n      destinations,\n      messages: [\n        {\n          messageKey: 'unsupported',\n          type: 'text',\n          destinations: destinationTypes,\n          payload: { text: resultText },\n        },\n      ],\n    },\n  },\n}];"
       },
       "id": "6",
       "name": "Build Unsupported Router Result",

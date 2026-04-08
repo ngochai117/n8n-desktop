@@ -2,6 +2,23 @@
 
 ## 2026-04-08
 
+- `MoMo AI Assistant` refactor them delivery stage theo huong field-toi-gian: cac node `Build Reply Response` / `Prepare GGChat Delivery Messages` / `Build Delivery Ack` / `Build Final Response` uu tien doc truc tiep tu node goc (`$('Ten node')`) thay vi pass-through envelope.
+- `Config Main` bo field thua `deliveryPlanVersion` va `defaultAssistantDestinationsByChannel`; fallback destination dua ve logic gon trong `Build Agent Delivery Envelope` (`system -> pushGoogleChat`, con lai `reply`).
+- `AI Agent` prompt output contract chot lai theo runtime toi thieu: `toolName`, `resultText`, `deliveryPlan` (bo cac field cu `toolType/resultData/followUpHints`).
+- `Save Agent Session` map field session truc tiep tu `Build Assistant Context` + `Build Agent Delivery Envelope`, giam phu thuoc field trung gian.
+- Chot input contract toi gian main -> router -> business tool: `triggerSource`, `commandText`, `channel`, `sessionId`, `spaceId`, `threadKey`, `actorId`, `actorDisplayName`, `args`; bo pass-through `runtimeConfig/config`, `resolvedToolName`, `commandType`.
+- `Build Assistant Context` va `Build Agent Delivery Envelope` duoc don payload theo source-of-truth: node downstream doc truc tiep `$('Config Main')`/`$('Build Assistant Context')`, khong carry full event/config qua nhieu lop.
+- `Load Session` / `Save Agent Session` schema duoc rut gon theo operation thuc te (`getSession`, `upsertSession`), bo input dead (`pendingAction*`, `toolRun`) o top-level mapping.
+- `MoMo AI Assistant Tool Sprint Healthcheck` quay ve local `Config Main` cho Jira/threshold/sheet config; contract qua subworkflow boundary giu toi thieu va khong phu thuoc config top-level.
+- `MoMo AI Assistant Tool Demo Commands` chuyen sang doc `args.commandType`; router matcher map commandType vao `args` de giu contract input dong nhat.
+
+- Cleanup theo huong toi gian field cho `MoMo AI Assistant`: bo `sessionMode/requestedToolName/requestedToolMode/threadName/rawEvent` o event builders, bo `assistantName` + `pendingActionTtlHours` khoi `Config Main`.
+- Top-level bo node `Restore Delivery Envelope`; `Save Agent Session` di thang vao `Build Reply Response`, va `Build Reply Response` doc truc tiep `$('Build Agent Delivery Envelope')`.
+- `Build Agent Delivery Envelope` bo metadata khong dung (`responseKind`, `resultData`, `ggChatWebhookUrl` trong output envelope), `Prepare GGChat Delivery Messages` bo fallback `responseKind` khi tao thread seed.
+- Router runtime registry bo `workflowRegistryKey`; `Resolve Routed Tool` va unsupported result giam payload trung gian de de trace.
+- Tool outputs toi gian: `MoMo AI Assistant Tool Sprint Healthcheck` + `MoMo AI Assistant Tool Demo Commands` chot output runtime con `toolName`, `resultText`, `deliveryPlan`.
+- Cap nhat checklist + guide subworkflow theo topology moi va rule doc field truc tiep tu node goc.
+
 - `MoMo AI Assistant Tool Router` matcher `status sprint` hien inject `additionalDestinations: [{ type: 'pushGoogleChat' }]` de test luong vua reply, vua push Google Chat theo kieu card summary + warning detail cung thread.
 - `MoMo AI Assistant` cutover delivery contract sang `deliveryPlan` V2: them `destinations[]` o cap plan va `destinations[]` o tung message, bo hard-code `deliveryTarget` khoi cac trigger builders.
 - `MoMo AI Assistant` bo `Switch Delivery Target`; top-level delivery engine gio di theo chuoi generic `Build Reply Response -> Prepare GGChat Delivery Messages -> If Has GGChat Delivery Messages? -> Split Out GGChat Delivery Messages -> Build Delivery Ack -> Build Final Response`.

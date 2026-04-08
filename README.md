@@ -84,20 +84,23 @@ Checklist hien tai la static contract/topology checklist cho workflow canonical 
   - subworkflow `MoMo AI Assistant State Cleanup`: cron cleanup state (`purgeAllState`) theo lich
 - Router config V1:
   - single source of truth nam trong node `Config Main` cua `MoMo AI Assistant Tool Router`
-  - moi tool duoc khai bao tai `toolRegistry` voi `toolName`, `workflowRegistryKey`, `workflowId`, `matchers`, `args`
+  - moi tool duoc khai bao tai `toolRegistry` voi `toolName`, `workflowId`, `matchers`, `args`
   - them/sua command routing thi sua 1 noi trong `toolRegistry`, khong can don canvas top-level
   - router chi con 1 node runner generic `Run Routed Tool` dung `resolvedTool.workflowId`
   - import wrapper `import-momo-ai-assistant-tool-router-workflow.sh` tu scan token `__REGISTRY__:<workflow name>` trong router config de import dependency, patch workflow ID luc import, va auto-activate router sau import de `Assistant Command Router Workflow Tool` goi duoc ngay
 - Google Chat config V2:
   - `ggChatWebhookUrl` hien duoc giu 1 noi duy nhat trong node `Config Main` cua top-level `MoMo AI Assistant`
   - business subworkflow khong can duplicate webhook URL
-  - top-level se loc `deliveryPlan.destinations[]` theo config kha dung; neu thieu `ggChatWebhookUrl` thi interactive channels fallback ve `reply`, con `schedule/system` se skip push thay vi fail cung
+  - top-level se loc destination `pushGoogleChat` theo config kha dung; neu thieu `ggChatWebhookUrl` thi bo push destination va tiep tuc luong binh thuong (khong fail cung)
 - Contract delivery V2:
-  - moi business tool/subworkflow tra ve `deliveryPlan`
+  - moi business tool/subworkflow tra ve contract toi thieu: `toolName`, `resultText`, `deliveryPlan`
+  - contract input main -> router -> subworkflow duoc chot toi gian: `triggerSource`, `commandText`, `channel`, `sessionId`, `spaceId`, `threadKey`, `actorId`, `actorDisplayName`, `args`
+  - business subworkflow tu giu `Config Main` local lam source of truth cho logic noi bo, khong pass-through `runtimeConfig/config` qua boundary
   - top-level khong con route business-case; moi trigger deu di chung luong `Load Session -> Build Assistant Context -> AI Agent -> Assistant Command Router Workflow Tool`
   - subworkflow/tool tu quyet dinh `deliveryPlan.destinations[]`; trigger khong con hard-code `deliveryTarget`
   - moi `message` co `destinations[]` rieng de quyet dinh message nao di `reply`, message nao di `pushGoogleChat`
   - top-level delivery engine da doi tu `Switch Delivery Target` sang chuoi generic `Build Reply Response -> Prepare GGChat Delivery Messages -> If Has GGChat Delivery Messages? -> Build Final Response`
+  - node delivery va final response uu tien doc truc tiep tu node goc (`$('Ten node')`) thay vi pass-through envelope da map lai qua nhieu lop
   - Google Chat push khong con hard-code rieng cho healthcheck; node `Prepare GGChat Delivery Messages` + `Send GGChat Delivery Message` gui bat ky message nao co `destinations: ['pushGoogleChat']`
 - Da live-test chat webhook local: `check sprint` / `status sprint` di qua `AI Agent -> sprint_healthcheck` on dinh, session thread duoc luu dung, va response tra ve report text thay vi fallback generic.
 - Luong dang bat:
