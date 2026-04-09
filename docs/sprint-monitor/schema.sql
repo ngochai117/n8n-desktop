@@ -14,6 +14,7 @@ create table if not exists monitor_configs (
   gitlab_project_ids jsonb not null default '[]'::jsonb,
   gchat_pm_webhook text not null,
   gchat_lead_webhook text,
+  message_language text not null default 'vi',
   timezone text not null default 'Asia/Saigon',
   max_candidate_tasks integer not null default 20,
   max_clusters integer not null default 5,
@@ -32,6 +33,9 @@ create table if not exists monitor_configs (
 
 create unique index if not exists ux_monitor_configs_team_board
   on monitor_configs(team_id, board_id);
+
+alter table monitor_configs
+  add column if not exists message_language text not null default 'vi';
 
 create table if not exists sprint_snapshots (
   id uuid primary key default gen_random_uuid(),

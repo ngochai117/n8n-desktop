@@ -9,6 +9,7 @@
 - Clarify Neon helper output and docs so `Host` in the printed credential block is explicitly the n8n credential host, while the direct connection-string host is labeled separately for CLI/schema use.
 - Harden the Neon helper against placeholder mistakes by rejecting values like `POOLER_HOST` for `--n8n-host`, and rename the example placeholder toward the clearer `n8n credential host` wording.
 - Add `docs/sprint-monitor/monitor-configs.sql` with operational SQL snippets for viewing, inserting, updating, disabling, and upserting `monitor_configs` rows.
+- Add Sprint Monitor outbound message language support with `monitor_configs.message_language` (`en|vi`), localized drafter prompts, and localized deterministic delivery fallbacks for PM digests and lead alerts.
 - Sprint Monitor top-level import wrappers now import `Sprint Monitor Engine` first and patch `__REGISTRY__:Sprint Monitor Engine` in the top-level templates before calling the generic import helper.
 - `import-all-workflows.sh`, `README.md`, and `scripts/README.md` now document the Sprint Monitor workflows, generation/import flow, schema bootstrap, strict checklist, and manual credential-binding requirements.
 
@@ -413,3 +414,15 @@
 ## 2026-04-09T04:56:12Z
 - Workflow sync (UI -> JSON) processed 22 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=22, changed=1, unchanged=21, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Sprint Monitor Engine.
+
+## 2026-04-09T05:10:51Z
+- Workflow sync (UI -> JSON) processed 22 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=22, changed=1, unchanged=21, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Sprint Monitor Engine.
+
+## 2026-04-09T05:40:11Z
+- Workflow sync (UI -> JSON) processed 22 workflow(s): changed=4, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=22, changed=4, unchanged=18, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Sprint Monitor Engine, Sprint Monitor Light Scan, Sprint Monitor Endgame, Sprint Monitor Deep Analysis.
+
+## 2026-04-09T05:42:46Z
+- Workflow sync (UI -> JSON) completed with no file, registry, or wrapper changes.
+- Run mode=apply, total=22, changed=0, unchanged=22, failed=0, missing_ui_folder=0, registry_changed=false, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.

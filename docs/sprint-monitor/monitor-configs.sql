@@ -11,6 +11,7 @@ select
   jira_jql,
   gitlab_base_url,
   gitlab_project_ids,
+  message_language,
   timezone,
   enabled,
   updated_at
@@ -29,6 +30,7 @@ insert into monitor_configs (
   gitlab_project_ids,
   gchat_pm_webhook,
   gchat_lead_webhook,
+  message_language,
   timezone,
   enabled
 ) values (
@@ -41,6 +43,7 @@ insert into monitor_configs (
   '["12345678"]'::jsonb,
   'https://chat.googleapis.com/v1/spaces/XXX/messages?key=XXX&token=XXX',
   'https://chat.googleapis.com/v1/spaces/YYY/messages?key=YYY&token=YYY',
+  'vi',
   'Asia/Ho_Chi_Minh',
   true
 );
@@ -56,6 +59,7 @@ set
   gitlab_project_ids = '["REAL_PROJECT_ID"]'::jsonb,
   gchat_pm_webhook = 'https://chat.googleapis.com/v1/spaces/REAL_PM/messages?key=REAL&token=REAL',
   gchat_lead_webhook = 'https://chat.googleapis.com/v1/spaces/REAL_LEAD/messages?key=REAL&token=REAL',
+  message_language = 'vi',
   timezone = 'Asia/Ho_Chi_Minh',
   enabled = true,
   updated_at = now()
@@ -74,18 +78,20 @@ insert into monitor_configs (
   gitlab_project_ids,
   gchat_pm_webhook,
   gchat_lead_webhook,
+  message_language,
   timezone,
   enabled
 ) values (
-  'momo-team',
-  '123',
-  'https://your-company.atlassian.net',
-  'MOMO',
+  'tfbv',
+  '1041',
+  'https://atlassiansuite.mservice.com.vn:8443',
+  'EXPENSE',
   null,
-  'https://gitlab.com',
-  '["12345678"]'::jsonb,
+  'https://gitlab.mservice.com.vn',
+  '["2419"]'::jsonb,
   'https://chat.googleapis.com/v1/spaces/XXX/messages?key=XXX&token=XXX',
   'https://chat.googleapis.com/v1/spaces/YYY/messages?key=YYY&token=YYY',
+  'vi',
   'Asia/Ho_Chi_Minh',
   true
 )
@@ -98,6 +104,7 @@ set
   gitlab_project_ids = excluded.gitlab_project_ids,
   gchat_pm_webhook = excluded.gchat_pm_webhook,
   gchat_lead_webhook = excluded.gchat_lead_webhook,
+  message_language = excluded.message_language,
   timezone = excluded.timezone,
   enabled = excluded.enabled,
   updated_at = now();

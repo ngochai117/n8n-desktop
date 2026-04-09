@@ -6,44 +6,35 @@
         "workflowInputs": {
           "values": [
             {
-              "name": "triggerSource",
-              "type": "string"
+              "name": "triggerSource"
             },
             {
-              "name": "commandText",
-              "type": "string"
+              "name": "commandText"
             },
             {
-              "name": "channel",
-              "type": "string"
+              "name": "channel"
             },
             {
-              "name": "sessionId",
-              "type": "string"
+              "name": "sessionId"
             },
             {
-              "name": "spaceId",
-              "type": "string"
+              "name": "spaceId"
             },
             {
-              "name": "threadKey",
-              "type": "string"
+              "name": "threadKey"
             },
             {
-              "name": "actorId",
-              "type": "string"
+              "name": "actorId"
             },
             {
-              "name": "actorDisplayName",
-              "type": "string"
+              "name": "actorDisplayName"
             },
             {
               "name": "args",
               "type": "object"
             }
           ]
-        },
-        "inputSource": "workflowInputs"
+        }
       },
       "id": "1",
       "name": "When Executed by Another Workflow",
@@ -300,37 +291,6 @@
     },
     {
       "parameters": {
-        "descriptionType": "manual",
-        "toolDescription": "Đọc sheet này để mapping userId mục đích tag đúng user google chat",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1uLVZ2b6Ra-r2KCbLHcOL68V6smtxymfTCNNQnWPG8mI/edit?usp=drive_web&ouid=117576252668331810710",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "MoMoer",
-          "mode": "name"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.googleSheetsTool",
-      "typeVersion": 4.7,
-      "position": [
-        -160,
-        672
-      ],
-      "id": "d0bda646-bacd-4faa-8a71-0ee7bf70223a",
-      "name": "Get MoMoer",
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "3i6vDJxzaxXLHIWl",
-          "name": "Google account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "toolDescription": "Bắt buộc sử dụng HTTP này để thực thi Jira.\nBase URL: https://atlassiansuite.mservice.com.vn:8443\nYêu cầu: Sử dụng Jira REST API v2.\n",
         "method": "={{ $fromAI('method', 'HTTP method to use (GET, POST, PUT, DELETE)', 'string') }}",
         "url": "={{ $fromAI('url', 'The full Jira API URL', 'string') }}",
@@ -379,6 +339,62 @@
       "alwaysOutputData": true,
       "retryOnFail": true,
       "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Đọc sheet này để mapping userId mục đích tag đúng user google chat",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1uLVZ2b6Ra-r2KCbLHcOL68V6smtxymfTCNNQnWPG8mI/edit?usp=drive_web&ouid=117576252668331810710",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "MoMoer",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_1_value', ``, 'string') }}"
+            },
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_2_value', ``, 'string') }}"
+            },
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_3_value', ``, 'string') }}"
+            },
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_4_value', ``, 'string') }}"
+            },
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_5_value', ``, 'string') }}"
+            }
+          ]
+        },
+        "combineFilters": "OR",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -160,
+        672
+      ],
+      "id": "d0bda646-bacd-4faa-8a71-0ee7bf70223a",
+      "name": "Get Members",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3i6vDJxzaxXLHIWl",
+          "name": "Google account"
+        }
+      }
     }
   ],
   "connections": {
@@ -438,17 +454,6 @@
         []
       ]
     },
-    "Get MoMoer": {
-      "ai_tool": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "HTTP Generic": {
       "ai_tool": [
         [
@@ -477,6 +482,17 @@
           {
             "node": "AI Agent",
             "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Members": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
             "index": 0
           }
         ]

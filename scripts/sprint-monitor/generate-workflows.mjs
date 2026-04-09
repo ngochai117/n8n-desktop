@@ -395,6 +395,11 @@ function asBoolean(value, fallback = false) {
   return fallback;
 }
 
+function asMessageLanguage(value) {
+  const normalized = asText(value, 'en').toLowerCase();
+  return normalized === 'vi' ? 'vi' : 'en';
+}
+
 function asArray(value) {
   if (Array.isArray(value)) return value;
   if (typeof value === 'string') {
@@ -419,6 +424,7 @@ const runType = asText(input.runType, 'light_scan');
 const workflowName = asText(input.workflowName, 'Sprint Monitor Engine');
 const triggerSource = asText(input.triggerSource, 'manual');
 const timezone = asText(rawConfig.timezone || rawConfig.timeZone, 'Asia/Ho_Chi_Minh');
+const messageLanguage = asMessageLanguage(rawConfig.message_language || rawConfig.messageLanguage);
 const generatedAt = $now.setZone(timezone).toISO();
 const runId = 'run_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
 
@@ -433,6 +439,7 @@ const monitorConfig = {
   gitlabProjectIds: asArray(rawConfig.gitlab_project_ids || rawConfig.gitlabProjectIds).map((item) => asText(item)).filter(Boolean),
   gchatPmWebhook: asText(rawConfig.gchat_pm_webhook || rawConfig.gchatPmWebhook),
   gchatLeadWebhook: asText(rawConfig.gchat_lead_webhook || rawConfig.gchatLeadWebhook),
+  messageLanguage,
   timezone,
   maxCandidateTasks: Math.max(5, asNumber(rawConfig.max_candidate_tasks || rawConfig.maxCandidateTasks, 20)),
   maxClusters: Math.max(1, asNumber(rawConfig.max_clusters || rawConfig.maxClusters, 5)),
@@ -490,17 +497,31 @@ const judgeSystemPrompt = [
   'If completion appears low but stage distribution suggests work is moving normally, do not overreact.',
 ].join('\n');
 
-const draftSystemPrompt = [
-  'Write like a sharp PM partner.',
-  'No generic reminders.',
-  'Every message must say:',
-  '- what is happening',
-  '- why it matters now',
-  '- what action is recommended',
-  'Keep it concise.',
-  'Do not invent facts beyond the structured input.',
-  'Avoid blameful language.',
-].join('\n');
+const draftSystemPrompt = messageLanguage === 'vi'
+  ? [
+      'Viet nhu mot PM partner sac sao va thuc dung.',
+      'Hay viet bang tieng Viet tu nhien.',
+      'Khong viet kieu dich may.',
+      'Khong nhac nho chung chung.',
+      'Moi message phai noi ro:',
+      '- dang co chuyen gi',
+      '- vi sao can xu ly ngay bay gio',
+      '- hanh dong de xuat la gi',
+      'Giu cau ngan, ro, de hanh dong.',
+      'Khong duoc bo sung su that ngoai input cau truc.',
+      'Tranh van phong do loi hoac quy ket ca nhan.',
+    ].join('\n')
+  : [
+      'Write like a sharp PM partner.',
+      'No generic reminders.',
+      'Every message must say:',
+      '- what is happening',
+      '- why it matters now',
+      '- what action is recommended',
+      'Keep it concise.',
+      'Do not invent facts beyond the structured input.',
+      'Avoid blameful language.',
+    ].join('\n');
 
 return {
   runId,
@@ -1436,6 +1457,7 @@ const draftNode = (() => {
   }
 })();
 const draft = draftNode.output && typeof draftNode.output === 'object' ? draftNode.output : {};
+const messageLanguage = asText(request.monitorConfig?.messageLanguage, 'en').toLowerCase() === 'vi' ? 'vi' : 'en';
 
 function asText(value, fallback = '') {
   const text = String(value ?? '').trim();
@@ -1446,16 +1468,29 @@ function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function t(english, vietnamese) {
+  return messageLanguage === 'vi' ? vietnamese : english;
+}
+
 function buildFallbackPmDigest() {
-  const summary = asText(judge.sprint_assessment?.summary, 'Sprint monitor did not receive a drafted PM digest.');
+  const summary = asText(
+    judge.sprint_assessment?.summary,
+    t(
+      'Sprint monitor did not receive a drafted PM digest.',
+      'Sprint Monitor khong nhan duoc ban nhap PM digest tu AI.',
+    ),
+  );
   const topCluster = asArray(judge.clusters)[0];
   const whyNow = asText(topCluster?.why_now);
-  return whyNow ? summary + '\n- Focus now: ' + whyNow : summary;
+  return whyNow ? summary + '\n- ' + t('Focus now', 'Can tap trung ngay') + ': ' + whyNow : summary;
 }
 
 function buildFallbackLeadAlert(issue) {
   const evidence = asArray(issue.evidence).slice(0, 2).join('; ');
-  return asText(issue.why_now, 'Issue requires lead attention') + (evidence ? '\n- Evidence: ' + evidence : '');
+  return asText(
+    issue.why_now,
+    t('Issue requires lead attention', 'Van de nay can lead xu ly ngay'),
+  ) + (evidence ? '\n- ' + t('Evidence', 'Can cu') + ': ' + evidence : '');
 }
 
 const deliveries = [];

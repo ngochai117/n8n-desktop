@@ -17,6 +17,10 @@ Bộ tài liệu implementation handoff cho hệ thống monitor sprint dùng:
 - `schema.sql` — PostgreSQL schema khởi tạo
 - `monitor-configs.sql` — query mẫu để xem, insert, update, upsert config trong `monitor_configs`
 
+## Ghi chú config
+- `monitor_configs.message_language` hỗ trợ `en` và `vi`
+- V1 chỉ localize outbound message layer; classifier/judge vẫn giữ logic hiện tại
+
 ## Handoff recommendation
 Nếu giao cho team khác hoặc AI build, hãy đưa trọn bộ 5 file trên. Không chỉ đưa README/SPEC.
 
