@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-04-09
+
+- Add standalone `Sprint Monitor` MVP workflow set under `workflows/sprint-monitor/`: `Sprint Monitor Light Scan`, `Sprint Monitor Deep Analysis`, `Sprint Monitor Endgame`, and shared subworkflow `Sprint Monitor Engine`.
+- Add `scripts/sprint-monitor/generate-workflows.mjs` so the 4 Sprint Monitor workflow JSON templates can be regenerated from maintainable JS source instead of hand-editing raw JSON.
+- Add Sprint Monitor support tooling: import wrappers, registry entries, strict checklist runner, and idempotent PostgreSQL schema apply helper `scripts/bootstrap/apply-sprint-monitor-schema.sh`.
+- Add `scripts/bootstrap/setup-sprint-monitor-neon.sh` to support Neon-first DB setup for Sprint Monitor: parse connection string, optionally switch n8n UI host to Neon pooler host, apply schema, and print the exact Postgres fields for manual credential creation in n8n UI.
+- Clarify Neon helper output and docs so `Host` in the printed credential block is explicitly the n8n credential host, while the direct connection-string host is labeled separately for CLI/schema use.
+- Harden the Neon helper against placeholder mistakes by rejecting values like `POOLER_HOST` for `--n8n-host`, and rename the example placeholder toward the clearer `n8n credential host` wording.
+- Add `docs/sprint-monitor/monitor-configs.sql` with operational SQL snippets for viewing, inserting, updating, disabling, and upserting `monitor_configs` rows.
+- Sprint Monitor top-level import wrappers now import `Sprint Monitor Engine` first and patch `__REGISTRY__:Sprint Monitor Engine` in the top-level templates before calling the generic import helper.
+- `import-all-workflows.sh`, `README.md`, and `scripts/README.md` now document the Sprint Monitor workflows, generation/import flow, schema bootstrap, strict checklist, and manual credential-binding requirements.
+
 ## 2026-04-08
 
 - `MoMo AI Assistant` refactor them delivery stage theo huong field-toi-gian: cac node `Build Reply Response` / `Prepare GGChat Delivery Messages` / `Build Delivery Ack` / `Build Final Response` uu tien doc truc tiep tu node goc (`$('Ten node')`) thay vi pass-through envelope.
@@ -393,3 +405,11 @@
 ## 2026-04-08T16:13:58Z
 - Workflow sync (UI -> JSON) processed 18 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=18, changed=1, unchanged=17, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: MoMo AI Assistant Tool Router.
+
+## 2026-04-09T04:49:10Z
+- Workflow sync (UI -> JSON) processed 22 workflow(s): changed=4, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=22, changed=4, unchanged=18, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Sprint Monitor Engine, Sprint Monitor Light Scan, Sprint Monitor Endgame, Sprint Monitor Deep Analysis.
+
+## 2026-04-09T04:56:12Z
+- Workflow sync (UI -> JSON) processed 22 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=22, changed=1, unchanged=21, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Sprint Monitor Engine.

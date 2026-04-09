@@ -1,0 +1,221 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+APPLY_SCHEMA_SCRIPT="$ROOT_DIR/scripts/bootstrap/apply-sprint-monitor-schema.sh"
+DEFAULT_OUTPUT_FILE="$ROOT_DIR/.vendor/sprint-monitor/neon.env"
+
+log() {
+  printf '[setup-sprint-monitor-neon] %s\n' "$1"
+}
+
+require_cmd() {
+  local cmd="$1"
+  command -v "$cmd" >/dev/null 2>&1 || {
+    echo "Missing required command: $cmd" >&2
+    exit 1
+  }
+}
+
+usage() {
+  cat <<'EOF'
+Usage:
+  bash scripts/bootstrap/setup-sprint-monitor-neon.sh \
+    --connection-string 'postgresql://user:pass@host/db?sslmode=require' \
+    [--n8n-host 'your-n8n-credential-host'] \
+    [--output-file '.vendor/sprint-monitor/neon.env'] \
+    [--skip-schema]
+
+What it does:
+  1. Parse a Neon PostgreSQL connection string.
+  2. Write local env values for Sprint Monitor under .vendor/.
+  3. Apply docs/sprint-monitor/schema.sql by default.
+  4. Print the exact Postgres credential fields to copy into n8n UI.
+
+Host rules:
+  - The connection string host is treated as the direct Neon host.
+  - --n8n-host is only the host that should be pasted into the n8n credential UI.
+  - For Neon, --n8n-host is usually the pooler host with "-pooler" in the name.
+
+What it does not do:
+  - create n8n credentials automatically
+  - bind credentials to workflow nodes
+
+Environment fallback:
+  - NEON_CONNECTION_STRING
+  - SPRINT_MONITOR_PGURL
+  - DATABASE_URL
+EOF
+}
+
+looks_like_placeholder_host() {
+  local value="$1"
+  case "$value" in
+    POOLER_HOST|DIRECT_HOST|N8N_HOST|YOUR_NEON_POOLER_HOST|YOUR_N8N_CREDENTIAL_HOST|your-neon-pooler-host|your-n8n-credential-host|"<pooler-host>"|"<your-neon-pooler-host>"|"<your-n8n-credential-host>")
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+CONNECTION_STRING="${NEON_CONNECTION_STRING:-${SPRINT_MONITOR_PGURL:-${DATABASE_URL:-}}}"
+N8N_HOST_OVERRIDE="${N8N_HOST_OVERRIDE:-}"
+OUTPUT_FILE="$DEFAULT_OUTPUT_FILE"
+SKIP_SCHEMA="false"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --connection-string|--url)
+      CONNECTION_STRING="${2:-}"
+      shift 2
+      ;;
+    --n8n-host|--pooler-host)
+      N8N_HOST_OVERRIDE="${2:-}"
+      shift 2
+      ;;
+    --output-file)
+      OUTPUT_FILE="${2:-}"
+      shift 2
+      ;;
+    --skip-schema)
+      SKIP_SCHEMA="true"
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+[ -n "$CONNECTION_STRING" ] || {
+  echo "Missing Neon connection string. Pass --connection-string or set NEON_CONNECTION_STRING." >&2
+  exit 1
+}
+
+if [ -n "$N8N_HOST_OVERRIDE" ] && looks_like_placeholder_host "$N8N_HOST_OVERRIDE"; then
+  cat >&2 <<EOF
+The value passed to --n8n-host looks like a placeholder: $N8N_HOST_OVERRIDE
+
+Replace it with the actual host that should be pasted into the n8n Postgres credential.
+For Neon this is usually the pooler host, for example:
+  ep-...-pooler.ap-southeast-1.aws.neon.tech
+EOF
+  exit 1
+fi
+
+require_cmd python3
+
+PARSED_JSON="$(python3 - "$CONNECTION_STRING" "$N8N_HOST_OVERRIDE" <<'PY'
+import json
+import sys
+from urllib.parse import parse_qs, unquote, urlparse
+
+connection_string = sys.argv[1].strip()
+n8n_host_override = sys.argv[2].strip()
+
+parsed = urlparse(connection_string)
+if parsed.scheme not in ("postgres", "postgresql"):
+    raise SystemExit("Connection string must start with postgres:// or postgresql://")
+
+host = parsed.hostname or ""
+database = parsed.path.lstrip("/")
+user = unquote(parsed.username or "")
+password = unquote(parsed.password or "")
+port = parsed.port or 5432
+sslmode = parse_qs(parsed.query).get("sslmode", ["disable"])[0]
+n8n_host = n8n_host_override or host
+
+if not host:
+    raise SystemExit("Cannot parse host from connection string")
+if not database:
+    raise SystemExit("Cannot parse database from connection string")
+if not user:
+    raise SystemExit("Cannot parse user from connection string")
+
+print(
+    json.dumps(
+        {
+            "connectionString": connection_string,
+            "directHost": host,
+            "n8nHost": n8n_host,
+            "database": database,
+            "user": user,
+            "password": password,
+            "port": port,
+            "sslmode": sslmode,
+            "allowUnauthorizedCerts": False,
+            "credentialName": "Sprint Monitor Postgres",
+        }
+    )
+)
+PY
+)"
+
+require_cmd jq
+
+DIRECT_HOST="$(echo "$PARSED_JSON" | jq -r '.directHost')"
+N8N_HOST="$(echo "$PARSED_JSON" | jq -r '.n8nHost')"
+DATABASE_NAME="$(echo "$PARSED_JSON" | jq -r '.database')"
+DATABASE_USER="$(echo "$PARSED_JSON" | jq -r '.user')"
+DATABASE_PASSWORD="$(echo "$PARSED_JSON" | jq -r '.password')"
+DATABASE_PORT="$(echo "$PARSED_JSON" | jq -r '.port')"
+DATABASE_SSLMODE="$(echo "$PARSED_JSON" | jq -r '.sslmode')"
+ALLOW_UNAUTHORIZED_CERTS="$(echo "$PARSED_JSON" | jq -r '.allowUnauthorizedCerts')"
+CREDENTIAL_NAME="$(echo "$PARSED_JSON" | jq -r '.credentialName')"
+
+mkdir -p "$(dirname "$OUTPUT_FILE")"
+
+cat > "$OUTPUT_FILE" <<EOF
+# Generated by scripts/bootstrap/setup-sprint-monitor-neon.sh
+SPRINT_MONITOR_PGURL='${CONNECTION_STRING//\'/\'\\\'\'}'
+SPRINT_MONITOR_N8N_HOST='${N8N_HOST//\'/\'\\\'\'}'
+SPRINT_MONITOR_N8N_DATABASE='${DATABASE_NAME//\'/\'\\\'\'}'
+SPRINT_MONITOR_N8N_USER='${DATABASE_USER//\'/\'\\\'\'}'
+SPRINT_MONITOR_N8N_PASSWORD='${DATABASE_PASSWORD//\'/\'\\\'\'}'
+SPRINT_MONITOR_N8N_PORT='${DATABASE_PORT//\'/\'\\\'\'}'
+SPRINT_MONITOR_N8N_SSL='${DATABASE_SSLMODE//\'/\'\\\'\'}'
+SPRINT_MONITOR_N8N_ALLOW_UNAUTHORIZED_CERTS='${ALLOW_UNAUTHORIZED_CERTS//\'/\'\\\'\'}'
+SPRINT_MONITOR_N8N_CREDENTIAL_NAME='${CREDENTIAL_NAME//\'/\'\\\'\'}'
+EOF
+
+log "Wrote local Neon helper env: $OUTPUT_FILE"
+
+if [ "$SKIP_SCHEMA" != "true" ]; then
+  log "Applying Sprint Monitor schema via direct connection string"
+  SPRINT_MONITOR_PGURL="$CONNECTION_STRING" bash "$APPLY_SCHEMA_SCRIPT"
+fi
+
+cat <<EOF
+
+Sprint Monitor Neon setup is ready.
+
+n8n UI credential fields (copy these into the Postgres credential form)
+- Credential name: $CREDENTIAL_NAME
+- Host (paste into n8n credential UI): $N8N_HOST
+- Database: $DATABASE_NAME
+- User: $DATABASE_USER
+- Password: $DATABASE_PASSWORD
+- Port: $DATABASE_PORT
+- SSL: $DATABASE_SSLMODE
+- Ignore SSL Issues (Insecure): $ALLOW_UNAUTHORIZED_CERTS
+
+Reference
+- Direct Neon host from connection string (CLI/schema apply): $DIRECT_HOST
+- n8n credential host printed above: $N8N_HOST
+- If you want n8n to use Neon pooler host, rerun with --n8n-host '<your-n8n-credential-host>'.
+- Local helper env file is ignored by git under .vendor/.
+
+Next
+1. Create the Postgres credential in n8n UI using the fields above.
+2. Name it exactly: $CREDENTIAL_NAME
+3. Bind it to Sprint Monitor nodes.
+4. Insert at least one row into monitor_configs before running Sprint Monitor.
+EOF

@@ -74,6 +74,37 @@ bash scripts/workflows/tests/test-momo-ai-assistant-checklist.sh
 
 Checklist hien tai la static contract/topology checklist cho workflow canonical (`Book Review`) va shared workflows `TTS VieNeu` + `TTS VREX`. Repo hien khong advertise full E2E runner cho media/runtime cho den khi backlog E2E duoc rebuild day du.
 
+## Sprint Monitor MVP
+- Workflow templates moi:
+  - `workflows/sprint-monitor/sprint-monitor-light-scan.workflow.json`
+  - `workflows/sprint-monitor/sprint-monitor-deep-analysis.workflow.json`
+  - `workflows/sprint-monitor/sprint-monitor-endgame.workflow.json`
+  - `workflows/sprint-monitor/sprint-monitor-engine.workflow.json`
+- Generator:
+  - `node scripts/sprint-monitor/generate-workflows.mjs`
+  - Dung khi can rebuild 4 workflow templates tu source JS thay vi sua raw JSON bang tay.
+- Import wrappers:
+  - `bash scripts/workflows/import/import-sprint-monitor-engine-workflow.sh`
+  - `bash scripts/workflows/import/import-sprint-monitor-light-scan-workflow.sh`
+  - `bash scripts/workflows/import/import-sprint-monitor-deep-analysis-workflow.sh`
+  - `bash scripts/workflows/import/import-sprint-monitor-endgame-workflow.sh`
+- Import behavior:
+  - 3 wrapper top-level se import `Sprint Monitor Engine` truoc, sau do patch token `__REGISTRY__:Sprint Monitor Engine` thanh workflow ID that trong template top-level.
+  - Credential binding van la buoc manual sau import.
+- Required credentials:
+  - `Sprint Monitor Jira`
+  - `Sprint Monitor GitLab`
+  - `Sprint Monitor Postgres`
+  - `Local OpenAI Proxy`
+- Checklist:
+  - `bash scripts/workflows/tests/test-sprint-monitor-checklist.sh --strict`
+- PostgreSQL schema apply:
+  - `bash scripts/bootstrap/apply-sprint-monitor-schema.sh`
+  - Script nay ap dung `docs/sprint-monitor/schema.sql` idempotent vao DB local khi set `SPRINT_MONITOR_PGURL` hoac `DATABASE_URL`, hoac `PGHOST` + `PGDATABASE` + `PGUSER`.
+  - Neu dung Neon va muon parse connection string + apply schema + in field cho n8n UI: `bash scripts/bootstrap/setup-sprint-monitor-neon.sh --connection-string 'postgresql://...' --n8n-host '<your-n8n-credential-host>'`
+  - Luu y: `--n8n-host` la host de paste vao credential UI cua n8n, thuong la Neon pooler host co `-pooler`; script se fail sớm neu ban truyen placeholder nhu `POOLER_HOST`.
+  - Script Neon helper khong tu tao credential trong n8n; no chi chuan bi DB-side setup va in ra field de paste vao UI.
+
 ## MoMo AI Assistant (Sprint Status)
 - Workflow `MoMo AI Assistant` da duoc cat thanh 6 lop de mo rong dan ma van giu manual/schedule healthcheck chay on dinh:
   - top-level `MoMo AI Assistant`: trigger + AI Agent chat orchestration + delivery
@@ -170,10 +201,15 @@ bash scripts/workflows/import/import-momo-ai-assistant-workflow.sh
 - `workflows/media/tts.workflow.json`: shared workflow `TTS VieNeu`
 - `workflows/media/tts-vrex.workflow.json`: shared workflow `TTS VREX`
 - `workflows/shared/data-table-store.workflow.json`: subworkflow generic cho Data Table get/upsert
+- `workflows/sprint-monitor/`: workflow templates `Sprint Monitor`
 - `workflows/book-review/prompts/`: prompt source files
 - `docs/book-review-workflow.md`: mo ta hien trang workflow canonical
 - `docs/book-review-todo.md`: backlog tiep tuc
 - `scripts/workflows/import/import-book-review-workflow.sh`: wrapper import canonical
+- `scripts/sprint-monitor/generate-workflows.mjs`: regenerate workflow JSON cho `Sprint Monitor`
+- `scripts/workflows/import/import-sprint-monitor-*.sh`: wrapper import `Sprint Monitor`
+- `scripts/bootstrap/apply-sprint-monitor-schema.sh`: apply `docs/sprint-monitor/schema.sql`
 - `scripts/workflows/tests/test-book-review-checklist.mjs`: checklist runner
 - `scripts/workflows/tests/test-tts-checklist.mjs`: checklist runner cho `TTS VieNeu`
 - `scripts/workflows/tests/test-tts-vrex-checklist.mjs`: checklist runner cho `TTS VREX`
+- `scripts/workflows/tests/test-sprint-monitor-checklist.mjs`: checklist runner cho `Sprint Monitor`

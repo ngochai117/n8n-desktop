@@ -12,6 +12,10 @@
 - `import-momo-ai-assistant-tool-router-workflow.sh`: import subworkflow router tool cho `MoMo AI Assistant`; wrapper nay tu scan token `__REGISTRY__:<workflow name>` trong router config de import dependency, patch workflow IDs, va auto-activate router luc import
 - `import-momo-ai-assistant-tool-sprint-healthcheck-workflow.sh`: import subworkflow read-only sprint healthcheck cho `MoMo AI Assistant`
 - `import-momo-ai-assistant-tool-demo-commands-workflow.sh`: import subworkflow demo command tool cho `MoMo AI Assistant`
+- `import-sprint-monitor-light-scan-workflow.sh`: import workflow `Sprint Monitor Light Scan`; wrapper nay import `Sprint Monitor Engine` truoc va patch registry token trong top-level template
+- `import-sprint-monitor-deep-analysis-workflow.sh`: import workflow `Sprint Monitor Deep Analysis`; wrapper nay import `Sprint Monitor Engine` truoc va patch registry token trong top-level template
+- `import-sprint-monitor-endgame-workflow.sh`: import workflow `Sprint Monitor Endgame`; wrapper nay import `Sprint Monitor Engine` truoc va patch registry token trong top-level template
+- `import-sprint-monitor-engine-workflow.sh`: import workflow `Sprint Monitor Engine`
 - `import-data-table-store-workflow.sh`: import subworkflow Data Table generic cho session state
 - `import-gg-drive-manager-workflow.sh`: import subworkflow Drive reusable
 - `import-gg-sheet-manager-workflow.sh`: import subworkflow Sheet reusable
@@ -34,6 +38,15 @@
 - `test-tts-vrex-checklist.mjs`: static topology/contract checklist cho workflow `TTS VREX`
 - `test-momo-ai-assistant-checklist.sh`: wrapper chay checklist cho `MoMo AI Assistant`
 - `test-momo-ai-assistant-checklist.mjs`: static topology/contract checklist cho top-level + state store + state cleanup + router tool + healthcheck tool + demo command tool cua `MoMo AI Assistant`
+- `test-sprint-monitor-checklist.sh`: wrapper chay checklist cho `Sprint Monitor`
+- `test-sprint-monitor-checklist.mjs`: static topology/contract checklist cho 4 workflow `Sprint Monitor` + support files
+
+## Workflow generation
+- `scripts/sprint-monitor/generate-workflows.mjs`: source JS de regenerate 4 workflow JSON `Sprint Monitor`
+
+## Bootstrap
+- `apply-sprint-monitor-schema.sh`: apply `docs/sprint-monitor/schema.sql` vao PostgreSQL local theo `SPRINT_MONITOR_PGURL` / `DATABASE_URL` hoac `PGHOST` / `PGDATABASE` / `PGUSER`
+- `setup-sprint-monitor-neon.sh`: parse Neon connection string, ghi helper env vao `.vendor/sprint-monitor/neon.env`, apply schema, va in field Postgres de dien vao n8n UI; `--n8n-host` la host paste vao credential UI, thuong la Neon pooler host co `-pooler`, va script se fail sớm neu ban truyen placeholder nhu `POOLER_HOST`
 
 ## Book Review notes
 - Workflow canonical: `workflows/book-review/book-review.workflow.json`

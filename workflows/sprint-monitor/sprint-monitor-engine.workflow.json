@@ -1,0 +1,1280 @@
+{
+  "name": "Sprint Monitor Engine",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "runType"
+            },
+            {
+              "name": "workflowName"
+            },
+            {
+              "name": "triggerSource"
+            },
+            {
+              "name": "monitorConfig",
+              "type": "object"
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -2352,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json || {};\n\nfunction asObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction asText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asNumber(value, fallback = 0) {\n  const parsed = Number(value);\n  return Number.isFinite(parsed) ? parsed : fallback;\n}\n\nfunction asBoolean(value, fallback = false) {\n  if (typeof value === 'boolean') return value;\n  if (typeof value === 'string') {\n    const normalized = value.trim().toLowerCase();\n    if (normalized === 'true') return true;\n    if (normalized === 'false') return false;\n  }\n  return fallback;\n}\n\nfunction asArray(value) {\n  if (Array.isArray(value)) return value;\n  if (typeof value === 'string') {\n    const trimmed = value.trim();\n    if (!trimmed) return [];\n    try {\n      const parsed = JSON.parse(trimmed);\n      return Array.isArray(parsed) ? parsed : [];\n    } catch (error) {\n      return trimmed.split(',').map((item) => item.trim()).filter(Boolean);\n    }\n  }\n  return [];\n}\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nconst rawConfig = asObject(input.monitorConfig);\nconst runType = asText(input.runType, 'light_scan');\nconst workflowName = asText(input.workflowName, 'Sprint Monitor Engine');\nconst triggerSource = asText(input.triggerSource, 'manual');\nconst timezone = asText(rawConfig.timezone || rawConfig.timeZone, 'Asia/Ho_Chi_Minh');\nconst generatedAt = $now.setZone(timezone).toISO();\nconst runId = 'run_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);\n\nconst monitorConfig = {\n  id: asText(rawConfig.id),\n  teamId: asText(rawConfig.team_id || rawConfig.teamId),\n  boardId: asText(rawConfig.board_id || rawConfig.boardId),\n  jiraBaseUrl: asText(rawConfig.jira_base_url || rawConfig.jiraBaseUrl).replace(/\\/+$/, ''),\n  jiraProjectKey: asText(rawConfig.jira_project_key || rawConfig.jiraProjectKey),\n  jiraJql: asText(rawConfig.jira_jql || rawConfig.jiraJql),\n  gitlabBaseUrl: asText(rawConfig.gitlab_base_url || rawConfig.gitlabBaseUrl).replace(/\\/+$/, ''),\n  gitlabProjectIds: asArray(rawConfig.gitlab_project_ids || rawConfig.gitlabProjectIds).map((item) => asText(item)).filter(Boolean),\n  gchatPmWebhook: asText(rawConfig.gchat_pm_webhook || rawConfig.gchatPmWebhook),\n  gchatLeadWebhook: asText(rawConfig.gchat_lead_webhook || rawConfig.gchatLeadWebhook),\n  timezone,\n  maxCandidateTasks: Math.max(5, asNumber(rawConfig.max_candidate_tasks || rawConfig.maxCandidateTasks, 20)),\n  maxClusters: Math.max(1, asNumber(rawConfig.max_clusters || rawConfig.maxClusters, 5)),\n  maxActivityExcerpts: Math.max(5, asNumber(rawConfig.max_activity_excerpts || rawConfig.maxActivityExcerpts, 30)),\n  ownerNudgeEnabled: asBoolean(rawConfig.owner_nudge_enabled || rawConfig.ownerNudgeEnabled, false),\n  suppressionOwnerHours: Math.max(1, asNumber(rawConfig.suppression_owner_hours || rawConfig.suppressionOwnerHours, 24)),\n  suppressionLeadHours: Math.max(1, asNumber(rawConfig.suppression_lead_hours || rawConfig.suppressionLeadHours, 24)),\n  suppressionPmHours: Math.max(1, asNumber(rawConfig.suppression_pm_hours || rawConfig.suppressionPmHours, 24)),\n  confidenceThresholdOwner: asNumber(rawConfig.confidence_threshold_owner || rawConfig.confidenceThresholdOwner, 0.85),\n  confidenceThresholdLead: asNumber(rawConfig.confidence_threshold_lead || rawConfig.confidenceThresholdLead, 0.7),\n  confidenceThresholdPm: asNumber(rawConfig.confidence_threshold_pm || rawConfig.confidenceThresholdPm, 0.65),\n};\n\nif (!monitorConfig.teamId) {\n  throw new Error('monitorConfig.teamId is required');\n}\nif (!monitorConfig.boardId) {\n  throw new Error('monitorConfig.boardId is required');\n}\nif (!monitorConfig.jiraBaseUrl) {\n  throw new Error('monitorConfig.jiraBaseUrl is required');\n}\n\nconst classifierSystemPrompt = [\n  'Classify each activity excerpt by what it means for delivery, not by surface wording.',\n  'Do not over-infer.',\n  'Use only these labels:',\n  '- real_progress',\n  '- review_pending',\n  '- waiting_external',\n  '- waiting_internal',\n  '- qa_pending',\n  '- scope_change',\n  '- status_noise',\n  '- soft_commitment',\n  '- risk_signal',\n  '- resolved_signal',\n  'Return one label per item with confidence and a short reason.',\n].join('\\n');\n\nconst judgeSystemPrompt = [\n  'You are an experienced PM sprint monitoring assistant.',\n  'Your job is not to summarize everything. Your job is to decide whether intervention is needed, where risk is accumulating, and what action would actually help.',\n  'Avoid generic reminders.',\n  'Prefer silence if there is no meaningful intervention.',\n  'Use structured signals as facts and activity excerpts as context.',\n  'Distinguish between:',\n  '1. likely_on_track',\n  '2. at_risk_but_recoverable',\n  '3. likely_spillover',\n  '4. needs_intervention_now',\n  'Prefer cluster-level insight over task spam.',\n  'State confidence.',\n  'Do not infer facts that are not supported by structured signals or excerpts.',\n  'If completion appears low but stage distribution suggests work is moving normally, do not overreact.',\n].join('\\n');\n\nconst draftSystemPrompt = [\n  'Write like a sharp PM partner.',\n  'No generic reminders.',\n  'Every message must say:',\n  '- what is happening',\n  '- why it matters now',\n  '- what action is recommended',\n  'Keep it concise.',\n  'Do not invent facts beyond the structured input.',\n  'Avoid blameful language.',\n].join('\\n');\n\nreturn {\n  runId,\n  runType,\n  workflowName,\n  triggerSource,\n  generatedAt,\n  monitorConfig,\n  classifierSystemPrompt,\n  judgeSystemPrompt,\n  draftSystemPrompt,\n  aiModels: {\n    classifier: 'cx/gpt-5.4',\n    judge: 'cx/gpt-5.4',\n    drafter: 'cx/gpt-5.4',\n  },\n  issueKeyPatterns: {\n    task: 'task:<task_id>:<risk_type>',\n    cluster: 'cluster:<cluster_type>:<subject_id>',\n    sprint: 'sprint:<sprint_id>:goal_risk',\n  },\n  runSummarySeed: {\n    workflowName,\n    runType,\n    triggerSource,\n    generatedAt,\n    teamId: monitorConfig.teamId,\n    boardId: monitorConfig.boardId,\n  },\n};"
+      },
+      "id": "2",
+      "name": "Normalize Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2128,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.monitorConfig.jiraBaseUrl + \"/rest/agile/1.0/board/\" + encodeURIComponent(String($json.monitorConfig.boardId)) + \"/sprint\" }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "jiraSoftwareServerPatApi",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={{ JSON.stringify({ state: \"active\", maxResults: 50 }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "3",
+      "name": "Get Active Sprint",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1904,
+        352
+      ],
+      "credentials": {
+        "jiraSoftwareServerPatApi": {
+          "id": "3TLwUpSgsJhbG45A",
+          "name": "Jira MoMo account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json || {};\nconst request = $('Normalize Request').first().json || {};\nconst monitorConfig = request.monitorConfig || {};\nconst statusCode = Number(input.statusCode || 200);\n\nfunction asText(value) {\n  return String(value ?? '').trim();\n}\n\nconst transportError = asText(input.error?.message || input.error?.description || input.message);\nif (transportError && !input.body) {\n  return {\n    hasActiveSprint: false,\n    failureReason: 'Failed to reach Jira: ' + transportError,\n  };\n}\n\nif (statusCode >= 400) {\n  const bodyMessage = asText(input.body?.errorMessages?.[0] || input.body?.message);\n  return {\n    hasActiveSprint: false,\n    failureReason: bodyMessage\n      ? 'Jira active sprint lookup failed (HTTP ' + statusCode + '): ' + bodyMessage\n      : 'Jira active sprint lookup failed (HTTP ' + statusCode + ')',\n  };\n}\n\nconst body = input.body && typeof input.body === 'object' ? input.body : input;\nconst values = Array.isArray(body.values) ? body.values : [];\nconst activeSprint = values\n  .filter((item) => asText(item?.state).toLowerCase() === 'active')\n  .sort((a, b) => new Date(b?.startDate || 0).getTime() - new Date(a?.startDate || 0).getTime())[0] || null;\n\nif (!activeSprint) {\n  return {\n    hasActiveSprint: false,\n    failureReason: 'No active sprint found for board ' + asText(monitorConfig.boardId),\n  };\n}\n\nreturn {\n  hasActiveSprint: true,\n  sprint: {\n    id: asText(activeSprint.id),\n    sprint_id: asText(activeSprint.id),\n    board_id: asText(monitorConfig.boardId),\n    sprint_name: asText(activeSprint.name),\n    sprint_goal: asText(activeSprint.goal || ''),\n    start_at: asText(activeSprint.startDate),\n    end_at: asText(activeSprint.endDate),\n    timezone: asText(monitorConfig.timezone),\n  },\n};"
+      },
+      "id": "4",
+      "name": "Pick Active Sprint",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1680,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "has-active-sprint",
+              "leftValue": "={{ $json.hasActiveSprint }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5",
+      "name": "If Active Sprint?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1456,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const request = $('Normalize Request').first().json || {};\nconst activeSprint = $('Pick Active Sprint').first().json || {};\n\nreturn [{\n  json: {\n    runId: request.runId,\n    status: 'skipped',\n    noMessage: true,\n    failureReason: activeSprint.failureReason || 'No active sprint',\n    summaryJson: {\n      workflowName: request.workflowName,\n      runType: request.runType,\n      triggerSource: request.triggerSource,\n      reason: activeSprint.failureReason || 'No active sprint',\n    },\n  },\n}];"
+      },
+      "id": "6",
+      "name": "Build No Active Sprint Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1232,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const request = $('Normalize Request').first().json || {};\nconst noSprint = $('Build No Active Sprint Summary').first().json || {};\n\nfunction sqlText(value) {\n  if (value === null || value === undefined || value === '') return 'NULL';\n  return \"'\" + String(value).replace(/'/g, \"''\") + \"'\";\n}\n\nfunction sqlJson(value) {\n  return \"'\" + JSON.stringify(value ?? {}).replace(/'/g, \"''\") + \"'::jsonb\";\n}\n\nreturn [{\n  json: {\n    persistQuery: [\n      'INSERT INTO runs (id, team_id, board_id, workflow_name, run_type, status, no_message, partial_data, issue_count_detected, issue_count_delivered, started_at, finished_at, duration_ms, summary_json, error_json)',\n      'VALUES (',\n      sqlText(request.runId) + ',',\n      sqlText(request.monitorConfig?.teamId) + ',',\n      sqlText(request.monitorConfig?.boardId) + ',',\n      sqlText(request.workflowName) + ',',\n      sqlText(request.runType) + ',',\n      sqlText('skipped') + ',',\n      'true,',\n      'false,',\n      '0,',\n      '0,',\n      sqlText(request.generatedAt) + ',',\n      sqlText(new Date().toISOString()) + ',',\n      '0,',\n      sqlJson(noSprint.summaryJson || {}) + ',',\n      sqlJson({ failureReason: noSprint.failureReason || '' }),\n      ');',\n    ].join(' '),\n  },\n}];"
+      },
+      "id": "7",
+      "name": "Build No Active Sprint Persist Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1008,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.persistQuery }}",
+        "options": {
+          "queryBatching": "single"
+        }
+      },
+      "id": "8",
+      "name": "Persist No Active Sprint",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -784,
+        544
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "hNw1lfcclrZjlInz",
+          "name": "Sprint Monitor Postgres"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const summary = $('Build No Active Sprint Summary').first().json || {};\nreturn [{ json: {\n  runId: summary.runId,\n  status: summary.status,\n  noMessage: summary.noMessage,\n  summaryJson: summary.summaryJson || {},\n  deliverySummary: { requestedCount: 0, deliveryStatus: 'skipped', successCount: 0, failureCount: 0 },\n  persistSummary: { issueUpserts: 0, deliveryRows: 0 },\n} }];"
+      },
+      "id": "9",
+      "name": "Build No Active Sprint Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $(\"Normalize Request\").first().json.monitorConfig.jiraBaseUrl + \"/rest/agile/1.0/sprint/\" + encodeURIComponent(String($(\"Pick Active Sprint\").first().json.sprint?.id || \"\")) + \"/issue\" }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "jiraSoftwareServerPatApi",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={{ JSON.stringify({ startAt: 0, maxResults: 500, fields: \"*all\", expand: \"changelog\" }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "10",
+      "name": "Get Sprint Issues",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1232,
+        256
+      ],
+      "credentials": {
+        "jiraSoftwareServerPatApi": {
+          "id": "3TLwUpSgsJhbG45A",
+          "name": "Jira MoMo account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const request = $('Normalize Request').first().json || {};\nconst sprint = $('Pick Active Sprint').first().json?.sprint || {};\nconst monitorConfig = request.monitorConfig || {};\nconst projectIds = Array.isArray(monitorConfig.gitlabProjectIds) ? monitorConfig.gitlabProjectIds : [];\n\nif (projectIds.length === 0 || !monitorConfig.gitlabBaseUrl) {\n  return [{\n    json: {\n      skipGitLab: true,\n      gitlabBaseUrl: monitorConfig.gitlabBaseUrl || '',\n      sprint,\n      body: {\n        projectId: '',\n        merge_requests: [],\n      },\n    },\n  }];\n}\n\nreturn projectIds.map((projectId) => ({\n  json: {\n    skipGitLab: false,\n    projectId: String(projectId),\n    gitlabBaseUrl: monitorConfig.gitlabBaseUrl,\n    sprint,\n    requestUrl: monitorConfig.gitlabBaseUrl + '/api/v4/projects/' + encodeURIComponent(String(projectId)) + '/merge_requests',\n  },\n}));"
+      },
+      "id": "11",
+      "name": "Build GitLab Project Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1008,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "should-fetch-gitlab",
+              "leftValue": "={{ !$json.skipGitLab }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "12",
+      "name": "If Should Fetch GitLab?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -784,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.requestUrl }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gitlabApi",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={{ JSON.stringify({ state: \"all\", scope: \"all\", per_page: 100, order_by: \"updated_at\", sort: \"desc\" }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "13",
+      "name": "Get GitLab Merge Requests",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -560,
+        160
+      ],
+      "credentials": {
+        "gitlabApi": {
+          "id": "SZQMVSelapIWsPmd",
+          "name": "GitLab MoMo Mini App account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    statusCode: 200,\n    body: {\n      projectId: '',\n      merge_requests: [],\n    },\n  },\n}];"
+      },
+      "id": "14",
+      "name": "Build Empty GitLab Signals",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const request = $('Normalize Request').first().json || {};\nconst items = $input.all().map((item) => item?.json || {});\n\nfunction asText(value) {\n  return String(value ?? '').trim();\n}\n\nfunction extractIssueKeys(text) {\n  return Array.from(new Set(\n    asText(text)\n      .match(/[A-Z][A-Z0-9]+-\\d+/g) || [],\n  ));\n}\n\nconst mergeRequests = [];\nconst unmatched = [];\n\nfor (const item of items) {\n  const body = item.body && typeof item.body === 'object' ? item.body : {};\n  const bodyMergeRequests = Array.isArray(body.merge_requests)\n    ? body.merge_requests\n    : (Array.isArray(body) ? body : []);\n\n  for (const mergeRequest of bodyMergeRequests) {\n    const issueKeys = Array.from(new Set([\n      ...extractIssueKeys(mergeRequest.title),\n      ...extractIssueKeys(mergeRequest.description),\n      ...extractIssueKeys(mergeRequest.source_branch),\n      ...extractIssueKeys(mergeRequest.target_branch),\n      ...extractIssueKeys(mergeRequest.merge_commit_sha),\n    ]));\n\n    const signal = {\n      issueKeys,\n      issueKey: issueKeys[0] || '',\n      deliverySignalConfidence: issueKeys.length > 0 ? 'high' : 'low',\n      projectId: asText(item.projectId || body.projectId),\n      mergeRequestId: asText(mergeRequest.iid || mergeRequest.id),\n      title: asText(mergeRequest.title),\n      mr_state: asText(mergeRequest.state || mergeRequest.merge_status),\n      mr_opened_at: asText(mergeRequest.created_at),\n      review_requested_at: asText(mergeRequest.updated_at),\n      approval_count: Number(Array.isArray(mergeRequest.approved_by) ? mergeRequest.approved_by.length : 0),\n      changes_requested_count: Number(Array.isArray(mergeRequest.reviewers) ? mergeRequest.reviewers.filter((reviewer) => reviewer?.state === 'changes_requested').length : 0),\n      latest_pipeline_state: asText(mergeRequest.head_pipeline?.status),\n      latest_pipeline_at: asText(mergeRequest.head_pipeline?.updated_at || mergeRequest.head_pipeline?.created_at),\n      latest_commit_at: asText(mergeRequest.updated_at),\n      web_url: asText(mergeRequest.web_url),\n      author: asText(mergeRequest.author?.name),\n    };\n\n    mergeRequests.push(signal);\n    if (signal.issueKeys.length === 0) unmatched.push(signal);\n  }\n}\n\nconst byIssueKey = {};\nfor (const signal of mergeRequests) {\n  for (const issueKey of signal.issueKeys) {\n    if (!byIssueKey[issueKey]) byIssueKey[issueKey] = [];\n    byIssueKey[issueKey].push(signal);\n  }\n}\n\nreturn [{\n  json: {\n    gitlabSignals: mergeRequests,\n    gitlabSignalsByIssueKey: byIssueKey,\n    gitlabSummary: {\n      totalMergeRequests: mergeRequests.length,\n      matchedIssueKeys: Object.keys(byIssueKey).length,\n      unmatchedMergeRequests: unmatched.length,\n      partialData: items.some((item) => Number(item.statusCode || 200) >= 400),\n    },\n  },\n}];"
+      },
+      "id": "15",
+      "name": "Aggregate GitLab Signals",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const request = $('Normalize Request').first().json || {};\nconst sprintInput = $('Pick Active Sprint').first().json || {};\nconst sprintIssuesResponse = $('Get Sprint Issues').first().json || {};\nconst gitlab = $('Aggregate GitLab Signals').first().json || {};\n\nconst monitorConfig = request.monitorConfig || {};\nconst sprint = sprintInput.sprint || {};\nconst statusCode = Number(sprintIssuesResponse.statusCode || 200);\nconst transportError = String(sprintIssuesResponse.error?.message || sprintIssuesResponse.message || '').trim();\n\nfunction asText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asNumber(value, fallback = 0) {\n  const parsed = Number(value);\n  return Number.isFinite(parsed) ? parsed : fallback;\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nfunction parseDate(value) {\n  if (!value) return null;\n  const date = new Date(value);\n  return Number.isNaN(date.getTime()) ? null : date;\n}\n\nfunction businessDaysBetween(startValue, endValue) {\n  const startDate = parseDate(startValue);\n  const endDate = parseDate(endValue);\n  if (!startDate || !endDate || endDate <= startDate) return 0;\n  let count = 0;\n  const cursor = new Date(startDate);\n  cursor.setHours(0, 0, 0, 0);\n  while (cursor < endDate) {\n    cursor.setDate(cursor.getDate() + 1);\n    const day = cursor.getDay();\n    if (day !== 0 && day !== 6 && cursor <= endDate) count += 1;\n  }\n  return count;\n}\n\nfunction normalizeStatus(rawStatus) {\n  const status = asText(rawStatus);\n  const map = {\n    open: 'Open',\n    'in progress': 'In Progress',\n    'ready for review': 'Ready For Review',\n    'in review': 'In Review',\n    'ready for test': 'Ready For Test',\n    'in test': 'In Test',\n    'ready for release': 'Ready For Release',\n    close: 'Close',\n    closed: 'Close',\n    done: 'Close',\n  };\n  return map[status.toLowerCase()] || status;\n}\n\nfunction normalizeUser(user) {\n  if (!user || typeof user !== 'object') {\n    return {\n      id: '',\n      name: '',\n    };\n  }\n  return {\n    id: asText(user.accountId || user.id || user.key),\n    name: asText(user.displayName || user.name),\n  };\n}\n\nfunction extractStoryPoints(fields) {\n  for (const key of ['customfield_10107', 'storyPoints', 'Story Points']) {\n    if (fields && Object.prototype.hasOwnProperty.call(fields, key)) {\n      const parsed = asNumber(fields[key], NaN);\n      if (Number.isFinite(parsed)) return parsed;\n    }\n  }\n  return 0;\n}\n\nfunction extractDependencies(issueLinks) {\n  const dependencies = [];\n  const dependents = [];\n  const blockedBy = [];\n  for (const link of asArray(issueLinks)) {\n    const inward = link?.inwardIssue;\n    const outward = link?.outwardIssue;\n    if (inward?.key) {\n      dependencies.push(asText(inward.key));\n      blockedBy.push(asText(inward.key));\n    }\n    if (outward?.key) {\n      dependents.push(asText(outward.key));\n    }\n  }\n  return { dependencies, dependents, blockedBy };\n}\n\nfunction phaseFromSprint(startAt, endAt, nowIso) {\n  const startDate = parseDate(startAt);\n  const endDate = parseDate(endAt);\n  const nowDate = parseDate(nowIso);\n  if (!startDate || !endDate || !nowDate || endDate <= startDate) {\n    return { phase: 'mid', elapsedRatio: 0.5, daysRemaining: 0 };\n  }\n  const elapsedMs = nowDate.getTime() - startDate.getTime();\n  const totalMs = Math.max(1, endDate.getTime() - startDate.getTime());\n  const elapsedRatio = Math.max(0, Math.min(1.5, elapsedMs / totalMs));\n  const daysRemaining = businessDaysBetween(nowDate.toISOString(), endDate.toISOString());\n  let phase = 'mid';\n  if (elapsedRatio < 0.25) phase = 'early';\n  else if (elapsedRatio < 0.75) phase = 'mid';\n  else if (daysRemaining > 0) phase = 'late';\n  else phase = 'endgame';\n  return { phase, elapsedRatio, daysRemaining };\n}\n\nconst nowIso = request.generatedAt || new Date().toISOString();\nconst phaseMeta = phaseFromSprint(sprint.start_at, sprint.end_at, nowIso);\nconst passedStatuses = new Set(['Ready For Review', 'In Review', 'Ready For Release', 'Close']);\nconst reviewStatuses = new Set(['Ready For Review', 'In Review']);\nconst qaStatuses = new Set(['Ready For Test', 'In Test']);\n\nlet partialData = false;\nlet failureReason = '';\nif (transportError && !sprintIssuesResponse.body) {\n  partialData = true;\n  failureReason = 'Sprint issue fetch transport error: ' + transportError;\n}\nif (statusCode >= 400) {\n  partialData = true;\n  failureReason = 'Sprint issue fetch failed (HTTP ' + statusCode + ')';\n}\n\nconst body = sprintIssuesResponse.body && typeof sprintIssuesResponse.body === 'object'\n  ? sprintIssuesResponse.body\n  : sprintIssuesResponse;\nconst rawIssues = asArray(body.issues);\nconst allowedTypes = new Set(['Task', 'Bug']);\n\nconst tasks = [];\nconst activityExcerpts = [];\nlet committedPoints = 0;\nlet completedPoints = 0;\n\nfor (const issue of rawIssues) {\n  const fields = issue && typeof issue === 'object' ? (issue.fields || {}) : {};\n  const issueType = asText(fields.issuetype?.name);\n  if (!allowedTypes.has(issueType)) continue;\n  const issueKey = asText(issue.key);\n  const status = normalizeStatus(fields.status?.name);\n  const assignee = normalizeUser(fields.assignee);\n  const reporter = normalizeUser(fields.reporter || fields.creator);\n  const dependenciesMeta = extractDependencies(fields.issuelinks);\n  const storyPoints = Math.max(0, extractStoryPoints(fields));\n  const latestSignals = asArray(gitlab.gitlabSignalsByIssueKey?.[issueKey]);\n  const latestSignal = latestSignals.sort((a, b) => new Date(b.latest_commit_at || 0).getTime() - new Date(a.latest_commit_at || 0).getTime())[0] || {};\n  const histories = asArray(issue?.changelog?.histories);\n  let statusEnteredAt = asText(fields.statuscategorychangedate || fields.updated || fields.created);\n  for (const history of histories) {\n    const historyItems = asArray(history.items);\n    for (const item of historyItems) {\n      if (asText(item.field).toLowerCase() !== 'status') continue;\n      const toStatus = normalizeStatus(item.toString || item.to);\n      if (toStatus === status) {\n        statusEnteredAt = asText(history.created || statusEnteredAt);\n      }\n    }\n  }\n\n  committedPoints += storyPoints;\n  if (passedStatuses.has(status)) completedPoints += storyPoints;\n\n  const task = {\n    task_id: issueKey,\n    key: issueKey,\n    title: asText(fields.summary),\n    type: issueType,\n    priority: asText(fields.priority?.name),\n    assignee_id: assignee.id,\n    assignee_name: assignee.name,\n    reviewer_ids: [],\n    status,\n    status_category: asText(fields.status?.statusCategory?.name),\n    story_points: storyPoints,\n    created_at: asText(fields.created),\n    updated_at: asText(fields.updated),\n    started_at: asText(fields.customfield_10015 || ''),\n    done_at: asText(fields.resolutiondate),\n    labels: asArray(fields.labels).map((item) => asText(item)).filter(Boolean),\n    epic_id: asText(fields.epic?.id || fields.customfield_10008),\n    dependencies: dependenciesMeta.dependencies,\n    dependents: dependenciesMeta.dependents,\n    blocked_by: dependenciesMeta.blockedBy,\n    due_at: asText(fields.duedate),\n    browse_url: monitorConfig.jiraBaseUrl + '/browse/' + issueKey,\n    reporter_name: reporter.name,\n    currentStatusEnteredAt: statusEnteredAt,\n    days_in_current_status: businessDaysBetween(statusEnteredAt, nowIso),\n    delivery_signal_confidence: asText(latestSignal.deliverySignalConfidence, latestSignals.length > 0 ? 'high' : 'low'),\n    delivery_signal: latestSignal,\n    is_review_stage: reviewStatuses.has(status),\n    is_qa_stage: qaStatuses.has(status),\n  };\n\n  const comments = asArray(fields.comment?.comments);\n  for (const comment of comments.slice(-5)) {\n    activityExcerpts.push({\n      task_id: issueKey,\n      at: asText(comment.created),\n      source: 'jira_comment',\n      event_type: 'jira_comment',\n      actor: asText(comment.author?.displayName),\n      text: asText(comment.body),\n    });\n  }\n\n  for (const history of histories.slice(-5)) {\n    const historyDate = asText(history.created);\n    for (const item of asArray(history.items)) {\n      if (asText(item.field).toLowerCase() !== 'status') continue;\n      activityExcerpts.push({\n        task_id: issueKey,\n        at: historyDate,\n        source: 'jira_transition',\n        event_type: 'jira_transition',\n        actor: asText(history.author?.displayName),\n        text: 'Status changed from ' + asText(item.fromString) + ' to ' + asText(item.toString),\n      });\n    }\n  }\n\n  for (const signal of latestSignals.slice(0, 2)) {\n    activityExcerpts.push({\n      task_id: issueKey,\n      at: asText(signal.latest_commit_at || signal.mr_opened_at),\n      source: 'gitlab_mr',\n      event_type: 'gitlab_mr',\n      actor: asText(signal.author),\n      text: 'Merge request ' + asText(signal.title) + ' is ' + asText(signal.mr_state),\n    });\n  }\n\n  tasks.push(task);\n}\n\nconst selectedActivityExcerpts = activityExcerpts\n  .filter((item) => item.text)\n  .sort((a, b) => new Date(b.at || 0).getTime() - new Date(a.at || 0).getTime())\n  .slice(0, Math.max(5, Number(monitorConfig.maxActivityExcerpts || 30)));\n\nconst sprintSnapshot = {\n  ...sprint,\n  sprint_id: sprint.sprint_id || sprint.id,\n  team_id: monitorConfig.teamId,\n  board_id: monitorConfig.boardId,\n  committed_points: committedPoints,\n  added_scope_points: 0,\n  completed_points: completedPoints,\n  remaining_points: Math.max(0, committedPoints - completedPoints),\n  elapsed_ratio: phaseMeta.elapsedRatio,\n  phase: phaseMeta.phase,\n  days_remaining: phaseMeta.daysRemaining,\n};\n\nreturn [{\n  json: {\n    sprint: sprintSnapshot,\n    tasks,\n    activityExcerpts: selectedActivityExcerpts,\n    partialData: partialData || Boolean(gitlab.gitlabSummary?.partialData),\n    failureReason,\n    gitlabSummary: gitlab.gitlabSummary || {},\n  },\n}];"
+      },
+      "id": "16",
+      "name": "Normalize Sprint Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $('Normalize Sprint Context').first().json || {};\nconst request = $('Normalize Request').first().json || {};\nreturn [{\n  json: {\n    classifierSystemPrompt: request.classifierSystemPrompt,\n    classifierPrompt: JSON.stringify({\n      items: context.activityExcerpts || [],\n    }, null, 2),\n  },\n}];"
+      },
+      "id": "17",
+      "name": "Build Comment Classifier Inputs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.classifierPrompt }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $json.classifierSystemPrompt }}"
+        }
+      },
+      "id": "18",
+      "name": "Comment Classifier AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        336,
+        256
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"results\": [\n    {\n      \"task_id\": \"string\",\n      \"at\": \"timestamp\",\n      \"label\": \"real_progress|review_pending|waiting_external|waiting_internal|qa_pending|scope_change|status_noise|soft_commitment|risk_signal|resolved_signal\",\n      \"confidence\": 0.0,\n      \"reason\": \"string\"\n    }\n  ]\n}"
+      },
+      "id": "19",
+      "name": "Structured Comment Classifier Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        496,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "cx/gpt-5.4",
+          "mode": "list",
+          "cachedResultName": "cx/gpt-5.4"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "id": "20",
+      "name": "Comment Classifier Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        480
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "nmpOof7gCtDCf1BD",
+          "name": "Local OpenAI Proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const request = $('Normalize Request').first().json || {};\nconst context = $('Normalize Sprint Context').first().json || {};\nlet classifierResults = [];\n\ntry {\n  const output = $('Comment Classifier AI Agent').first().json?.output || {};\n  classifierResults = Array.isArray(output.results) ? output.results : [];\n} catch (error) {\n  classifierResults = [];\n}\n\nfunction asText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asNumber(value, fallback = 0) {\n  const parsed = Number(value);\n  return Number.isFinite(parsed) ? parsed : fallback;\n}\n\nfunction buildClassifierMap(items) {\n  const map = new Map();\n  for (const item of items) {\n    const key = asText(item.task_id) + '::' + asText(item.at);\n    map.set(key, item);\n  }\n  return map;\n}\n\nconst classifierMap = buildClassifierMap(classifierResults);\nconst tasks = Array.isArray(context.tasks) ? context.tasks.slice() : [];\nconst phase = asText(context.sprint?.phase, 'mid');\nconst meaningfulLabels = new Set(['real_progress', 'resolved_signal', 'review_pending', 'waiting_internal', 'waiting_external']);\n\nconst assigneeCounts = {};\nconst reviewerCounts = {};\nfor (const task of tasks) {\n  const assigneeName = asText(task.assignee_name);\n  if (assigneeName) assigneeCounts[assigneeName] = (assigneeCounts[assigneeName] || 0) + 1;\n}\n\nconst candidateTasks = tasks.map((task) => {\n  const taskExcerpts = (context.activityExcerpts || []).filter((item) => asText(item.task_id) === asText(task.task_id));\n  const meaningfulUpdates = taskExcerpts.filter((item) => {\n    const classified = classifierMap.get(asText(item.task_id) + '::' + asText(item.at));\n    return meaningfulLabels.has(asText(classified?.label));\n  });\n  const lastMeaningfulUpdateAt = meaningfulUpdates[0]?.at || task.updated_at || task.currentStatusEnteredAt || context.sprint?.start_at;\n  const reviewPendingDays = task.is_review_stage ? asNumber(task.days_in_current_status) : 0;\n  const qaPendingDays = task.is_qa_stage ? asNumber(task.days_in_current_status) : 0;\n  const blockedDays = Array.isArray(task.blocked_by) && task.blocked_by.length > 0 ? asNumber(task.days_in_current_status) : 0;\n  const reviewerQueueCount = reviewPendingDays > 0 ? 1 : 0;\n  const assigneeActiveTaskCount = assigneeCounts[asText(task.assignee_name)] || 0;\n  const likelyRemainingStageCount = task.status === 'Close' ? 0 : (task.is_review_stage ? 1 : (task.is_qa_stage ? 1 : 2));\n  let candidateScore = 0;\n  candidateScore += blockedDays * 2.2;\n  candidateScore += reviewPendingDays * 1.7;\n  candidateScore += qaPendingDays * 1.4;\n  candidateScore += Math.max(0, asNumber(task.days_in_current_status) - 2) * 1.1;\n  candidateScore += (Array.isArray(task.dependencies) ? task.dependencies.length : 0) * 1.5;\n  candidateScore += assigneeActiveTaskCount * 0.4;\n  if (phase === 'late' || phase === 'endgame') candidateScore += likelyRemainingStageCount * 1.5;\n  if (task.delivery_signal_confidence === 'low') candidateScore -= 0.5;\n\n  let riskType = 'silent_but_probably_ok';\n  if (blockedDays > 0) riskType = 'dependency_chain_risk';\n  else if (reviewPendingDays > 1) riskType = 'review_bottleneck';\n  else if (qaPendingDays > 1) riskType = 'qa_bottleneck';\n  else if (candidateScore > 6) riskType = 'stale_no_progress';\n\n  return {\n    ...task,\n    days_since_last_meaningful_update: asNumber(task.days_in_current_status),\n    review_pending_days: reviewPendingDays,\n    qa_pending_days: qaPendingDays,\n    blocked_days: blockedDays,\n    dependency_in_degree: Array.isArray(task.blocked_by) ? task.blocked_by.length : 0,\n    dependency_out_degree: Array.isArray(task.dependents) ? task.dependents.length : 0,\n    reopened_count: 0,\n    status_transition_count_last_5d: taskExcerpts.filter((item) => asText(item.event_type) === 'jira_transition').length,\n    comment_activity_count_last_3d: taskExcerpts.filter((item) => asText(item.event_type) === 'jira_comment').length,\n    assignee_active_task_count: assigneeActiveTaskCount,\n    reviewer_queue_count: reviewerQueueCount,\n    scope_added_mid_sprint: false,\n    candidate_score: Number(candidateScore.toFixed(3)),\n    criticality: candidateScore >= 8 ? 'high' : (candidateScore >= 4 ? 'medium' : 'low'),\n    current_stage_order: task.status === 'Close' ? 5 : (task.is_qa_stage ? 4 : (task.is_review_stage ? 3 : 2)),\n    expected_stage_order_for_phase: phase === 'early' ? 2 : (phase === 'mid' ? 3 : 4),\n    likely_remaining_stage_count: likelyRemainingStageCount,\n    risk_type_seed: riskType,\n    last_meaningful_update_at: lastMeaningfulUpdateAt,\n  };\n});\n\nconst sortedTasks = candidateTasks\n  .slice()\n  .sort((a, b) => Number(b.candidate_score || 0) - Number(a.candidate_score || 0));\n\nconst topCandidateTasks = sortedTasks.slice(0, Number(request.monitorConfig?.maxCandidateTasks || 20));\nconst blockedTasks = candidateTasks.filter((task) => Number(task.blocked_days || 0) > 0);\nconst reviewTasks = candidateTasks.filter((task) => Number(task.review_pending_days || 0) > 0);\nconst qaTasks = candidateTasks.filter((task) => Number(task.qa_pending_days || 0) > 0);\nconst epicBuckets = new Map();\nfor (const task of candidateTasks) {\n  const epicId = asText(task.epic_id);\n  if (!epicId) continue;\n  if (!epicBuckets.has(epicId)) epicBuckets.set(epicId, []);\n  epicBuckets.get(epicId).push(task);\n}\n\nconst clusters = [];\nif (reviewTasks.length > 0) {\n  clusters.push({\n    cluster_id: 'cluster:review_bottleneck:reviewers',\n    cluster_type: 'review_bottleneck',\n    severity: reviewTasks.length >= 3 ? 'high' : 'medium',\n    affected_count: reviewTasks.length,\n    why_now: reviewTasks.length + ' task(s) are waiting in review',\n    evidence: reviewTasks.slice(0, 5).map((task) => task.key + ' in ' + task.status + ' for ' + task.review_pending_days + 'd'),\n    subject_id: 'reviewers',\n    recommended_action: 'ESCALATE_TO_LEAD',\n    audience: 'lead',\n    confidence: 0.78,\n  });\n}\nif (blockedTasks.length > 0) {\n  clusters.push({\n    cluster_id: 'cluster:dependency_chain_risk:blocked',\n    cluster_type: 'dependency_chain_risk',\n    severity: blockedTasks.length >= 2 ? 'high' : 'medium',\n    affected_count: blockedTasks.length,\n    why_now: blockedTasks.length + ' task(s) have dependency blockers',\n    evidence: blockedTasks.slice(0, 5).map((task) => task.key + ' blocked by ' + (task.blocked_by || []).join(', ')),\n    subject_id: 'blocked',\n    recommended_action: 'ESCALATE_TO_LEAD',\n    audience: 'lead',\n    confidence: 0.8,\n  });\n}\nif (qaTasks.length > 0) {\n  clusters.push({\n    cluster_id: 'cluster:qa_bottleneck:qa',\n    cluster_type: 'qa_bottleneck',\n    severity: qaTasks.length >= 3 ? 'high' : 'medium',\n    affected_count: qaTasks.length,\n    why_now: qaTasks.length + ' task(s) are stuck waiting for QA progression',\n    evidence: qaTasks.slice(0, 5).map((task) => task.key + ' in ' + task.status + ' for ' + task.qa_pending_days + 'd'),\n    subject_id: 'qa',\n    recommended_action: 'ESCALATE_TO_LEAD',\n    audience: 'lead',\n    confidence: 0.74,\n  });\n}\nfor (const [epicId, epicTasks] of epicBuckets.entries()) {\n  if (epicTasks.length < 3) continue;\n  clusters.push({\n    cluster_id: 'cluster:scope_creep:' + epicId,\n    cluster_type: 'scope_creep',\n    severity: epicTasks.length >= 5 ? 'high' : 'medium',\n    affected_count: epicTasks.length,\n    why_now: 'Epic ' + epicId + ' has multiple unresolved tasks',\n    evidence: epicTasks.slice(0, 4).map((task) => task.key + ' score ' + task.candidate_score),\n    subject_id: epicId,\n    recommended_action: 'FLAG_SPRINT_GOAL_RISK',\n    audience: 'pm',\n    confidence: 0.69,\n  });\n}\nif (Object.values(assigneeCounts).some((count) => count >= 4)) {\n  const overloaded = Object.entries(assigneeCounts).sort((a, b) => b[1] - a[1])[0];\n  clusters.push({\n    cluster_id: 'cluster:assignee_overload:' + overloaded[0],\n    cluster_type: 'unowned_work',\n    severity: overloaded[1] >= 6 ? 'high' : 'medium',\n    affected_count: overloaded[1],\n    why_now: overloaded[0] + ' owns many active tasks',\n    evidence: sortedTasks.filter((task) => asText(task.assignee_name) === overloaded[0]).slice(0, 5).map((task) => task.key),\n    subject_id: overloaded[0],\n    recommended_action: 'ESCALATE_TO_LEAD',\n    audience: 'lead',\n    confidence: 0.66,\n  });\n}\n\nconst topClusters = clusters.slice(0, Number(request.monitorConfig?.maxClusters || 5));\nconst sprintSignals = {\n  phase,\n  elapsed_ratio: context.sprint?.elapsed_ratio || 0,\n  completed_points_ratio: (Number(context.sprint?.completed_points || 0) / Math.max(1, Number(context.sprint?.committed_points || 0))),\n  tasks_not_started_ratio: candidateTasks.filter((task) => asText(task.status) === 'Open').length / Math.max(1, candidateTasks.length),\n  tasks_in_dev_ratio: candidateTasks.filter((task) => asText(task.status) === 'In Progress').length / Math.max(1, candidateTasks.length),\n  tasks_in_review_ratio: reviewTasks.length / Math.max(1, candidateTasks.length),\n  tasks_in_qa_ratio: qaTasks.length / Math.max(1, candidateTasks.length),\n  blocked_ratio: blockedTasks.length / Math.max(1, candidateTasks.length),\n  review_bottleneck_score: reviewTasks.reduce((sum, task) => sum + Number(task.review_pending_days || 0), 0),\n  qa_bottleneck_score: qaTasks.reduce((sum, task) => sum + Number(task.qa_pending_days || 0), 0),\n  dependency_risk_score: blockedTasks.reduce((sum, task) => sum + Number(task.blocked_days || 0), 0),\n  sprint_goal_coverage_score: Math.max(0.1, 1 - topClusters.length * 0.12),\n};\n\nreturn [{\n  json: {\n    sprint: context.sprint,\n    tasks: candidateTasks,\n    topCandidateTasks,\n    topClusters,\n    activityExcerpts: context.activityExcerpts,\n    classifierResults,\n    sprintSignals,\n    partialData: Boolean(context.partialData),\n    failureReason: asText(context.failureReason),\n  },\n}];"
+      },
+      "id": "21",
+      "name": "Compute Signals",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const request = $('Normalize Request').first().json || {};\nconst signalState = $('Compute Signals').first().json || {};\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nconst teamId = sqlEscape(request.monitorConfig?.teamId || '');\nconst sprintId = sqlEscape(signalState.sprint?.sprint_id || signalState.sprint?.id || '');\n\nconst query = [\n  'SELECT json_build_object(',\n  \"  'openIssues', COALESCE((\",\n  \"    SELECT json_agg(row_to_json(t)) FROM (\",\n  \"      SELECT * FROM v_open_issues\",\n  \"      WHERE team_id = '\" + teamId + \"'\",\n  sprintId ? \"        AND sprint_id = '\" + sprintId + \"'\" : '',\n  '      ORDER BY last_seen_at DESC',\n  '      LIMIT 100',\n  '    ) t',\n  \"  ), '[]'::json),\",\n  \"  'priorInterventions', COALESCE((\",\n  \"    SELECT json_agg(row_to_json(t)) FROM (\",\n  \"      SELECT * FROM interventions\",\n  \"      WHERE created_at >= now() - interval '7 day'\",\n  '      ORDER BY created_at DESC',\n  '      LIMIT 200',\n  '    ) t',\n  \"  ), '[]'::json),\",\n  \"  'historicalPatterns', COALESCE((\",\n  \"    SELECT json_agg(row_to_json(t)) FROM (\",\n  \"      SELECT * FROM historical_patterns\",\n  \"      WHERE team_id = '\" + teamId + \"'\",\n  '      ORDER BY generated_at DESC',\n  '      LIMIT 50',\n  '    ) t',\n  \"  ), '[]'::json)\",\n  ') AS state_json;',\n].filter(Boolean).join('\\n');\n\nreturn [{\n  json: {\n    priorStateQuery: query,\n  },\n}];"
+      },
+      "id": "22",
+      "name": "Build Prior State Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.priorStateQuery }}",
+        "options": {
+          "queryBatching": "single"
+        }
+      },
+      "id": "23",
+      "name": "Load Prior State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1184,
+        256
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "hNw1lfcclrZjlInz",
+          "name": "Sprint Monitor Postgres"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const request = $('Normalize Request').first().json || {};\nconst signals = $('Compute Signals').first().json || {};\nconst priorStateRow = $('Load Prior State').first().json || {};\n\nfunction asObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nconst stateJson = asObject(priorStateRow.state_json || priorStateRow.stateJson || {});\nconst packet = {\n  run_context: {\n    run_id: request.runId,\n    run_type: request.runType,\n    generated_at: request.generatedAt,\n    team_name: request.monitorConfig?.teamId || '',\n    sprint_phase: signals.sprintSignals?.phase || signals.sprint?.phase || 'mid',\n  },\n  policy: {\n    max_owner_nudges_per_run: 0,\n    max_lead_alerts_per_run: 2,\n    pm_escalation_threshold: 'high',\n    prefer_cluster_alerts: true,\n    silence_if_no_new_actionable_insight: true,\n  },\n  sprint_snapshot: {\n    ...(signals.sprint || {}),\n    signals: signals.sprintSignals || {},\n  },\n  top_clusters: signals.topClusters || [],\n  candidate_tasks: signals.topCandidateTasks || [],\n  activity_excerpts: signals.activityExcerpts || [],\n  prior_interventions: stateJson.priorInterventions || [],\n  historical_patterns: stateJson.historicalPatterns || [],\n};\n\nreturn [{\n  json: {\n    judgeSystemPrompt: request.judgeSystemPrompt,\n    judgePrompt: JSON.stringify(packet, null, 2),\n    packet,\n    openIssues: stateJson.openIssues || [],\n    priorInterventions: stateJson.priorInterventions || [],\n    historicalPatterns: stateJson.historicalPatterns || [],\n  },\n}];"
+      },
+      "id": "24",
+      "name": "Build Judge Inputs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1408,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.judgePrompt }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $json.judgeSystemPrompt }}"
+        }
+      },
+      "id": "25",
+      "name": "Sprint Judge AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1632,
+        256
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"sprint_assessment\": {\n    \"health\": \"green|amber|red\",\n    \"goal_risk\": \"low|medium|high\",\n    \"delivery_outlook\": \"likely_on_track|at_risk_but_recoverable|likely_spillover\",\n    \"confidence\": 0.0,\n    \"summary\": \"string\"\n  },\n  \"clusters\": [\n    {\n      \"cluster_id\": \"string\",\n      \"cluster_type\": \"review_bottleneck|dependency_chain_risk|qa_bottleneck|scope_creep|unowned_work\",\n      \"severity\": \"low|medium|high\",\n      \"affected_count\": 0,\n      \"why_now\": \"string\",\n      \"evidence\": [\"string\"],\n      \"recommended_action\": \"NO_ACTION|MONITOR_ONLY|SUGGEST_REASSIGN_REVIEWER|ESCALATE_TO_LEAD|ESCALATE_TO_PM|FLAG_SPRINT_GOAL_RISK|SUGGEST_SCOPE_CUT\",\n      \"audience\": \"owner|lead|pm|team|none\",\n      \"confidence\": 0.0\n    }\n  ],\n  \"tasks\": [\n    {\n      \"task_id\": \"string\",\n      \"classification\": \"likely_on_track|at_risk_but_recoverable|likely_spillover|needs_intervention_now|noise_do_not_alert\",\n      \"risk_type\": \"stale_no_progress|blocked_external|blocked_internal|review_bottleneck|qa_bottleneck|overscoped_work|dependency_chain_risk|scope_creep|silent_but_probably_ok\",\n      \"severity\": \"low|medium|high\",\n      \"why_now\": \"string\",\n      \"evidence\": [\"string\"],\n      \"recommended_action\": \"NO_ACTION|MONITOR_ONLY|NUDGE_OWNER_FOR_UPDATE|ASK_BLOCKER_CLARIFICATION|SUGGEST_SPLIT_TASK|SUGGEST_SCOPE_CUT|SUGGEST_REASSIGN_REVIEWER|ESCALATE_TO_LEAD|ESCALATE_TO_PM\",\n      \"audience\": \"owner|lead|pm|none\",\n      \"confidence\": 0.0\n    }\n  ],\n  \"silence_decision\": {\n    \"no_message_needed\": true,\n    \"reason\": \"string\"\n  },\n  \"delivery_plan\": {\n    \"send_pm_digest\": true,\n    \"send_lead_alerts\": true,\n    \"send_owner_nudges\": false,\n    \"send_team_digest\": false\n  }\n}"
+      },
+      "id": "26",
+      "name": "Structured Sprint Judgment Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1792,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "cx/gpt-5.4",
+          "mode": "list",
+          "cachedResultName": "cx/gpt-5.4"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "id": "27",
+      "name": "Sprint Judge Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1664,
+        480
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "nmpOof7gCtDCf1BD",
+          "name": "Local OpenAI Proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const request = $('Normalize Request').first().json || {};\nconst signals = $('Compute Signals').first().json || {};\nconst judgeNode = $('Sprint Judge AI Agent').first().json || {};\nconst judge = judgeNode.output && typeof judgeNode.output === 'object' ? judgeNode.output : {};\nconst prior = $('Build Judge Inputs').first().json || {};\n\nfunction asText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nconst suppressionLeadHours = Number(request.monitorConfig?.suppressionLeadHours || 24);\nconst suppressionPmHours = Number(request.monitorConfig?.suppressionPmHours || 24);\nconst now = new Date(request.generatedAt || new Date().toISOString());\n\nfunction hoursSince(value) {\n  const date = value ? new Date(value) : null;\n  if (!date || Number.isNaN(date.getTime())) return Number.POSITIVE_INFINITY;\n  return Math.max(0, (now.getTime() - date.getTime()) / 3600000);\n}\n\nfunction makeIssueKey(entityType, entityId, riskType) {\n  return entityType + ':' + entityId + ':' + riskType;\n}\n\nconst openIssues = asArray(prior.openIssues);\nconst tasks = asArray(judge.tasks).filter((task) => asText(task.classification) !== 'noise_do_not_alert');\nconst clusters = asArray(judge.clusters);\nconst deliverableTaskIssues = [];\nconst deliverableClusterIssues = [];\n\nfor (const task of tasks) {\n  const issueKey = makeIssueKey('task', asText(task.task_id), asText(task.risk_type));\n  const existing = openIssues.find((item) => asText(item.issue_key) === issueKey);\n  const suppressed = existing && hoursSince(existing.last_alerted_at) < suppressionLeadHours && asText(existing.severity) === asText(task.severity);\n  if (suppressed) continue;\n  deliverableTaskIssues.push({\n    issue_key: issueKey,\n    entity_type: 'task',\n    entity_id: asText(task.task_id),\n    risk_type: asText(task.risk_type),\n    severity: asText(task.severity, 'medium'),\n    audience: asText(task.audience, 'lead'),\n    recommended_action: asText(task.recommended_action),\n    why_now: asText(task.why_now),\n    evidence: asArray(task.evidence),\n    confidence: Number(task.confidence || 0.6),\n  });\n}\n\nfor (const cluster of clusters) {\n  const subjectId = asText(cluster.cluster_id || cluster.cluster_type || 'cluster').split(':').slice(-1)[0];\n  const issueKey = makeIssueKey('cluster', asText(cluster.cluster_type), subjectId);\n  const existing = openIssues.find((item) => asText(item.issue_key) === issueKey);\n  const suppressed = existing && hoursSince(existing.last_alerted_at) < suppressionLeadHours && asText(existing.severity) === asText(cluster.severity);\n  if (suppressed) continue;\n  deliverableClusterIssues.push({\n    issue_key: issueKey,\n    entity_type: 'cluster',\n    entity_id: asText(cluster.cluster_id || subjectId),\n    risk_type: asText(cluster.cluster_type),\n    severity: asText(cluster.severity, 'medium'),\n    audience: asText(cluster.audience, 'lead'),\n    recommended_action: asText(cluster.recommended_action),\n    why_now: asText(cluster.why_now),\n    evidence: asArray(cluster.evidence),\n    confidence: Number(cluster.confidence || 0.65),\n  });\n}\n\nconst combinedIssues = [\n  ...deliverableClusterIssues,\n  ...deliverableTaskIssues,\n];\n\nconst sendPmDigest = Boolean(judge.delivery_plan?.send_pm_digest) && !Boolean(judge.silence_decision?.no_message_needed);\nconst shouldDraftMessages = sendPmDigest || combinedIssues.length > 0;\nconst noMessage = Boolean(judge.silence_decision?.no_message_needed) || (!shouldDraftMessages && combinedIssues.length === 0);\n\nconst pmSuppressed = openIssues.some((item) => asText(item.entity_type) === 'sprint' && hoursSince(item.last_alerted_at) < suppressionPmHours);\n\nreturn [{\n  json: {\n    judge,\n    deliverableIssues: combinedIssues,\n    sendPmDigest: sendPmDigest && !pmSuppressed,\n    shouldDraftMessages: shouldDraftMessages && !noMessage,\n    noMessage,\n    suppressionSummary: {\n      openIssueCount: openIssues.length,\n      deliverableIssueCount: combinedIssues.length,\n      pmSuppressed,\n    },\n    summaryJson: {\n      sprintAssessment: judge.sprint_assessment || {},\n      topClusterCount: clusters.length,\n      topTaskCount: tasks.length,\n      partialData: Boolean(signals.partialData),\n    },\n  },\n}];"
+      },
+      "id": "28",
+      "name": "Delivery Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2032,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "if-need-draft",
+              "leftValue": "={{ $json.shouldDraftMessages }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "29",
+      "name": "If Need Draft?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2256,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const request = $('Normalize Request').first().json || {};\nconst gate = $('Delivery Gate').first().json || {};\nconst judge = gate.judge || {};\n\nconst payload = {\n  sprint_assessment: judge.sprint_assessment || {},\n  clusters: judge.clusters || [],\n  tasks: judge.tasks || [],\n  delivery_plan: judge.delivery_plan || {},\n};\n\nreturn [{\n  json: {\n    draftSystemPrompt: request.draftSystemPrompt,\n    draftPrompt: JSON.stringify(payload, null, 2),\n  },\n}];"
+      },
+      "id": "30",
+      "name": "Build Draft Inputs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2480,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.draftPrompt }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $json.draftSystemPrompt }}"
+        }
+      },
+      "id": "31",
+      "name": "Message Drafter AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2704,
+        128
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"pm_digest\": \"string\",\n  \"lead_alerts\": [\"string\"],\n  \"owner_nudges\": [\"string\"]\n}"
+      },
+      "id": "32",
+      "name": "Structured Message Draft Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2864,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "cx/gpt-5.4",
+          "mode": "list",
+          "cachedResultName": "cx/gpt-5.4"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "id": "33",
+      "name": "Message Drafter Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2736,
+        352
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "nmpOof7gCtDCf1BD",
+          "name": "Local OpenAI Proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const request = $('Normalize Request').first().json || {};\nconst gate = $('Delivery Gate').first().json || {};\nconst judge = gate.judge || {};\nconst draftNode = (() => {\n  try {\n    return $('Message Drafter AI Agent').first().json || {};\n  } catch (error) {\n    return {};\n  }\n})();\nconst draft = draftNode.output && typeof draftNode.output === 'object' ? draftNode.output : {};\n\nfunction asText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nfunction buildFallbackPmDigest() {\n  const summary = asText(judge.sprint_assessment?.summary, 'Sprint monitor did not receive a drafted PM digest.');\n  const topCluster = asArray(judge.clusters)[0];\n  const whyNow = asText(topCluster?.why_now);\n  return whyNow ? summary + '\\n- Focus now: ' + whyNow : summary;\n}\n\nfunction buildFallbackLeadAlert(issue) {\n  const evidence = asArray(issue.evidence).slice(0, 2).join('; ');\n  return asText(issue.why_now, 'Issue requires lead attention') + (evidence ? '\\n- Evidence: ' + evidence : '');\n}\n\nconst deliveries = [];\nif (!gate.noMessage && gate.sendPmDigest && request.monitorConfig?.gchatPmWebhook) {\n  deliveries.push({\n    destination: request.monitorConfig.gchatPmWebhook,\n    audience: 'pm',\n    messageType: 'pm_digest',\n    payload: {\n      text: asText(draft.pm_digest, buildFallbackPmDigest()),\n    },\n    issueKeys: asArray(gate.deliverableIssues).filter((issue) => asText(issue.audience) === 'pm').map((issue) => issue.issue_key),\n  });\n}\n\nconst leadMessages = asArray(draft.lead_alerts).slice(0, 2);\nconst leadIssues = asArray(gate.deliverableIssues).filter((issue) => asText(issue.audience) === 'lead').slice(0, 2);\nfor (let index = 0; index < leadIssues.length; index += 1) {\n  if (!request.monitorConfig?.gchatLeadWebhook) break;\n  deliveries.push({\n    destination: request.monitorConfig.gchatLeadWebhook,\n    audience: 'lead',\n    messageType: 'lead_alert',\n    payload: {\n      text: asText(leadMessages[index], buildFallbackLeadAlert(leadIssues[index])),\n    },\n    issueKeys: [leadIssues[index].issue_key],\n  });\n}\n\nreturn [{\n  json: {\n    noMessage: gate.noMessage,\n    deliveries,\n    deliveryCount: deliveries.length,\n    deliverySummary: {\n      requestedCount: deliveries.length,\n      pmDigestRequested: deliveries.some((delivery) => delivery.messageType === 'pm_digest'),\n      leadAlertCount: deliveries.filter((delivery) => delivery.messageType === 'lead_alert').length,\n    },\n  },\n}];"
+      },
+      "id": "34",
+      "name": "Build Delivery Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3104,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "has-deliveries",
+              "leftValue": "={{ $json.deliveryCount > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "35",
+      "name": "If Has Deliveries?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3328,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const deliveryPayload = $('Build Delivery Messages').first().json || {};\nconst deliveries = Array.isArray(deliveryPayload.deliveries) ? deliveryPayload.deliveries : [];\n\nreturn deliveries.map((delivery, index) => ({\n  json: {\n    requestUrl: delivery.destination,\n    requestBody: delivery.payload,\n    messageType: delivery.messageType,\n    audience: delivery.audience,\n    issueKeys: delivery.issueKeys || [],\n    requestIndex: index,\n  },\n}));"
+      },
+      "id": "36",
+      "name": "Expand Delivery Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3552,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.requestUrl }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.requestBody }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "37",
+      "name": "Send Google Chat Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3776,
+        192
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map((item) => item?.json || {});\nconst successCount = items.filter((item) => Number(item.statusCode || 0) > 0 && Number(item.statusCode) < 400).length;\nconst failureCount = items.filter((item) => Number(item.statusCode || 0) >= 400).length;\n\nreturn [{\n  json: {\n    attemptedCount: items.length,\n    successCount,\n    failureCount,\n    status: items.length === 0\n      ? 'skipped'\n      : (failureCount === 0 ? 'delivered' : (successCount > 0 ? 'partial' : 'failed')),\n    responses: items,\n  },\n}];"
+      },
+      "id": "38",
+      "name": "Aggregate Deliveries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4000,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const request = $('Normalize Request').first().json || {};\nconst context = $('Normalize Sprint Context').first().json || {};\nconst signals = $('Compute Signals').first().json || {};\nconst gate = $('Delivery Gate').first().json || {};\nconst deliveryPayload = $('Build Delivery Messages').first().json || {};\nconst deliveryAggregate = (() => {\n  try {\n    return $('Aggregate Deliveries').first().json || {};\n  } catch (error) {\n    return {};\n  }\n})();\n\nfunction asText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asNumber(value, fallback = 0) {\n  const parsed = Number(value);\n  return Number.isFinite(parsed) ? parsed : fallback;\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nfunction sqlText(value) {\n  if (value === null || value === undefined || value === '') return 'NULL';\n  return \"'\" + String(value).replace(/'/g, \"''\") + \"'\";\n}\n\nfunction sqlJson(value) {\n  return \"'\" + JSON.stringify(value ?? {}).replace(/'/g, \"''\") + \"'::jsonb\";\n}\n\nfunction sqlNumeric(value) {\n  const parsed = Number(value);\n  return Number.isFinite(parsed) ? String(parsed) : 'NULL';\n}\n\nconst sprint = context.sprint || {};\nconst tasks = asArray(context.tasks);\nconst activityExcerpts = asArray(context.activityExcerpts);\nconst sprintSignals = signals.sprintSignals || {};\nconst deliverableIssues = asArray(gate.deliverableIssues);\nconst responses = asArray(deliveryAggregate.responses);\nconst deliveries = asArray(deliveryPayload.deliveries);\nconst retroNotes = request.runType === 'endgame'\n  ? asArray((gate.judge?.clusters || [])).slice(0, 3).map((cluster) => ({\n      note_type: 'retro_candidate',\n      severity: cluster.severity || 'medium',\n      content: cluster.why_now || '',\n      source_issue_key: 'cluster:' + (cluster.cluster_type || 'unknown') + ':' + (cluster.cluster_id || 'cluster'),\n    }))\n  : [];\n\nlet statements = [];\n\nstatements.push([\n  'INSERT INTO runs (id, team_id, board_id, sprint_id, workflow_name, run_type, status, no_message, partial_data, issue_count_detected, issue_count_delivered, started_at, finished_at, duration_ms, summary_json, error_json)',\n  'VALUES (',\n  sqlText(request.runId) + ',',\n  sqlText(request.monitorConfig?.teamId) + ',',\n  sqlText(request.monitorConfig?.boardId) + ',',\n  sqlText(sprint.sprint_id || sprint.id) + ',',\n  sqlText(request.workflowName) + ',',\n  sqlText(request.runType) + ',',\n  sqlText(asText(deliveryAggregate.status, gate.noMessage ? 'suppressed' : (context.partialData ? 'partial' : 'success'))) + ',',\n  gate.noMessage ? 'true' : 'false',\n  ',',\n  context.partialData ? 'true' : 'false',\n  ',',\n  sqlNumeric(deliverableIssues.length) + ',',\n  sqlNumeric(deliveryAggregate.successCount || 0) + ',',\n  sqlText(request.generatedAt) + ',',\n  sqlText(new Date().toISOString()) + ',',\n  sqlNumeric(0) + ',',\n  sqlJson({\n    sprintAssessment: gate.judge?.sprint_assessment || {},\n    sprintSignals,\n    deliverySummary: deliveryPayload.deliverySummary || {},\n  }) + ',',\n  sqlJson({\n    failureReason: context.failureReason || '',\n  }),\n  ');',\n].join(' '));\n\nstatements.push([\n  'INSERT INTO sprint_snapshots (team_id, board_id, sprint_id, sprint_name, sprint_goal, start_at, end_at, timezone, committed_points, added_scope_points, completed_points, remaining_points, snapshot_at, raw_json)',\n  'VALUES (',\n  sqlText(request.monitorConfig?.teamId) + ',',\n  sqlText(request.monitorConfig?.boardId) + ',',\n  sqlText(sprint.sprint_id || sprint.id) + ',',\n  sqlText(sprint.sprint_name) + ',',\n  sqlText(sprint.sprint_goal) + ',',\n  sqlText(sprint.start_at) + ',',\n  sqlText(sprint.end_at) + ',',\n  sqlText(sprint.timezone || request.monitorConfig?.timezone) + ',',\n  sqlNumeric(sprint.committed_points) + ',',\n  sqlNumeric(sprint.added_scope_points || 0) + ',',\n  sqlNumeric(sprint.completed_points) + ',',\n  sqlNumeric(sprint.remaining_points) + ',',\n  sqlText(request.generatedAt) + ',',\n  sqlJson(sprint),\n  ');',\n].join(' '));\n\nif (tasks.length > 0) {\n  statements.push('INSERT INTO task_snapshots (team_id, sprint_id, task_id, task_key, title, task_type, priority, assignee_id, assignee_name, reviewer_ids, status, status_category, story_points, created_at_source, updated_at_source, done_at_source, epic_id, labels, dependencies, dependents, blocked_by, due_at, snapshot_at, raw_json) VALUES');\n  statements.push(tasks.map((task) => [\n    '(',\n    sqlText(request.monitorConfig?.teamId) + ',',\n    sqlText(sprint.sprint_id || sprint.id) + ',',\n    sqlText(task.task_id) + ',',\n    sqlText(task.key) + ',',\n    sqlText(task.title) + ',',\n    sqlText(task.type) + ',',\n    sqlText(task.priority) + ',',\n    sqlText(task.assignee_id) + ',',\n    sqlText(task.assignee_name) + ',',\n    sqlJson(task.reviewer_ids || []) + ',',\n    sqlText(task.status) + ',',\n    sqlText(task.status_category) + ',',\n    sqlNumeric(task.story_points) + ',',\n    sqlText(task.created_at) + ',',\n    sqlText(task.updated_at) + ',',\n    sqlText(task.done_at) + ',',\n    sqlText(task.epic_id) + ',',\n    sqlJson(task.labels || []) + ',',\n    sqlJson(task.dependencies || []) + ',',\n    sqlJson(task.dependents || []) + ',',\n    sqlJson(task.blocked_by || []) + ',',\n    sqlText(task.due_at) + ',',\n    sqlText(request.generatedAt) + ',',\n    sqlJson(task),\n    ')',\n  ].join(' ')).join(',\\n') + ';');\n}\n\nif (activityExcerpts.length > 0) {\n  statements.push('INSERT INTO activity_excerpts (team_id, sprint_id, task_id, event_at, event_type, actor, source, text, ingested_at, raw_json) VALUES');\n  statements.push(activityExcerpts.map((item) => [\n    '(',\n    sqlText(request.monitorConfig?.teamId) + ',',\n    sqlText(sprint.sprint_id || sprint.id) + ',',\n    sqlText(item.task_id) + ',',\n    sqlText(item.at) + ',',\n    sqlText(item.event_type) + ',',\n    sqlText(item.actor) + ',',\n    sqlText(item.source) + ',',\n    sqlText(item.text) + ',',\n    sqlText(request.generatedAt) + ',',\n    sqlJson(item),\n    ')',\n  ].join(' ')).join(',\\n') + ';');\n}\n\nstatements.push([\n  'INSERT INTO signal_snapshots (team_id, sprint_id, signal_scope, signal_type, candidate_score, phase, signal_json, computed_at)',\n  'VALUES (',\n  sqlText(request.monitorConfig?.teamId) + ',',\n  sqlText(sprint.sprint_id || sprint.id) + ',',\n  sqlText('sprint') + ',',\n  sqlText('sprint_summary') + ',',\n  sqlNumeric(0) + ',',\n  sqlText(sprint.phase) + ',',\n  sqlJson(sprintSignals) + ',',\n  sqlText(request.generatedAt),\n  ');',\n].join(' '));\n\nfor (const task of asArray(signals.topCandidateTasks)) {\n  statements.push([\n    'INSERT INTO signal_snapshots (team_id, sprint_id, task_id, signal_scope, signal_type, candidate_score, phase, signal_json, computed_at)',\n    'VALUES (',\n    sqlText(request.monitorConfig?.teamId) + ',',\n    sqlText(sprint.sprint_id || sprint.id) + ',',\n    sqlText(task.task_id) + ',',\n    sqlText('task') + ',',\n    sqlText(task.risk_type_seed || 'candidate') + ',',\n    sqlNumeric(task.candidate_score) + ',',\n    sqlText(sprint.phase) + ',',\n    sqlJson(task) + ',',\n    sqlText(request.generatedAt),\n    ');',\n  ].join(' '));\n}\n\nif (deliverableIssues.length > 0) {\n  statements.push('INSERT INTO issues (issue_key, team_id, sprint_id, entity_type, entity_id, risk_type, severity, state, confidence, audience, recommended_action, why_now, evidence, first_detected_at, last_seen_at, last_alerted_at, source_run_id, metadata_json) VALUES');\n  statements.push(deliverableIssues.map((issue) => [\n    '(',\n    sqlText(issue.issue_key) + ',',\n    sqlText(request.monitorConfig?.teamId) + ',',\n    sqlText(sprint.sprint_id || sprint.id) + ',',\n    sqlText(issue.entity_type) + ',',\n    sqlText(issue.entity_id) + ',',\n    sqlText(issue.risk_type) + ',',\n    sqlText(issue.severity) + ',',\n    sqlText(deliveries.length > 0 ? 'escalated' : 'monitoring') + ',',\n    sqlNumeric(issue.confidence) + ',',\n    sqlText(issue.audience) + ',',\n    sqlText(issue.recommended_action) + ',',\n    sqlText(issue.why_now) + ',',\n    sqlJson(issue.evidence || []) + ',',\n    sqlText(request.generatedAt) + ',',\n    sqlText(request.generatedAt) + ',',\n    sqlText(deliveries.length > 0 ? request.generatedAt : null) + ',',\n    sqlText(request.runId) + ',',\n    sqlJson(issue),\n    ')',\n  ].join(' ')).join(',\\n'));\n  statements.push([\n    'ON CONFLICT (issue_key) DO UPDATE SET',\n    'severity = EXCLUDED.severity,',\n    'state = EXCLUDED.state,',\n    'confidence = EXCLUDED.confidence,',\n    'audience = EXCLUDED.audience,',\n    'recommended_action = EXCLUDED.recommended_action,',\n    'why_now = EXCLUDED.why_now,',\n    'evidence = EXCLUDED.evidence,',\n    'last_seen_at = EXCLUDED.last_seen_at,',\n    'last_alerted_at = EXCLUDED.last_alerted_at,',\n    'source_run_id = EXCLUDED.source_run_id,',\n    'metadata_json = EXCLUDED.metadata_json;',\n  ].join(' '));\n}\n\nfor (let index = 0; index < deliveries.length; index += 1) {\n  const delivery = deliveries[index];\n  const response = responses[index] || {};\n  statements.push([\n    'INSERT INTO interventions (run_id, issue_key, audience, destination, action_type, message_text, delivered_at, delivery_status, metadata_json) VALUES (',\n    sqlText(request.runId) + ',',\n    sqlText((delivery.issueKeys || [])[0] || '') + ',',\n    sqlText(delivery.audience) + ',',\n    sqlText(delivery.destination) + ',',\n    sqlText(delivery.messageType) + ',',\n    sqlText(delivery.payload?.text || '') + ',',\n    sqlText(Number(response.statusCode || 0) < 400 ? request.generatedAt : null) + ',',\n    sqlText(Number(response.statusCode || 0) < 400 ? 'sent' : 'failed') + ',',\n    sqlJson(response),\n    ');',\n  ].join(' '));\n\n  statements.push([\n    'INSERT INTO message_deliveries (run_id, message_type, destination, payload_json, response_code, response_body, status, sent_at) VALUES (',\n    sqlText(request.runId) + ',',\n    sqlText(delivery.messageType) + ',',\n    sqlText(delivery.destination) + ',',\n    sqlJson(delivery.payload) + ',',\n    sqlNumeric(response.statusCode) + ',',\n    sqlText(JSON.stringify(response.body || response)) + ',',\n    sqlText(Number(response.statusCode || 0) < 400 ? 'sent' : 'failed') + ',',\n    sqlText(request.generatedAt),\n    ');',\n  ].join(' '));\n}\n\nfor (const note of retroNotes) {\n  statements.push([\n    'INSERT INTO retro_notes (team_id, sprint_id, note_type, severity, content, source_issue_key, source_run_id, created_at) VALUES (',\n    sqlText(request.monitorConfig?.teamId) + ',',\n    sqlText(sprint.sprint_id || sprint.id) + ',',\n    sqlText(note.note_type) + ',',\n    sqlText(note.severity) + ',',\n    sqlText(note.content) + ',',\n    sqlText(note.source_issue_key) + ',',\n    sqlText(request.runId) + ',',\n    sqlText(request.generatedAt),\n    ');',\n  ].join(' '));\n}\n\nreturn [{\n  json: {\n    persistQuery: statements.join('\\n'),\n    persistSummary: {\n      taskSnapshots: tasks.length,\n      activityExcerpts: activityExcerpts.length,\n      issueUpserts: deliverableIssues.length,\n      deliveryRows: deliveries.length,\n      retroNotes: retroNotes.length,\n    },\n  },\n}];"
+      },
+      "id": "39",
+      "name": "Build Persist Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4224,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.persistQuery }}",
+        "options": {
+          "queryBatching": "single"
+        }
+      },
+      "id": "40",
+      "name": "Persist Run State",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        4448,
+        256
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "hNw1lfcclrZjlInz",
+          "name": "Sprint Monitor Postgres"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const request = $('Normalize Request').first().json || {};\nconst gate = $('Delivery Gate').first().json || {};\nconst deliveryPayload = $('Build Delivery Messages').first().json || {};\nconst persistPayload = $('Build Persist Query').first().json || {};\nconst deliveryAggregate = (() => {\n  try {\n    return $('Aggregate Deliveries').first().json || {};\n  } catch (error) {\n    return {};\n  }\n})();\n\nconst status = gate.noMessage\n  ? 'success'\n  : (deliveryAggregate.status === 'failed' ? 'partial' : (deliveryAggregate.status || (gate.summaryJson?.partialData ? 'partial' : 'success')));\n\nreturn [{\n  json: {\n    runId: request.runId,\n    status,\n    noMessage: Boolean(gate.noMessage),\n    summaryJson: {\n      ...(gate.summaryJson || {}),\n      suppressionSummary: gate.suppressionSummary || {},\n    },\n    deliverySummary: {\n      ...(deliveryPayload.deliverySummary || {}),\n      deliveryStatus: deliveryAggregate.status || 'skipped',\n      successCount: Number(deliveryAggregate.successCount || 0),\n      failureCount: Number(deliveryAggregate.failureCount || 0),\n    },\n    persistSummary: persistPayload.persistSummary || {},\n  },\n}];"
+      },
+      "id": "41",
+      "name": "Build Engine Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4672,
+        256
+      ]
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Normalize Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Request": {
+      "main": [
+        [
+          {
+            "node": "Get Active Sprint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Sprint": {
+      "main": [
+        [
+          {
+            "node": "Pick Active Sprint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Active Sprint": {
+      "main": [
+        [
+          {
+            "node": "If Active Sprint?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Active Sprint?": {
+      "main": [
+        [
+          {
+            "node": "Get Sprint Issues",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build No Active Sprint Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build No Active Sprint Summary": {
+      "main": [
+        [
+          {
+            "node": "Build No Active Sprint Persist Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build No Active Sprint Persist Query": {
+      "main": [
+        [
+          {
+            "node": "Persist No Active Sprint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist No Active Sprint": {
+      "main": [
+        [
+          {
+            "node": "Build No Active Sprint Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Sprint Issues": {
+      "main": [
+        [
+          {
+            "node": "Build GitLab Project Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build GitLab Project Items": {
+      "main": [
+        [
+          {
+            "node": "If Should Fetch GitLab?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Should Fetch GitLab?": {
+      "main": [
+        [
+          {
+            "node": "Get GitLab Merge Requests",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Empty GitLab Signals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get GitLab Merge Requests": {
+      "main": [
+        [
+          {
+            "node": "Aggregate GitLab Signals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Empty GitLab Signals": {
+      "main": [
+        [
+          {
+            "node": "Aggregate GitLab Signals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate GitLab Signals": {
+      "main": [
+        [
+          {
+            "node": "Normalize Sprint Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Sprint Context": {
+      "main": [
+        [
+          {
+            "node": "Build Comment Classifier Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Comment Classifier Inputs": {
+      "main": [
+        [
+          {
+            "node": "Comment Classifier AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comment Classifier AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Compute Signals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Comment Classifier Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Comment Classifier AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comment Classifier Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Comment Classifier AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Signals": {
+      "main": [
+        [
+          {
+            "node": "Build Prior State Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prior State Query": {
+      "main": [
+        [
+          {
+            "node": "Load Prior State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Prior State": {
+      "main": [
+        [
+          {
+            "node": "Build Judge Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Judge Inputs": {
+      "main": [
+        [
+          {
+            "node": "Sprint Judge AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sprint Judge AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Delivery Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Sprint Judgment Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Sprint Judge AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sprint Judge Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Sprint Judge AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delivery Gate": {
+      "main": [
+        [
+          {
+            "node": "If Need Draft?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Need Draft?": {
+      "main": [
+        [
+          {
+            "node": "Build Draft Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Delivery Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Draft Inputs": {
+      "main": [
+        [
+          {
+            "node": "Message Drafter AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Drafter AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Build Delivery Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Message Draft Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Message Drafter AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Drafter Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Message Drafter AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Delivery Messages": {
+      "main": [
+        [
+          {
+            "node": "If Has Deliveries?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has Deliveries?": {
+      "main": [
+        [
+          {
+            "node": "Expand Delivery Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Persist Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expand Delivery Items": {
+      "main": [
+        [
+          {
+            "node": "Send Google Chat Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Google Chat Message": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Deliveries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Deliveries": {
+      "main": [
+        [
+          {
+            "node": "Build Persist Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Persist Query": {
+      "main": [
+        [
+          {
+            "node": "Persist Run State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Run State": {
+      "main": [
+        [
+          {
+            "node": "Build Engine Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}

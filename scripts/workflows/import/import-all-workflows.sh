@@ -21,6 +21,10 @@ contains_item() {
 priority_scripts=(
   "import-shared-notification-router-workflow.sh"
   "import-data-table-store-workflow.sh"
+  "import-sprint-monitor-light-scan-workflow.sh"
+  "import-sprint-monitor-deep-analysis-workflow.sh"
+  "import-sprint-monitor-endgame-workflow.sh"
+  "import-sprint-monitor-engine-workflow.sh"
   "import-gemini-demo-workflow.sh"
   "import-openai-demo-workflow.sh"
   "import-book-review-workflow.sh"

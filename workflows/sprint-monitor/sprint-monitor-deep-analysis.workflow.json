@@ -1,0 +1,369 @@
+{
+  "name": "Sprint Monitor Deep Analysis",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -960,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const monitorConfigId = String($json.monitorConfigId || '').trim();\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nconst filterClause = monitorConfigId\n  ? \" AND id = '\" + sqlEscape(monitorConfigId) + \"'::uuid\"\n  : '';\n\nreturn {\n  triggerSource: 'manual',\n  workflowName: 'Sprint Monitor Deep Analysis',\n  runType: 'deep_analysis',\n  monitorConfigId,\n  configQuery: \"SELECT * FROM monitor_configs WHERE enabled = true\" + filterClause + \" ORDER BY team_id, board_id\",\n};"
+      },
+      "id": "2",
+      "name": "Build Manual Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -736,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 14 * * 2,4"
+            }
+          ]
+        }
+      },
+      "id": "3",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -960,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const monitorConfigId = String($json.monitorConfigId || '').trim();\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nconst filterClause = monitorConfigId\n  ? \" AND id = '\" + sqlEscape(monitorConfigId) + \"'::uuid\"\n  : '';\n\nreturn {\n  triggerSource: 'schedule',\n  workflowName: 'Sprint Monitor Deep Analysis',\n  runType: 'deep_analysis',\n  monitorConfigId,\n  configQuery: \"SELECT * FROM monitor_configs WHERE enabled = true\" + filterClause + \" ORDER BY team_id, board_id\",\n};"
+      },
+      "id": "4",
+      "name": "Build Scheduled Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -736,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.configQuery }}",
+        "options": {
+          "queryBatching": "single"
+        }
+      },
+      "id": "5",
+      "name": "Load Monitor Configs (Manual)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -480,
+        96
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "hNw1lfcclrZjlInz",
+          "name": "Sprint Monitor Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.configQuery }}",
+        "options": {
+          "queryBatching": "single"
+        }
+      },
+      "id": "6",
+      "name": "Load Monitor Configs (Scheduled)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -480,
+        272
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "hNw1lfcclrZjlInz",
+          "name": "Sprint Monitor Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "UbFT1qz7YOaelW9W",
+          "mode": "list",
+          "cachedResultName": "Sprint Monitor Engine"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "runType": "={{ 'deep_analysis' }}",
+            "workflowName": "={{ 'Sprint Monitor Deep Analysis' }}",
+            "triggerSource": "={{ \"manual\" }}",
+            "monitorConfig": "={{ $json }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "runType",
+              "displayName": "runType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "workflowName",
+              "displayName": "workflowName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "triggerSource",
+              "displayName": "triggerSource",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "monitorConfig",
+              "displayName": "monitorConfig",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "7",
+      "name": "Run Sprint Monitor Engine (Manual)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -208,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "UbFT1qz7YOaelW9W",
+          "mode": "list",
+          "cachedResultName": "Sprint Monitor Engine"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "runType": "={{ 'deep_analysis' }}",
+            "workflowName": "={{ 'Sprint Monitor Deep Analysis' }}",
+            "triggerSource": "={{ \"schedule\" }}",
+            "monitorConfig": "={{ $json }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "runType",
+              "displayName": "runType",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "workflowName",
+              "displayName": "workflowName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "triggerSource",
+              "displayName": "triggerSource",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "monitorConfig",
+              "displayName": "monitorConfig",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "8",
+      "name": "Run Sprint Monitor Engine (Scheduled)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -208,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map((item) => item?.json || {});\nconst summary = {\n  workflowName: 'Sprint Monitor Deep Analysis',\n  runType: 'deep_analysis',\n  totalConfigs: items.length,\n  successCount: items.filter((item) => String(item.status || '') === 'success').length,\n  partialCount: items.filter((item) => String(item.status || '') === 'partial').length,\n  failedCount: items.filter((item) => String(item.status || '') === 'failed').length,\n  skippedCount: items.filter((item) => String(item.status || '') === 'skipped').length,\n  noMessageCount: items.filter((item) => Boolean(item.noMessage)).length,\n  results: items,\n};\n\nreturn [{ json: summary }];"
+      },
+      "id": "9",
+      "name": "Build Workflow Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        192
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Build Manual Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Manual Request": {
+      "main": [
+        [
+          {
+            "node": "Load Monitor Configs (Manual)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Monitor Configs (Manual)": {
+      "main": [
+        [
+          {
+            "node": "Run Sprint Monitor Engine (Manual)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Sprint Monitor Engine (Manual)": {
+      "main": [
+        [
+          {
+            "node": "Build Workflow Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Build Scheduled Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Scheduled Request": {
+      "main": [
+        [
+          {
+            "node": "Load Monitor Configs (Scheduled)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Monitor Configs (Scheduled)": {
+      "main": [
+        [
+          {
+            "node": "Run Sprint Monitor Engine (Scheduled)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Sprint Monitor Engine (Scheduled)": {
+      "main": [
+        [
+          {
+            "node": "Build Workflow Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}
