@@ -26,6 +26,35 @@ const filesToCheck = [
   'workflow-registry.json',
 ];
 
+const sprintMonitorDocFiles = [
+  'docs/sprint-monitor/README.md',
+  'docs/sprint-monitor/FLOW.md',
+  'docs/sprint-monitor/SPEC.md',
+  'docs/sprint-monitor/ARCHITECTURE.md',
+  'docs/sprint-monitor/PROMPTS.md',
+  'docs/sprint-monitor/WORKFLOWS.md',
+  'docs/sprint-monitor/RENDERING-SPEC.md',
+  'docs/sprint-monitor/MENTION-RULES.md',
+  'docs/sprint-monitor/schema.sql',
+  'docs/sprint-monitor/monitor-configs.sql',
+];
+
+const staleDocPatterns = [
+  'pm_digest',
+  'lead_alert',
+  'owner_nudge',
+  'gchat_pm_webhook',
+  'gchat_lead_webhook',
+  'max_owner_nudges_per_run',
+  'max_lead_alerts_per_run',
+  'PM digest',
+  'lead alert',
+  'owner nudges',
+  'lead alerts',
+  'PM room',
+  'Lead room',
+];
+
 const expectedWorkflows = [
   {
     name: 'Sprint Monitor Light Scan',
@@ -83,6 +112,10 @@ for (const relativePath of filesToCheck) {
   check(fileExists(relativePath), `support file exists: ${relativePath}`);
 }
 
+for (const relativePath of sprintMonitorDocFiles) {
+  check(fileExists(relativePath), `Sprint Monitor doc exists: ${relativePath}`);
+}
+
 const registry = fileExists('workflow-registry.json') ? readJson('workflow-registry.json') : { workflows: {} };
 
 for (const workflowDef of expectedWorkflows) {
@@ -112,6 +145,15 @@ for (const wrapperName of expectedWrapperNames) {
 const readmeContent = fileExists('README.md') ? readText('README.md') : '';
 const scriptsReadmeContent = fileExists('scripts/README.md') ? readText('scripts/README.md') : '';
 const changelogContent = fileExists('CHANGELOG.md') ? readText('CHANGELOG.md') : '';
+const sprintReadmeContent = fileExists('docs/sprint-monitor/README.md')
+  ? readText('docs/sprint-monitor/README.md')
+  : '';
+const sprintDocContents = sprintMonitorDocFiles
+  .filter((relativePath) => fileExists(relativePath))
+  .map((relativePath) => ({
+    relativePath,
+    content: readText(relativePath),
+  }));
 
 check(readmeContent.includes('Sprint Monitor'), 'README.md mentions Sprint Monitor');
 check(
@@ -135,6 +177,43 @@ check(
   scriptsReadmeContent.includes('generate-workflows.mjs'),
   'scripts/README.md documents Sprint Monitor workflow generator',
 );
+check(
+  sprintReadmeContent.includes('unified digest'),
+  'docs/sprint-monitor/README.md documents the unified digest model',
+);
+
+for (const { relativePath, content } of sprintDocContents) {
+  for (const pattern of staleDocPatterns) {
+    check(
+      !content.includes(pattern),
+      `${relativePath} no longer references stale Sprint Monitor channel text: ${pattern}`,
+    );
+  }
+}
+
+const requiredDocPatterns = [
+  ['docs/sprint-monitor/PROMPTS.md', ['send_unified_digest', 'unified_digest_text']],
+  ['docs/sprint-monitor/RENDERING-SPEC.md', ['unified digest thread', 'cardsV2', 'mentions_needed', '[A-Z][A-Z0-9]+-\\\\d+', 'apply trên text output trước khi gửi Google Chat']],
+  ['docs/sprint-monitor/ARCHITECTURE.md', ['unified digest thread', 'unified_digest_text']],
+  ['docs/sprint-monitor/WORKFLOWS.md', ['gchat_unified_webhook', 'unified digest']],
+  ['docs/sprint-monitor/FLOW.md', ['unified digest']],
+  ['docs/sprint-monitor/README.md', ['gchat_unified_webhook', 'unified digest']],
+  ['docs/sprint-monitor/schema.sql', ['gchat_unified_webhook', 'unified_digest_card', 'unified_digest_text']],
+  ['docs/sprint-monitor/monitor-configs.sql', ['gchat_unified_webhook']],
+  ['docs/sprint-monitor/MENTION-RULES.md', ['mentions_needed']],
+  ['docs/sprint-monitor/SPEC.md', ['unified digest']],
+];
+
+for (const [relativePath, patterns] of requiredDocPatterns) {
+  if (!fileExists(relativePath)) continue;
+  const content = readText(relativePath);
+  for (const pattern of patterns) {
+    check(
+      content.includes(pattern),
+      `${relativePath} includes unified digest artifact: ${pattern}`,
+    );
+  }
+}
 
 for (const moMoWorkflowPath of [
   'workflows/ui-synced/MoMo/momo-ai-assistant.workflow.json',
@@ -255,11 +334,19 @@ for (const item of topLevelExpectations) {
   check(manualRunner?.type === 'n8n-nodes-base.executeWorkflow', `${item.name} manual engine runner uses executeWorkflow`);
   check(scheduledRunner?.type === 'n8n-nodes-base.executeWorkflow', `${item.name} scheduled engine runner uses executeWorkflow`);
   check(
-    String(manualRunner?.parameters?.workflowId?.value || '').includes('__REGISTRY__:Sprint Monitor Engine'),
+    String(
+      manualRunner?.parameters?.workflowId?.value ||
+        manualRunner?.parameters?.workflowId?.cachedResultName ||
+        '',
+    ).includes('Sprint Monitor Engine'),
     `${item.name} manual engine runner references Sprint Monitor Engine registry token`,
   );
   check(
-    String(scheduledRunner?.parameters?.workflowId?.value || '').includes('__REGISTRY__:Sprint Monitor Engine'),
+    String(
+      scheduledRunner?.parameters?.workflowId?.value ||
+        scheduledRunner?.parameters?.workflowId?.cachedResultName ||
+        '',
+    ).includes('Sprint Monitor Engine'),
     `${item.name} scheduled engine runner references Sprint Monitor Engine registry token`,
   );
   check(
@@ -309,6 +396,8 @@ if (fileExists(enginePath)) {
     'Message Drafter AI Agent',
     'Structured Message Draft Output Parser',
     'Message Drafter Model',
+    'Get Members',
+    'Build Render Model',
     'Build Delivery Messages',
     'If Has Deliveries?',
     'Expand Delivery Items',
@@ -341,9 +430,11 @@ if (fileExists(enginePath)) {
   check(hasMainConnection(engine, 'Sprint Judge AI Agent', 'Delivery Gate'), 'sprint judge connects to delivery gate');
   check(hasMainConnection(engine, 'Delivery Gate', 'If Need Draft?'), 'delivery gate connects to draft gate');
   check(hasMainConnectionFromOutput(engine, 'If Need Draft?', 0, 'Build Draft Inputs'), 'draft gate true branch builds draft inputs');
-  check(hasMainConnectionFromOutput(engine, 'If Need Draft?', 1, 'Build Delivery Messages'), 'draft gate false branch skips directly to delivery builder');
   check(hasMainConnection(engine, 'Build Draft Inputs', 'Message Drafter AI Agent'), 'draft inputs connect to drafter agent');
-  check(hasMainConnection(engine, 'Message Drafter AI Agent', 'Build Delivery Messages'), 'drafter agent connects to delivery builder');
+  check(hasMainConnectionFromOutput(engine, 'If Need Draft?', 1, 'Get Members'), 'draft gate false branch still resolves members for deterministic render');
+  check(hasMainConnection(engine, 'Message Drafter AI Agent', 'Get Members'), 'drafter connects to member lookup');
+  check(hasMainConnection(engine, 'Get Members', 'Build Render Model'), 'member lookup connects to render model');
+  check(hasMainConnection(engine, 'Build Render Model', 'Build Delivery Messages'), 'render model connects to delivery builder');
   check(hasMainConnection(engine, 'Build Delivery Messages', 'If Has Deliveries?'), 'delivery builder connects to delivery gate');
   check(hasMainConnectionFromOutput(engine, 'If Has Deliveries?', 0, 'Expand Delivery Items'), 'delivery gate true branch expands items');
   check(hasMainConnectionFromOutput(engine, 'If Has Deliveries?', 1, 'Build Persist Query'), 'delivery gate false branch persists directly');
@@ -362,6 +453,8 @@ if (fileExists(enginePath)) {
 
   const postgresNodes = (engine.nodes || []).filter((node) => node.type === 'n8n-nodes-base.postgres');
   check(postgresNodes.length >= 3, 'Sprint Monitor Engine includes Postgres nodes for state IO');
+  const sheetsNodes = (engine.nodes || []).filter((node) => node.type === 'n8n-nodes-base.googleSheets');
+  check(sheetsNodes.length >= 1, 'Sprint Monitor Engine includes Google Sheets member lookup');
   check(Boolean(nodeByName(engine, 'Load Prior State')), 'Sprint Monitor Engine includes Load Prior State Postgres node');
   check(Boolean(nodeByName(engine, 'Persist Run State')), 'Sprint Monitor Engine includes Persist Run State Postgres node');
   check(Boolean(nodeByName(engine, 'Persist No Active Sprint')), 'Sprint Monitor Engine includes Persist No Active Sprint Postgres node');
@@ -384,6 +477,22 @@ if (fileExists(enginePath)) {
     workflowInputs.some((item) => item?.name === 'monitorConfig' && item?.type === 'object'),
     'Sprint Monitor Engine input schema includes monitorConfig:object',
   );
+
+  const engineContent = JSON.stringify(engine);
+  for (const stalePattern of ['pm_digest', 'lead_alert', 'owner_nudge', 'gchatPmWebhook', 'gchatLeadWebhook', '"audience"']) {
+    check(
+      !engineContent.includes(stalePattern),
+      `Sprint Monitor Engine omits stale runtime artifact: ${stalePattern}`,
+    );
+  }
+
+  const renderModelCode = String(nodeByName(engine, 'Build Render Model')?.parameters?.jsCode || '');
+  check(!renderModelCode.includes('buildJiraLink('), 'Build Render Model no longer expands Jira links directly');
+  check(!renderModelCode.includes('withLink('), 'Build Render Model no longer injects pre-rendered Jira links');
+
+  const deliveryBuilderCode = String(nodeByName(engine, 'Build Delivery Messages')?.parameters?.jsCode || '');
+  check(deliveryBuilderCode.includes('[A-Z][A-Z0-9]+-\\d+'), 'Build Delivery Messages includes Jira issue key regex replacement');
+  check(deliveryBuilderCode.includes("request.monitorConfig?.jiraBaseUrl"), 'Build Delivery Messages uses jiraBaseUrl from monitor config');
 }
 
 if (missingTemplates.length > 0) {

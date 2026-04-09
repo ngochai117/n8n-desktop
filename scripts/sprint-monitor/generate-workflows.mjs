@@ -14,6 +14,10 @@ const SETTINGS = {
   availableInMCP: false,
 };
 
+const SHARED_MEMBER_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1uLVZ2b6Ra-r2KCbLHcOL68V6smtxymfTCNNQnWPG8mI';
+const SHARED_MEMBER_SHEET_NAME = 'MoMoer';
+const GOOGLE_CHAT_REPLY_OPTION = 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD';
+
 const STRUCTURED_COMMENT_RESULTS_SCHEMA = `{
   "results": [
     {
@@ -43,7 +47,17 @@ const SPRINT_JUDGMENT_SCHEMA = `{
       "why_now": "string",
       "evidence": ["string"],
       "recommended_action": "NO_ACTION|MONITOR_ONLY|SUGGEST_REASSIGN_REVIEWER|ESCALATE_TO_LEAD|ESCALATE_TO_PM|FLAG_SPRINT_GOAL_RISK|SUGGEST_SCOPE_CUT",
-      "audience": "owner|lead|pm|team|none",
+      "action_owner_type": "pm|lead|assignee|reviewer|team|none",
+      "decision_owner_type": "pm|lead|assignee|reviewer|team|none",
+      "execution_owner_type": "pm|lead|assignee|reviewer|team|none",
+      "mentions_needed": [
+        {
+          "type": "person",
+          "email": "string",
+          "reason": "string",
+          "priority": 1
+        }
+      ],
       "confidence": 0.0
     }
   ],
@@ -56,7 +70,17 @@ const SPRINT_JUDGMENT_SCHEMA = `{
       "why_now": "string",
       "evidence": ["string"],
       "recommended_action": "NO_ACTION|MONITOR_ONLY|NUDGE_OWNER_FOR_UPDATE|ASK_BLOCKER_CLARIFICATION|SUGGEST_SPLIT_TASK|SUGGEST_SCOPE_CUT|SUGGEST_REASSIGN_REVIEWER|ESCALATE_TO_LEAD|ESCALATE_TO_PM",
-      "audience": "owner|lead|pm|none",
+      "action_owner_type": "pm|lead|assignee|reviewer|team|none",
+      "decision_owner_type": "pm|lead|assignee|reviewer|team|none",
+      "execution_owner_type": "pm|lead|assignee|reviewer|team|none",
+      "mentions_needed": [
+        {
+          "type": "person",
+          "email": "string",
+          "reason": "string",
+          "priority": 1
+        }
+      ],
       "confidence": 0.0
     }
   ],
@@ -65,17 +89,13 @@ const SPRINT_JUDGMENT_SCHEMA = `{
     "reason": "string"
   },
   "delivery_plan": {
-    "send_pm_digest": true,
-    "send_lead_alerts": true,
-    "send_owner_nudges": false,
+    "send_unified_digest": true,
     "send_team_digest": false
   }
 }`;
 
 const MESSAGE_DRAFTER_SCHEMA = `{
-  "pm_digest": "string",
-  "lead_alerts": ["string"],
-  "owner_nudges": ["string"]
+  "unified_digest_text": "string"
 }`;
 
 function ensureDir(dirPath) {
@@ -415,10 +435,6 @@ function asArray(value) {
   return [];
 }
 
-function sqlEscape(value) {
-  return String(value ?? '').replace(/'/g, "''");
-}
-
 const rawConfig = asObject(input.monitorConfig);
 const runType = asText(input.runType, 'light_scan');
 const workflowName = asText(input.workflowName, 'Sprint Monitor Engine');
@@ -437,20 +453,14 @@ const monitorConfig = {
   jiraJql: asText(rawConfig.jira_jql || rawConfig.jiraJql),
   gitlabBaseUrl: asText(rawConfig.gitlab_base_url || rawConfig.gitlabBaseUrl).replace(/\/+$/, ''),
   gitlabProjectIds: asArray(rawConfig.gitlab_project_ids || rawConfig.gitlabProjectIds).map((item) => asText(item)).filter(Boolean),
-  gchatPmWebhook: asText(rawConfig.gchat_pm_webhook || rawConfig.gchatPmWebhook),
-  gchatLeadWebhook: asText(rawConfig.gchat_lead_webhook || rawConfig.gchatLeadWebhook),
+  gchatUnifiedWebhook: asText(rawConfig.gchat_unified_webhook || rawConfig.gchatUnifiedWebhook),
   messageLanguage,
   timezone,
   maxCandidateTasks: Math.max(5, asNumber(rawConfig.max_candidate_tasks || rawConfig.maxCandidateTasks, 20)),
   maxClusters: Math.max(1, asNumber(rawConfig.max_clusters || rawConfig.maxClusters, 5)),
   maxActivityExcerpts: Math.max(5, asNumber(rawConfig.max_activity_excerpts || rawConfig.maxActivityExcerpts, 30)),
-  ownerNudgeEnabled: asBoolean(rawConfig.owner_nudge_enabled || rawConfig.ownerNudgeEnabled, false),
-  suppressionOwnerHours: Math.max(1, asNumber(rawConfig.suppression_owner_hours || rawConfig.suppressionOwnerHours, 24)),
-  suppressionLeadHours: Math.max(1, asNumber(rawConfig.suppression_lead_hours || rawConfig.suppressionLeadHours, 24)),
-  suppressionPmHours: Math.max(1, asNumber(rawConfig.suppression_pm_hours || rawConfig.suppressionPmHours, 24)),
-  confidenceThresholdOwner: asNumber(rawConfig.confidence_threshold_owner || rawConfig.confidenceThresholdOwner, 0.85),
-  confidenceThresholdLead: asNumber(rawConfig.confidence_threshold_lead || rawConfig.confidenceThresholdLead, 0.7),
-  confidenceThresholdPm: asNumber(rawConfig.confidence_threshold_pm || rawConfig.confidenceThresholdPm, 0.65),
+  suppressionDigestHours: Math.max(1, asNumber(rawConfig.suppression_digest_hours || rawConfig.suppressionDigestHours, 24)),
+  confidenceThresholdDigest: asNumber(rawConfig.confidence_threshold_digest || rawConfig.confidenceThresholdDigest, 0.7),
 };
 
 if (!monitorConfig.teamId) {
@@ -502,23 +512,25 @@ const draftSystemPrompt = messageLanguage === 'vi'
       'Viet nhu mot PM partner sac sao va thuc dung.',
       'Hay viet bang tieng Viet tu nhien.',
       'Khong viet kieu dich may.',
-      'Khong nhac nho chung chung.',
-      'Moi message phai noi ro:',
-      '- dang co chuyen gi',
-      '- vi sao can xu ly ngay bay gio',
-      '- hanh dong de xuat la gi',
-      'Giu cau ngan, ro, de hanh dong.',
+      'Chi viet phan text cho unified digest.',
+      'Toi da 3 bullet, uu tien dung format:',
+      '- Main blocker: ...',
+      '- Quick win: ...',
+      '- Decision today: ...',
+      'Neu khong co quick win hoac decision ro rang thi bo dong do, khong duoc ke dai.',
+      'Giu cau ngan, scan nhanh, de hanh dong.',
       'Khong duoc bo sung su that ngoai input cau truc.',
       'Tranh van phong do loi hoac quy ket ca nhan.',
     ].join('\n')
   : [
       'Write like a sharp PM partner.',
-      'No generic reminders.',
-      'Every message must say:',
-      '- what is happening',
-      '- why it matters now',
-      '- what action is recommended',
-      'Keep it concise.',
+      'Write only the text portion of the unified digest.',
+      'Use at most 3 bullets and prefer this exact framing:',
+      '- Main blocker: ...',
+      '- Quick win: ...',
+      '- Decision today: ...',
+      'If there is no clear quick win or decision, omit that line instead of padding.',
+      'Keep it concise and highly scannable.',
       'Do not invent facts beyond the structured input.',
       'Avoid blameful language.',
     ].join('\n');
@@ -790,11 +802,13 @@ function normalizeUser(user) {
     return {
       id: '',
       name: '',
+      email: '',
     };
   }
   return {
     id: asText(user.accountId || user.id || user.key),
     name: asText(user.displayName || user.name),
+    email: asText(user.emailAddress || user.email || user.mail).toLowerCase(),
   };
 }
 
@@ -909,6 +923,7 @@ for (const issue of rawIssues) {
     priority: asText(fields.priority?.name),
     assignee_id: assignee.id,
     assignee_name: assignee.name,
+    assignee_email: assignee.email,
     reviewer_ids: [],
     status,
     status_category: asText(fields.status?.statusCategory?.name),
@@ -925,6 +940,7 @@ for (const issue of rawIssues) {
     due_at: asText(fields.duedate),
     browse_url: monitorConfig.jiraBaseUrl + '/browse/' + issueKey,
     reporter_name: reporter.name,
+    reporter_email: reporter.email,
     currentStatusEnteredAt: statusEnteredAt,
     days_in_current_status: businessDaysBetween(statusEnteredAt, nowIso),
     delivery_signal_confidence: asText(latestSignal.deliverySignalConfidence, latestSignals.length > 0 ? 'high' : 'low'),
@@ -1137,7 +1153,9 @@ if (reviewTasks.length > 0) {
     evidence: reviewTasks.slice(0, 5).map((task) => task.key + ' in ' + task.status + ' for ' + task.review_pending_days + 'd'),
     subject_id: 'reviewers',
     recommended_action: 'ESCALATE_TO_LEAD',
-    audience: 'lead',
+    action_owner_type: 'lead',
+    decision_owner_type: 'lead',
+    execution_owner_type: 'reviewer',
     confidence: 0.78,
   });
 }
@@ -1151,7 +1169,9 @@ if (blockedTasks.length > 0) {
     evidence: blockedTasks.slice(0, 5).map((task) => task.key + ' blocked by ' + (task.blocked_by || []).join(', ')),
     subject_id: 'blocked',
     recommended_action: 'ESCALATE_TO_LEAD',
-    audience: 'lead',
+    action_owner_type: 'lead',
+    decision_owner_type: 'lead',
+    execution_owner_type: 'assignee',
     confidence: 0.8,
   });
 }
@@ -1165,7 +1185,9 @@ if (qaTasks.length > 0) {
     evidence: qaTasks.slice(0, 5).map((task) => task.key + ' in ' + task.status + ' for ' + task.qa_pending_days + 'd'),
     subject_id: 'qa',
     recommended_action: 'ESCALATE_TO_LEAD',
-    audience: 'lead',
+    action_owner_type: 'lead',
+    decision_owner_type: 'lead',
+    execution_owner_type: 'reviewer',
     confidence: 0.74,
   });
 }
@@ -1180,7 +1202,9 @@ for (const [epicId, epicTasks] of epicBuckets.entries()) {
     evidence: epicTasks.slice(0, 4).map((task) => task.key + ' score ' + task.candidate_score),
     subject_id: epicId,
     recommended_action: 'FLAG_SPRINT_GOAL_RISK',
-    audience: 'pm',
+    action_owner_type: 'pm',
+    decision_owner_type: 'pm',
+    execution_owner_type: 'lead',
     confidence: 0.69,
   });
 }
@@ -1195,7 +1219,9 @@ if (Object.values(assigneeCounts).some((count) => count >= 4)) {
     evidence: sortedTasks.filter((task) => asText(task.assignee_name) === overloaded[0]).slice(0, 5).map((task) => task.key),
     subject_id: overloaded[0],
     recommended_action: 'ESCALATE_TO_LEAD',
-    audience: 'lead',
+    action_owner_type: 'lead',
+    decision_owner_type: 'lead',
+    execution_owner_type: 'lead',
     confidence: 0.66,
   });
 }
@@ -1294,9 +1320,7 @@ const packet = {
     sprint_phase: signals.sprintSignals?.phase || signals.sprint?.phase || 'mid',
   },
   policy: {
-    max_owner_nudges_per_run: 0,
-    max_lead_alerts_per_run: 2,
-    pm_escalation_threshold: 'high',
+    max_mentions_per_digest: 2,
     prefer_cluster_alerts: true,
     silence_if_no_new_actionable_insight: true,
   },
@@ -1337,8 +1361,25 @@ function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
-const suppressionLeadHours = Number(request.monitorConfig?.suppressionLeadHours || 24);
-const suppressionPmHours = Number(request.monitorConfig?.suppressionPmHours || 24);
+function asOwnerType(value, fallback = 'none') {
+  const normalized = asText(value, fallback).toLowerCase();
+  return ['pm', 'lead', 'assignee', 'reviewer', 'team', 'none'].includes(normalized)
+    ? normalized
+    : fallback;
+}
+
+function normalizeMentionsNeeded(value) {
+  return asArray(value)
+    .map((item, index) => ({
+      type: asText(item?.type, 'person'),
+      email: asText(item?.email).toLowerCase(),
+      reason: asText(item?.reason),
+      priority: Number(item?.priority || index + 1),
+    }))
+    .filter((item) => item.email);
+}
+
+const suppressionDigestHours = Number(request.monitorConfig?.suppressionDigestHours || 24);
 const now = new Date(request.generatedAt || new Date().toISOString());
 
 function hoursSince(value) {
@@ -1360,7 +1401,7 @@ const deliverableClusterIssues = [];
 for (const task of tasks) {
   const issueKey = makeIssueKey('task', asText(task.task_id), asText(task.risk_type));
   const existing = openIssues.find((item) => asText(item.issue_key) === issueKey);
-  const suppressed = existing && hoursSince(existing.last_alerted_at) < suppressionLeadHours && asText(existing.severity) === asText(task.severity);
+  const suppressed = existing && hoursSince(existing.last_alerted_at) < suppressionDigestHours && asText(existing.severity) === asText(task.severity);
   if (suppressed) continue;
   deliverableTaskIssues.push({
     issue_key: issueKey,
@@ -1368,10 +1409,13 @@ for (const task of tasks) {
     entity_id: asText(task.task_id),
     risk_type: asText(task.risk_type),
     severity: asText(task.severity, 'medium'),
-    audience: asText(task.audience, 'lead'),
+    action_owner_type: asOwnerType(task.action_owner_type, 'lead'),
+    decision_owner_type: asOwnerType(task.decision_owner_type || task.action_owner_type, 'lead'),
+    execution_owner_type: asOwnerType(task.execution_owner_type || task.action_owner_type, 'assignee'),
     recommended_action: asText(task.recommended_action),
     why_now: asText(task.why_now),
     evidence: asArray(task.evidence),
+    mentions_needed: normalizeMentionsNeeded(task.mentions_needed),
     confidence: Number(task.confidence || 0.6),
   });
 }
@@ -1380,7 +1424,7 @@ for (const cluster of clusters) {
   const subjectId = asText(cluster.cluster_id || cluster.cluster_type || 'cluster').split(':').slice(-1)[0];
   const issueKey = makeIssueKey('cluster', asText(cluster.cluster_type), subjectId);
   const existing = openIssues.find((item) => asText(item.issue_key) === issueKey);
-  const suppressed = existing && hoursSince(existing.last_alerted_at) < suppressionLeadHours && asText(existing.severity) === asText(cluster.severity);
+  const suppressed = existing && hoursSince(existing.last_alerted_at) < suppressionDigestHours && asText(existing.severity) === asText(cluster.severity);
   if (suppressed) continue;
   deliverableClusterIssues.push({
     issue_key: issueKey,
@@ -1388,10 +1432,13 @@ for (const cluster of clusters) {
     entity_id: asText(cluster.cluster_id || subjectId),
     risk_type: asText(cluster.cluster_type),
     severity: asText(cluster.severity, 'medium'),
-    audience: asText(cluster.audience, 'lead'),
+    action_owner_type: asOwnerType(cluster.action_owner_type, 'lead'),
+    decision_owner_type: asOwnerType(cluster.decision_owner_type || cluster.action_owner_type, 'lead'),
+    execution_owner_type: asOwnerType(cluster.execution_owner_type || cluster.action_owner_type, 'lead'),
     recommended_action: asText(cluster.recommended_action),
     why_now: asText(cluster.why_now),
     evidence: asArray(cluster.evidence),
+    mentions_needed: normalizeMentionsNeeded(cluster.mentions_needed),
     confidence: Number(cluster.confidence || 0.65),
   });
 }
@@ -1401,23 +1448,20 @@ const combinedIssues = [
   ...deliverableTaskIssues,
 ];
 
-const sendPmDigest = Boolean(judge.delivery_plan?.send_pm_digest) && !Boolean(judge.silence_decision?.no_message_needed);
-const shouldDraftMessages = sendPmDigest || combinedIssues.length > 0;
-const noMessage = Boolean(judge.silence_decision?.no_message_needed) || (!shouldDraftMessages && combinedIssues.length === 0);
-
-const pmSuppressed = openIssues.some((item) => asText(item.entity_type) === 'sprint' && hoursSince(item.last_alerted_at) < suppressionPmHours);
+const sendUnifiedDigest = Boolean(judge.delivery_plan?.send_unified_digest) && !Boolean(judge.silence_decision?.no_message_needed);
+const shouldDraftMessages = sendUnifiedDigest;
+const noMessage = Boolean(judge.silence_decision?.no_message_needed) || (!sendUnifiedDigest && combinedIssues.length === 0);
 
 return [{
   json: {
     judge,
     deliverableIssues: combinedIssues,
-    sendPmDigest: sendPmDigest && !pmSuppressed,
+    sendUnifiedDigest,
     shouldDraftMessages: shouldDraftMessages && !noMessage,
     noMessage,
     suppressionSummary: {
       openIssueCount: openIssues.length,
       deliverableIssueCount: combinedIssues.length,
-      pmSuppressed,
     },
     summaryJson: {
       sprintAssessment: judge.sprint_assessment || {},
@@ -1430,12 +1474,15 @@ return [{
 
 const buildDraftInputsCode = String.raw`const request = $('Normalize Request').first().json || {};
 const gate = $('Delivery Gate').first().json || {};
+const context = $('Normalize Sprint Context').first().json || {};
 const judge = gate.judge || {};
 
 const payload = {
   sprint_assessment: judge.sprint_assessment || {},
   clusters: judge.clusters || [],
   tasks: judge.tasks || [],
+  deliverable_issues: gate.deliverableIssues || [],
+  sprint: context.sprint || {},
   delivery_plan: judge.delivery_plan || {},
 };
 
@@ -1446,7 +1493,9 @@ return [{
   },
 }];`;
 
-const buildDeliveryMessagesCode = String.raw`const request = $('Normalize Request').first().json || {};
+const buildRenderModelCode = String.raw`const request = $('Normalize Request').first().json || {};
+const context = $('Normalize Sprint Context').first().json || {};
+const signals = $('Compute Signals').first().json || {};
 const gate = $('Delivery Gate').first().json || {};
 const judge = gate.judge || {};
 const draftNode = (() => {
@@ -1457,7 +1506,216 @@ const draftNode = (() => {
   }
 })();
 const draft = draftNode.output && typeof draftNode.output === 'object' ? draftNode.output : {};
-const messageLanguage = asText(request.monitorConfig?.messageLanguage, 'en').toLowerCase() === 'vi' ? 'vi' : 'en';
+const messageLanguage = String(request.monitorConfig?.messageLanguage || 'en').trim().toLowerCase() === 'vi' ? 'vi' : 'en';
+
+function asText(value, fallback = '') {
+  const text = String(value ?? '').trim();
+  return text || fallback;
+}
+
+function asArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
+function asOwnerType(value, fallback = 'none') {
+  const normalized = asText(value, fallback).toLowerCase();
+  return ['pm', 'lead', 'assignee', 'reviewer', 'team', 'none'].includes(normalized)
+    ? normalized
+    : fallback;
+}
+
+function t(english, vietnamese) {
+  return messageLanguage === 'vi' ? vietnamese : english;
+}
+
+function titleCaseFromOwnerType(ownerType) {
+  const normalized = asOwnerType(ownerType, 'team');
+  const labels = {
+    pm: t('PM', 'PM'),
+    lead: t('Lead', 'Lead'),
+    assignee: t('Owner', 'Owner'),
+    reviewer: t('Reviewer', 'Reviewer'),
+    team: t('Team', 'Team'),
+    none: t('Team', 'Team'),
+  };
+  return labels[normalized] || labels.team;
+}
+
+function normalizeMentionsNeeded(value) {
+  return asArray(value)
+    .map((item, index) => ({
+      type: asText(item?.type, 'person'),
+      email: asText(item?.email).toLowerCase(),
+      reason: asText(item?.reason),
+      priority: Number(item?.priority || index + 1),
+    }))
+    .filter((item) => item.email);
+}
+
+function normalizeEmail(value) {
+  const email = asText(value).toLowerCase();
+  return email.includes('@') ? email : '';
+}
+
+function bulletBody(text, labelPattern) {
+  const raw = asText(text);
+  if (!raw) return '';
+  if (!labelPattern.test(raw)) return raw;
+  return raw.replace(labelPattern, '').trim();
+}
+
+function dedupeMentions(items) {
+  const seen = new Set();
+  const results = [];
+  for (const item of items) {
+    const email = normalizeEmail(item?.email);
+    if (!email || seen.has(email)) continue;
+    seen.add(email);
+    results.push({
+      type: 'person',
+      email,
+      reason: asText(item?.reason),
+      priority: Number(item?.priority || results.length + 1),
+    });
+  }
+  return results.sort((a, b) => a.priority - b.priority).slice(0, 2);
+}
+
+const memberRows = $input.all().map((item) => item?.json || {});
+const memberMap = new Map();
+for (const row of memberRows) {
+  const normalized = {};
+  for (const [key, value] of Object.entries(row || {})) {
+    normalized[String(key || '').trim().toLowerCase()] = value;
+  }
+  const email = normalizeEmail(normalized.email);
+  const id = asText(normalized.id);
+  const name = asText(normalized.name || normalized.display_name || normalized.displayname);
+  if (!email) continue;
+  if (!memberMap.has(email)) {
+    memberMap.set(email, { id, name, email });
+  }
+}
+
+const sprint = context.sprint || {};
+const tasks = asArray(context.tasks);
+const deliverableIssues = asArray(gate.deliverableIssues);
+const topIssue = deliverableIssues[0] || {};
+const topTask = tasks.find((task) => asText(task.task_id) === asText(topIssue.entity_id)) || {};
+const notStartedCount = tasks.filter((task) => asText(task.status) === 'Open').length;
+const reviewCount = tasks.filter((task) => ['Ready For Review', 'In Review'].includes(asText(task.status))).length;
+const blockedCount = tasks.filter((task) => asArray(task.blocked_by).length > 0).length;
+const doneTasks = tasks.filter((task) => ['Ready For Review', 'In Review', 'Ready For Release', 'Close'].includes(asText(task.status))).length;
+const totalTasks = tasks.length;
+const donePoints = Number(sprint.completed_points || 0);
+const totalPoints = Number(sprint.committed_points || 0);
+const burnedPercent = totalPoints > 0 ? Number(((donePoints / totalPoints) * 100).toFixed(1)) : null;
+const daysLeft = Number(sprint.days_remaining || 0);
+
+const statusMap = {
+  likely_on_track: t('on track', 'on track'),
+  at_risk_but_recoverable: t('at risk', 'at risk'),
+  likely_spillover: t('likely spillover', 'likely spillover'),
+};
+const sprintStatus = statusMap[asText(judge.sprint_assessment?.delivery_outlook)] || t('at risk', 'at risk');
+const mainRiskCluster = asArray(judge.clusters)[0];
+
+const defaultMainBlocker = (() => {
+  if (!deliverableIssues.length) return '';
+  const issue = deliverableIssues[0];
+  return asText(issue.why_now) || t('Main blocker needs a decision today.', 'Main blocker can mot quyet dinh trong hom nay.');
+})();
+
+const quickWinTask = tasks
+  .filter((task) => ['Ready For Review', 'In Review', 'Ready For Test', 'In Test'].includes(asText(task.status)))
+  .sort((a, b) => Number(b.story_points || 0) - Number(a.story_points || 0))[0];
+const defaultQuickWin = quickWinTask
+  ? asText(quickWinTask.key) + ' ' + t('is close to done if ownership is cleared today.', 'co the chot nhanh neu clear owner trong hom nay.')
+  : '';
+
+const decisionOwnerType = asOwnerType(topIssue.decision_owner_type || mainRiskCluster?.decision_owner_type, 'lead');
+const executionOwnerType = asOwnerType(topIssue.execution_owner_type || mainRiskCluster?.execution_owner_type, 'assignee');
+
+const derivedMentions = [];
+if (normalizeEmail(topTask.assignee_email)) {
+  derivedMentions.push({ type: 'person', email: topTask.assignee_email, reason: 'execution_owner', priority: 1 });
+}
+if (normalizeEmail(topTask.reporter_email)) {
+  derivedMentions.push({ type: 'person', email: topTask.reporter_email, reason: 'decision_owner', priority: 2 });
+}
+for (const issue of deliverableIssues.slice(0, 3)) {
+  derivedMentions.push(...normalizeMentionsNeeded(issue.mentions_needed));
+}
+const mentionsNeeded = dedupeMentions(derivedMentions);
+const mentionsResolved = mentionsNeeded.map((item) => {
+  const member = memberMap.get(item.email);
+  return {
+    ...item,
+    display_name: member?.name || item.email,
+    mention_text: member?.id ? '<users/' + member.id + '>' : '',
+    resolved: Boolean(member?.id),
+  };
+});
+
+function mentionOrFallback(position, ownerType) {
+  const mention = mentionsResolved[position];
+  if (mention?.mention_text) return mention.mention_text;
+  if (mention?.display_name) return mention.display_name;
+  return titleCaseFromOwnerType(ownerType);
+}
+
+const draftedText = asText(draft.unified_digest_text);
+const mainBlockerLine = bulletBody(
+  draftedText.split('\n').find((line) => /^\s*[-*•]?\s*Main blocker:/i.test(line)),
+  /^\s*[-*•]?\s*Main blocker:\s*/i,
+) || defaultMainBlocker;
+const quickWinLine = bulletBody(
+  draftedText.split('\n').find((line) => /^\s*[-*•]?\s*Quick win:/i.test(line)),
+  /^\s*[-*•]?\s*Quick win:\s*/i,
+) || defaultQuickWin;
+const decisionTodayLine = bulletBody(
+  draftedText.split('\n').find((line) => /^\s*[-*•]?\s*Decision today:/i.test(line)),
+  /^\s*[-*•]?\s*Decision today:\s*/i,
+) || [
+  mentionOrFallback(0, decisionOwnerType),
+  t('to confirm the blocker path today.', 'xac nhan huong xu ly blocker trong hom nay.'),
+].join(' ');
+
+const metricsLines = [
+  t('Team passed', 'Team passed') + ': ' + doneTasks + '/' + Math.max(0, totalTasks) + ' ' + t('tasks', 'tasks') + ' — ' + donePoints + '/' + (totalPoints || 0) + ' pts — ' + (burnedPercent === null ? 'n/a' : String(burnedPercent) + '%') + ' ' + t('burned', 'burned'),
+];
+const keySignals = [
+  t('Blocked', 'Blocked') + ': ' + blockedCount + ' ' + t('tasks', 'tasks'),
+  t('In review', 'In review') + ': ' + reviewCount + ' ' + t('tasks', 'tasks'),
+  t('Not started', 'Not started') + ': ' + notStartedCount + ' ' + t('tasks', 'tasks'),
+];
+if (mainRiskCluster?.subject_id || mainRiskCluster?.cluster_id) {
+  keySignals.push(t('Main risk cluster', 'Main risk cluster') + ': ' + asText(mainRiskCluster.subject_id || mainRiskCluster.cluster_id));
+}
+
+return [{
+  json: {
+    threadKey: 'sprint-monitor-' + request.runId,
+    sprintStatus,
+    daysLeft,
+    metricsLines,
+    keySignals: keySignals.filter(Boolean).slice(0, 4),
+    mainBlockerLine,
+    quickWinLine,
+    decisionTodayLine,
+    mentionsNeeded,
+    mentionsResolved,
+    decisionOwnerType,
+    executionOwnerType,
+    unifiedDigestText: draftedText,
+    deliveryIssueKeys: deliverableIssues.map((issue) => issue.issue_key),
+  },
+}];`;
+
+const buildDeliveryMessagesCode = String.raw`const request = $('Normalize Request').first().json || {};
+const gate = $('Delivery Gate').first().json || {};
+const render = $('Build Render Model').first().json || {};
+const messageLanguage = String(request.monitorConfig?.messageLanguage || 'en').trim().toLowerCase() === 'vi' ? 'vi' : 'en';
 
 function asText(value, fallback = '') {
   const text = String(value ?? '').trim();
@@ -1472,52 +1730,108 @@ function t(english, vietnamese) {
   return messageLanguage === 'vi' ? vietnamese : english;
 }
 
-function buildFallbackPmDigest() {
-  const summary = asText(
-    judge.sprint_assessment?.summary,
-    t(
-      'Sprint monitor did not receive a drafted PM digest.',
-      'Sprint Monitor khong nhan duoc ban nhap PM digest tu AI.',
-    ),
-  );
-  const topCluster = asArray(judge.clusters)[0];
-  const whyNow = asText(topCluster?.why_now);
-  return whyNow ? summary + '\n- ' + t('Focus now', 'Can tap trung ngay') + ': ' + whyNow : summary;
+function compactLines(lines) {
+  return asArray(lines).map((line) => asText(line)).filter(Boolean);
 }
 
-function buildFallbackLeadAlert(issue) {
-  const evidence = asArray(issue.evidence).slice(0, 2).join('; ');
-  return asText(
-    issue.why_now,
-    t('Issue requires lead attention', 'Van de nay can lead xu ly ngay'),
-  ) + (evidence ? '\n- ' + t('Evidence', 'Can cu') + ': ' + evidence : '');
+function renderJiraLinks(text) {
+  const raw = asText(text);
+  const baseUrl = asText(request.monitorConfig?.jiraBaseUrl).replace(/\/+$/, '');
+  const projectKey = asText(request.monitorConfig?.jiraProjectKey).toUpperCase();
+  if (!raw || !baseUrl) return raw;
+
+  function toLink(issueKey, label = issueKey) {
+    return '<' + baseUrl + '/browse/' + encodeURIComponent(issueKey) + '|' + label + '>';
+  }
+
+  try {
+    let rendered = raw.replace(
+      /[A-Z][A-Z0-9]+-\d+/g,
+      (cardId) => toLink(cardId, cardId),
+    );
+
+    // Fallback for compact numeric lists like "4495/4498/4503" when project key is configured.
+    if (projectKey) {
+      rendered = rendered.replace(/\b\d{3,7}(?:\s*[/,]\s*\d{3,7})+\b/g, (chunk) => {
+        return chunk
+          .split(/(\s*[/,]\s*)/)
+          .map((part) => {
+            const token = part.trim();
+            if (!/^\d{3,7}$/.test(token)) return part;
+            const issueKey = projectKey + '-' + token;
+            return toLink(issueKey, issueKey);
+          })
+          .join('');
+      });
+    }
+
+    return rendered;
+  } catch (error) {
+    return raw;
+  }
 }
+
+const narrativeLines = [];
+if (asText(render.mainBlockerLine)) narrativeLines.push('• Main blocker: ' + render.mainBlockerLine);
+if (asText(render.quickWinLine)) narrativeLines.push('• Quick win: ' + render.quickWinLine);
+if (asText(render.decisionTodayLine)) narrativeLines.push('• Decision today: ' + render.decisionTodayLine);
+const narrativeText = renderJiraLinks(narrativeLines.join('\n'));
+
+const cardPayload = {
+  cardsV2: [
+    {
+      cardId: 'sprint-monitor-unified-digest',
+      card: {
+        sections: [
+          {
+            widgets: [
+              {
+                decoratedText: {
+                  text: '<b>' + t('Sprint status', 'Sprint status') + ': ' + asText(render.sprintStatus, t('at risk', 'at risk')) + '</b><br>' + t('Days left', 'Days left') + ': ' + String(render.daysLeft ?? 0),
+                  wrapText: true,
+                },
+              },
+              {
+                decoratedText: {
+                  text: compactLines(render.metricsLines).join('<br>'),
+                  wrapText: true,
+                },
+              },
+              {
+                decoratedText: {
+                  text: compactLines(render.keySignals).join('<br>'),
+                  wrapText: true,
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
+};
 
 const deliveries = [];
-if (!gate.noMessage && gate.sendPmDigest && request.monitorConfig?.gchatPmWebhook) {
+if (!gate.noMessage && gate.sendUnifiedDigest && request.monitorConfig?.gchatUnifiedWebhook) {
   deliveries.push({
-    destination: request.monitorConfig.gchatPmWebhook,
-    audience: 'pm',
-    messageType: 'pm_digest',
-    payload: {
-      text: asText(draft.pm_digest, buildFallbackPmDigest()),
-    },
-    issueKeys: asArray(gate.deliverableIssues).filter((issue) => asText(issue.audience) === 'pm').map((issue) => issue.issue_key),
+    destination: request.monitorConfig.gchatUnifiedWebhook,
+    destinationType: 'google_chat_unified',
+    messageType: 'unified_digest_card',
+    threadKey: asText(render.threadKey),
+    auditText: t('Sprint status', 'Sprint status') + ': ' + asText(render.sprintStatus) + ' | ' + t('Days left', 'Days left') + ': ' + String(render.daysLeft ?? 0),
+    payload: cardPayload,
+    issueKeys: asArray(render.deliveryIssueKeys),
   });
-}
-
-const leadMessages = asArray(draft.lead_alerts).slice(0, 2);
-const leadIssues = asArray(gate.deliverableIssues).filter((issue) => asText(issue.audience) === 'lead').slice(0, 2);
-for (let index = 0; index < leadIssues.length; index += 1) {
-  if (!request.monitorConfig?.gchatLeadWebhook) break;
   deliveries.push({
-    destination: request.monitorConfig.gchatLeadWebhook,
-    audience: 'lead',
-    messageType: 'lead_alert',
+    destination: request.monitorConfig.gchatUnifiedWebhook,
+    destinationType: 'google_chat_unified',
+    messageType: 'unified_digest_text',
+    threadKey: asText(render.threadKey),
+    auditText: narrativeText,
     payload: {
-      text: asText(leadMessages[index], buildFallbackLeadAlert(leadIssues[index])),
+      text: narrativeText,
     },
-    issueKeys: [leadIssues[index].issue_key],
+    issueKeys: asArray(render.deliveryIssueKeys),
   });
 }
 
@@ -1528,8 +1842,8 @@ return [{
     deliveryCount: deliveries.length,
     deliverySummary: {
       requestedCount: deliveries.length,
-      pmDigestRequested: deliveries.some((delivery) => delivery.messageType === 'pm_digest'),
-      leadAlertCount: deliveries.filter((delivery) => delivery.messageType === 'lead_alert').length,
+      unifiedDigestRequested: deliveries.length > 0,
+      threadMessageCount: deliveries.length,
     },
   },
 }];`;
@@ -1539,11 +1853,12 @@ const deliveries = Array.isArray(deliveryPayload.deliveries) ? deliveryPayload.d
 
 return deliveries.map((delivery, index) => ({
   json: {
-    requestUrl: delivery.destination,
+    requestUrl: delivery.destination + (delivery.destination.includes('?') ? '&' : '?') + 'threadKey=' + encodeURIComponent(String(delivery.threadKey || '')) + '&messageReplyOption=' + encodeURIComponent('${GOOGLE_CHAT_REPLY_OPTION}'),
     requestBody: delivery.payload,
     messageType: delivery.messageType,
-    audience: delivery.audience,
+    destinationType: delivery.destinationType,
     issueKeys: delivery.issueKeys || [],
+    auditText: delivery.auditText || '',
     requestIndex: index,
   },
 }));`;
@@ -1755,7 +2070,7 @@ for (const task of asArray(signals.topCandidateTasks)) {
 }
 
 if (deliverableIssues.length > 0) {
-  statements.push('INSERT INTO issues (issue_key, team_id, sprint_id, entity_type, entity_id, risk_type, severity, state, confidence, audience, recommended_action, why_now, evidence, first_detected_at, last_seen_at, last_alerted_at, source_run_id, metadata_json) VALUES');
+  statements.push('INSERT INTO issues (issue_key, team_id, sprint_id, entity_type, entity_id, risk_type, severity, state, confidence, decision_owner_type, execution_owner_type, recommended_action, why_now, evidence, first_detected_at, last_seen_at, last_alerted_at, source_run_id, metadata_json) VALUES');
   statements.push(deliverableIssues.map((issue) => [
     '(',
     sqlText(issue.issue_key) + ',',
@@ -1767,7 +2082,8 @@ if (deliverableIssues.length > 0) {
     sqlText(issue.severity) + ',',
     sqlText(deliveries.length > 0 ? 'escalated' : 'monitoring') + ',',
     sqlNumeric(issue.confidence) + ',',
-    sqlText(issue.audience) + ',',
+    sqlText(issue.decision_owner_type) + ',',
+    sqlText(issue.execution_owner_type) + ',',
     sqlText(issue.recommended_action) + ',',
     sqlText(issue.why_now) + ',',
     sqlJson(issue.evidence || []) + ',',
@@ -1783,7 +2099,8 @@ if (deliverableIssues.length > 0) {
     'severity = EXCLUDED.severity,',
     'state = EXCLUDED.state,',
     'confidence = EXCLUDED.confidence,',
-    'audience = EXCLUDED.audience,',
+    'decision_owner_type = EXCLUDED.decision_owner_type,',
+    'execution_owner_type = EXCLUDED.execution_owner_type,',
     'recommended_action = EXCLUDED.recommended_action,',
     'why_now = EXCLUDED.why_now,',
     'evidence = EXCLUDED.evidence,',
@@ -1798,13 +2115,13 @@ for (let index = 0; index < deliveries.length; index += 1) {
   const delivery = deliveries[index];
   const response = responses[index] || {};
   statements.push([
-    'INSERT INTO interventions (run_id, issue_key, audience, destination, action_type, message_text, delivered_at, delivery_status, metadata_json) VALUES (',
+    'INSERT INTO interventions (run_id, issue_key, delivery_channel, destination, action_type, message_text, delivered_at, delivery_status, metadata_json) VALUES (',
     sqlText(request.runId) + ',',
     sqlText((delivery.issueKeys || [])[0] || '') + ',',
-    sqlText(delivery.audience) + ',',
+    sqlText(delivery.destinationType || 'google_chat_unified') + ',',
     sqlText(delivery.destination) + ',',
     sqlText(delivery.messageType) + ',',
-    sqlText(delivery.payload?.text || '') + ',',
+    sqlText(delivery.auditText || delivery.payload?.text || '') + ',',
     sqlText(Number(response.statusCode || 0) < 400 ? request.generatedAt : null) + ',',
     sqlText(Number(response.statusCode || 0) < 400 ? 'sent' : 'failed') + ',',
     sqlJson(response),
@@ -2479,11 +2796,46 @@ return [{ json: {
       },
     }),
     node({
+      id: '42',
+      name: 'Get Members',
+      type: 'n8n-nodes-base.googleSheets',
+      typeVersion: 4.7,
+      position: [2576, 128],
+      parameters: {
+        documentId: {
+          __rl: true,
+          value: SHARED_MEMBER_SHEET_URL,
+          mode: 'url',
+        },
+        sheetName: {
+          __rl: true,
+          value: SHARED_MEMBER_SHEET_NAME,
+          mode: 'name',
+        },
+        filtersUI: {
+          values: [],
+        },
+        options: {},
+      },
+      continueOnFail: true,
+    }),
+    node({
+      id: '43',
+      name: 'Build Render Model',
+      type: 'n8n-nodes-base.code',
+      typeVersion: 2,
+      position: [2800, 208],
+      parameters: {
+        mode: 'runOnceForAllItems',
+        jsCode: buildRenderModelCode,
+      },
+    }),
+    node({
       id: '34',
       name: 'Build Delivery Messages',
       type: 'n8n-nodes-base.code',
       typeVersion: 2,
-      position: [2576, 208],
+      position: [3024, 208],
       parameters: {
         mode: 'runOnceForEachItem',
         jsCode: buildDeliveryMessagesCode,
@@ -2494,7 +2846,7 @@ return [{ json: {
       name: 'If Has Deliveries?',
       type: 'n8n-nodes-base.if',
       typeVersion: 2.3,
-      position: [2800, 208],
+      position: [3248, 208],
       parameters: {
         conditions: {
           options: {
@@ -2524,7 +2876,7 @@ return [{ json: {
       name: 'Expand Delivery Items',
       type: 'n8n-nodes-base.code',
       typeVersion: 2,
-      position: [3024, 128],
+      position: [3472, 128],
       parameters: {
         mode: 'runOnceForAllItems',
         jsCode: expandDeliveryItemsCode,
@@ -2535,7 +2887,7 @@ return [{ json: {
       name: 'Send Google Chat Message',
       type: 'n8n-nodes-base.httpRequest',
       typeVersion: 4.3,
-      position: [3248, 128],
+      position: [3696, 128],
       parameters: {
         method: 'POST',
         url: '={{ $json.requestUrl }}',
@@ -2559,7 +2911,7 @@ return [{ json: {
       name: 'Aggregate Deliveries',
       type: 'n8n-nodes-base.code',
       typeVersion: 2,
-      position: [3472, 128],
+      position: [3920, 128],
       parameters: {
         mode: 'runOnceForAllItems',
         jsCode: aggregateDeliveriesCode,
@@ -2570,7 +2922,7 @@ return [{ json: {
       name: 'Build Persist Query',
       type: 'n8n-nodes-base.code',
       typeVersion: 2,
-      position: [3696, 208],
+      position: [4144, 208],
       parameters: {
         mode: 'runOnceForEachItem',
         jsCode: buildPersistQueryCode,
@@ -2581,7 +2933,7 @@ return [{ json: {
       name: 'Persist Run State',
       type: 'n8n-nodes-base.postgres',
       typeVersion: 2.6,
-      position: [3920, 208],
+      position: [4368, 208],
       parameters: {
         resource: 'database',
         operation: 'executeQuery',
@@ -2597,7 +2949,7 @@ return [{ json: {
       name: 'Build Engine Result',
       type: 'n8n-nodes-base.code',
       typeVersion: 2,
-      position: [4144, 208],
+      position: [4592, 208],
       parameters: {
         mode: 'runOnceForEachItem',
         jsCode: buildEngineResultCode,
@@ -2618,6 +2970,7 @@ return [{ json: {
     'Build Judge Inputs',
     'Delivery Gate',
     'Build Draft Inputs',
+    'Build Render Model',
     'Build Delivery Messages',
     'Build Persist Query',
     'Build Engine Result',
@@ -2663,11 +3016,13 @@ return [{ json: {
     aiConnection('Sprint Judge Model', 'Sprint Judge AI Agent', 'ai_languageModel'),
     mainConnection('Delivery Gate', 'If Need Draft?'),
     mainConnection('If Need Draft?', 'Build Draft Inputs', 0),
-    mainConnection('If Need Draft?', 'Build Delivery Messages', 1),
+    mainConnection('If Need Draft?', 'Get Members', 1),
     mainConnection('Build Draft Inputs', 'Message Drafter AI Agent'),
-    mainConnection('Message Drafter AI Agent', 'Build Delivery Messages'),
+    mainConnection('Message Drafter AI Agent', 'Get Members'),
     aiConnection('Structured Message Draft Output Parser', 'Message Drafter AI Agent', 'ai_outputParser'),
     aiConnection('Message Drafter Model', 'Message Drafter AI Agent', 'ai_languageModel'),
+    mainConnection('Get Members', 'Build Render Model'),
+    mainConnection('Build Render Model', 'Build Delivery Messages'),
     mainConnection('Build Delivery Messages', 'If Has Deliveries?'),
     mainConnection('If Has Deliveries?', 'Expand Delivery Items', 0),
     mainConnection('If Has Deliveries?', 'Build Persist Query', 1),

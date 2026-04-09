@@ -62,8 +62,9 @@
     },
     {
       "parameters": {
+        "resource": "database",
         "operation": "executeQuery",
-        "query": "{{ $json.configQuery }}",
+        "query": "={{ $json.configQuery }}",
         "options": {
           "queryBatching": "single"
         }
@@ -75,18 +76,13 @@
       "position": [
         -480,
         96
-      ],
-      "credentials": {
-        "postgres": {
-          "id": "hNw1lfcclrZjlInz",
-          "name": "Sprint Monitor Postgres"
-        }
-      }
+      ]
     },
     {
       "parameters": {
+        "resource": "database",
         "operation": "executeQuery",
-        "query": "{{ $json.configQuery }}",
+        "query": "={{ $json.configQuery }}",
         "options": {
           "queryBatching": "single"
         }
@@ -98,13 +94,7 @@
       "position": [
         -480,
         272
-      ],
-      "credentials": {
-        "postgres": {
-          "id": "hNw1lfcclrZjlInz",
-          "name": "Sprint Monitor Postgres"
-        }
-      }
+      ]
     },
     {
       "parameters": {
@@ -258,6 +248,7 @@
     },
     {
       "parameters": {
+        "mode": "runOnceForAllItems",
         "jsCode": "const items = $input.all().map((item) => item?.json || {});\nconst summary = {\n  workflowName: 'Sprint Monitor Endgame',\n  runType: 'endgame',\n  totalConfigs: items.length,\n  successCount: items.filter((item) => String(item.status || '') === 'success').length,\n  partialCount: items.filter((item) => String(item.status || '') === 'partial').length,\n  failedCount: items.filter((item) => String(item.status || '') === 'failed').length,\n  skippedCount: items.filter((item) => String(item.status || '') === 'skipped').length,\n  noMessageCount: items.filter((item) => Boolean(item.noMessage)).length,\n  results: items,\n};\n\nreturn [{ json: summary }];"
       },
       "id": "9",
@@ -266,7 +257,7 @@
       "typeVersion": 2,
       "position": [
         80,
-        192
+        184
       ]
     }
   ],

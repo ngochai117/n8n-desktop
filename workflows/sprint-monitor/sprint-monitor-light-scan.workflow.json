@@ -43,7 +43,7 @@
       "typeVersion": 1.2,
       "position": [
         -960,
-        288
+        272
       ]
     },
     {
@@ -57,7 +57,7 @@
       "typeVersion": 2,
       "position": [
         -736,
-        288
+        272
       ]
     },
     {
@@ -73,7 +73,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -512,
+        -480,
         96
       ],
       "credentials": {
@@ -96,8 +96,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        -512,
-        288
+        -480,
+        272
       ],
       "credentials": {
         "postgres": {
@@ -112,7 +112,6 @@
           "__rl": true,
           "value": "UbFT1qz7YOaelW9W",
           "mode": "list",
-          "cachedResultUrl": "/workflow/UbFT1qz7YOaelW9W",
           "cachedResultName": "Sprint Monitor Engine"
         },
         "workflowInputs": {
@@ -178,7 +177,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        -288,
+        -208,
         96
       ]
     },
@@ -188,7 +187,6 @@
           "__rl": true,
           "value": "UbFT1qz7YOaelW9W",
           "mode": "list",
-          "cachedResultUrl": "/workflow/UbFT1qz7YOaelW9W",
           "cachedResultName": "Sprint Monitor Engine"
         },
         "workflowInputs": {
@@ -254,8 +252,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        -288,
-        288
+        -208,
+        272
       ]
     },
     {
@@ -267,7 +265,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -64,
+        80,
         192
       ]
     }

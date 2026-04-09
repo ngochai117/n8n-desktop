@@ -12,20 +12,14 @@ create table if not exists monitor_configs (
   jira_jql text,
   gitlab_base_url text not null,
   gitlab_project_ids jsonb not null default '[]'::jsonb,
-  gchat_pm_webhook text not null,
-  gchat_lead_webhook text,
-  message_language text not null default 'vi',
-  timezone text not null default 'Asia/Saigon',
+  gchat_unified_webhook text not null,
+  message_language text not null default 'en',
+  timezone text not null default 'Asia/Ho_Chi_Minh',
   max_candidate_tasks integer not null default 20,
   max_clusters integer not null default 5,
   max_activity_excerpts integer not null default 30,
-  owner_nudge_enabled boolean not null default false,
-  suppression_owner_hours integer not null default 24,
-  suppression_lead_hours integer not null default 24,
-  suppression_pm_hours integer not null default 24,
-  confidence_threshold_owner numeric(4,3) not null default 0.850,
-  confidence_threshold_lead numeric(4,3) not null default 0.700,
-  confidence_threshold_pm numeric(4,3) not null default 0.650,
+  suppression_digest_hours integer not null default 24,
+  confidence_threshold_digest numeric(4,3) not null default 0.700,
   enabled boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -33,9 +27,6 @@ create table if not exists monitor_configs (
 
 create unique index if not exists ux_monitor_configs_team_board
   on monitor_configs(team_id, board_id);
-
-alter table monitor_configs
-  add column if not exists message_language text not null default 'vi';
 
 create table if not exists sprint_snapshots (
   id uuid primary key default gen_random_uuid(),
@@ -164,7 +155,8 @@ create table if not exists issues (
   severity text not null check (severity in ('low','medium','high')),
   state text not null check (state in ('detected','monitoring','nudged','escalated','resolved','suppressed','expired')),
   confidence numeric(4,3) not null,
-  audience text check (audience in ('owner','lead','pm','team','none')),
+  decision_owner_type text check (decision_owner_type in ('pm','lead','assignee','reviewer','team','none')),
+  execution_owner_type text check (execution_owner_type in ('pm','lead','assignee','reviewer','team','none')),
   recommended_action text,
   why_now text,
   evidence jsonb not null default '[]'::jsonb,
@@ -189,7 +181,7 @@ create table if not exists interventions (
   id uuid primary key default gen_random_uuid(),
   run_id uuid references runs(id) on delete set null,
   issue_key text not null,
-  audience text not null check (audience in ('owner','lead','pm','team')),
+  delivery_channel text not null check (delivery_channel in ('google_chat_unified','team_digest')),
   destination text not null,
   action_type text not null,
   message_text text not null,
@@ -210,7 +202,7 @@ create table if not exists message_deliveries (
   id uuid primary key default gen_random_uuid(),
   run_id uuid references runs(id) on delete set null,
   intervention_id uuid references interventions(id) on delete set null,
-  message_type text not null check (message_type in ('pm_digest','lead_alert','owner_nudge','team_digest')),
+  message_type text not null check (message_type in ('unified_digest_card','unified_digest_text','team_digest')),
   destination text not null,
   payload_json jsonb not null default '{}'::jsonb,
   response_code integer,
@@ -263,7 +255,8 @@ select
   severity,
   state,
   confidence,
-  audience,
+  decision_owner_type,
+  execution_owner_type,
   recommended_action,
   why_now,
   first_detected_at,

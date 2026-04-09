@@ -26,8 +26,8 @@ Vì vậy khi nhìn trên UI n8n, 3 workflow này trông gần như giống nhau
   - `runType`: `light_scan`
 
 - `Deep Analysis`
-  - mục tiêu: tạo PM digest và nhìn bottleneck rõ hơn
-  - kỳ vọng: có thể gửi PM digest hoặc lead alerts chọn lọc
+  - mục tiêu: tạo unified digest và nhìn bottleneck rõ hơn
+  - kỳ vọng: có thể gửi 1 unified digest thread với card metrics + text action
   - cron mặc định: `0 14 * * 2,4`
   - `runType`: `deep_analysis`
 
@@ -55,7 +55,7 @@ Engine chuẩn hóa config và tạo context chạy:
 - timezone
 - Jira/GitLab base URL
 - project IDs
-- Google Chat webhooks
+- Google Chat unified webhook
 - thresholds
 - `runId`
 - thời điểm chạy
@@ -146,9 +146,9 @@ Engine gửi packet lớn hơn sang AI để judge:
 - delivery outlook
 - task risks
 - cluster risks
-- audience nên nhận alert
+- target cần được mention
 - có nên im lặng không
-- có cần PM digest không
+- có cần unified digest không
 
 ### 11. Delivery gate và suppression
 Trước khi gửi message, engine kiểm tra:
@@ -156,13 +156,12 @@ Trước khi gửi message, engine kiểm tra:
 - issue này đã alert gần đây chưa
 - severity có tăng không
 - có insight mới không
-- PM digest có đang bị suppress không
+- unified digest có đang bị suppress không
 
 Kết quả của bước này là:
 
 - issue nào còn đáng gửi
-- có gửi PM digest không
-- có gửi lead alert không
+- có gửi unified digest không
 - có thể `noMessage = true`
 
 ### 12. Draft message
@@ -176,10 +175,10 @@ Nếu draft fail:
 ### 13. Gửi Google Chat
 Engine gửi:
 
-- PM digest vào PM webhook
-- lead alerts vào lead webhook
+- unified digest card vào unified webhook
+- unified digest text vào cùng thread
 
-Hiện tại owner nudges và team digest chưa bật cho MVP.
+Hiện tại team digest chỉ là contract phụ, chưa phải default path.
 
 ### 14. Persist toàn bộ state
 Cuối run, engine ghi vào PostgreSQL:

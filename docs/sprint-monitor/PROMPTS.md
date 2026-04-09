@@ -1,6 +1,7 @@
 # Prompt Pack + Output Contracts
 
 ## 1. Prompting principles
+
 - structured input only
 - JSON output first, prose after
 - prefer silence over weak insight
@@ -14,14 +15,17 @@
 ## 2. Prompt A — Sprint Judgment
 
 ### Purpose
+
 Decide:
+
 - overall sprint health
 - delivery outlook
 - which tasks/clusters truly need intervention
 - whether to send nothing
-- who should receive what
+- which targets need mention in the unified digest
 
 ### System prompt
+
 ```text
 You are an experienced PM sprint monitoring assistant.
 Your job is not to summarize everything. Your job is to decide whether intervention is needed, where risk is accumulating, and what action would actually help.
@@ -40,6 +44,7 @@ If completion appears low but stage distribution suggests work is moving normall
 ```
 
 ### Input payload template
+
 ```json
 {
   "run_context": {
@@ -50,9 +55,7 @@ If completion appears low but stage distribution suggests work is moving normall
     "sprint_phase": "mid"
   },
   "policy": {
-    "max_owner_nudges_per_run": 3,
-    "max_lead_alerts_per_run": 2,
-    "pm_escalation_threshold": "high",
+    "max_mentions_per_digest": 2,
     "prefer_cluster_alerts": true,
     "silence_if_no_new_actionable_insight": true
   },
@@ -66,6 +69,7 @@ If completion appears low but stage distribution suggests work is moving normall
 ```
 
 ### Required JSON output
+
 ```json
 {
   "sprint_assessment": {
@@ -84,7 +88,17 @@ If completion appears low but stage distribution suggests work is moving normall
       "why_now": "string",
       "evidence": ["string"],
       "recommended_action": "NO_ACTION|MONITOR_ONLY|SUGGEST_REASSIGN_REVIEWER|ESCALATE_TO_LEAD|ESCALATE_TO_PM|FLAG_SPRINT_GOAL_RISK|SUGGEST_SCOPE_CUT",
-      "audience": "owner|lead|pm|team|none",
+      "action_owner_type": "pm|lead|assignee|reviewer|team|none",
+      "decision_owner_type": "pm|lead|assignee|reviewer|team|none",
+      "execution_owner_type": "pm|lead|assignee|reviewer|team|none",
+      "mentions_needed": [
+        {
+          "type": "person",
+          "email": "string",
+          "reason": "string",
+          "priority": 1
+        }
+      ],
       "confidence": 0.0
     }
   ],
@@ -97,7 +111,17 @@ If completion appears low but stage distribution suggests work is moving normall
       "why_now": "string",
       "evidence": ["string"],
       "recommended_action": "NO_ACTION|MONITOR_ONLY|NUDGE_OWNER_FOR_UPDATE|ASK_BLOCKER_CLARIFICATION|SUGGEST_SPLIT_TASK|SUGGEST_SCOPE_CUT|SUGGEST_REASSIGN_REVIEWER|ESCALATE_TO_LEAD|ESCALATE_TO_PM",
-      "audience": "owner|lead|pm|none",
+      "action_owner_type": "pm|lead|assignee|reviewer|team|none",
+      "decision_owner_type": "pm|lead|assignee|reviewer|team|none",
+      "execution_owner_type": "pm|lead|assignee|reviewer|team|none",
+      "mentions_needed": [
+        {
+          "type": "person",
+          "email": "string",
+          "reason": "string",
+          "priority": 1
+        }
+      ],
       "confidence": 0.0
     }
   ],
@@ -106,25 +130,26 @@ If completion appears low but stage distribution suggests work is moving normall
     "reason": "string"
   },
   "delivery_plan": {
-    "send_pm_digest": true,
-    "send_lead_alerts": true,
-    "send_owner_nudges": false,
+    "send_unified_digest": true,
     "send_team_digest": false
   }
 }
 ```
 
 ### Judgment rubric
+
 A good answer:
+
 - identifies actual bottleneck, not superficial metric
 - ignores harmless silence when evidence says delivery still on track
 - escalates only when action would help
-- prefers lead/PM cluster alert over spraying task reminders
+- prefers unified digest with cluster-level insight over spraying task reminders
 
 A bad answer:
+
 - equates low done ratio with certain sprint failure
 - lists stale tasks without impact context
-- recommends actions with no clear audience
+- recommends actions with no clear owner or decision target
 - sends messages despite `no new actionable insight`
 
 ---
@@ -132,9 +157,11 @@ A bad answer:
 ## 3. Prompt B — Comment Meaning Classifier
 
 ### Purpose
+
 Map raw comments/activity excerpts into delivery-meaning labels used by signal/judgment layers.
 
 ### System prompt
+
 ```text
 Classify each activity excerpt by what it means for delivery, not by surface wording.
 Do not over-infer.
@@ -153,6 +180,7 @@ Return one label per item with confidence and a short reason.
 ```
 
 ### Input template
+
 ```json
 {
   "items": [
@@ -167,6 +195,7 @@ Return one label per item with confidence and a short reason.
 ```
 
 ### Output contract
+
 ```json
 {
   "results": [
@@ -182,6 +211,7 @@ Return one label per item with confidence and a short reason.
 ```
 
 ### Label guidance
+
 - `real_progress`: concrete delivery movement
 - `review_pending`: done by owner, waiting review
 - `waiting_external`: blocked outside team/system
@@ -198,22 +228,25 @@ Return one label per item with confidence and a short reason.
 ## 4. Prompt C — Message Drafter
 
 ### Purpose
-Convert approved structured recommendations into concise, audience-appropriate text.
+
+Convert approved structured recommendations into concise unified-digest text.
 
 ### System prompt
+
 ```text
-Write like a sharp PM partner.
-No generic reminders.
-Every message must say:
-- what is happening
-- why it matters now
-- what action is recommended
-Keep it concise.
+Write like a sharp PM partner writing the text block of a unified digest thread.
+Use at most 3 bullets and prefer this exact framing:
+- Main blocker: ...
+- Quick win: ...
+- Decision today: ...
+If there is no clear quick win or decision, omit that line instead of padding.
+Keep it concise and highly scannable.
 Do not invent facts beyond the structured input.
 Avoid blameful language.
 ```
 
 ### Input template
+
 ```json
 {
   "sprint_assessment": {},
@@ -224,29 +257,28 @@ Avoid blameful language.
 ```
 
 ### Output contract
+
 ```json
 {
-  "pm_digest": "string",
-  "lead_alerts": ["string"],
-  "owner_nudges": ["string"]
+  "unified_digest_text": "string"
 }
 ```
 
 ### Style rules
-- PM digest: 3–6 bullets or short paragraphs
-- lead alert: direct, operational, one clear ask
-- owner nudge: short, factual, non-accusatory
-- no lecture tone
-- no empty phrases like “please kindly update status”
+
+- unified digest text: 3 bullets tối đa nếu có thể
+- phải ưu tiên `Main blocker`, `Quick win`, `Decision today`
+- không lecture tone
+- không empty phrases như “please kindly update status”
 
 ---
 
 ## 5. Validation rules
+
 - all responses must be valid JSON
 - enums must match exact allowed values
 - confidence must be in `[0,1]`
 - if `silence_decision.no_message_needed = true`, downstream delivery should be minimal unless policy overrides
-- owner-facing drafts should be suppressed when confidence is below configured threshold
 - if draft generation fails, system may fallback to deterministic templates using structured output
 
 ---
@@ -254,20 +286,26 @@ Avoid blameful language.
 ## 6. Example good behavior
 
 ### Example 1 — mid sprint, low completion but high review movement
+
 Expected judgment:
+
 - do not overreact to completed ratio
 - identify review bottleneck
-- alert lead only
-- PM digest says throughput is bottlenecked at review, not development
+- keep the message in the unified digest thread
+- digest says throughput is bottlenecked at review, not development
 
 ### Example 2 — late sprint, critical task still in dev with downstream dependents
+
 Expected judgment:
+
 - classify as likely_spillover or needs_intervention_now
-- escalate to PM or lead depending on policy
+- point to the decision owner and execution owner depending on policy
 - recommend split scope or descoping
 
 ### Example 3 — task stale by timestamp but comment indicates legitimate waiting state
+
 Expected judgment:
+
 - do not treat as owner negligence by default
 - classify according to blocker type
 - maybe monitor only if not impactful

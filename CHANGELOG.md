@@ -2,6 +2,7 @@
 
 ## 2026-04-09
 
+- Simplify Sprint Monitor Jira link rendering: render layer now regex-scans unified digest text for issue keys and replaces them with Google Chat link markup `<jiraBaseUrl/browse/<ISSUE_KEY>|<ISSUE_KEY>>` right before delivery, with plain-text fallback when no Jira domain is configured.
 - Add standalone `Sprint Monitor` MVP workflow set under `workflows/sprint-monitor/`: `Sprint Monitor Light Scan`, `Sprint Monitor Deep Analysis`, `Sprint Monitor Endgame`, and shared subworkflow `Sprint Monitor Engine`.
 - Add `scripts/sprint-monitor/generate-workflows.mjs` so the 4 Sprint Monitor workflow JSON templates can be regenerated from maintainable JS source instead of hand-editing raw JSON.
 - Add Sprint Monitor support tooling: import wrappers, registry entries, strict checklist runner, and idempotent PostgreSQL schema apply helper `scripts/bootstrap/apply-sprint-monitor-schema.sh`.
@@ -426,3 +427,35 @@
 ## 2026-04-09T05:42:46Z
 - Workflow sync (UI -> JSON) completed with no file, registry, or wrapper changes.
 - Run mode=apply, total=22, changed=0, unchanged=22, failed=0, missing_ui_folder=0, registry_changed=false, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+
+## 2026-04-09T07:21:32Z
+- Workflow sync (UI -> JSON) processed 22 workflow(s): changed=2, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=22, changed=2, unchanged=20, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Sprint Monitor Engine, MoMo AI Assistant Tool Router.
+
+## 2026-04-09T10:59:57Z
+- Workflow sync (UI -> JSON) processed 22 workflow(s): changed=4, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=22, changed=4, unchanged=18, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Sprint Monitor Engine, Sprint Monitor Light Scan, Sprint Monitor Endgame, Sprint Monitor Deep Analysis.
+
+## 2026-04-09T11:08:50Z
+- Workflow sync (UI -> JSON) processed 22 workflow(s): changed=4, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=22, changed=4, unchanged=18, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Sprint Monitor Engine, Sprint Monitor Light Scan, Sprint Monitor Endgame, Sprint Monitor Deep Analysis.
+
+## 2026-04-09T11:11:19Z
+- Workflow sync (UI -> JSON) completed with no file, registry, or wrapper changes.
+- Run mode=apply, total=1, changed=0, unchanged=1, failed=0, missing_ui_folder=0, registry_changed=false, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+
+## 2026-04-09T11:11:19Z
+- Workflow sync (UI -> JSON) completed with no file, registry, or wrapper changes.
+- Run mode=apply, total=1, changed=0, unchanged=1, failed=0, missing_ui_folder=0, registry_changed=false, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+
+## 2026-04-09T11:11:19Z
+- Workflow sync (UI -> JSON) completed with no file, registry, or wrapper changes.
+- Run mode=apply, total=1, changed=0, unchanged=1, failed=0, missing_ui_folder=0, registry_changed=false, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+
+## 2026-04-09T11:11:19Z
+- Workflow sync (UI -> JSON) completed with no file, registry, or wrapper changes.
+- Run mode=apply, total=1, changed=0, unchanged=1, failed=0, missing_ui_folder=0, registry_changed=false, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+
+## 2026-04-09T12:07:24Z
+- Workflow sync (UI -> JSON) processed 22 workflow(s): changed=2, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=22, changed=2, unchanged=20, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Sprint Monitor Engine, Sprint Monitor Endgame.

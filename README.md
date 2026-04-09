@@ -83,6 +83,7 @@ Checklist hien tai la static contract/topology checklist cho workflow canonical 
 - Generator:
   - `node scripts/sprint-monitor/generate-workflows.mjs`
   - Dung khi can rebuild 4 workflow templates tu source JS thay vi sua raw JSON bang tay.
+  - Unified digest text se replace moi issue key match regex `[A-Z][A-Z0-9]+-\\d+` thanh format Google Chat `<jiraBaseUrl/browse/<ISSUE_KEY>|<ISSUE_KEY>>`, giu nguyen visible cardId ngay truoc khi gui Google Chat.
 - Import wrappers:
   - `bash scripts/workflows/import/import-sprint-monitor-engine-workflow.sh`
   - `bash scripts/workflows/import/import-sprint-monitor-light-scan-workflow.sh`

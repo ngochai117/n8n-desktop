@@ -21,21 +21,17 @@ Các workflow dùng chung config sau:
 - `jira_project_key` hoặc JQL source
 - `gitlab_base_url`
 - `gitlab_project_ids[]`
-- `gchat_pm_webhook`
-- `gchat_lead_webhook`
+- `gchat_unified_webhook`
 - `timezone`
 - `max_candidate_tasks`
 - `max_clusters`
 - `max_activity_excerpts`
-- `owner_nudge_enabled`
-- `suppression_owner_hours`
-- `suppression_lead_hours`
-- `suppression_pm_hours`
-- `confidence_threshold_owner`
-- `confidence_threshold_lead`
-- `confidence_threshold_pm`
+- `message_language`
+- `suppression_digest_hours`
+- `confidence_threshold_digest`
 
 Khuyến nghị lưu config trong PostgreSQL bảng `monitor_configs`, không hardcode vào workflow.
+Shared Google Sheet members source không nằm trong `monitor_configs`; workflow dùng source cố định để resolve mention theo email.
 
 ---
 
@@ -191,11 +187,25 @@ Node gợi ý:
 - HTTP Request gọi `POST /draft-messages`
 - hoặc fallback template node nếu drafting service fail
 
-### Step A17 — Send Google Chat
+### Step A17 — Resolve mentions
+Node gợi ý:
+- Google Sheets + Code node
+
+Nguồn v1:
+- shared members sheet cố định
+- 3 cột `email`, `id`, `name`
+
+Nếu resolve được email cụ thể:
+- render mention token thật
+
+Nếu chỉ biết role như `PM`/`Lead`:
+- fallback text
+
+### Step A18 — Send Google Chat
 Node gợi ý:
 - HTTP Request tới webhook/bot endpoint
 
-### Step A18 — Persist state
+### Step A19 — Persist state
 Node gợi ý:
 - Postgres queries
 
@@ -217,7 +227,7 @@ Ghi:
 
 ## 4.1 Goal
 - phân tích sâu hơn
-- tạo PM digest có judgment
+- tạo unified digest có judgment
 - cluster-level insight
 
 ## 4.2 Trigger
@@ -228,7 +238,7 @@ Ghi:
 - fetch nhiều comment/activity hơn
 - load historical patterns
 - candidate selection rộng hơn nhưng vẫn capped
-- PM digest là output chính
+- unified digest là output chính
 
 ## 4.4 Steps
 ### Step B1 — Load config
@@ -254,18 +264,18 @@ Cluster types tối thiểu:
 ### Step B14 — Validate response
 ### Step B15 — Apply policy filters
 Ví dụ:
-- cap tối đa 2 lead alerts
-- suppress owner nudges nếu disabled
-- suppress PM escalation nếu confidence dưới threshold
+- cap tối đa 1 unified digest thread
+- suppress unified digest nếu confidence dưới threshold
+- suppress delivery nếu không có insight mới
 
 ### Step B16 — Call `POST /draft-messages`
-### Step B17 — Deliver PM digest to PM Google Chat room
-### Step B18 — Deliver lead alerts if any
-### Step B19 — Persist all records
+### Step B17 — Resolve mentions from shared members sheet
+### Step B18 — Deliver unified digest thread to Google Chat
+### Step B19 — Persist render/output records
 
 ## 4.5 Expected output
-- 1 PM digest/run nếu có insight đáng nói
-- 0–2 lead alerts
+- 1 unified digest thread/run nếu có insight đáng nói
+- 2 messages trong cùng thread: card + text
 - no owner spam in MVP
 
 ---
@@ -296,8 +306,8 @@ Khác với deep analysis ở chỗ packet phải nhấn mạnh:
 
 ### Step C7 — Call `POST /judge-sprint`
 ### Step C8 — Validate + apply suppression
-### Step C9 — Draft PM decision digest
-### Step C10 — Send PM digest
+### Step C9 — Draft unified digest
+### Step C10 — Send unified digest thread
 ### Step C11 — Persist retro candidates/issues
 
 ## 5.4 Expected output style
@@ -358,7 +368,7 @@ Mỗi run nên log:
 ## 10. MVP workflow boundaries
 MVP nên chốt:
 - no auto owner DMs by default
-- PM digest + lead alerts only
+- unified digest only
 - no team-wide broadcast
 - no Jira/GitLab write-back
 

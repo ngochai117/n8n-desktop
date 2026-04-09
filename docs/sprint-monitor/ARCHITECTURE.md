@@ -80,9 +80,8 @@ Responsible for:
 
 ## 2.5 Google Chat delivery
 Responsible for:
-- PM room notifications
-- lead room alerts
-- optional owner messages later
+- unified digest thread delivery
+- optional team digest later
 
 Not responsible for:
 - state tracking
@@ -118,11 +117,13 @@ A cron in n8n starts one of:
 n8n loads runtime config from DB or environment:
 - team_id
 - board_id
-- Google Chat destinations
+- unified Google Chat webhook
 - suppression windows
 - confidence thresholds
-- max alerts per run
 - phase thresholds
+
+Google Sheet members source không nằm trong `monitor_configs`.
+V1 dùng shared source cố định trong workflow để resolve mention theo email.
 
 ## Step 3 — Fetch current sprint context
 n8n fetches:
@@ -169,16 +170,25 @@ n8n validates:
 - alert caps not exceeded
 
 ## Step 10 — Draft messages
-If delivery plan says send, n8n calls `POST /draft-messages` or renders from templates.
+If delivery plan says send, n8n calls `POST /draft-messages` or renders from templates to build the unified digest thread.
+
+## Step 10.5 — Resolve mentions
+n8n đọc shared Google Sheet members source cố định với 3 cột:
+- `email`
+- `id`
+- `name`
+
+Resolver chỉ map mention thật khi có email cụ thể.
+Nếu chỉ biết role như `PM` hoặc `Lead`, renderer fallback text thay vì bịa mention.
 
 ## Step 11 — Suppression and dedupe
 Before delivery, n8n checks DB for:
 - same issue_key recently alerted
-- same audience recently notified
+- same responsibility target recently mentioned
 - unresolved issue with no material change
 
 ## Step 12 — Deliver
-n8n posts to Google Chat.
+n8n posts a unified digest thread to Google Chat.
 
 ## Step 13 — Persist results
 n8n writes:
@@ -202,11 +212,11 @@ Typical cadence:
 
 Expected output:
 - mostly internal issue updates
-- occasional lead alert / PM note
+- occasional unified digest thread
 
 ## 5.2 Deep analysis
 Purpose:
-- produce actionable PM digest
+- produce actionable unified digest
 - analyze cluster-level bottlenecks
 - compare current sprint posture vs likely delivery outlook
 
@@ -214,8 +224,8 @@ Typical cadence:
 - Tuesday/Thursday or custom
 
 Expected output:
-- PM digest
-- selective lead alerts
+- unified digest thread
+- selective mention targets inside the thread
 
 ## 5.3 Endgame
 Purpose:
@@ -228,7 +238,7 @@ Typical cadence:
 - optional day after
 
 Expected output:
-- decision-oriented PM summary
+- decision-oriented unified digest
 - retro notes candidates
 
 ---
@@ -291,7 +301,7 @@ See `PROMPTS.md` for canonical schema. This endpoint must return exactly that co
 
 ## 6.3 `POST /draft-messages`
 ### Purpose
-Draft concise audience-specific messages from already-approved structured recommendations.
+Draft concise unified digest text from already-approved structured recommendations.
 
 ### Request
 ```json
@@ -306,9 +316,7 @@ Draft concise audience-specific messages from already-approved structured recomm
 ### Response
 ```json
 {
-  "pm_digest": "string",
-  "lead_alerts": ["string"],
-  "owner_nudges": ["string"]
+  "unified_digest_text": "string"
 }
 ```
 
@@ -370,9 +378,8 @@ This is required so prompt sizes stay bounded and judgment stays focused.
 ## 9. Suppression and escalation policy
 
 ### Suppression windows
-- owner nudge: 24h default
-- lead alert: 1 business day default
-- PM escalation: suppress until severity materially changes
+- unified digest: 24h default
+- suppress until severity materially changes
 - team digest: disabled in MVP
 
 ### Material change examples
@@ -386,20 +393,18 @@ This is required so prompt sizes stay bounded and judgment stays focused.
 
 ## 10. Message routing design
 
-### PM room receives
+### Unified digest receives
 - sprint health digest
 - likely spillovers
 - sprint goal risk
 - scope cut / descoping suggestions
 - endgame/carryover recommendations
-
-### Lead room receives
 - review bottleneck alerts
 - dependency chain cluster alerts
 - workload/reviewer imbalance
 - unresolved blocker escalations
 
-### Owner messages later
+### Mention targets later
 - only for confidence >= configured threshold
 - no blame wording
 
