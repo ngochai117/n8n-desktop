@@ -27,13 +27,13 @@
       "typeVersion": 1.1,
       "position": [
         -2352,
-        348
+        352
       ]
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const input = $json || {};\n\nfunction asObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction asText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asNumber(value, fallback = 0) {\n  const parsed = Number(value);\n  return Number.isFinite(parsed) ? parsed : fallback;\n}\n\nfunction asBoolean(value, fallback = false) {\n  if (typeof value === 'boolean') return value;\n  if (typeof value === 'string') {\n    const normalized = value.trim().toLowerCase();\n    if (normalized === 'true') return true;\n    if (normalized === 'false') return false;\n  }\n  return fallback;\n}\n\nfunction asMessageLanguage(value) {\n  const normalized = asText(value, 'en').toLowerCase();\n  return normalized === 'vi' ? 'vi' : 'en';\n}\n\nfunction asArray(value) {\n  if (Array.isArray(value)) return value;\n  if (typeof value === 'string') {\n    const trimmed = value.trim();\n    if (!trimmed) return [];\n    try {\n      const parsed = JSON.parse(trimmed);\n      return Array.isArray(parsed) ? parsed : [];\n    } catch (error) {\n      return trimmed.split(',').map((item) => item.trim()).filter(Boolean);\n    }\n  }\n  return [];\n}\n\nconst rawConfig = asObject(input.monitorConfig);\nconst runType = asText(input.runType, 'light_scan');\nconst workflowName = asText(input.workflowName, 'Sprint Monitor Engine');\nconst triggerSource = asText(input.triggerSource, 'manual');\nconst timezone = asText(rawConfig.timezone || rawConfig.timeZone, 'Asia/Ho_Chi_Minh');\nconst messageLanguage = asMessageLanguage(rawConfig.message_language || rawConfig.messageLanguage);\nconst generatedAt = $now.setZone(timezone).toISO();\nconst runId = 'run_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);\n\nconst monitorConfig = {\n  id: asText(rawConfig.id),\n  teamId: asText(rawConfig.team_id || rawConfig.teamId),\n  boardId: asText(rawConfig.board_id || rawConfig.boardId),\n  jiraBaseUrl: asText(rawConfig.jira_base_url || rawConfig.jiraBaseUrl).replace(/\\/+$/, ''),\n  jiraProjectKey: asText(rawConfig.jira_project_key || rawConfig.jiraProjectKey),\n  jiraJql: asText(rawConfig.jira_jql || rawConfig.jiraJql),\n  gitlabBaseUrl: asText(rawConfig.gitlab_base_url || rawConfig.gitlabBaseUrl).replace(/\\/+$/, ''),\n  gitlabProjectIds: asArray(rawConfig.gitlab_project_ids || rawConfig.gitlabProjectIds).map((item) => asText(item)).filter(Boolean),\n  gchatUnifiedWebhook: asText(rawConfig.gchat_unified_webhook || rawConfig.gchatUnifiedWebhook),\n  messageLanguage,\n  timezone,\n  maxCandidateTasks: Math.max(5, asNumber(rawConfig.max_candidate_tasks || rawConfig.maxCandidateTasks, 20)),\n  maxClusters: Math.max(1, asNumber(rawConfig.max_clusters || rawConfig.maxClusters, 5)),\n  maxActivityExcerpts: Math.max(5, asNumber(rawConfig.max_activity_excerpts || rawConfig.maxActivityExcerpts, 30)),\n  suppressionDigestHours: Math.max(1, asNumber(rawConfig.suppression_digest_hours || rawConfig.suppressionDigestHours, 24)),\n  confidenceThresholdDigest: asNumber(rawConfig.confidence_threshold_digest || rawConfig.confidenceThresholdDigest, 0.7),\n};\n\nif (!monitorConfig.teamId) {\n  throw new Error('monitorConfig.teamId is required');\n}\nif (!monitorConfig.boardId) {\n  throw new Error('monitorConfig.boardId is required');\n}\nif (!monitorConfig.jiraBaseUrl) {\n  throw new Error('monitorConfig.jiraBaseUrl is required');\n}\n\nconst classifierSystemPrompt = [\n  'Classify each activity excerpt by what it means for delivery, not by surface wording.',\n  'Do not over-infer.',\n  'Use only these labels:',\n  '- real_progress',\n  '- review_pending',\n  '- waiting_external',\n  '- waiting_internal',\n  '- qa_pending',\n  '- scope_change',\n  '- status_noise',\n  '- soft_commitment',\n  '- risk_signal',\n  '- resolved_signal',\n  'Return one label per item with confidence and a short reason.',\n].join('\\n');\n\nconst judgeSystemPrompt = [\n  'You are an experienced PM sprint monitoring assistant.',\n  'Your job is not to summarize everything. Your job is to decide whether intervention is needed, where risk is accumulating, and what action would actually help.',\n  'Avoid generic reminders.',\n  'Prefer silence if there is no meaningful intervention.',\n  'Use structured signals as facts and activity excerpts as context.',\n  'Distinguish between:',\n  '1. likely_on_track',\n  '2. at_risk_but_recoverable',\n  '3. likely_spillover',\n  '4. needs_intervention_now',\n  'Prefer cluster-level insight over task spam.',\n  'State confidence.',\n  'Do not infer facts that are not supported by structured signals or excerpts.',\n  'If completion appears low but stage distribution suggests work is moving normally, do not overreact.',\n].join('\\n');\n\nconst draftSystemPrompt = messageLanguage === 'vi'\n  ? [\n      'Viet nhu mot PM partner sac sao va thuc dung.',\n      'Hay viet bang tieng Viet tu nhien.',\n      'Khong viet kieu dich may.',\n      'Chi viet phan text cho unified digest.',\n      'Toi da 3 bullet, uu tien dung format:',\n      '- Main blocker: ...',\n      '- Quick win: ...',\n      '- Decision today: ...',\n      'Neu khong co quick win hoac decision ro rang thi bo dong do, khong duoc ke dai.',\n      'Giu cau ngan, scan nhanh, de hanh dong.',\n      'Khong duoc bo sung su that ngoai input cau truc.',\n      'Tranh van phong do loi hoac quy ket ca nhan.',\n    ].join('\\n')\n  : [\n      'Write like a sharp PM partner.',\n      'Write only the text portion of the unified digest.',\n      'Use at most 3 bullets and prefer this exact framing:',\n      '- Main blocker: ...',\n      '- Quick win: ...',\n      '- Decision today: ...',\n      'If there is no clear quick win or decision, omit that line instead of padding.',\n      'Keep it concise and highly scannable.',\n      'Do not invent facts beyond the structured input.',\n      'Avoid blameful language.',\n    ].join('\\n');\n\nreturn {\n  runId,\n  runType,\n  workflowName,\n  triggerSource,\n  generatedAt,\n  monitorConfig,\n  classifierSystemPrompt,\n  judgeSystemPrompt,\n  draftSystemPrompt,\n  aiModels: {\n    classifier: 'cx/gpt-5.4',\n    judge: 'cx/gpt-5.4',\n    drafter: 'cx/gpt-5.4',\n  },\n  issueKeyPatterns: {\n    task: 'task:<task_id>:<risk_type>',\n    cluster: 'cluster:<cluster_type>:<subject_id>',\n    sprint: 'sprint:<sprint_id>:goal_risk',\n  },\n  runSummarySeed: {\n    workflowName,\n    runType,\n    triggerSource,\n    generatedAt,\n    teamId: monitorConfig.teamId,\n    boardId: monitorConfig.boardId,\n  },\n};"
+        "jsCode": "const input = $json || {};\n\nfunction asObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction asText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asNumber(value, fallback = 0) {\n  const parsed = Number(value);\n  return Number.isFinite(parsed) ? parsed : fallback;\n}\n\nfunction asBoolean(value, fallback = false) {\n  if (typeof value === 'boolean') return value;\n  if (typeof value === 'string') {\n    const normalized = value.trim().toLowerCase();\n    if (normalized === 'true') return true;\n    if (normalized === 'false') return false;\n  }\n  return fallback;\n}\n\nfunction asMessageLanguage(value) {\n  const normalized = asText(value, 'en').toLowerCase();\n  return normalized === 'vi' ? 'vi' : 'en';\n}\n\nfunction asArray(value) {\n  if (Array.isArray(value)) return value;\n  if (typeof value === 'string') {\n    const trimmed = value.trim();\n    if (!trimmed) return [];\n    try {\n      const parsed = JSON.parse(trimmed);\n      return Array.isArray(parsed) ? parsed : [];\n    } catch (error) {\n      return trimmed.split(',').map((item) => item.trim()).filter(Boolean);\n    }\n  }\n  return [];\n}\n\nconst rawConfig = asObject(input.monitorConfig);\nconst runType = asText(input.runType, 'light_scan');\nconst workflowName = asText(input.workflowName, 'Sprint Monitor Engine');\nconst triggerSource = asText(input.triggerSource, 'manual');\nconst timezone = asText(rawConfig.timezone, 'Asia/Ho_Chi_Minh');\nconst messageLanguage = asMessageLanguage(rawConfig.message_language);\nconst generatedAt = $now.setZone(timezone).toISO();\nconst runId = 'run_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);\n\nconst monitorConfig = {\n  id: asText(rawConfig.id),\n  teamId: asText(rawConfig.team_id),\n  boardId: asText(rawConfig.board_id),\n  jiraBaseUrl: asText(rawConfig.jira_base_url).replace(/\\/+$/, ''),\n  jiraProjectKey: asText(rawConfig.jira_project_key),\n  jiraJql: asText(rawConfig.jira_jql),\n  gitlabBaseUrl: asText(rawConfig.gitlab_base_url).replace(/\\/+$/, ''),\n  gitlabProjectIds: asArray(rawConfig.gitlab_project_ids).map((item) => asText(item)).filter(Boolean),\n  gchatUnifiedWebhook: asText(rawConfig.gchat_unified_webhook),\n  messageLanguage,\n  timezone,\n  maxCandidateTasks: Math.max(5, asNumber(rawConfig.max_candidate_tasks, 20)),\n  maxClusters: Math.max(1, asNumber(rawConfig.max_clusters, 5)),\n  maxActivityExcerpts: Math.max(5, asNumber(rawConfig.max_activity_excerpts, 30)),\n  suppressionDigestHours: Math.max(1, asNumber(rawConfig.suppression_digest_hours, 24)),\n  confidenceThresholdDigest: asNumber(rawConfig.confidence_threshold_digest, 0.7),\n};\n\nif (!Object.keys(rawConfig).length) {\n  throw new Error('monitorConfig object is required');\n}\nif (!monitorConfig.teamId) {\n  throw new Error('monitorConfig.teamId is required');\n}\nif (!monitorConfig.boardId) {\n  throw new Error('monitorConfig.boardId is required');\n}\nif (!monitorConfig.jiraBaseUrl) {\n  throw new Error('monitorConfig.jiraBaseUrl is required');\n}\n\nconst classifierSystemPrompt = [\n  'Classify each activity excerpt by what it means for delivery, not by surface wording.',\n  'Do not over-infer.',\n  'Use only these labels:',\n  '- real_progress',\n  '- review_pending',\n  '- waiting_external',\n  '- waiting_internal',\n  '- qa_pending',\n  '- scope_change',\n  '- status_noise',\n  '- soft_commitment',\n  '- risk_signal',\n  '- resolved_signal',\n  'Return one label per item with confidence and a short reason.',\n].join('\\n');\n\nconst judgeSystemPrompt = [\n  'You are an experienced PM sprint monitoring assistant.',\n  'Your job is not to summarize everything. Your job is to decide whether intervention is needed, where risk is accumulating, and what action would actually help.',\n  'Avoid generic reminders.',\n  'Prefer silence if there is no meaningful intervention.',\n  'Use structured signals as facts and activity excerpts as context.',\n  'Distinguish between:',\n  '1. likely_on_track',\n  '2. at_risk_but_recoverable',\n  '3. likely_spillover',\n  '4. needs_intervention_now',\n  'Prefer cluster-level insight over task spam.',\n  'State confidence.',\n  'Do not infer facts that are not supported by structured signals or excerpts.',\n  'If completion appears low but stage distribution suggests work is moving normally, do not overreact.',\n].join('\\n');\n\nconst draftSystemPrompt = messageLanguage === 'vi'\n  ? [\n      'Viet nhu mot PM partner sac sao va thuc dung.',\n      'Hay viet bang tieng Viet tu nhien.',\n      'Khong viet kieu dich may.',\n      'Chi viet phan text cho unified digest.',\n      'Uu tien toi da 4 dong theo thu tu co dinh:',\n      '- Urgency: ...',\n      '- Main blocker: ...',\n      '- Quick win: ...',\n      '- Decision today: ...',\n      'Urgency phai la dong rieng neu neu thoi gian/throughput dang tao ap luc scope.',\n      'Khong tron cau urgency vao Main blocker.',\n      'Main blocker/Quick win/Decision today co the bo dong neu du lieu yeu hoac khong ro.',\n      'Neu resolve duoc owner, uu tien mention ngan gon (vd @PIC, @Reviewer, @PM).',\n      'Moi dong toi da 1-2 cau ngan.',\n      'Giu cau ngan, scan nhanh, de hanh dong.',\n      'Khong duoc bo sung su that ngoai input cau truc.',\n      'Tranh van phong do loi hoac quy ket ca nhan.',\n    ].join('\\n')\n  : [\n      'Write like a sharp PM partner.',\n      'Write only the text portion of the unified digest.',\n      'Prefer up to 4 short lines in this fixed order:',\n      '- Urgency: ...',\n      '- Main blocker: ...',\n      '- Quick win: ...',\n      '- Decision today: ...',\n      'Urgency must be a separate line when time/throughput pressure exists.',\n      'Do not blend urgency into Main blocker.',\n      'Main blocker/Quick win/Decision today may be omitted when evidence is weak.',\n      'Use action-owner mention placeholders when resolvable (for example @PIC, @Reviewer, @PM).',\n      'Keep each line within 1-2 short sentences.',\n      'Keep it concise and highly scannable.',\n      'Do not invent facts beyond the structured input.',\n      'Avoid blameful language.',\n    ].join('\\n');\n\nreturn {\n  runId,\n  runType,\n  workflowName,\n  triggerSource,\n  generatedAt,\n  monitorConfig,\n  classifierSystemPrompt,\n  judgeSystemPrompt,\n  draftSystemPrompt,\n  aiModels: {\n    classifier: 'cx/gpt-5.4',\n    judge: 'cx/gpt-5.4',\n    drafter: 'cx/gpt-5.4',\n  },\n  issueKeyPatterns: {\n    task: 'task:<task_id>:<risk_type>',\n    cluster: 'cluster:<cluster_type>:<subject_id>',\n    sprint: 'sprint:<sprint_id>:goal_risk',\n  },\n  runSummarySeed: {\n    workflowName,\n    runType,\n    triggerSource,\n    generatedAt,\n    teamId: monitorConfig.teamId,\n    boardId: monitorConfig.boardId,\n  },\n};"
       },
       "id": "2",
       "name": "Normalize Request",
@@ -41,7 +41,7 @@
       "typeVersion": 2,
       "position": [
         -2128,
-        348
+        352
       ]
     },
     {
@@ -68,7 +68,7 @@
       "typeVersion": 4.3,
       "position": [
         -1904,
-        348
+        352
       ],
       "credentials": {
         "jiraSoftwareServerPatApi": {
@@ -89,7 +89,7 @@
       "typeVersion": 2,
       "position": [
         -1680,
-        348
+        352
       ]
     },
     {
@@ -122,7 +122,7 @@
       "typeVersion": 2.3,
       "position": [
         -1456,
-        348
+        352
       ]
     },
     {
@@ -135,7 +135,7 @@
       "typeVersion": 2,
       "position": [
         -1232,
-        540
+        544
       ]
     },
     {
@@ -148,7 +148,7 @@
       "typeVersion": 2,
       "position": [
         -1008,
-        540
+        544
       ]
     },
     {
@@ -165,7 +165,7 @@
       "typeVersion": 2.6,
       "position": [
         -784,
-        540
+        544
       ],
       "credentials": {
         "postgres": {
@@ -185,7 +185,7 @@
       "typeVersion": 2,
       "position": [
         -560,
-        540
+        544
       ]
     },
     {
@@ -212,7 +212,7 @@
       "typeVersion": 4.3,
       "position": [
         -1232,
-        252
+        256
       ],
       "credentials": {
         "jiraSoftwareServerPatApi": {
@@ -232,7 +232,7 @@
       "typeVersion": 2,
       "position": [
         -1008,
-        252
+        256
       ]
     },
     {
@@ -265,7 +265,7 @@
       "typeVersion": 2.3,
       "position": [
         -784,
-        252
+        256
       ]
     },
     {
@@ -292,7 +292,7 @@
       "typeVersion": 4.3,
       "position": [
         -560,
-        156
+        160
       ],
       "credentials": {
         "gitlabApi": {
@@ -312,7 +312,7 @@
       "typeVersion": 2,
       "position": [
         -560,
-        348
+        352
       ]
     },
     {
@@ -325,7 +325,7 @@
       "typeVersion": 2,
       "position": [
         -336,
-        252
+        256
       ]
     },
     {
@@ -338,7 +338,7 @@
       "typeVersion": 2,
       "position": [
         -112,
-        252
+        256
       ]
     },
     {
@@ -351,7 +351,7 @@
       "typeVersion": 2,
       "position": [
         112,
-        252
+        256
       ]
     },
     {
@@ -368,8 +368,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        392,
-        252
+        464,
+        256
       ],
       "retryOnFail": true,
       "waitBetweenTries": 2000,
@@ -384,8 +384,8 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        592,
-        476
+        720,
+        480
       ]
     },
     {
@@ -407,7 +407,7 @@
       "typeVersion": 1.3,
       "position": [
         336,
-        476
+        480
       ],
       "credentials": {
         "openAiApi": {
@@ -425,8 +425,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        800,
-        252
+        928,
+        256
       ]
     },
     {
@@ -438,8 +438,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1024,
-        252
+        1152,
+        256
       ]
     },
     {
@@ -455,8 +455,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1248,
-        252
+        1376,
+        256
       ],
       "credentials": {
         "postgres": {
@@ -475,8 +475,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1472,
-        252
+        1600,
+        256
       ]
     },
     {
@@ -493,8 +493,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        1696,
-        252
+        1824,
+        256
       ],
       "retryOnFail": true,
       "waitBetweenTries": 2000,
@@ -509,8 +509,8 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        1832,
-        476
+        1968,
+        480
       ]
     },
     {
@@ -531,8 +531,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        1704,
-        476
+        1840,
+        480
       ],
       "credentials": {
         "openAiApi": {
@@ -550,8 +550,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2048,
-        252
+        2176,
+        256
       ]
     },
     {
@@ -583,8 +583,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2272,
-        252
+        2400,
+        256
       ]
     },
     {
@@ -596,7 +596,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2496,
+        2624,
         128
       ]
     },
@@ -614,7 +614,7 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        2720,
+        2848,
         128
       ],
       "retryOnFail": true,
@@ -630,7 +630,7 @@
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
       "position": [
-        2856,
+        2992,
         352
       ]
     },
@@ -652,7 +652,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        2728,
+        2864,
         352
       ],
       "credentials": {
@@ -684,8 +684,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        3072,
-        252
+        3200,
+        256
       ],
       "credentials": {
         "googleSheetsOAuth2Api": {
@@ -697,28 +697,28 @@
     },
     {
       "parameters": {
-        "jsCode": "const request = $('Normalize Request').first().json || {};\nconst context = $('Normalize Sprint Context').first().json || {};\nconst signals = $('Compute Signals').first().json || {};\nconst gate = $('Delivery Gate').first().json || {};\nconst judge = gate.judge || {};\nconst draftNode = (() => {\n  try {\n    return $('Message Drafter AI Agent').first().json || {};\n  } catch (error) {\n    return {};\n  }\n})();\nconst draft = draftNode.output && typeof draftNode.output === 'object' ? draftNode.output : {};\nconst messageLanguage = String(request.monitorConfig?.messageLanguage || 'en').trim().toLowerCase() === 'vi' ? 'vi' : 'en';\n\nfunction asText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nfunction asOwnerType(value, fallback = 'none') {\n  const normalized = asText(value, fallback).toLowerCase();\n  return ['pm', 'lead', 'assignee', 'reviewer', 'team', 'none'].includes(normalized)\n    ? normalized\n    : fallback;\n}\n\nfunction t(english, vietnamese) {\n  return messageLanguage === 'vi' ? vietnamese : english;\n}\n\nfunction titleCaseFromOwnerType(ownerType) {\n  const normalized = asOwnerType(ownerType, 'team');\n  const labels = {\n    pm: t('PM', 'PM'),\n    lead: t('Lead', 'Lead'),\n    assignee: t('Owner', 'Owner'),\n    reviewer: t('Reviewer', 'Reviewer'),\n    team: t('Team', 'Team'),\n    none: t('Team', 'Team'),\n  };\n  return labels[normalized] || labels.team;\n}\n\nfunction normalizeMentionsNeeded(value) {\n  return asArray(value)\n    .map((item, index) => ({\n      type: asText(item?.type, 'person'),\n      email: asText(item?.email).toLowerCase(),\n      reason: asText(item?.reason),\n      priority: Number(item?.priority || index + 1),\n    }))\n    .filter((item) => item.email);\n}\n\nfunction normalizeEmail(value) {\n  const email = asText(value).toLowerCase();\n  return email.includes('@') ? email : '';\n}\n\nfunction bulletBody(text, labelPattern) {\n  const raw = asText(text);\n  if (!raw) return '';\n  if (!labelPattern.test(raw)) return raw;\n  return raw.replace(labelPattern, '').trim();\n}\n\nfunction dedupeMentions(items) {\n  const seen = new Set();\n  const results = [];\n  for (const item of items) {\n    const email = normalizeEmail(item?.email);\n    if (!email || seen.has(email)) continue;\n    seen.add(email);\n    results.push({\n      type: 'person',\n      email,\n      reason: asText(item?.reason),\n      priority: Number(item?.priority || results.length + 1),\n    });\n  }\n  return results.sort((a, b) => a.priority - b.priority).slice(0, 2);\n}\n\nconst memberRows = $input.all().map((item) => item?.json || {});\nconst memberMap = new Map();\nfor (const row of memberRows) {\n  const normalized = {};\n  for (const [key, value] of Object.entries(row || {})) {\n    normalized[String(key || '').trim().toLowerCase()] = value;\n  }\n  const email = normalizeEmail(normalized.email);\n  const id = asText(normalized.id);\n  const name = asText(normalized.name || normalized.display_name || normalized.displayname);\n  if (!email) continue;\n  if (!memberMap.has(email)) {\n    memberMap.set(email, { id, name, email });\n  }\n}\n\nconst sprint = context.sprint || {};\nconst tasks = asArray(context.tasks);\nconst deliverableIssues = asArray(gate.deliverableIssues);\nconst topIssue = deliverableIssues[0] || {};\nconst topTask = tasks.find((task) => asText(task.task_id) === asText(topIssue.entity_id)) || {};\nconst notStartedCount = tasks.filter((task) => asText(task.status) === 'Open').length;\nconst reviewCount = tasks.filter((task) => ['Ready For Review', 'In Review'].includes(asText(task.status))).length;\nconst blockedCount = tasks.filter((task) => asArray(task.blocked_by).length > 0).length;\nconst doneTasks = tasks.filter((task) => ['Ready For Review', 'In Review', 'Ready For Release', 'Close'].includes(asText(task.status))).length;\nconst totalTasks = tasks.length;\nconst donePoints = Number(sprint.completed_points || 0);\nconst totalPoints = Number(sprint.committed_points || 0);\nconst burnedPercent = totalPoints > 0 ? Number(((donePoints / totalPoints) * 100).toFixed(1)) : null;\nconst daysLeft = Number(sprint.days_remaining || 0);\n\nconst statusMap = {\n  likely_on_track: t('on track', 'on track'),\n  at_risk_but_recoverable: t('at risk', 'at risk'),\n  likely_spillover: t('likely spillover', 'likely spillover'),\n};\nconst sprintStatus = statusMap[asText(judge.sprint_assessment?.delivery_outlook)] || t('at risk', 'at risk');\nconst mainRiskCluster = asArray(judge.clusters)[0];\n\nconst defaultMainBlocker = (() => {\n  if (!deliverableIssues.length) return '';\n  const issue = deliverableIssues[0];\n  return asText(issue.why_now) || t('Main blocker needs a decision today.', 'Main blocker can mot quyet dinh trong hom nay.');\n})();\n\nconst quickWinTask = tasks\n  .filter((task) => ['Ready For Review', 'In Review', 'Ready For Test', 'In Test'].includes(asText(task.status)))\n  .sort((a, b) => Number(b.story_points || 0) - Number(a.story_points || 0))[0];\nconst defaultQuickWin = quickWinTask\n  ? asText(quickWinTask.key) + ' ' + t('is close to done if ownership is cleared today.', 'co the chot nhanh neu clear owner trong hom nay.')\n  : '';\n\nconst decisionOwnerType = asOwnerType(topIssue.decision_owner_type || mainRiskCluster?.decision_owner_type, 'lead');\nconst executionOwnerType = asOwnerType(topIssue.execution_owner_type || mainRiskCluster?.execution_owner_type, 'assignee');\n\nconst derivedMentions = [];\nif (normalizeEmail(topTask.assignee_email)) {\n  derivedMentions.push({ type: 'person', email: topTask.assignee_email, reason: 'execution_owner', priority: 1 });\n}\nif (normalizeEmail(topTask.reporter_email)) {\n  derivedMentions.push({ type: 'person', email: topTask.reporter_email, reason: 'decision_owner', priority: 2 });\n}\nfor (const issue of deliverableIssues.slice(0, 3)) {\n  derivedMentions.push(...normalizeMentionsNeeded(issue.mentions_needed));\n}\nconst mentionsNeeded = dedupeMentions(derivedMentions);\nconst mentionsResolved = mentionsNeeded.map((item) => {\n  const member = memberMap.get(item.email);\n  return {\n    ...item,\n    display_name: member?.name || item.email,\n    mention_text: member?.id ? '<users/' + member.id + '>' : '',\n    resolved: Boolean(member?.id),\n  };\n});\n\nfunction mentionOrFallback(position, ownerType) {\n  const mention = mentionsResolved[position];\n  if (mention?.mention_text) return mention.mention_text;\n  if (mention?.display_name) return mention.display_name;\n  return titleCaseFromOwnerType(ownerType);\n}\n\nconst draftedText = asText(draft.unified_digest_text);\nconst mainBlockerLine = bulletBody(\n  draftedText.split('\\n').find((line) => /^\\s*[-*•]?\\s*Main blocker:/i.test(line)),\n  /^\\s*[-*•]?\\s*Main blocker:\\s*/i,\n) || defaultMainBlocker;\nconst quickWinLine = bulletBody(\n  draftedText.split('\\n').find((line) => /^\\s*[-*•]?\\s*Quick win:/i.test(line)),\n  /^\\s*[-*•]?\\s*Quick win:\\s*/i,\n) || defaultQuickWin;\nconst decisionTodayLine = bulletBody(\n  draftedText.split('\\n').find((line) => /^\\s*[-*•]?\\s*Decision today:/i.test(line)),\n  /^\\s*[-*•]?\\s*Decision today:\\s*/i,\n) || [\n  mentionOrFallback(0, decisionOwnerType),\n  t('to confirm the blocker path today.', 'xac nhan huong xu ly blocker trong hom nay.'),\n].join(' ');\n\nconst metricsLines = [\n  t('Team passed', 'Team passed') + ': ' + doneTasks + '/' + Math.max(0, totalTasks) + ' ' + t('tasks', 'tasks') + ' — ' + donePoints + '/' + (totalPoints || 0) + ' pts — ' + (burnedPercent === null ? 'n/a' : String(burnedPercent) + '%') + ' ' + t('burned', 'burned'),\n];\nconst keySignals = [\n  t('Blocked', 'Blocked') + ': ' + blockedCount + ' ' + t('tasks', 'tasks'),\n  t('In review', 'In review') + ': ' + reviewCount + ' ' + t('tasks', 'tasks'),\n  t('Not started', 'Not started') + ': ' + notStartedCount + ' ' + t('tasks', 'tasks'),\n];\nif (mainRiskCluster?.subject_id || mainRiskCluster?.cluster_id) {\n  keySignals.push(t('Main risk cluster', 'Main risk cluster') + ': ' + asText(mainRiskCluster.subject_id || mainRiskCluster.cluster_id));\n}\n\nreturn [{\n  json: {\n    threadKey: 'sprint-monitor-' + request.runId,\n    sprintStatus,\n    daysLeft,\n    metricsLines,\n    keySignals: keySignals.filter(Boolean).slice(0, 4),\n    mainBlockerLine,\n    quickWinLine,\n    decisionTodayLine,\n    mentionsNeeded,\n    mentionsResolved,\n    decisionOwnerType,\n    executionOwnerType,\n    unifiedDigestText: draftedText,\n    deliveryIssueKeys: deliverableIssues.map((issue) => issue.issue_key),\n  },\n}];"
+        "jsCode": "const request = $('Normalize Request').first().json || {};\nconst context = $('Normalize Sprint Context').first().json || {};\nconst signals = $('Compute Signals').first().json || {};\nconst gate = $('Delivery Gate').first().json || {};\nconst judge = gate.judge || {};\nconst draftNode = (() => {\n  try {\n    return $('Message Drafter AI Agent').first().json || {};\n  } catch (error) {\n    return {};\n  }\n})();\nconst draft = draftNode.output && typeof draftNode.output === 'object' ? draftNode.output : {};\nconst messageLanguage = String(request.monitorConfig?.messageLanguage || 'en').trim().toLowerCase() === 'vi' ? 'vi' : 'en';\n\nfunction asText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nfunction asNumber(value, fallback = 0) {\n  const parsed = Number(value);\n  return Number.isFinite(parsed) ? parsed : fallback;\n}\n\nfunction asOwnerType(value, fallback = 'none') {\n  const normalized = asText(value, fallback).toLowerCase();\n  return ['pm', 'lead', 'assignee', 'reviewer', 'team', 'none'].includes(normalized)\n    ? normalized\n    : fallback;\n}\n\nfunction t(english, vietnamese) {\n  return messageLanguage === 'vi' ? vietnamese : english;\n}\n\nfunction titleCaseFromOwnerType(ownerType) {\n  const normalized = asOwnerType(ownerType, 'team');\n  const labels = {\n    pm: t('PM', 'PM'),\n    lead: t('Lead', 'Lead'),\n    assignee: t('Owner', 'Owner'),\n    reviewer: t('Reviewer', 'Reviewer'),\n    team: t('Team', 'Team'),\n    none: t('Team', 'Team'),\n  };\n  return labels[normalized] || labels.team;\n}\n\nfunction normalizeMentionsNeeded(value) {\n  return asArray(value)\n    .map((item, index) => ({\n      type: asText(item?.type, 'person'),\n      email: asText(item?.email).toLowerCase(),\n      reason: asText(item?.reason),\n      priority: Number(item?.priority || index + 1),\n    }))\n    .filter((item) => item.email);\n}\n\nfunction normalizeEmail(value) {\n  const email = asText(value).toLowerCase();\n  return email.includes('@') ? email : '';\n}\n\nfunction bulletBody(text, labelPattern) {\n  const raw = asText(text);\n  if (!raw) return '';\n  if (!labelPattern.test(raw)) return raw;\n  return raw.replace(labelPattern, '').trim();\n}\n\nfunction pickDraftLine(lines, labelPattern) {\n  return asArray(lines).find((line) => labelPattern.test(asText(line))) || '';\n}\n\nfunction isWeakDirectiveLine(text) {\n  const normalized = asText(text).toLowerCase();\n  if (!normalized) return true;\n  return /^(none|n\\/a|no action|no decision|khong co|chua ro)\\b/.test(normalized);\n}\n\nfunction splitIntoSentences(text) {\n  const normalized = asText(text);\n  if (!normalized) return [];\n  return normalized\n    .split(/[.!?;；]\\s*/)\n    .map((part) => asText(part))\n    .filter(Boolean);\n}\n\nfunction looksLikeUrgencySentence(text) {\n  const sentence = asText(text);\n  if (!sentence) return false;\n  const hasDays = /\\b\\d+\\s*(?:days?|ngay|ngày)\\b/i.test(sentence);\n  const hasRatio = /\\b\\d+\\s*\\/\\s*\\d+\\s*(?:pts?|points?)?\\b/i.test(sentence);\n  const hasPressureCue = /(scope|spillover|urgent|need|can|cần|xu ly ngay|chot)\\b/i.test(sentence);\n  return (hasDays && hasRatio) || (hasDays && hasPressureCue);\n}\n\nfunction detachUrgencyTail(text) {\n  const sentences = splitIntoSentences(text);\n  if (sentences.length <= 1) {\n    return {\n      main: asText(text),\n      urgency: '',\n    };\n  }\n  for (let index = sentences.length - 1; index >= 0; index -= 1) {\n    if (!looksLikeUrgencySentence(sentences[index])) continue;\n    const urgency = sentences[index];\n    const main = sentences.filter((_, position) => position !== index).join(' ').trim();\n    return {\n      main,\n      urgency,\n    };\n  }\n  return {\n    main: asText(text),\n    urgency: '',\n  };\n}\n\nfunction dedupeMentions(items) {\n  const seen = new Set();\n  const results = [];\n  for (const item of items) {\n    const email = normalizeEmail(item?.email);\n    if (!email || seen.has(email)) continue;\n    seen.add(email);\n    results.push({\n      type: 'person',\n      email,\n      reason: asText(item?.reason),\n      priority: Number(item?.priority || results.length + 1),\n    });\n  }\n  return results.sort((a, b) => a.priority - b.priority).slice(0, 2);\n}\n\nconst memberRows = $input.all().map((item) => item?.json || {});\nconst memberMap = new Map();\nfor (const row of memberRows) {\n  const normalized = {};\n  for (const [key, value] of Object.entries(row || {})) {\n    normalized[String(key || '').trim().toLowerCase()] = value;\n  }\n  const email = normalizeEmail(normalized.email);\n  const id = asText(normalized.id);\n  const name = asText(normalized.name || normalized.display_name || normalized.displayname);\n  if (!email) continue;\n  if (!memberMap.has(email)) {\n    memberMap.set(email, { id, name, email });\n  }\n}\n\nconst mentionLookup = {};\nfor (const member of memberMap.values()) {\n  const memberId = asText(member?.id);\n  const memberEmail = normalizeEmail(member?.email);\n  const memberName = asText(member?.name);\n  if (!memberId) continue;\n  const mentionText = '<users/' + memberId + '>';\n  const localPart = memberEmail.includes('@') ? memberEmail.split('@')[0] : '';\n  for (const rawKey of [localPart, memberEmail, memberName]) {\n    const key = asText(rawKey).toLowerCase();\n    if (!key || mentionLookup[key]) continue;\n    mentionLookup[key] = mentionText;\n  }\n}\n\nconst sprint = context.sprint || {};\nconst tasks = asArray(context.tasks);\nconst deliverableIssues = asArray(gate.deliverableIssues);\nconst topIssue = deliverableIssues[0] || {};\nconst topTask = tasks.find((task) => asText(task.task_id) === asText(topIssue.entity_id)) || {};\nconst notStartedCount = tasks.filter((task) => asText(task.status) === 'Open').length;\nconst reviewCount = tasks.filter((task) => ['Ready For Review', 'In Review'].includes(asText(task.status))).length;\nconst blockedCount = tasks.filter((task) => asArray(task.blocked_by).length > 0).length;\nconst doneTasks = tasks.filter((task) => ['Ready For Review', 'In Review', 'Ready For Release', 'Close'].includes(asText(task.status))).length;\nconst totalTasks = tasks.length;\nconst donePoints = asNumber(sprint.completed_points, 0);\nconst totalPoints = asNumber(sprint.committed_points, 0);\nconst burnedPercent = totalPoints > 0 ? Number(((donePoints / totalPoints) * 100).toFixed(1)) : null;\nconst daysLeft = asNumber(sprint.days_remaining, 0);\n\nconst statusMap = {\n  likely_on_track: t('on track', 'on track'),\n  at_risk_but_recoverable: t('at risk', 'at risk'),\n  likely_spillover: t('likely spillover', 'likely spillover'),\n};\nconst sprintStatus = statusMap[asText(judge.sprint_assessment?.delivery_outlook)] || t('at risk', 'at risk');\nconst mainRiskCluster = asArray(judge.clusters)[0];\n\nconst defaultMainBlocker = (() => {\n  if (!deliverableIssues.length) return '';\n  const issue = deliverableIssues[0];\n  return asText(issue.why_now) || t('Main blocker needs a decision today.', 'Main blocker can mot quyet dinh trong hom nay.');\n})();\n\nconst quickWinTask = tasks\n  .filter((task) => ['Ready For Review', 'In Review', 'Ready For Test', 'In Test'].includes(asText(task.status)))\n  .sort((a, b) => Number(b.story_points || 0) - Number(a.story_points || 0))[0];\nconst defaultQuickWin = quickWinTask\n  ? asText(quickWinTask.key) + ' ' + t('is close to done if ownership is cleared today.', 'co the chot nhanh neu clear owner trong hom nay.')\n  : '';\n\nconst decisionOwnerType = asOwnerType(topIssue.decision_owner_type || mainRiskCluster?.decision_owner_type, 'lead');\nconst executionOwnerType = asOwnerType(topIssue.execution_owner_type || mainRiskCluster?.execution_owner_type, 'assignee');\n\nconst derivedMentions = [];\nif (normalizeEmail(topTask.assignee_email)) {\n  derivedMentions.push({ type: 'person', email: topTask.assignee_email, reason: 'execution_owner', priority: 1 });\n}\nif (normalizeEmail(topTask.reporter_email)) {\n  derivedMentions.push({ type: 'person', email: topTask.reporter_email, reason: 'decision_owner', priority: 2 });\n}\nfor (const issue of deliverableIssues.slice(0, 3)) {\n  derivedMentions.push(...normalizeMentionsNeeded(issue.mentions_needed));\n}\nconst mentionsNeeded = dedupeMentions(derivedMentions);\nconst mentionsResolved = mentionsNeeded.map((item) => {\n  const member = memberMap.get(item.email);\n  return {\n    ...item,\n    display_name: member?.name || item.email,\n    mention_text: member?.id ? '<users/' + member.id + '>' : '',\n    resolved: Boolean(member?.id),\n  };\n});\n\nfunction mentionOrFallback(position, ownerType) {\n  const mention = mentionsResolved[position];\n  if (mention?.mention_text) return mention.mention_text;\n  if (mention?.display_name) return mention.display_name;\n  return titleCaseFromOwnerType(ownerType);\n}\n\nfunction mentionByReasonOrFallback(reasonPattern, position, ownerType) {\n  const matched = mentionsResolved.find((item) => reasonPattern.test(asText(item?.reason).toLowerCase()));\n  if (matched?.mention_text) return matched.mention_text;\n  if (matched?.display_name) return matched.display_name;\n  return mentionOrFallback(position, ownerType);\n}\n\nfunction replaceMentionPlaceholders(text, mentionTokens) {\n  const raw = asText(text);\n  if (!raw) return '';\n  return raw.replace(/@(?:PIC|OWNER|ASSIGNEE|REVIEWER|LEAD|PM|DECIDER)\\b/gi, (token) => {\n    const key = token.replace('@', '').toUpperCase();\n    const replacement = asText(mentionTokens[key]);\n    return replacement || token;\n  });\n}\n\nconst draftedText = asText(draft.unified_digest_text);\nconst draftedLines = draftedText.split(/\\r?\\n/).map((line) => asText(line)).filter(Boolean);\n\nconst draftedUrgencyLine = bulletBody(\n  pickDraftLine(draftedLines, /^\\s*[-*•]?\\s*(?:Urgency|Khan cap)\\s*:/i),\n  /^\\s*[-*•]?\\s*(?:Urgency|Khan cap)\\s*:\\s*/i,\n);\nconst draftedMainBlockerLine = bulletBody(\n  pickDraftLine(draftedLines, /^\\s*[-*•]?\\s*Main blocker:/i),\n  /^\\s*[-*•]?\\s*Main blocker:\\s*/i,\n);\nconst draftedQuickWinLine = bulletBody(\n  pickDraftLine(draftedLines, /^\\s*[-*•]?\\s*Quick win:/i),\n  /^\\s*[-*•]?\\s*Quick win:\\s*/i,\n);\nconst draftedDecisionTodayLine = bulletBody(\n  pickDraftLine(draftedLines, /^\\s*[-*•]?\\s*Decision today:/i),\n  /^\\s*[-*•]?\\s*Decision today:\\s*/i,\n);\n\nconst defaultDecisionToday = topIssue?.issue_key ? [\n  mentionOrFallback(0, decisionOwnerType),\n  t('to confirm the blocker path today.', 'xac nhan huong xu ly blocker trong hom nay.'),\n].join(' ') : '';\n\nconst detached = detachUrgencyTail(draftedMainBlockerLine || defaultMainBlocker);\nconst mainBlockerSeed = asText(detached.main || draftedMainBlockerLine || defaultMainBlocker);\nconst urgencyLine = asText(draftedUrgencyLine || detached.urgency);\n\nconst mentionTokens = {\n  PIC: mentionByReasonOrFallback(/execution|assignee|owner|blocker/, 0, executionOwnerType),\n  OWNER: mentionByReasonOrFallback(/execution|assignee|owner/, 0, executionOwnerType),\n  ASSIGNEE: mentionByReasonOrFallback(/execution|assignee|owner/, 0, executionOwnerType),\n  REVIEWER: mentionByReasonOrFallback(/review/, 1, 'reviewer'),\n  LEAD: mentionByReasonOrFallback(/lead/, 0, 'lead'),\n  PM: mentionByReasonOrFallback(/decision|scope|pm/, 0, decisionOwnerType),\n  DECIDER: mentionByReasonOrFallback(/decision|scope|pm/, 0, decisionOwnerType),\n};\n\nconst mainBlockerLine = replaceMentionPlaceholders(mainBlockerSeed, mentionTokens);\nconst quickWinLine = isWeakDirectiveLine(draftedQuickWinLine)\n  ? replaceMentionPlaceholders(defaultQuickWin, mentionTokens)\n  : replaceMentionPlaceholders(draftedQuickWinLine, mentionTokens);\nconst decisionTodayLine = isWeakDirectiveLine(draftedDecisionTodayLine)\n  ? replaceMentionPlaceholders(defaultDecisionToday, mentionTokens)\n  : replaceMentionPlaceholders(draftedDecisionTodayLine, mentionTokens);\n\nconst metricsLines = [\n  t('Team passed', 'Team passed') + ': ' + doneTasks + '/' + Math.max(0, totalTasks) + ' ' + t('tasks', 'tasks') + ' — ' + donePoints + '/' + (totalPoints || 0) + ' pts — ' + (burnedPercent === null ? 'n/a' : String(burnedPercent) + '%') + ' ' + t('burned', 'burned'),\n];\nconst keySignals = [\n  t('Blocked', 'Blocked') + ': ' + blockedCount + ' ' + t('tasks', 'tasks'),\n  t('In review', 'In review') + ': ' + reviewCount + ' ' + t('tasks', 'tasks'),\n  t('Not started', 'Not started') + ': ' + notStartedCount + ' ' + t('tasks', 'tasks'),\n];\n\nreturn [{\n  json: {\n    threadKey: 'sprint-monitor-' + request.runId,\n    sprintStatus,\n    daysLeft,\n    metricsLines,\n    keySignals: keySignals.filter(Boolean).slice(0, 4),\n    urgencyLine,\n    mainBlockerLine,\n    quickWinLine,\n    decisionTodayLine,\n    mentionsNeeded,\n    mentionsResolved,\n    mentionTokens,\n    mentionLookup,\n    decisionOwnerType,\n    executionOwnerType,\n    unifiedDigestText: draftedText,\n    deliveryIssueKeys: deliverableIssues.map((issue) => issue.issue_key),\n  },\n}];"
       },
       "id": "43",
       "name": "Build Render Model",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3296,
-        252
+        3424,
+        256
       ]
     },
     {
       "parameters": {
-        "jsCode": "const request = $('Normalize Request').first().json || {};\nconst gate = $('Delivery Gate').first().json || {};\nconst render = $('Build Render Model').first().json || {};\nconst messageLanguage = String(request.monitorConfig?.messageLanguage || 'en').trim().toLowerCase() === 'vi' ? 'vi' : 'en';\n\nfunction asText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nfunction t(english, vietnamese) {\n  return messageLanguage === 'vi' ? vietnamese : english;\n}\n\nfunction compactLines(lines) {\n  return asArray(lines).map((line) => asText(line)).filter(Boolean);\n}\n\nfunction renderJiraLinks(text) {\n  const raw = asText(text);\n  const baseUrl = asText(request.monitorConfig?.jiraBaseUrl).replace(/\\/+$/, '');\n  if (!raw || !baseUrl) return raw;\n  try {\n    return raw.replace(\n      /[A-Z][A-Z0-9]+-\\d+/g,\n      (cardId) => '<' + baseUrl + '/browse/' + encodeURIComponent(cardId) + '|' + cardId + '>',\n    );\n  } catch (error) {\n    return raw;\n  }\n}\n\nconst narrativeLines = [];\nif (asText(render.mainBlockerLine)) narrativeLines.push('• Main blocker: ' + render.mainBlockerLine);\nif (asText(render.quickWinLine)) narrativeLines.push('• Quick win: ' + render.quickWinLine);\nif (asText(render.decisionTodayLine)) narrativeLines.push('• Decision today: ' + render.decisionTodayLine);\nconst narrativeText = renderJiraLinks(narrativeLines.join('\\n'));\n\nconst cardPayload = {\n  cardsV2: [\n    {\n      cardId: 'sprint-monitor-unified-digest',\n      card: {\n        sections: [\n          {\n            widgets: [\n              {\n                decoratedText: {\n                  text: '<b>' + t('Sprint status', 'Sprint status') + ': ' + asText(render.sprintStatus, t('at risk', 'at risk')) + '</b><br>' + t('Days left', 'Days left') + ': ' + String(render.daysLeft ?? 0),\n                  wrapText: true,\n                },\n              },\n              {\n                decoratedText: {\n                  text: compactLines(render.metricsLines).join('<br>'),\n                  wrapText: true,\n                },\n              },\n              {\n                decoratedText: {\n                  text: compactLines(render.keySignals).join('<br>'),\n                  wrapText: true,\n                },\n              },\n            ],\n          },\n        ],\n      },\n    },\n  ],\n};\n\nconst deliveries = [];\nif (!gate.noMessage && gate.sendUnifiedDigest && request.monitorConfig?.gchatUnifiedWebhook) {\n  deliveries.push({\n    destination: request.monitorConfig.gchatUnifiedWebhook,\n    destinationType: 'google_chat_unified',\n    messageType: 'unified_digest_card',\n    threadKey: asText(render.threadKey),\n    auditText: t('Sprint status', 'Sprint status') + ': ' + asText(render.sprintStatus) + ' | ' + t('Days left', 'Days left') + ': ' + String(render.daysLeft ?? 0),\n    payload: cardPayload,\n    issueKeys: asArray(render.deliveryIssueKeys),\n  });\n  deliveries.push({\n    destination: request.monitorConfig.gchatUnifiedWebhook,\n    destinationType: 'google_chat_unified',\n    messageType: 'unified_digest_text',\n    threadKey: asText(render.threadKey),\n    auditText: narrativeText,\n    payload: {\n      text: narrativeText,\n    },\n    issueKeys: asArray(render.deliveryIssueKeys),\n  });\n}\n\nreturn [{\n  json: {\n    noMessage: gate.noMessage,\n    deliveries,\n    deliveryCount: deliveries.length,\n    deliverySummary: {\n      requestedCount: deliveries.length,\n      unifiedDigestRequested: deliveries.length > 0,\n      threadMessageCount: deliveries.length,\n    },\n  },\n}];"
+        "jsCode": "const request = $('Normalize Request').first().json || {};\nconst gate = $('Delivery Gate').first().json || {};\nconst render = $('Build Render Model').first().json || {};\nconst messageLanguage = String(request.monitorConfig?.messageLanguage || 'en').trim().toLowerCase() === 'vi' ? 'vi' : 'en';\n\nfunction asText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nfunction t(english, vietnamese) {\n  return messageLanguage === 'vi' ? vietnamese : english;\n}\n\nfunction compactLines(lines) {\n  return asArray(lines).map((line) => asText(line)).filter(Boolean);\n}\n\nfunction renderMentions(text) {\n  const raw = asText(text);\n  if (!raw) return raw;\n  const mentionTokens = render.mentionTokens && typeof render.mentionTokens === 'object'\n    ? render.mentionTokens\n    : {};\n  const mentionLookup = render.mentionLookup && typeof render.mentionLookup === 'object'\n    ? render.mentionLookup\n    : {};\n  let rendered = raw.replace(/@(?:PIC|OWNER|ASSIGNEE|REVIEWER|LEAD|PM|DECIDER)\\b/gi, (token) => {\n    const key = token.replace('@', '').toUpperCase();\n    const replacement = asText(mentionTokens[key]);\n    return replacement || token;\n  });\n\n  rendered = rendered.replace(/(^|[\\s(])@([A-Za-z0-9._-]{2,64})\\b/g, (full, prefix, handle) => {\n    const replacement = asText(mentionLookup[String(handle || '').toLowerCase()]);\n    return replacement ? prefix + replacement : full;\n  });\n\n  function escapeRegExp(value) {\n    return String(value || '').replace(/[.*+?^()|[\\]\\\\$]/g, '\\\\$&');\n  }\n\n  const displayNameKeys = Object.keys(mentionLookup)\n    .filter((key) => key.includes(' '))\n    .sort((a, b) => b.length - a.length);\n  for (const displayNameKey of displayNameKeys) {\n    const replacement = asText(mentionLookup[displayNameKey]);\n    if (!replacement) continue;\n    const namePattern = new RegExp(\n      '(^|[\\\\s(])@\\\\s*' + escapeRegExp(displayNameKey) + '(?=\\\\s|[.,;:)]|$)',\n      'giu',\n    );\n    rendered = rendered.replace(namePattern, (full, prefix) => prefix + replacement);\n  }\n\n  return rendered;\n}\n\nfunction renderJiraLinks(text) {\n  const raw = asText(text);\n  const baseUrl = asText(request.monitorConfig?.jiraBaseUrl).replace(/\\/+$/, '');\n  const projectKey = asText(request.monitorConfig?.jiraProjectKey).toUpperCase();\n  if (!raw || !baseUrl) return raw;\n\n  function toLink(issueKey, label = issueKey) {\n    return '<' + baseUrl + '/browse/' + encodeURIComponent(issueKey) + '|' + label + '>';\n  }\n\n  try {\n    let rendered = raw.replace(\n      /[A-Z][A-Z0-9]+-\\d+/g,\n      (cardId) => toLink(cardId, cardId),\n    );\n\n    // Fallback for compact numeric lists like \"4495/4498/4503\" when project key is configured.\n    if (projectKey) {\n      rendered = rendered.replace(/\\b\\d{3,7}(?:\\s*[/,]\\s*\\d{3,7})+\\b/g, (chunk) => {\n        return chunk\n          .split(/(\\s*[/,]\\s*)/)\n          .map((part) => {\n            const token = part.trim();\n            if (!/^\\d{3,7}$/.test(token)) return part;\n            const issueKey = projectKey + '-' + token;\n            return toLink(issueKey, issueKey);\n          })\n          .join('');\n      });\n    }\n\n    return rendered;\n  } catch (error) {\n    return raw;\n  }\n}\n\nconst narrativeLines = [];\nif (asText(render.urgencyLine)) narrativeLines.push('• Urgency: ' + render.urgencyLine);\nif (asText(render.mainBlockerLine)) narrativeLines.push('• Main blocker: ' + render.mainBlockerLine);\nif (asText(render.quickWinLine)) narrativeLines.push('• Quick win: ' + render.quickWinLine);\nif (asText(render.decisionTodayLine)) narrativeLines.push('• Decision today: ' + render.decisionTodayLine);\nconst narrativeText = renderJiraLinks(renderMentions(narrativeLines.join('\\n')));\n\nconst cardPayload = {\n  cardsV2: [\n    {\n      cardId: 'sprint-monitor-unified-digest',\n      card: {\n        sections: [\n          {\n            widgets: [\n              {\n                decoratedText: {\n                  text: '<b>' + t('Sprint status', 'Sprint status') + ': ' + asText(render.sprintStatus, t('at risk', 'at risk')) + '</b><br>' + t('Days left', 'Days left') + ': ' + String(render.daysLeft ?? 0),\n                  wrapText: true,\n                },\n              },\n              {\n                decoratedText: {\n                  text: compactLines(render.metricsLines).join('<br>'),\n                  wrapText: true,\n                },\n              },\n              {\n                decoratedText: {\n                  text: compactLines(render.keySignals).join('<br>'),\n                  wrapText: true,\n                },\n              },\n            ],\n          },\n        ],\n      },\n    },\n  ],\n};\n\nconst deliveries = [];\nif (!gate.noMessage && gate.sendUnifiedDigest && request.monitorConfig?.gchatUnifiedWebhook) {\n  deliveries.push({\n    destination: request.monitorConfig.gchatUnifiedWebhook,\n    destinationType: 'google_chat_unified',\n    messageType: 'unified_digest_card',\n    threadKey: asText(render.threadKey),\n    auditText: t('Sprint status', 'Sprint status') + ': ' + asText(render.sprintStatus) + ' | ' + t('Days left', 'Days left') + ': ' + String(render.daysLeft ?? 0),\n    payload: cardPayload,\n    issueKeys: asArray(render.deliveryIssueKeys),\n  });\n  deliveries.push({\n    destination: request.monitorConfig.gchatUnifiedWebhook,\n    destinationType: 'google_chat_unified',\n    messageType: 'unified_digest_text',\n    threadKey: asText(render.threadKey),\n    auditText: narrativeText,\n    payload: {\n      text: narrativeText,\n    },\n    issueKeys: asArray(render.deliveryIssueKeys),\n  });\n}\n\nreturn [{\n  json: {\n    noMessage: gate.noMessage,\n    deliveries,\n    deliveryCount: deliveries.length,\n    deliverySummary: {\n      requestedCount: deliveries.length,\n      unifiedDigestRequested: deliveries.length > 0,\n      threadMessageCount: deliveries.length,\n    },\n  },\n}];"
       },
       "id": "34",
       "name": "Build Delivery Messages",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3520,
-        252
+        3648,
+        256
       ]
     },
     {
@@ -750,8 +750,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        3744,
-        252
+        3872,
+        256
       ]
     },
     {
@@ -763,8 +763,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3968,
-        180
+        4096,
+        192
       ]
     },
     {
@@ -789,8 +789,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        4192,
-        180
+        4320,
+        192
       ],
       "continueOnFail": true
     },
@@ -803,8 +803,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4416,
-        180
+        4544,
+        192
       ]
     },
     {
@@ -816,8 +816,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4640,
-        252
+        4768,
+        256
       ]
     },
     {
@@ -833,8 +833,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        4864,
-        252
+        4992,
+        256
       ],
       "credentials": {
         "postgres": {
@@ -853,8 +853,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5088,
-        252
+        5216,
+        256
       ]
     },
     {
@@ -876,7 +876,7 @@
       "typeVersion": 4.4,
       "position": [
         464,
-        476
+        480
       ],
       "id": "d573ca72-9e8d-4d6b-80ea-79921c1ce951",
       "name": "HTTP Generic",
@@ -884,6 +884,62 @@
         "jiraSoftwareServerPatApi": {
           "id": "3TLwUpSgsJhbG45A",
           "name": "Jira MoMo account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Đọc sheet này để mapping \"<users/member_id>\" mục đích tag đúng user google chat",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1uLVZ2b6Ra-r2KCbLHcOL68V6smtxymfTCNNQnWPG8mI/edit?usp=drive_web&ouid=117576252668331810710",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "MoMoer",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_1_value', ``, 'string') }}"
+            },
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_2_value', ``, 'string') }}"
+            },
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_3_value', ``, 'string') }}"
+            },
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_4_value', ``, 'string') }}"
+            },
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_5_value', ``, 'string') }}"
+            }
+          ]
+        },
+        "combineFilters": "OR",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        592,
+        480
+      ],
+      "id": "78a230d9-7eb3-47db-af29-4a5caaa287a0",
+      "name": "Get Members1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3i6vDJxzaxXLHIWl",
+          "name": "Google account"
         }
       }
     }
@@ -1383,6 +1439,27 @@
           },
           {
             "node": "Comment Classifier AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Members1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Comment Classifier AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Sprint Judge AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Message Drafter AI Agent",
             "type": "ai_tool",
             "index": 0
           }

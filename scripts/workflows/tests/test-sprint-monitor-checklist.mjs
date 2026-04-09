@@ -489,10 +489,13 @@ if (fileExists(enginePath)) {
   const renderModelCode = String(nodeByName(engine, 'Build Render Model')?.parameters?.jsCode || '');
   check(!renderModelCode.includes('buildJiraLink('), 'Build Render Model no longer expands Jira links directly');
   check(!renderModelCode.includes('withLink('), 'Build Render Model no longer injects pre-rendered Jira links');
+  check(renderModelCode.includes('urgencyLine'), 'Build Render Model extracts/builds urgency line');
 
   const deliveryBuilderCode = String(nodeByName(engine, 'Build Delivery Messages')?.parameters?.jsCode || '');
   check(deliveryBuilderCode.includes('[A-Z][A-Z0-9]+-\\d+'), 'Build Delivery Messages includes Jira issue key regex replacement');
   check(deliveryBuilderCode.includes("request.monitorConfig?.jiraBaseUrl"), 'Build Delivery Messages uses jiraBaseUrl from monitor config');
+  check(deliveryBuilderCode.includes('• Urgency:'), 'Build Delivery Messages renders urgency line first');
+  check(deliveryBuilderCode.includes('renderMentions('), 'Build Delivery Messages maps mention placeholders for Google Chat');
 }
 
 if (missingTemplates.length > 0) {

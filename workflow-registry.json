@@ -111,13 +111,13 @@
     "Sprint Monitor Light Scan": {
       "id": "l4HFV7Mr0c5ZXi7j",
       "template": "workflows/sprint-monitor/sprint-monitor-light-scan.workflow.json",
-      "lastSyncedAt": "2026-04-09T11:08:50Z",
+      "lastSyncedAt": "2026-04-09T13:01:27Z",
       "templateImport": "scripts/workflows/import/import-sprint-monitor-light-scan-workflow.sh"
     },
     "Sprint Monitor Deep Analysis": {
       "id": "o9u06jNixOh0QnAT",
       "template": "workflows/sprint-monitor/sprint-monitor-deep-analysis.workflow.json",
-      "lastSyncedAt": "2026-04-09T11:08:50Z",
+      "lastSyncedAt": "2026-04-09T13:01:27Z",
       "templateImport": "scripts/workflows/import/import-sprint-monitor-deep-analysis-workflow.sh"
     },
     "Sprint Monitor Endgame": {
@@ -129,7 +129,7 @@
     "Sprint Monitor Engine": {
       "id": "UbFT1qz7YOaelW9W",
       "template": "workflows/sprint-monitor/sprint-monitor-engine.workflow.json",
-      "lastSyncedAt": "2026-04-09T12:07:24Z",
+      "lastSyncedAt": "2026-04-09T14:40:05Z",
       "templateImport": "scripts/workflows/import/import-sprint-monitor-engine-workflow.sh"
     }
   }

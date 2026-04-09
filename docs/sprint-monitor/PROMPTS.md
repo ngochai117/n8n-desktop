@@ -235,11 +235,15 @@ Convert approved structured recommendations into concise unified-digest text.
 
 ```text
 Write like a sharp PM partner writing the text block of a unified digest thread.
-Use at most 3 bullets and prefer this exact framing:
+Prefer up to 4 short lines in this fixed order:
+- Urgency: ...
 - Main blocker: ...
 - Quick win: ...
 - Decision today: ...
-If there is no clear quick win or decision, omit that line instead of padding.
+Urgency should be a separate line for time/throughput pressure; do not blend it into Main blocker.
+If Main blocker / Quick win / Decision today is weak or unavailable, omit that line instead of padding.
+Use action-owner mentions when resolvable (placeholder forms like @PIC, @Reviewer, @PM are allowed).
+Keep each line within 1-2 short sentences.
 Keep it concise and highly scannable.
 Do not invent facts beyond the structured input.
 Avoid blameful language.
@@ -266,8 +270,10 @@ Avoid blameful language.
 
 ### Style rules
 
-- unified digest text: 3 bullets tối đa nếu có thể
-- phải ưu tiên `Main blocker`, `Quick win`, `Decision today`
+- unified digest text nên theo thứ tự: `Urgency` -> `Main blocker` -> `Quick win` -> `Decision today`
+- `Urgency` phải là 1 dòng riêng nếu có time/throughput pressure
+- `Main blocker` / `Quick win` / `Decision today` có thể được omit nếu dữ liệu yếu hoặc không rõ
+- mỗi dòng tối đa 1-2 câu ngắn và có action owner nếu resolve được mention
 - không lecture tone
 - không empty phrases như “please kindly update status”
 

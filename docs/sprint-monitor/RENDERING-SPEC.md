@@ -66,6 +66,7 @@ Chứa metrics + status + key signals.
 
 Chứa action block:
 
+- `Urgency:` ...
 - `Main blocker:` ...
 - `Quick win:` ...
 - `Decision today:` ...
@@ -102,11 +103,18 @@ Chỉ 2–4 dòng tối đa, ví dụ:
 
 ## 3.3 Text structure
 
-Text message tiếp theo trong cùng thread bắt buộc có tối đa 3 bullet:
+Text message tiếp theo trong cùng thread ưu tiên tối đa 4 dòng theo thứ tự cố định:
 
+- `Urgency:` ...
 - `Main blocker:` ...
 - `Quick win:` ...
 - `Decision today:` ...
+
+Fallback policy:
+
+- ưu tiên lấy `Urgency` từ draft; nếu draft thiếu thì có thể bỏ dòng này
+- nếu AI lỡ nhét urgency vào `Main blocker`, renderer tách phần urgency ra dòng riêng khi detect được pattern rõ
+- `Main blocker`, `Quick win`, `Decision today` có thể omit nếu data yếu hoặc không đủ chắc
 
 ---
 
@@ -130,6 +138,7 @@ Main risk cluster: Epic 278099
 ### Message 2 — Threaded text content
 
 ```text
+• Urgency: Còn 4 ngày · 6/87 pts done · cần chốt lại scope hôm nay.
 • Main blocker: EXPENSE-4507 đang chặn EXPENSE-4503, EXPENSE-4498, và kéo theo EXPENSE-4495.
 • Quick win: EXPENSE-4505 đang chờ review 3 ngày — có thể convert sang done nếu assign reviewer hôm nay.
 • Decision today: @An xác nhận EXPENSE-4507 còn cứu được trong sprint không; @Mai chốt phần nào của Epic 278099 giữ lại, phần nào de-scope.
@@ -246,6 +255,7 @@ Tại render layer, áp dụng các rule rút gọn sau:
 
 - ưu tiên tag **người cụ thể** thay vì role chung
 - unified digest text message: tối đa 2 người chính, 3 nếu thật sự cần
+- hỗ trợ map placeholder mention trong text (`@PIC`, `@Reviewer`, `@PM`, `@Lead`, `@Owner`) sang mention token Google Chat nếu resolve được
 - nếu không resolve chắc được user, fallback về plain text hoặc bỏ mention
 
 ---
@@ -267,11 +277,19 @@ Tại render layer, áp dụng các rule rút gọn sau:
 Nếu vượt ngưỡng:
 
 - cắt narrative
-- giữ blocker + quick win + decision/action
+- giữ `Urgency` + `Main blocker` + `Decision today`
 
 ---
 
 ## 10. Content rules for Judgment block
+
+## 10.0 Urgency
+
+Phải nêu:
+
+- thời gian còn lại (`days_left`)
+- throughput pressure (`done/total pts` hoặc tasks)
+- cue cần hành động trong hôm nay
 
 ## 10.1 Main blocker
 
@@ -313,6 +331,7 @@ Không viết kiểu:
 
 Nên viết kiểu:
 
+- `Urgency: ...`
 - `Main blocker: ...`
 - `Quick win: ...`
 - `Decision today: ...`
@@ -383,14 +402,17 @@ Nếu AI draft quá dài hoặc quá lan man:
 - bỏ draft
 - render bằng deterministic template từ structured fields
 
+Nếu thiếu `Urgency` hoặc `Urgency` quá chung chung:
+
+- không tự generate fallback line; giữ output theo nội dung draft/parse được
+
 Nếu không có quick win:
 
 - bỏ dòng quick win
 
 Nếu không có decision today rõ:
 
-- render `Decision today: none` chỉ cho internal log
-- không nên gửi ra ngoài nếu message quá yếu
+- bỏ dòng decision today (không nhét filler text)
 
 ---
 

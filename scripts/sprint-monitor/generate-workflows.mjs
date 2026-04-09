@@ -301,7 +301,7 @@ function buildTopLevelWorkflow({ name, runType, cronExpression }) {
             { id: 'monitorConfig', displayName: 'monitorConfig', required: false, defaultMatch: false, display: true, canBeUsedToMatch: true, type: 'object', removed: false },
           ],
           attemptToConvertTypes: false,
-          convertFieldsToString: true,
+          convertFieldsToString: false,
         },
         options: {
           waitForSubWorkflow: true,
@@ -337,7 +337,7 @@ function buildTopLevelWorkflow({ name, runType, cronExpression }) {
             { id: 'monitorConfig', displayName: 'monitorConfig', required: false, defaultMatch: false, display: true, canBeUsedToMatch: true, type: 'object', removed: false },
           ],
           attemptToConvertTypes: false,
-          convertFieldsToString: true,
+          convertFieldsToString: false,
         },
         options: {
           waitForSubWorkflow: true,
@@ -439,30 +439,33 @@ const rawConfig = asObject(input.monitorConfig);
 const runType = asText(input.runType, 'light_scan');
 const workflowName = asText(input.workflowName, 'Sprint Monitor Engine');
 const triggerSource = asText(input.triggerSource, 'manual');
-const timezone = asText(rawConfig.timezone || rawConfig.timeZone, 'Asia/Ho_Chi_Minh');
-const messageLanguage = asMessageLanguage(rawConfig.message_language || rawConfig.messageLanguage);
+const timezone = asText(rawConfig.timezone, 'Asia/Ho_Chi_Minh');
+const messageLanguage = asMessageLanguage(rawConfig.message_language);
 const generatedAt = $now.setZone(timezone).toISO();
 const runId = 'run_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
 
 const monitorConfig = {
   id: asText(rawConfig.id),
-  teamId: asText(rawConfig.team_id || rawConfig.teamId),
-  boardId: asText(rawConfig.board_id || rawConfig.boardId),
-  jiraBaseUrl: asText(rawConfig.jira_base_url || rawConfig.jiraBaseUrl).replace(/\/+$/, ''),
-  jiraProjectKey: asText(rawConfig.jira_project_key || rawConfig.jiraProjectKey),
-  jiraJql: asText(rawConfig.jira_jql || rawConfig.jiraJql),
-  gitlabBaseUrl: asText(rawConfig.gitlab_base_url || rawConfig.gitlabBaseUrl).replace(/\/+$/, ''),
-  gitlabProjectIds: asArray(rawConfig.gitlab_project_ids || rawConfig.gitlabProjectIds).map((item) => asText(item)).filter(Boolean),
-  gchatUnifiedWebhook: asText(rawConfig.gchat_unified_webhook || rawConfig.gchatUnifiedWebhook),
+  teamId: asText(rawConfig.team_id),
+  boardId: asText(rawConfig.board_id),
+  jiraBaseUrl: asText(rawConfig.jira_base_url).replace(/\/+$/, ''),
+  jiraProjectKey: asText(rawConfig.jira_project_key),
+  jiraJql: asText(rawConfig.jira_jql),
+  gitlabBaseUrl: asText(rawConfig.gitlab_base_url).replace(/\/+$/, ''),
+  gitlabProjectIds: asArray(rawConfig.gitlab_project_ids).map((item) => asText(item)).filter(Boolean),
+  gchatUnifiedWebhook: asText(rawConfig.gchat_unified_webhook),
   messageLanguage,
   timezone,
-  maxCandidateTasks: Math.max(5, asNumber(rawConfig.max_candidate_tasks || rawConfig.maxCandidateTasks, 20)),
-  maxClusters: Math.max(1, asNumber(rawConfig.max_clusters || rawConfig.maxClusters, 5)),
-  maxActivityExcerpts: Math.max(5, asNumber(rawConfig.max_activity_excerpts || rawConfig.maxActivityExcerpts, 30)),
-  suppressionDigestHours: Math.max(1, asNumber(rawConfig.suppression_digest_hours || rawConfig.suppressionDigestHours, 24)),
-  confidenceThresholdDigest: asNumber(rawConfig.confidence_threshold_digest || rawConfig.confidenceThresholdDigest, 0.7),
+  maxCandidateTasks: Math.max(5, asNumber(rawConfig.max_candidate_tasks, 20)),
+  maxClusters: Math.max(1, asNumber(rawConfig.max_clusters, 5)),
+  maxActivityExcerpts: Math.max(5, asNumber(rawConfig.max_activity_excerpts, 30)),
+  suppressionDigestHours: Math.max(1, asNumber(rawConfig.suppression_digest_hours, 24)),
+  confidenceThresholdDigest: asNumber(rawConfig.confidence_threshold_digest, 0.7),
 };
 
+if (!Object.keys(rawConfig).length) {
+  throw new Error('monitorConfig object is required');
+}
 if (!monitorConfig.teamId) {
   throw new Error('monitorConfig.teamId is required');
 }
@@ -513,11 +516,16 @@ const draftSystemPrompt = messageLanguage === 'vi'
       'Hay viet bang tieng Viet tu nhien.',
       'Khong viet kieu dich may.',
       'Chi viet phan text cho unified digest.',
-      'Toi da 3 bullet, uu tien dung format:',
+      'Uu tien toi da 4 dong theo thu tu co dinh:',
+      '- Urgency: ...',
       '- Main blocker: ...',
       '- Quick win: ...',
       '- Decision today: ...',
-      'Neu khong co quick win hoac decision ro rang thi bo dong do, khong duoc ke dai.',
+      'Urgency phai la dong rieng neu neu thoi gian/throughput dang tao ap luc scope.',
+      'Khong tron cau urgency vao Main blocker.',
+      'Main blocker/Quick win/Decision today co the bo dong neu du lieu yeu hoac khong ro.',
+      'Neu resolve duoc owner, uu tien mention ngan gon (vd @PIC, @Reviewer, @PM).',
+      'Moi dong toi da 1-2 cau ngan.',
       'Giu cau ngan, scan nhanh, de hanh dong.',
       'Khong duoc bo sung su that ngoai input cau truc.',
       'Tranh van phong do loi hoac quy ket ca nhan.',
@@ -525,11 +533,16 @@ const draftSystemPrompt = messageLanguage === 'vi'
   : [
       'Write like a sharp PM partner.',
       'Write only the text portion of the unified digest.',
-      'Use at most 3 bullets and prefer this exact framing:',
+      'Prefer up to 4 short lines in this fixed order:',
+      '- Urgency: ...',
       '- Main blocker: ...',
       '- Quick win: ...',
       '- Decision today: ...',
-      'If there is no clear quick win or decision, omit that line instead of padding.',
+      'Urgency must be a separate line when time/throughput pressure exists.',
+      'Do not blend urgency into Main blocker.',
+      'Main blocker/Quick win/Decision today may be omitted when evidence is weak.',
+      'Use action-owner mention placeholders when resolvable (for example @PIC, @Reviewer, @PM).',
+      'Keep each line within 1-2 short sentences.',
       'Keep it concise and highly scannable.',
       'Do not invent facts beyond the structured input.',
       'Avoid blameful language.',
@@ -1361,6 +1374,11 @@ function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function asNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 function asOwnerType(value, fallback = 'none') {
   const normalized = asText(value, fallback).toLowerCase();
   return ['pm', 'lead', 'assignee', 'reviewer', 'team', 'none'].includes(normalized)
@@ -1517,6 +1535,11 @@ function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function asNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 function asOwnerType(value, fallback = 'none') {
   const normalized = asText(value, fallback).toLowerCase();
   return ['pm', 'lead', 'assignee', 'reviewer', 'team', 'none'].includes(normalized)
@@ -1564,6 +1587,57 @@ function bulletBody(text, labelPattern) {
   return raw.replace(labelPattern, '').trim();
 }
 
+function pickDraftLine(lines, labelPattern) {
+  return asArray(lines).find((line) => labelPattern.test(asText(line))) || '';
+}
+
+function isWeakDirectiveLine(text) {
+  const normalized = asText(text).toLowerCase();
+  if (!normalized) return true;
+  return /^(none|n\/a|no action|no decision|khong co|chua ro)\b/.test(normalized);
+}
+
+function splitIntoSentences(text) {
+  const normalized = asText(text);
+  if (!normalized) return [];
+  return normalized
+    .split(/[.!?;；]\s*/)
+    .map((part) => asText(part))
+    .filter(Boolean);
+}
+
+function looksLikeUrgencySentence(text) {
+  const sentence = asText(text);
+  if (!sentence) return false;
+  const hasDays = /\b\d+\s*(?:days?|ngay|ngày)\b/i.test(sentence);
+  const hasRatio = /\b\d+\s*\/\s*\d+\s*(?:pts?|points?)?\b/i.test(sentence);
+  const hasPressureCue = /(scope|spillover|urgent|need|can|cần|xu ly ngay|chot)\b/i.test(sentence);
+  return (hasDays && hasRatio) || (hasDays && hasPressureCue);
+}
+
+function detachUrgencyTail(text) {
+  const sentences = splitIntoSentences(text);
+  if (sentences.length <= 1) {
+    return {
+      main: asText(text),
+      urgency: '',
+    };
+  }
+  for (let index = sentences.length - 1; index >= 0; index -= 1) {
+    if (!looksLikeUrgencySentence(sentences[index])) continue;
+    const urgency = sentences[index];
+    const main = sentences.filter((_, position) => position !== index).join(' ').trim();
+    return {
+      main,
+      urgency,
+    };
+  }
+  return {
+    main: asText(text),
+    urgency: '',
+  };
+}
+
 function dedupeMentions(items) {
   const seen = new Set();
   const results = [];
@@ -1597,6 +1671,21 @@ for (const row of memberRows) {
   }
 }
 
+const mentionLookup = {};
+for (const member of memberMap.values()) {
+  const memberId = asText(member?.id);
+  const memberEmail = normalizeEmail(member?.email);
+  const memberName = asText(member?.name);
+  if (!memberId) continue;
+  const mentionText = '<users/' + memberId + '>';
+  const localPart = memberEmail.includes('@') ? memberEmail.split('@')[0] : '';
+  for (const rawKey of [localPart, memberEmail, memberName]) {
+    const key = asText(rawKey).toLowerCase();
+    if (!key || mentionLookup[key]) continue;
+    mentionLookup[key] = mentionText;
+  }
+}
+
 const sprint = context.sprint || {};
 const tasks = asArray(context.tasks);
 const deliverableIssues = asArray(gate.deliverableIssues);
@@ -1607,10 +1696,10 @@ const reviewCount = tasks.filter((task) => ['Ready For Review', 'In Review'].inc
 const blockedCount = tasks.filter((task) => asArray(task.blocked_by).length > 0).length;
 const doneTasks = tasks.filter((task) => ['Ready For Review', 'In Review', 'Ready For Release', 'Close'].includes(asText(task.status))).length;
 const totalTasks = tasks.length;
-const donePoints = Number(sprint.completed_points || 0);
-const totalPoints = Number(sprint.committed_points || 0);
+const donePoints = asNumber(sprint.completed_points, 0);
+const totalPoints = asNumber(sprint.committed_points, 0);
 const burnedPercent = totalPoints > 0 ? Number(((donePoints / totalPoints) * 100).toFixed(1)) : null;
-const daysLeft = Number(sprint.days_remaining || 0);
+const daysLeft = asNumber(sprint.days_remaining, 0);
 
 const statusMap = {
   likely_on_track: t('on track', 'on track'),
@@ -1664,22 +1753,69 @@ function mentionOrFallback(position, ownerType) {
   return titleCaseFromOwnerType(ownerType);
 }
 
+function mentionByReasonOrFallback(reasonPattern, position, ownerType) {
+  const matched = mentionsResolved.find((item) => reasonPattern.test(asText(item?.reason).toLowerCase()));
+  if (matched?.mention_text) return matched.mention_text;
+  if (matched?.display_name) return matched.display_name;
+  return mentionOrFallback(position, ownerType);
+}
+
+function replaceMentionPlaceholders(text, mentionTokens) {
+  const raw = asText(text);
+  if (!raw) return '';
+  return raw.replace(/@(?:PIC|OWNER|ASSIGNEE|REVIEWER|LEAD|PM|DECIDER)\b/gi, (token) => {
+    const key = token.replace('@', '').toUpperCase();
+    const replacement = asText(mentionTokens[key]);
+    return replacement || token;
+  });
+}
+
 const draftedText = asText(draft.unified_digest_text);
-const mainBlockerLine = bulletBody(
-  draftedText.split('\n').find((line) => /^\s*[-*•]?\s*Main blocker:/i.test(line)),
+const draftedLines = draftedText.split(/\r?\n/).map((line) => asText(line)).filter(Boolean);
+
+const draftedUrgencyLine = bulletBody(
+  pickDraftLine(draftedLines, /^\s*[-*•]?\s*(?:Urgency|Khan cap)\s*:/i),
+  /^\s*[-*•]?\s*(?:Urgency|Khan cap)\s*:\s*/i,
+);
+const draftedMainBlockerLine = bulletBody(
+  pickDraftLine(draftedLines, /^\s*[-*•]?\s*Main blocker:/i),
   /^\s*[-*•]?\s*Main blocker:\s*/i,
-) || defaultMainBlocker;
-const quickWinLine = bulletBody(
-  draftedText.split('\n').find((line) => /^\s*[-*•]?\s*Quick win:/i.test(line)),
+);
+const draftedQuickWinLine = bulletBody(
+  pickDraftLine(draftedLines, /^\s*[-*•]?\s*Quick win:/i),
   /^\s*[-*•]?\s*Quick win:\s*/i,
-) || defaultQuickWin;
-const decisionTodayLine = bulletBody(
-  draftedText.split('\n').find((line) => /^\s*[-*•]?\s*Decision today:/i.test(line)),
+);
+const draftedDecisionTodayLine = bulletBody(
+  pickDraftLine(draftedLines, /^\s*[-*•]?\s*Decision today:/i),
   /^\s*[-*•]?\s*Decision today:\s*/i,
-) || [
+);
+
+const defaultDecisionToday = topIssue?.issue_key ? [
   mentionOrFallback(0, decisionOwnerType),
   t('to confirm the blocker path today.', 'xac nhan huong xu ly blocker trong hom nay.'),
-].join(' ');
+].join(' ') : '';
+
+const detached = detachUrgencyTail(draftedMainBlockerLine || defaultMainBlocker);
+const mainBlockerSeed = asText(detached.main || draftedMainBlockerLine || defaultMainBlocker);
+const urgencyLine = asText(draftedUrgencyLine || detached.urgency);
+
+const mentionTokens = {
+  PIC: mentionByReasonOrFallback(/execution|assignee|owner|blocker/, 0, executionOwnerType),
+  OWNER: mentionByReasonOrFallback(/execution|assignee|owner/, 0, executionOwnerType),
+  ASSIGNEE: mentionByReasonOrFallback(/execution|assignee|owner/, 0, executionOwnerType),
+  REVIEWER: mentionByReasonOrFallback(/review/, 1, 'reviewer'),
+  LEAD: mentionByReasonOrFallback(/lead/, 0, 'lead'),
+  PM: mentionByReasonOrFallback(/decision|scope|pm/, 0, decisionOwnerType),
+  DECIDER: mentionByReasonOrFallback(/decision|scope|pm/, 0, decisionOwnerType),
+};
+
+const mainBlockerLine = replaceMentionPlaceholders(mainBlockerSeed, mentionTokens);
+const quickWinLine = isWeakDirectiveLine(draftedQuickWinLine)
+  ? replaceMentionPlaceholders(defaultQuickWin, mentionTokens)
+  : replaceMentionPlaceholders(draftedQuickWinLine, mentionTokens);
+const decisionTodayLine = isWeakDirectiveLine(draftedDecisionTodayLine)
+  ? replaceMentionPlaceholders(defaultDecisionToday, mentionTokens)
+  : replaceMentionPlaceholders(draftedDecisionTodayLine, mentionTokens);
 
 const metricsLines = [
   t('Team passed', 'Team passed') + ': ' + doneTasks + '/' + Math.max(0, totalTasks) + ' ' + t('tasks', 'tasks') + ' — ' + donePoints + '/' + (totalPoints || 0) + ' pts — ' + (burnedPercent === null ? 'n/a' : String(burnedPercent) + '%') + ' ' + t('burned', 'burned'),
@@ -1689,9 +1825,6 @@ const keySignals = [
   t('In review', 'In review') + ': ' + reviewCount + ' ' + t('tasks', 'tasks'),
   t('Not started', 'Not started') + ': ' + notStartedCount + ' ' + t('tasks', 'tasks'),
 ];
-if (mainRiskCluster?.subject_id || mainRiskCluster?.cluster_id) {
-  keySignals.push(t('Main risk cluster', 'Main risk cluster') + ': ' + asText(mainRiskCluster.subject_id || mainRiskCluster.cluster_id));
-}
 
 return [{
   json: {
@@ -1700,11 +1833,14 @@ return [{
     daysLeft,
     metricsLines,
     keySignals: keySignals.filter(Boolean).slice(0, 4),
+    urgencyLine,
     mainBlockerLine,
     quickWinLine,
     decisionTodayLine,
     mentionsNeeded,
     mentionsResolved,
+    mentionTokens,
+    mentionLookup,
     decisionOwnerType,
     executionOwnerType,
     unifiedDigestText: draftedText,
@@ -1732,6 +1868,46 @@ function t(english, vietnamese) {
 
 function compactLines(lines) {
   return asArray(lines).map((line) => asText(line)).filter(Boolean);
+}
+
+function renderMentions(text) {
+  const raw = asText(text);
+  if (!raw) return raw;
+  const mentionTokens = render.mentionTokens && typeof render.mentionTokens === 'object'
+    ? render.mentionTokens
+    : {};
+  const mentionLookup = render.mentionLookup && typeof render.mentionLookup === 'object'
+    ? render.mentionLookup
+    : {};
+  let rendered = raw.replace(/@(?:PIC|OWNER|ASSIGNEE|REVIEWER|LEAD|PM|DECIDER)\b/gi, (token) => {
+    const key = token.replace('@', '').toUpperCase();
+    const replacement = asText(mentionTokens[key]);
+    return replacement || token;
+  });
+
+  rendered = rendered.replace(/(^|[\s(])@([A-Za-z0-9._-]{2,64})\b/g, (full, prefix, handle) => {
+    const replacement = asText(mentionLookup[String(handle || '').toLowerCase()]);
+    return replacement ? prefix + replacement : full;
+  });
+
+  function escapeRegExp(value) {
+    return String(value || '').replace(/[.*+?^()|[\]\\$]/g, '\\$&');
+  }
+
+  const displayNameKeys = Object.keys(mentionLookup)
+    .filter((key) => key.includes(' '))
+    .sort((a, b) => b.length - a.length);
+  for (const displayNameKey of displayNameKeys) {
+    const replacement = asText(mentionLookup[displayNameKey]);
+    if (!replacement) continue;
+    const namePattern = new RegExp(
+      '(^|[\\s(])@\\s*' + escapeRegExp(displayNameKey) + '(?=\\s|[.,;:)]|$)',
+      'giu',
+    );
+    rendered = rendered.replace(namePattern, (full, prefix) => prefix + replacement);
+  }
+
+  return rendered;
 }
 
 function renderJiraLinks(text) {
@@ -1772,10 +1948,11 @@ function renderJiraLinks(text) {
 }
 
 const narrativeLines = [];
+if (asText(render.urgencyLine)) narrativeLines.push('• Urgency: ' + render.urgencyLine);
 if (asText(render.mainBlockerLine)) narrativeLines.push('• Main blocker: ' + render.mainBlockerLine);
 if (asText(render.quickWinLine)) narrativeLines.push('• Quick win: ' + render.quickWinLine);
 if (asText(render.decisionTodayLine)) narrativeLines.push('• Decision today: ' + render.decisionTodayLine);
-const narrativeText = renderJiraLinks(narrativeLines.join('\n'));
+const narrativeText = renderJiraLinks(renderMentions(narrativeLines.join('\n')));
 
 const cardPayload = {
   cardsV2: [
