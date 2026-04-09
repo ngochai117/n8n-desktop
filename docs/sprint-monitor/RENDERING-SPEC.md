@@ -253,10 +253,22 @@ Mention rules chi tiết nằm ở file riêng: `MENTION-RULES.md`.
 
 Tại render layer, áp dụng các rule rút gọn sau:
 
-- ưu tiên tag **người cụ thể** thay vì role chung
-- unified digest text message: tối đa 2 người chính, 3 nếu thật sự cần
-- hỗ trợ map placeholder mention trong text (`@PIC`, `@Reviewer`, `@PM`, `@Lead`, `@Owner`) sang mention token Google Chat nếu resolve được
-- nếu không resolve chắc được user, fallback về plain text hoặc bỏ mention
+- mention resolution theo **AI handle trong text** (`@thoa.le`, `@hung.ngo`) + role token chung (`@PM`, `@Lead`, ...)
+- không ép map owner/reviewer/qcs theo line-context task để tránh map sai người
+- legacy token rewrite (input-compatible):
+  - `@PIC -> @ASSIGNEE`
+  - `@Reviewer -> @OWNER`
+  - `@QC -> @QCS`
+- body render rule:
+  - token mention nào cũng render dạng bold text token theo Google Chat markdown (`*@thoa.le*`, `*@PM*`)
+  - với handle resolve được user thật: body vẫn giữ bold handle, không thay bằng full name
+  - với role token/unresolved handle: vẫn giữ bold token, không fail message
+- footer mention rule:
+  - append 1 tail liên tục ở cuối text (`<users/...> <users/...> ...`), không thêm label prefix
+  - chỉ gồm mention thực sự resolve được từ handle trong body, dedupe theo user id
+- internal debug payload:
+  - bỏ `mentionTokens`
+  - dùng `lineMentions` (line -> context issue -> handles trong line -> resolved people -> appended mention ids)
 
 ---
 
@@ -459,6 +471,6 @@ Unified digest text nên đi theo thứ tự cố định:
 
 Example rewrite:
 Urgency: Còn 4 ngày · 6/87 pts done · cần chốt lại scope hôm nay.
-Main blocker: EXPENSE-4507 đang chặn EXPENSE-4503 và EXPENSE-4498, gián tiếp giữ EXPENSE-4495. @PIC xác nhận hôm nay có kéo xong EXPENSE-4507 không.
-Quick win: EXPENSE-4505 đang chờ review 3 ngày. @Reviewer chốt review hôm nay.
+Main blocker: EXPENSE-4507 đang chặn EXPENSE-4503 và EXPENSE-4498, gián tiếp giữ EXPENSE-4495. @thoa.le xác nhận hôm nay có kéo xong EXPENSE-4507 không.
+Quick win: EXPENSE-4505 đang chờ review 3 ngày. @hung.ngo chốt review hôm nay.
 Decision today: @PM chốt giữ phần nào trong sprint: nếu EXPENSE-4507 không xong trong 24h thì bỏ hoặc dời các task phụ thuộc, không tiếp tục giữ full scope.

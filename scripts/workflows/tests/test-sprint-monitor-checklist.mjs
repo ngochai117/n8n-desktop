@@ -12,7 +12,6 @@ const strictMode =
   process.env.SPRINT_MONITOR_CHECKLIST_STRICT === '1';
 
 const filesToCheck = [
-  'scripts/sprint-monitor/generate-workflows.mjs',
   'scripts/bootstrap/apply-sprint-monitor-schema.sh',
   'scripts/workflows/import/import-sprint-monitor-light-scan-workflow.sh',
   'scripts/workflows/import/import-sprint-monitor-deep-analysis-workflow.sh',
@@ -117,6 +116,9 @@ for (const relativePath of sprintMonitorDocFiles) {
 }
 
 const registry = fileExists('workflow-registry.json') ? readJson('workflow-registry.json') : { workflows: {} };
+const sprintMonitorEngineRegistryId = String(
+  registry.workflows?.['Sprint Monitor Engine']?.id || '',
+);
 
 for (const workflowDef of expectedWorkflows) {
   const entry = registry.workflows?.[workflowDef.name] || null;
@@ -168,14 +170,6 @@ check(
 check(
   scriptsReadmeContent.includes('test-sprint-monitor-checklist.sh'),
   'scripts/README.md documents Sprint Monitor checklist script',
-);
-check(
-  readmeContent.includes('generate-workflows.mjs'),
-  'README.md documents Sprint Monitor workflow generator',
-);
-check(
-  scriptsReadmeContent.includes('generate-workflows.mjs'),
-  'scripts/README.md documents Sprint Monitor workflow generator',
 );
 check(
   sprintReadmeContent.includes('unified digest'),
@@ -331,23 +325,29 @@ for (const item of topLevelExpectations) {
 
   const manualRunner = nodeByName(workflow, 'Run Sprint Monitor Engine (Manual)');
   const scheduledRunner = nodeByName(workflow, 'Run Sprint Monitor Engine (Scheduled)');
+  const manualWorkflowIdValue = String(manualRunner?.parameters?.workflowId?.value || '');
+  const scheduledWorkflowIdValue = String(scheduledRunner?.parameters?.workflowId?.value || '');
+  const manualWorkflowCachedName = String(manualRunner?.parameters?.workflowId?.cachedResultName || '');
+  const scheduledWorkflowCachedName = String(scheduledRunner?.parameters?.workflowId?.cachedResultName || '');
   check(manualRunner?.type === 'n8n-nodes-base.executeWorkflow', `${item.name} manual engine runner uses executeWorkflow`);
   check(scheduledRunner?.type === 'n8n-nodes-base.executeWorkflow', `${item.name} scheduled engine runner uses executeWorkflow`);
   check(
-    String(
-      manualRunner?.parameters?.workflowId?.value ||
-        manualRunner?.parameters?.workflowId?.cachedResultName ||
-        '',
-    ).includes('Sprint Monitor Engine'),
-    `${item.name} manual engine runner references Sprint Monitor Engine registry token`,
+    (
+      manualWorkflowIdValue.includes('__REGISTRY__:Sprint Monitor Engine') ||
+      manualWorkflowIdValue.includes('Sprint Monitor Engine') ||
+      (sprintMonitorEngineRegistryId && manualWorkflowIdValue === sprintMonitorEngineRegistryId) ||
+      manualWorkflowCachedName.includes('Sprint Monitor Engine')
+    ),
+    `${item.name} manual engine runner references Sprint Monitor Engine`,
   );
   check(
-    String(
-      scheduledRunner?.parameters?.workflowId?.value ||
-        scheduledRunner?.parameters?.workflowId?.cachedResultName ||
-        '',
-    ).includes('Sprint Monitor Engine'),
-    `${item.name} scheduled engine runner references Sprint Monitor Engine registry token`,
+    (
+      scheduledWorkflowIdValue.includes('__REGISTRY__:Sprint Monitor Engine') ||
+      scheduledWorkflowIdValue.includes('Sprint Monitor Engine') ||
+      (sprintMonitorEngineRegistryId && scheduledWorkflowIdValue === sprintMonitorEngineRegistryId) ||
+      scheduledWorkflowCachedName.includes('Sprint Monitor Engine')
+    ),
+    `${item.name} scheduled engine runner references Sprint Monitor Engine`,
   );
   check(
     String(manualRunner?.parameters?.workflowInputs?.value?.runType || '').includes(item.runType),
@@ -487,15 +487,48 @@ if (fileExists(enginePath)) {
   }
 
   const renderModelCode = String(nodeByName(engine, 'Build Render Model')?.parameters?.jsCode || '');
+  const normalizeContextCode = String(nodeByName(engine, 'Normalize Sprint Context')?.parameters?.jsCode || '');
+  check(
+    normalizeContextCode.includes('customfield_10201'),
+    'Normalize Sprint Context extracts QCs from customfield_10201',
+  );
+  check(
+    normalizeContextCode.includes('reviewer_ids: reporter.id ? [reporter.id] : []'),
+    'Normalize Sprint Context maps reviewer_ids from Jira reporter',
+  );
   check(!renderModelCode.includes('buildJiraLink('), 'Build Render Model no longer expands Jira links directly');
   check(!renderModelCode.includes('withLink('), 'Build Render Model no longer injects pre-rendered Jira links');
   check(renderModelCode.includes('urgencyLine'), 'Build Render Model extracts/builds urgency line');
+  check(
+    renderModelCode.includes('lineMentions'),
+    'Build Render Model exposes per-line mention debug payload',
+  );
+  check(
+    !renderModelCode.includes('mentionTokens'),
+    'Build Render Model no longer uses global mentionTokens table',
+  );
+  check(
+    renderModelCode.includes("replace(/@PIC\\b/gi, '@ASSIGNEE')"),
+    'Build Render Model rewrites legacy @PIC placeholder',
+  );
+  check(
+    renderModelCode.includes("replace(/@REVIEWER\\b/gi, '@OWNER')"),
+    'Build Render Model rewrites legacy @Reviewer placeholder',
+  );
+  check(
+    renderModelCode.includes("replace(/@QC\\b/gi, '@QCS')"),
+    'Build Render Model rewrites legacy @QC placeholder',
+  );
 
   const deliveryBuilderCode = String(nodeByName(engine, 'Build Delivery Messages')?.parameters?.jsCode || '');
   check(deliveryBuilderCode.includes('[A-Z][A-Z0-9]+-\\d+'), 'Build Delivery Messages includes Jira issue key regex replacement');
   check(deliveryBuilderCode.includes("request.monitorConfig?.jiraBaseUrl"), 'Build Delivery Messages uses jiraBaseUrl from monitor config');
   check(deliveryBuilderCode.includes('• Urgency:'), 'Build Delivery Messages renders urgency line first');
-  check(deliveryBuilderCode.includes('renderMentions('), 'Build Delivery Messages maps mention placeholders for Google Chat');
+  check(deliveryBuilderCode.includes('render.mentionTail'), 'Build Delivery Messages appends deduped mention footer tail');
+  check(
+    !deliveryBuilderCode.includes('mentionTokens'),
+    'Build Delivery Messages no longer consumes global mentionTokens',
+  );
 }
 
 if (missingTemplates.length > 0) {

@@ -242,7 +242,10 @@ Prefer up to 4 short lines in this fixed order:
 - Decision today: ...
 Urgency should be a separate line for time/throughput pressure; do not blend it into Main blocker.
 If Main blocker / Quick win / Decision today is weak or unavailable, omit that line instead of padding.
-Use action-owner mentions when resolvable (placeholder forms like @PIC, @Reviewer, @PM are allowed).
+If user context exists, mention by email local-part handles (for example @thoa.le, @hung.ngo).
+If specific people are unclear, use role tokens such as @PM or @Lead.
+Avoid full-name mentions; prefer compact @handle form.
+Legacy placeholders (@PIC, @Reviewer, @QC) are rewritten by renderer.
 Keep each line within 1-2 short sentences.
 Keep it concise and highly scannable.
 Do not invent facts beyond the structured input.
@@ -273,6 +276,10 @@ Avoid blameful language.
 - unified digest text nên theo thứ tự: `Urgency` -> `Main blocker` -> `Quick win` -> `Decision today`
 - `Urgency` phải là 1 dòng riêng nếu có time/throughput pressure
 - `Main blocker` / `Quick win` / `Decision today` có thể được omit nếu dữ liệu yếu hoặc không rõ
+- nếu có context user theo task, ưu tiên `@<email local-part>` (vd `@thoa.le`, `@hung.ngo`)
+- nếu chưa rõ user cụ thể, dùng role token chung (`@PM`, `@Lead`, ...), không cần cố map người giả định
+- không mention bằng full-name dài; ưu tiên handle ngắn
+- legacy placeholder (`@PIC`, `@Reviewer`, `@QC`) vẫn input-compatible, renderer sẽ rewrite trước khi render
 - mỗi dòng tối đa 1-2 câu ngắn và có action owner nếu resolve được mention
 - không lecture tone
 - không empty phrases như “please kindly update status”

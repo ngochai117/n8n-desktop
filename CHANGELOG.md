@@ -3,8 +3,9 @@
 ## 2026-04-09
 
 - Simplify Sprint Monitor Jira link rendering: render layer now regex-scans unified digest text for issue keys and replaces them with Google Chat link markup `<jiraBaseUrl/browse/<ISSUE_KEY>|<ISSUE_KEY>>` right before delivery, with plain-text fallback when no Jira domain is configured.
+- Sprint Monitor deterministic owner mapping: normalize `customfield_10201` as QCs for testing context (`Ready For Test`/`In Test`), map `reviewer_ids` from Jira reporter, and extend mention rendering placeholders with `@QCS/@QC` while keeping fallback-to-text behavior when mention resolution is unavailable.
 - Add standalone `Sprint Monitor` MVP workflow set under `workflows/sprint-monitor/`: `Sprint Monitor Light Scan`, `Sprint Monitor Deep Analysis`, `Sprint Monitor Endgame`, and shared subworkflow `Sprint Monitor Engine`.
-- Add `scripts/sprint-monitor/generate-workflows.mjs` so the 4 Sprint Monitor workflow JSON templates can be regenerated from maintainable JS source instead of hand-editing raw JSON.
+- Sprint Monitor workflow authoring now follows the same path as other workflows: edit synced JSON templates directly in `workflows/sprint-monitor/` and import via wrapper scripts; remove `scripts/sprint-monitor/generate-workflows.mjs`.
 - Add Sprint Monitor support tooling: import wrappers, registry entries, strict checklist runner, and idempotent PostgreSQL schema apply helper `scripts/bootstrap/apply-sprint-monitor-schema.sh`.
 - Add `scripts/bootstrap/setup-sprint-monitor-neon.sh` to support Neon-first DB setup for Sprint Monitor: parse connection string, optionally switch n8n UI host to Neon pooler host, apply schema, and print the exact Postgres fields for manual credential creation in n8n UI.
 - Clarify Neon helper output and docs so `Host` in the printed credential block is explicitly the n8n credential host, while the direct connection-string host is labeled separately for CLI/schema use.

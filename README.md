@@ -80,9 +80,8 @@ Checklist hien tai la static contract/topology checklist cho workflow canonical 
   - `workflows/sprint-monitor/sprint-monitor-deep-analysis.workflow.json`
   - `workflows/sprint-monitor/sprint-monitor-endgame.workflow.json`
   - `workflows/sprint-monitor/sprint-monitor-engine.workflow.json`
-- Generator:
-  - `node scripts/sprint-monitor/generate-workflows.mjs`
-  - Dung khi can rebuild 4 workflow templates tu source JS thay vi sua raw JSON bang tay.
+- Workflow authoring:
+  - Sprint Monitor duoc quan ly giong cac workflow khac: sua truc tiep JSON template da sync tai `workflows/sprint-monitor/`.
   - Unified digest text se replace moi issue key match regex `[A-Z][A-Z0-9]+-\\d+` thanh format Google Chat `<jiraBaseUrl/browse/<ISSUE_KEY>|<ISSUE_KEY>>`, giu nguyen visible cardId ngay truoc khi gui Google Chat.
 - Import wrappers:
   - `bash scripts/workflows/import/import-sprint-monitor-engine-workflow.sh`
@@ -207,7 +206,6 @@ bash scripts/workflows/import/import-momo-ai-assistant-workflow.sh
 - `docs/book-review-workflow.md`: mo ta hien trang workflow canonical
 - `docs/book-review-todo.md`: backlog tiep tuc
 - `scripts/workflows/import/import-book-review-workflow.sh`: wrapper import canonical
-- `scripts/sprint-monitor/generate-workflows.mjs`: regenerate workflow JSON cho `Sprint Monitor`
 - `scripts/workflows/import/import-sprint-monitor-*.sh`: wrapper import `Sprint Monitor`
 - `scripts/bootstrap/apply-sprint-monitor-schema.sh`: apply `docs/sprint-monitor/schema.sql`
 - `scripts/workflows/tests/test-book-review-checklist.mjs`: checklist runner

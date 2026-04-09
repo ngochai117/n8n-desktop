@@ -41,8 +41,8 @@
 - `test-sprint-monitor-checklist.sh`: wrapper chay checklist cho `Sprint Monitor`
 - `test-sprint-monitor-checklist.mjs`: static topology/contract checklist cho 4 workflow `Sprint Monitor` + support files
 
-## Workflow generation
-- `scripts/sprint-monitor/generate-workflows.mjs`: source JS de regenerate 4 workflow JSON `Sprint Monitor`
+## Sprint Monitor workflow source
+- Sprint Monitor duoc quan ly giong workflow khac: sua truc tiep cac template JSON trong `workflows/sprint-monitor/` va import lai bang `scripts/workflows/import/import-sprint-monitor-*.sh`
 
 ## Bootstrap
 - `apply-sprint-monitor-schema.sh`: apply `docs/sprint-monitor/schema.sql` vao PostgreSQL local theo `SPRINT_MONITOR_PGURL` / `DATABASE_URL` hoac `PGHOST` / `PGDATABASE` / `PGUSER`
