@@ -15,7 +15,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const monitorConfigId = String($json.monitorConfigId || '').trim();\nconst requestedForceMode = String($json.forceMode || 'auto').trim().toLowerCase();\nconst forceMode = ['scan', 'review'].includes(requestedForceMode) ? requestedForceMode : 'auto';\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nconst filterClause = monitorConfigId\n  ? \" AND id = '\" + sqlEscape(monitorConfigId) + \"'::uuid\"\n  : '';\n\nreturn {\n  triggerSource: 'manual',\n  workflowName: 'Sprint Monitor Scheduler',\n  runType: 'scan',\n  forceMode,\n  monitorConfigId,\n  configQuery: \"SELECT * FROM monitor_configs WHERE enabled = true\" + filterClause + \" ORDER BY team_id, board_id\",\n};"
+        "jsCode": "const monitorConfigId = String($json.monitorConfigId || '').trim();\nconst requestedForceMode = String($json.forceMode || 'auto').trim().toLowerCase();\nconst forceMode = ['scan', 'review'].includes(requestedForceMode) ? requestedForceMode : 'auto';\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nconst filterClause = monitorConfigId\n  ? \" AND id = '\" + sqlEscape(monitorConfigId) + \"'::uuid\"\n  : '';\n\nreturn {\n  triggerSource: 'manual',\n  workflowName: 'Sprint Monitor Scheduler',\n  requestedRunType: 'scan',\n  forceMode,\n  monitorConfigId,\n  configQuery: \"SELECT * FROM monitor_configs WHERE enabled = true\" + filterClause + \" ORDER BY team_id, board_id\",\n};"
       },
       "id": "2",
       "name": "Build Manual Request",
@@ -49,7 +49,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const monitorConfigId = String($json.monitorConfigId || '').trim();\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nconst filterClause = monitorConfigId\n  ? \" AND id = '\" + sqlEscape(monitorConfigId) + \"'::uuid\"\n  : '';\n\nreturn {\n  triggerSource: 'schedule',\n  workflowName: 'Sprint Monitor Scheduler',\n  runType: 'scan',\n  forceMode: 'auto',\n  monitorConfigId,\n  configQuery: \"SELECT * FROM monitor_configs WHERE enabled = true\" + filterClause + \" ORDER BY team_id, board_id\",\n};"
+        "jsCode": "const monitorConfigId = String($json.monitorConfigId || '').trim();\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nconst filterClause = monitorConfigId\n  ? \" AND id = '\" + sqlEscape(monitorConfigId) + \"'::uuid\"\n  : '';\n\nreturn {\n  triggerSource: 'schedule',\n  workflowName: 'Sprint Monitor Scheduler',\n  requestedRunType: 'scan',\n  forceMode: 'auto',\n  monitorConfigId,\n  configQuery: \"SELECT * FROM monitor_configs WHERE enabled = true\" + filterClause + \" ORDER BY team_id, board_id\",\n};"
       },
       "id": "4",
       "name": "Build Scheduled Request",
@@ -117,17 +117,17 @@
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": {
-            "runType": "={{ 'scan' }}",
             "workflowName": "={{ 'Sprint Monitor Scheduler' }}",
             "triggerSource": "={{ \"manual\" }}",
             "monitorConfig": "={{ $json }}",
-            "forceMode": "={{ $(\"Build Manual Request\").first().json.forceMode || \"auto\" }}"
+            "forceMode": "={{ $(\"Build Manual Request\").first().json.forceMode || \"auto\" }}",
+            "requestedRunType": "={{ 'scan' }}"
           },
           "matchingColumns": [],
           "schema": [
             {
-              "id": "runType",
-              "displayName": "runType",
+              "id": "requestedRunType",
+              "displayName": "requestedRunType",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -203,17 +203,17 @@
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": {
-            "runType": "={{ 'scan' }}",
             "workflowName": "={{ 'Sprint Monitor Scheduler' }}",
             "triggerSource": "={{ \"schedule\" }}",
             "monitorConfig": "={{ $json }}",
-            "forceMode": "={{ 'auto' }}"
+            "forceMode": "={{ 'auto' }}",
+            "requestedRunType": "={{ 'scan' }}"
           },
           "matchingColumns": [],
           "schema": [
             {
-              "id": "runType",
-              "displayName": "runType",
+              "id": "requestedRunType",
+              "displayName": "requestedRunType",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -280,7 +280,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all().map((item) => item?.json || {});\n\nconst modeCounts = items.reduce((acc, item) => {\n  const mode = String(item.selectedMode || item.runType || '').trim().toLowerCase();\n  if (!mode) return acc;\n  acc[mode] = (acc[mode] || 0) + 1;\n  return acc;\n}, {});\n\nconst summary = {\n  workflowName: 'Sprint Monitor Scheduler',\n  runType: 'auto_mode_selector',\n  totalConfigs: items.length,\n  successCount: items.filter((item) => String(item.status || '') === 'success').length,\n  partialCount: items.filter((item) => String(item.status || '') === 'partial').length,\n  failedCount: items.filter((item) => String(item.status || '') === 'failed').length,\n  skippedCount: items.filter((item) => String(item.status || '') === 'skipped').length,\n  noMessageCount: items.filter((item) => Boolean(item.noMessage)).length,\n  modeCounts,\n  results: items,\n};\n\nreturn [{ json: summary }];"
+        "jsCode": "const items = $input.all().map((item) => item?.json || {});\n\nconst modeCounts = items.reduce((acc, item) => {\n  const mode = String(item.selectedMode || item.requestedRunType || item.runType || '').trim().toLowerCase();\n  if (!mode) return acc;\n  acc[mode] = (acc[mode] || 0) + 1;\n  return acc;\n}, {});\n\nconst summary = {\n  workflowName: 'Sprint Monitor Scheduler',\n  runType: 'auto_mode_selector',\n  totalConfigs: items.length,\n  successCount: items.filter((item) => String(item.status || '') === 'success').length,\n  partialCount: items.filter((item) => String(item.status || '') === 'partial').length,\n  failedCount: items.filter((item) => String(item.status || '') === 'failed').length,\n  skippedCount: items.filter((item) => String(item.status || '') === 'skipped').length,\n  noMessageCount: items.filter((item) => Boolean(item.noMessage)).length,\n  modeCounts,\n  results: items,\n};\n\nreturn [{ json: summary }];"
       },
       "id": "9",
       "name": "Build Workflow Summary",

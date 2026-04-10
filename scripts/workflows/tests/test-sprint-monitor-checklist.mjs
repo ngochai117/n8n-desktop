@@ -159,16 +159,16 @@ if (fileExists(schedulerPath)) {
   const manualRunner = nodeByName(scheduler, 'Run Sprint Monitor Engine (Manual)');
   const scheduledRunner = nodeByName(scheduler, 'Run Sprint Monitor Engine (Scheduled)');
   check(
-    String(manualRunner?.parameters?.workflowInputs?.value?.runType || '').includes('scan'),
-    'scheduler manual runner seeds runType=scan',
+    String(manualRunner?.parameters?.workflowInputs?.value?.requestedRunType || '').includes('scan'),
+    'scheduler manual runner seeds requestedRunType=scan',
   );
   check(
     String(manualRunner?.parameters?.workflowInputs?.value?.forceMode || '').includes('Build Manual Request'),
     'scheduler manual runner forwards forceMode override',
   );
   check(
-    String(scheduledRunner?.parameters?.workflowInputs?.value?.runType || '').includes('scan'),
-    'scheduler scheduled runner seeds runType=scan',
+    String(scheduledRunner?.parameters?.workflowInputs?.value?.requestedRunType || '').includes('scan'),
+    'scheduler scheduled runner seeds requestedRunType=scan',
   );
   check(
     String(scheduledRunner?.parameters?.workflowInputs?.value?.forceMode || '').includes('auto'),
@@ -200,8 +200,12 @@ if (fileExists(enginePath)) {
   check(hasMainConnection(engine, 'Select Run Mode', 'Build Judge Inputs'), 'engine routes mode selection to judge inputs');
   check(hasMainConnection(engine, 'Build Judge Inputs', 'Sprint Judge AI Agent'), 'engine routes judge inputs to judge AI');
   check(hasMainConnection(engine, 'Sprint Judge AI Agent', 'Delivery Gate'), 'engine routes judge AI to delivery gate');
-  check(hasMainConnection(engine, 'Delivery Gate', 'If Need Draft?'), 'engine routes gate to draft IF node');
-  check(hasMainConnectionFromOutput(engine, 'If Need Draft?', 1, 'Get Members'), 'engine skip-draft branch still goes through member resolver');
+  check(hasMainConnection(engine, 'Delivery Gate', 'Get Members'), 'engine routes gate directly to member resolver');
+  check(!nodeByName(engine, 'If Need Draft?'), 'engine no longer includes drafter IF node');
+  check(!nodeByName(engine, 'Build Draft Inputs'), 'engine no longer includes drafter input builder');
+  check(!nodeByName(engine, 'Message Drafter AI Agent'), 'engine no longer includes drafter AI agent');
+  check(!nodeByName(engine, 'Structured Message Draft Output Parser'), 'engine no longer includes drafter parser');
+  check(!nodeByName(engine, 'Message Drafter Model'), 'engine no longer includes drafter model');
 
   check(hasAiConnection(engine, 'Structured Sprint Judgment Output Parser', 'ai_outputParser', 'Sprint Judge AI Agent'), 'judge parser wired to judge AI');
   check(hasAiConnection(engine, 'Sprint Judge Model', 'ai_languageModel', 'Sprint Judge AI Agent'), 'judge model wired to judge AI');
@@ -214,6 +218,7 @@ if (fileExists(enginePath)) {
   const deliveryCode = String(nodeByName(engine, 'Build Delivery Messages')?.parameters?.jsCode || '');
   const persistCode = String(nodeByName(engine, 'Build Persist Query')?.parameters?.jsCode || '');
   const resultCode = String(nodeByName(engine, 'Build Engine Result')?.parameters?.jsCode || '');
+  const judgeSchema = String(nodeByName(engine, 'Structured Sprint Judgment Output Parser')?.parameters?.jsonSchemaExample || '');
 
   check(
     normalizeCode.includes("const runType = requestedRunType === 'review' ? 'review' : 'scan';"),
@@ -238,6 +243,12 @@ if (fileExists(enginePath)) {
   check(judgeInputCode.includes('is_near_end'), 'Build Judge Inputs includes near-end flag in packet');
   check(judgeInputCode.includes('Do not generate a full daily digest shape'), 'Build Judge Inputs adds strict scan prompt policy');
   check(judgeInputCode.includes('salvage, de-scope, and carryover'), 'Build Judge Inputs adds near-end review framing');
+  check(judgeInputCode.includes('language_config'), 'Build Judge Inputs includes language_config');
+  check(judgeInputCode.includes('semantic_output'), 'Build Judge Inputs enforces semantic_output contract');
+  check(judgeInputCode.includes('narrative_output'), 'Build Judge Inputs enforces narrative_output contract');
+
+  check(judgeSchema.includes('"semantic_output"'), 'Judge parser schema includes semantic_output');
+  check(judgeSchema.includes('"narrative_output"'), 'Judge parser schema includes narrative_output');
 
   check(gateCode.includes('newIssue'), 'Delivery Gate computes newIssue flag');
   check(gateCode.includes('severityIncrease'), 'Delivery Gate computes severityIncrease flag');
@@ -246,22 +257,32 @@ if (fileExists(enginePath)) {
   check(gateCode.includes("selectedMode === 'scan'"), 'Delivery Gate has explicit scan branch');
   check(gateCode.includes('!hasDeterministicDelta'), 'Delivery Gate forces noMessage for scan without delta');
   check(gateCode.includes('!hasActionableInsight'), 'Delivery Gate forces noMessage for review without actionable insight');
+  check(gateCode.includes('semantic_signature'), 'Delivery Gate computes semantic_signature');
+  check(gateCode.includes('semanticOutput'), 'Delivery Gate reads semanticOutput');
+  check(gateCode.includes('narrativeOutput'), 'Delivery Gate reads narrativeOutput');
 
   check(renderCode.includes('scanDeltaLines'), 'Build Render Model exposes scanDeltaLines');
   check(renderCode.includes("selectedMode === 'review'"), 'Build Render Model has review-only full digest branch');
   check(renderCode.includes("renderLineMentions('scanDelta'"), 'Build Render Model applies mention resolver to scan delta lines');
+  check(renderCode.includes('narrativeOutput'), 'Build Render Model reads localized narrative output');
 
   check(deliveryCode.includes("if (mode === 'scan')"), 'Build Delivery Messages has scan-only compact delivery branch');
   check(deliveryCode.includes('scanDeltaLines'), 'Build Delivery Messages uses scan delta lines');
   check(deliveryCode.includes('unified_digest_card'), 'Build Delivery Messages keeps card path for review mode');
+  check(deliveryCode.includes('messageLanguage'), 'Build Delivery Messages carries message language');
 
   check(persistCode.includes('const selectedMode'), 'Build Persist Query persists selected mode');
   check(persistCode.includes('modeSelectionSource'), 'Build Persist Query persists modeSelectionSource');
   check(persistCode.includes("selectedMode === 'review' && isNearEnd"), 'Build Persist Query near-end retro notes gated on review mode');
+  check(persistCode.includes('semantic_signature'), 'Build Persist Query stores semantic_signature');
+  check(persistCode.includes('semantic_json'), 'Build Persist Query stores semantic_json in metadata');
+  check(persistCode.includes('narrative_json'), 'Build Persist Query stores narrative_json in metadata');
+  check(persistCode.includes('message_language'), 'Build Persist Query stores message_language in metadata');
 
   check(resultCode.includes('selectedMode'), 'Build Engine Result returns selectedMode');
   check(resultCode.includes('modeSelectionSource'), 'Build Engine Result returns modeSelectionSource');
   check(resultCode.includes('deterministicGate'), 'Build Engine Result returns deterministic gate summary');
+  check(resultCode.includes('messageLanguage'), 'Build Engine Result returns messageLanguage');
 }
 
 const readmeContent = fileExists('README.md') ? readText('README.md') : '';

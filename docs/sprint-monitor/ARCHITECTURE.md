@@ -3,7 +3,7 @@
 ## 1. Architecture decision
 Chosen architecture:
 - **n8n** for orchestration, scheduling, retries, branching, integrations
-- **AI Judgment Service** for analysis, classification, decisioning, drafting
+- **AI Judgment Service** for analysis, classification, and decisioning
 - **PostgreSQL** for state, issue lifecycle, audit, delivery logs, learned patterns
 - **Google Chat** for notifications
 - **Jira + GitLab** as upstream systems
@@ -42,7 +42,7 @@ Responsible for:
 - loading prior state from PostgreSQL
 - building AI payload packets
 - calling AI endpoints
-- validating response presence and routing by delivery plan
+- validating response presence and enforcing semantic gating rules
 - applying suppression checks before delivery
 - writing run results, issues, interventions, and deliveries to PostgreSQL
 - failure routing and retry policies
@@ -58,7 +58,7 @@ Responsible for:
 - sprint health assessment
 - task and cluster risk classification
 - intervention recommendation
-- concise message drafting
+- producing dual-output judgment (`semantic_output` + `narrative_output`)
 - JSON schema validation for generated responses
 
 Not responsible for:
@@ -167,10 +167,20 @@ n8n validates:
 - confidence thresholds respected
 - alert caps not exceeded
 
-## Step 10 — Draft messages
-If delivery plan says send, n8n calls `POST /draft-messages` or renders from templates to build the unified digest thread.
+## Step 10 — Deterministic semantic gate
+n8n computes deterministic change flags from semantic fields only:
+- `newIssue`
+- `severityIncrease`
+- `materialChange` (semantic signature)
+- `newGoalBlocker`
 
-## Step 10.5 — Resolve mentions
+Gate does not read localized free-text.
+
+## Step 10.5 — Render localized messages
+n8n renders localized text/card from `narrative_output`.
+If narrative is weak or missing, renderer falls back to deterministic text from semantic fields.
+
+## Step 11 — Resolve mentions
 n8n đọc shared Google Sheet members source cố định với 3 cột:
 - `email`
 - `id`
@@ -179,16 +189,16 @@ n8n đọc shared Google Sheet members source cố định với 3 cột:
 Resolver chỉ map mention thật khi có email cụ thể.
 Nếu chỉ biết role như `PM` hoặc `Lead`, renderer fallback text thay vì bịa mention.
 
-## Step 11 — Suppression and dedupe
+## Step 12 — Suppression and dedupe
 Before delivery, n8n checks DB for:
 - same issue_key recently alerted
 - same responsibility target recently mentioned
 - unresolved issue with no material change
 
-## Step 12 — Deliver
+## Step 13 — Deliver
 n8n posts a unified digest thread to Google Chat.
 
-## Step 13 — Persist results
+## Step 14 — Persist results
 n8n writes:
 - run record
 - issue upserts
@@ -260,7 +270,9 @@ Classify activity excerpts into delivery-relevant meaning labels.
 
 ## 6.2 `POST /judge-sprint`
 ### Purpose
-Return sprint assessment, task/cluster recommendations, silence decision, and delivery plan.
+Return dual-output judgment:
+- `semantic_output` for gate/history
+- `narrative_output` for delivery rendering
 
 ### Request shape
 ```json
@@ -277,28 +289,7 @@ Return sprint assessment, task/cluster recommendations, silence decision, and de
 ```
 
 ### Response shape
-See `PROMPTS.md` for canonical schema. This endpoint must return exactly that contract.
-
-## 6.3 `POST /draft-messages`
-### Purpose
-Draft concise unified digest text from already-approved structured recommendations.
-
-### Request
-```json
-{
-  "sprint_assessment": {},
-  "clusters": [],
-  "tasks": [],
-  "delivery_plan": {}
-}
-```
-
-### Response
-```json
-{
-  "unified_digest_text": "string"
-}
-```
+See `PROMPTS.md` for canonical schema (`semantic_output` + `narrative_output`).
 
 ---
 
@@ -400,7 +391,7 @@ This is required so prompt sizes stay bounded and judgment stays focused.
 ### AI failures
 - if `/judge-sprint` invalid JSON or schema mismatch: retry once or twice
 - if still invalid: mark run failed, do not send message
-- if `/draft-messages` fails but structured output exists: fallback to deterministic template renderer
+- if `narrative_output` is missing but semantic output is valid: fallback to deterministic renderer
 
 ### Delivery failures
 - Google Chat failure should write failed delivery log

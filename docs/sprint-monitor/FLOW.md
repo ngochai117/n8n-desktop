@@ -34,7 +34,13 @@ Cron/schedule run luon di theo auto selector, khong dung manual override.
 
 ## Engine pipeline
 
-`Trigger -> Load config -> Jira/GitLab fetch -> Normalize -> AI classify -> Compute signals -> Load DB state -> Select mode -> Build judge packet (mode-aware) -> AI judge -> Deterministic DB gate -> Render -> Deliver -> Persist`
+`Trigger -> Load config -> Jira/GitLab fetch -> Normalize -> AI classify -> Compute signals -> Load DB state -> Select mode -> Build judge packet (mode-aware + language config) -> AI judge (semantic_output + narrative_output) -> Deterministic DB gate (semantic-only) -> Render localized text/card -> Deliver -> Persist`
+
+## Option 3 split (semantic vs narrative)
+
+- `semantic_output`: canonical enums/codes cho gate, suppression, issue identity, material-change
+- `narrative_output`: wording localized theo `message_language` cho text/card
+- thay doi wording/ngon ngu khong duoc tao `materialChange` neu semantic khong doi
 
 ## Deterministic gate bat buoc
 
@@ -53,4 +59,5 @@ Truoc khi gui message, engine ap gate deterministic (khong de AI bypass):
 ## Persist behavior
 
 - `runs.run_type` luu mode da chon (`scan` hoac `review`)
+- `issues.metadata_json` luu `semantic_signature`, `semantic_json`, `narrative_json`, `message_language`
 - near-end `review` moi tao `retro_notes`

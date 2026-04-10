@@ -49,7 +49,7 @@ Khong them field mode checkpoint vao DB trong ban nay.
 - `Manual Trigger`
 
 ### 3.3 Steps
-1. Build request (`workflowName`, `triggerSource`, seed `runType=scan`)
+1. Build request (`workflowName`, `triggerSource`, seed `requestedRunType=scan`)
    - manual path ho tro `forceMode=auto|scan|review` cho debug
 2. Load enabled `monitor_configs`
 3. Call `Sprint Monitor Engine`
@@ -69,12 +69,13 @@ Khong them field mode checkpoint vao DB trong ban nay.
 7. Compute deterministic signals
 8. Load prior DB state (`openIssues`, `priorInterventions`, `historicalPatterns`, `recentRuns`)
 9. Select mode (`scan`/`review`)
-10. Build mode-aware judge packet + call AI judge
-11. Apply deterministic DB gate
-12. Render mode-aware delivery text
-13. Send Google Chat (if any)
-14. Persist runs/issues/interventions/deliveries
-15. Return engine result
+10. Build mode-aware judge packet (`language_config` + policy) + call AI judge
+11. Parse AI output contract (`semantic_output` + `narrative_output`)
+12. Apply deterministic DB gate (semantic-only)
+13. Resolve mentions + render localized delivery text/card
+14. Send Google Chat (if any)
+15. Persist runs/issues/interventions/deliveries
+16. Return engine result
 
 ### 4.2 Mode selection (hardcoded)
 - manual debug override:
@@ -89,7 +90,7 @@ Khong them field mode checkpoint vao DB trong ban nay.
 Per issue, compute:
 - `newIssue`
 - `severityIncrease`
-- `materialChange`
+- `materialChange` (semantic signature only)
 - `newGoalBlocker`
 
 Rules:
@@ -97,7 +98,16 @@ Rules:
 - `review`: deliver only when actionable insight exists and survives DB suppression
 - AI output cannot bypass these deterministic rules
 
-### 4.4 Mode-aware rendering
+### 4.4 Semantic vs narrative split (Option 3)
+- `semantic_output`:
+  - canonical enums/codes (risk/severity/action/owner)
+  - source of truth for gate/suppression/history/material-change
+- `narrative_output`:
+  - localized user-facing wording for digest
+  - consumed only at render layer
+- wording/ngon ngu thay doi khong duoc tu tao semantic material-change
+
+### 4.5 Mode-aware rendering
 - `scan`: compact 2-3 delta lines only, no full 4-block digest
 - `review`: full unified digest (`Urgency`, `Main blocker`, `Quick win`, `Decision today`)
 - `review` near-end: `Decision today` must be salvage/de-scope/carryover oriented
@@ -106,8 +116,13 @@ Mention behavior giu nguyen:
 - body dung bold `@handle`
 - mention IDs append o footer tail
 
-### 4.5 Persistence
+### 4.6 Persistence
 - `runs.run_type` luu mode duoc chon (`scan`/`review`)
+- `issues.metadata_json` luu:
+  - `semantic_signature`
+  - `semantic_json`
+  - `narrative_json`
+  - `message_language`
 - `retro_notes` chi tao khi `review` + near-end
 
 ---
@@ -116,7 +131,7 @@ Mention behavior giu nguyen:
 
 - Jira/GitLab fetch loi: mark partial/failed theo muc do
 - Judge output invalid: fail run, khong delivery
-- Drafter fail: fallback render deterministic
+- narrative output thieu/yeu: renderer fallback deterministic tu semantic layer
 - Google Chat fail: persist failed delivery rows
 
 ---
