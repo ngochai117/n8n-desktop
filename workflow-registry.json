@@ -111,7 +111,7 @@
     "Sprint Monitor Engine": {
       "id": "UbFT1qz7YOaelW9W",
       "template": "workflows/sprint-monitor/sprint-monitor-engine.workflow.json",
-      "lastSyncedAt": "2026-04-10T10:21:14Z",
+      "lastSyncedAt": "2026-04-10T16:11:14Z",
       "templateImport": "scripts/workflows/import/import-sprint-monitor-engine-workflow.sh"
     },
     "Sprint Monitor Scheduler": {
