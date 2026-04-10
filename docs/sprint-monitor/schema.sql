@@ -125,7 +125,7 @@ create table if not exists runs (
   board_id text not null,
   sprint_id text,
   workflow_name text not null,
-  run_type text not null check (run_type in ('light_scan','deep_analysis','endgame')),
+  run_type text not null check (run_type in ('scan','review')),
   status text not null check (status in ('running','success','partial','failed','suppressed')),
   no_message boolean not null default false,
   partial_data boolean not null default false,

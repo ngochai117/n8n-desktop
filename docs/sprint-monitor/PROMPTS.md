@@ -49,7 +49,7 @@ If completion appears low but stage distribution suggests work is moving normall
 {
   "run_context": {
     "run_id": "run_2026_04_09_0001",
-    "run_type": "deep_analysis",
+    "run_type": "review",
     "generated_at": "2026-04-09T00:05:00+07:00",
     "team_name": "Core Growth",
     "sprint_phase": "mid"

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-04-10
+
+- Sprint Monitor cutover to **single scheduler topology**: replace 3 top-level wrappers (`Light Scan`, `Deep Analysis`, `Endgame`) with one top-level workflow `Sprint Monitor Scheduler`, while keeping `Sprint Monitor Engine` as the only execution engine.
+- Repurpose existing workflow ID `l4HFV7Mr0c5ZXi7j` for `Sprint Monitor Scheduler`; registry/import wrappers updated accordingly, legacy deep/endgame templates and wrappers removed.
+- Engine now selects runtime mode deterministically (`scan` vs `review`) with hardcoded rules: review on Monday/Thursday checkpoints or near-end (`days_remaining <= 1`), otherwise scan.
+- Add explicit mode-aware judge packet policy and near-end framing guidance (salvage/de-scope/carryover) before judge call.
+- Replace delivery decision with deterministic DB gate after judge: compute `newIssue`, `severityIncrease`, `materialChange`, `newGoalBlocker`; force `scan` silence when no delta; allow `review` delivery only when actionable + unsuppressed.
+- Mode-aware delivery behavior:
+  - `scan`: compact 2-3 delta lines only, no full 4-block digest.
+  - `review`: full unified digest (`Urgency`, `Main blocker`, `Quick win`, `Decision today`) with existing mention style.
+- Persist selected mode into run outputs and `runs.run_type`; schema constraint updated to allow both historical run types (`light_scan/deep_analysis/endgame`) and new run modes (`scan/review`).
+- Refresh Sprint Monitor docs/checklist for new topology and gate behavior (`FLOW.md`, `WORKFLOWS.md`, `ARCHITECTURE.md`, `SPEC.md`, `README.md`, `scripts/README.md`, `test-sprint-monitor-checklist.mjs`).
+
 ## 2026-04-09
 
 - Simplify Sprint Monitor Jira link rendering: render layer now regex-scans unified digest text for issue keys and replaces them with Google Chat link markup `<jiraBaseUrl/browse/<ISSUE_KEY>|<ISSUE_KEY>>` right before delivery, with plain-text fallback when no Jira domain is configured.
@@ -464,3 +477,7 @@
 ## 2026-04-09T12:25:52Z
 - Workflow sync (UI -> JSON) completed with no file, registry, or wrapper changes.
 - Run mode=apply, total=22, changed=0, unchanged=22, failed=0, missing_ui_folder=0, registry_changed=false, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+
+## 2026-04-09T17:45:07Z
+- Workflow sync (UI -> JSON) processed 22 workflow(s): changed=3, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=22, changed=3, unchanged=19, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Sprint Monitor Light Scan, Sprint Monitor Endgame, Sprint Monitor Deep Analysis.

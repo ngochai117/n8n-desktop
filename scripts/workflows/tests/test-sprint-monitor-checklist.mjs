@@ -11,74 +11,6 @@ const strictMode =
   process.argv.includes('--strict') ||
   process.env.SPRINT_MONITOR_CHECKLIST_STRICT === '1';
 
-const filesToCheck = [
-  'scripts/bootstrap/apply-sprint-monitor-schema.sh',
-  'scripts/workflows/import/import-sprint-monitor-light-scan-workflow.sh',
-  'scripts/workflows/import/import-sprint-monitor-deep-analysis-workflow.sh',
-  'scripts/workflows/import/import-sprint-monitor-endgame-workflow.sh',
-  'scripts/workflows/import/import-sprint-monitor-engine-workflow.sh',
-  'scripts/workflows/tests/test-sprint-monitor-checklist.sh',
-  'scripts/workflows/tests/test-sprint-monitor-checklist.mjs',
-  'README.md',
-  'scripts/README.md',
-  'CHANGELOG.md',
-  'workflow-registry.json',
-];
-
-const sprintMonitorDocFiles = [
-  'docs/sprint-monitor/README.md',
-  'docs/sprint-monitor/FLOW.md',
-  'docs/sprint-monitor/SPEC.md',
-  'docs/sprint-monitor/ARCHITECTURE.md',
-  'docs/sprint-monitor/PROMPTS.md',
-  'docs/sprint-monitor/WORKFLOWS.md',
-  'docs/sprint-monitor/RENDERING-SPEC.md',
-  'docs/sprint-monitor/MENTION-RULES.md',
-  'docs/sprint-monitor/schema.sql',
-  'docs/sprint-monitor/monitor-configs.sql',
-];
-
-const staleDocPatterns = [
-  'pm_digest',
-  'lead_alert',
-  'owner_nudge',
-  'gchat_pm_webhook',
-  'gchat_lead_webhook',
-  'max_owner_nudges_per_run',
-  'max_lead_alerts_per_run',
-  'PM digest',
-  'lead alert',
-  'owner nudges',
-  'lead alerts',
-  'PM room',
-  'Lead room',
-];
-
-const expectedWorkflows = [
-  {
-    name: 'Sprint Monitor Light Scan',
-    template: 'workflows/sprint-monitor/sprint-monitor-light-scan.workflow.json',
-    templateImport: 'scripts/workflows/import/import-sprint-monitor-light-scan-workflow.sh',
-  },
-  {
-    name: 'Sprint Monitor Deep Analysis',
-    template: 'workflows/sprint-monitor/sprint-monitor-deep-analysis.workflow.json',
-    templateImport: 'scripts/workflows/import/import-sprint-monitor-deep-analysis-workflow.sh',
-  },
-  {
-    name: 'Sprint Monitor Endgame',
-    template: 'workflows/sprint-monitor/sprint-monitor-endgame.workflow.json',
-    templateImport: 'scripts/workflows/import/import-sprint-monitor-endgame-workflow.sh',
-  },
-  {
-    name: 'Sprint Monitor Engine',
-    template: 'workflows/sprint-monitor/sprint-monitor-engine.workflow.json',
-    templateImport: 'scripts/workflows/import/import-sprint-monitor-engine-workflow.sh',
-  },
-];
-
-const expectedWorkflowNames = expectedWorkflows.map((item) => item.name);
-const expectedWrapperNames = expectedWorkflows.map((item) => path.basename(item.templateImport));
 const failures = [];
 const warnings = [];
 const passes = [];
@@ -107,128 +39,6 @@ function fileExists(relativePath) {
   return fs.existsSync(path.join(rootDir, relativePath));
 }
 
-for (const relativePath of filesToCheck) {
-  check(fileExists(relativePath), `support file exists: ${relativePath}`);
-}
-
-for (const relativePath of sprintMonitorDocFiles) {
-  check(fileExists(relativePath), `Sprint Monitor doc exists: ${relativePath}`);
-}
-
-const registry = fileExists('workflow-registry.json') ? readJson('workflow-registry.json') : { workflows: {} };
-const sprintMonitorEngineRegistryId = String(
-  registry.workflows?.['Sprint Monitor Engine']?.id || '',
-);
-
-for (const workflowDef of expectedWorkflows) {
-  const entry = registry.workflows?.[workflowDef.name] || null;
-  check(Boolean(entry), `registry entry exists: ${workflowDef.name}`);
-  if (!entry) continue;
-
-  check(entry.template === workflowDef.template, `${workflowDef.name} registry template matches`);
-  check(
-    entry.templateImport === workflowDef.templateImport,
-    `${workflowDef.name} registry templateImport matches`,
-  );
-  check(typeof entry.id === 'string', `${workflowDef.name} registry id is a string`);
-}
-
-const importAllContent = fileExists('scripts/workflows/import/import-all-workflows.sh')
-  ? readText('scripts/workflows/import/import-all-workflows.sh')
-  : '';
-
-for (const wrapperName of expectedWrapperNames) {
-  check(
-    importAllContent.includes(wrapperName),
-    `import-all-workflows.sh references ${wrapperName}`,
-  );
-}
-
-const readmeContent = fileExists('README.md') ? readText('README.md') : '';
-const scriptsReadmeContent = fileExists('scripts/README.md') ? readText('scripts/README.md') : '';
-const changelogContent = fileExists('CHANGELOG.md') ? readText('CHANGELOG.md') : '';
-const sprintReadmeContent = fileExists('docs/sprint-monitor/README.md')
-  ? readText('docs/sprint-monitor/README.md')
-  : '';
-const sprintDocContents = sprintMonitorDocFiles
-  .filter((relativePath) => fileExists(relativePath))
-  .map((relativePath) => ({
-    relativePath,
-    content: readText(relativePath),
-  }));
-
-check(readmeContent.includes('Sprint Monitor'), 'README.md mentions Sprint Monitor');
-check(
-  scriptsReadmeContent.includes('Sprint Monitor'),
-  'scripts/README.md mentions Sprint Monitor',
-);
-check(changelogContent.includes('Sprint Monitor'), 'CHANGELOG.md mentions Sprint Monitor');
-check(
-  readmeContent.includes('apply-sprint-monitor-schema.sh'),
-  'README.md documents Sprint Monitor schema apply script',
-);
-check(
-  scriptsReadmeContent.includes('test-sprint-monitor-checklist.sh'),
-  'scripts/README.md documents Sprint Monitor checklist script',
-);
-check(
-  sprintReadmeContent.includes('unified digest'),
-  'docs/sprint-monitor/README.md documents the unified digest model',
-);
-
-for (const { relativePath, content } of sprintDocContents) {
-  for (const pattern of staleDocPatterns) {
-    check(
-      !content.includes(pattern),
-      `${relativePath} no longer references stale Sprint Monitor channel text: ${pattern}`,
-    );
-  }
-}
-
-const requiredDocPatterns = [
-  ['docs/sprint-monitor/PROMPTS.md', ['send_unified_digest', 'unified_digest_text']],
-  ['docs/sprint-monitor/RENDERING-SPEC.md', ['unified digest thread', 'cardsV2', 'mentions_needed', '[A-Z][A-Z0-9]+-\\\\d+', 'apply trên text output trước khi gửi Google Chat']],
-  ['docs/sprint-monitor/ARCHITECTURE.md', ['unified digest thread', 'unified_digest_text']],
-  ['docs/sprint-monitor/WORKFLOWS.md', ['gchat_unified_webhook', 'unified digest']],
-  ['docs/sprint-monitor/FLOW.md', ['unified digest']],
-  ['docs/sprint-monitor/README.md', ['gchat_unified_webhook', 'unified digest']],
-  ['docs/sprint-monitor/schema.sql', ['gchat_unified_webhook', 'unified_digest_card', 'unified_digest_text']],
-  ['docs/sprint-monitor/monitor-configs.sql', ['gchat_unified_webhook']],
-  ['docs/sprint-monitor/MENTION-RULES.md', ['mentions_needed']],
-  ['docs/sprint-monitor/SPEC.md', ['unified digest']],
-];
-
-for (const [relativePath, patterns] of requiredDocPatterns) {
-  if (!fileExists(relativePath)) continue;
-  const content = readText(relativePath);
-  for (const pattern of patterns) {
-    check(
-      content.includes(pattern),
-      `${relativePath} includes unified digest artifact: ${pattern}`,
-    );
-  }
-}
-
-for (const moMoWorkflowPath of [
-  'workflows/ui-synced/MoMo/momo-ai-assistant.workflow.json',
-  'workflows/ui-synced/MoMo/momo-ai-assistant-tool-sprint-healthcheck.workflow.json',
-]) {
-  if (!fileExists(moMoWorkflowPath)) {
-    warn(`missing MoMo workflow template: ${moMoWorkflowPath}`);
-    continue;
-  }
-
-  const content = readText(moMoWorkflowPath);
-  check(
-    !content.includes('Sprint Monitor'),
-    `${path.basename(moMoWorkflowPath)} stays free of Sprint Monitor references`,
-  );
-}
-
-const templatePaths = expectedWorkflows.map((item) => item.template);
-const existingTemplates = templatePaths.filter((templatePath) => fileExists(templatePath));
-const missingTemplates = templatePaths.filter((templatePath) => !fileExists(templatePath));
-
 function nodeByName(workflow, name) {
   return (workflow.nodes || []).find((node) => node.name === name) || null;
 }
@@ -248,58 +58,85 @@ function hasAiConnection(workflow, from, type, to) {
   return entries.some((entry) => entry?.node === to);
 }
 
-if (existingTemplates.length > 0) {
-  for (const templatePath of existingTemplates) {
-    const workflow = readJson(templatePath);
-    check(
-      expectedWorkflowNames.includes(workflow.name),
-      `workflow template has expected name: ${templatePath}`,
-    );
-    check(
-      workflow.settings && typeof workflow.settings === 'object',
-      `workflow template has settings object: ${templatePath}`,
-    );
-  }
-}
-
-const topLevelExpectations = [
-  {
-    path: 'workflows/sprint-monitor/sprint-monitor-light-scan.workflow.json',
-    name: 'Sprint Monitor Light Scan',
-    runType: 'light_scan',
-  },
-  {
-    path: 'workflows/sprint-monitor/sprint-monitor-deep-analysis.workflow.json',
-    name: 'Sprint Monitor Deep Analysis',
-    runType: 'deep_analysis',
-  },
-  {
-    path: 'workflows/sprint-monitor/sprint-monitor-endgame.workflow.json',
-    name: 'Sprint Monitor Endgame',
-    runType: 'endgame',
-  },
+const filesToCheck = [
+  'scripts/bootstrap/apply-sprint-monitor-schema.sh',
+  'scripts/workflows/import/import-sprint-monitor-scheduler-workflow.sh',
+  'scripts/workflows/import/import-sprint-monitor-engine-workflow.sh',
+  'scripts/workflows/tests/test-sprint-monitor-checklist.sh',
+  'scripts/workflows/tests/test-sprint-monitor-checklist.mjs',
+  'README.md',
+  'scripts/README.md',
+  'CHANGELOG.md',
+  'workflow-registry.json',
+  'workflows/sprint-monitor/sprint-monitor-scheduler.workflow.json',
+  'workflows/sprint-monitor/sprint-monitor-engine.workflow.json',
 ];
 
-for (const wrapperPath of [
+for (const relativePath of filesToCheck) {
+  check(fileExists(relativePath), `support file exists: ${relativePath}`);
+}
+
+for (const removedPath of [
+  'workflows/sprint-monitor/sprint-monitor-light-scan.workflow.json',
+  'workflows/sprint-monitor/sprint-monitor-deep-analysis.workflow.json',
+  'workflows/sprint-monitor/sprint-monitor-endgame.workflow.json',
   'scripts/workflows/import/import-sprint-monitor-light-scan-workflow.sh',
   'scripts/workflows/import/import-sprint-monitor-deep-analysis-workflow.sh',
   'scripts/workflows/import/import-sprint-monitor-endgame-workflow.sh',
 ]) {
-  if (!fileExists(wrapperPath)) continue;
-  const wrapperContent = readText(wrapperPath);
-  check(
-    wrapperContent.includes('import-sprint-monitor-engine-workflow.sh'),
-    `${path.basename(wrapperPath)} imports Sprint Monitor Engine first`,
-  );
-  check(
-    wrapperContent.includes('__REGISTRY__'),
-    `${path.basename(wrapperPath)} patches Sprint Monitor Engine registry token`,
-  );
+  check(!fileExists(removedPath), `legacy artifact removed: ${removedPath}`);
 }
 
-for (const item of topLevelExpectations) {
-  if (!fileExists(item.path)) continue;
-  const workflow = readJson(item.path);
+const registry = fileExists('workflow-registry.json') ? readJson('workflow-registry.json') : { workflows: {} };
+const schedulerEntry = registry.workflows?.['Sprint Monitor Scheduler'];
+const engineEntry = registry.workflows?.['Sprint Monitor Engine'];
+
+check(Boolean(schedulerEntry), 'registry entry exists: Sprint Monitor Scheduler');
+check(Boolean(engineEntry), 'registry entry exists: Sprint Monitor Engine');
+if (schedulerEntry) {
+  check(schedulerEntry.id === 'l4HFV7Mr0c5ZXi7j', 'scheduler keeps repurposed Light Scan workflow ID');
+  check(
+    schedulerEntry.template === 'workflows/sprint-monitor/sprint-monitor-scheduler.workflow.json',
+    'scheduler registry template matches',
+  );
+  check(
+    schedulerEntry.templateImport === 'scripts/workflows/import/import-sprint-monitor-scheduler-workflow.sh',
+    'scheduler registry import wrapper matches',
+  );
+}
+if (engineEntry) {
+  check(
+    engineEntry.template === 'workflows/sprint-monitor/sprint-monitor-engine.workflow.json',
+    'engine registry template matches',
+  );
+  check(
+    engineEntry.templateImport === 'scripts/workflows/import/import-sprint-monitor-engine-workflow.sh',
+    'engine registry import wrapper matches',
+  );
+}
+check(!registry.workflows?.['Sprint Monitor Light Scan'], 'registry no longer contains Sprint Monitor Light Scan');
+check(!registry.workflows?.['Sprint Monitor Deep Analysis'], 'registry no longer contains Sprint Monitor Deep Analysis');
+check(!registry.workflows?.['Sprint Monitor Endgame'], 'registry no longer contains Sprint Monitor Endgame');
+
+const importAllContent = fileExists('scripts/workflows/import/import-all-workflows.sh')
+  ? readText('scripts/workflows/import/import-all-workflows.sh')
+  : '';
+check(
+  importAllContent.includes('import-sprint-monitor-scheduler-workflow.sh'),
+  'import-all-workflows.sh references scheduler wrapper',
+);
+check(
+  !importAllContent.includes('import-sprint-monitor-deep-analysis-workflow.sh')
+    && !importAllContent.includes('import-sprint-monitor-endgame-workflow.sh')
+    && !importAllContent.includes('import-sprint-monitor-light-scan-workflow.sh'),
+  'import-all-workflows.sh omits legacy Sprint Monitor wrappers',
+);
+
+const schedulerPath = 'workflows/sprint-monitor/sprint-monitor-scheduler.workflow.json';
+if (fileExists(schedulerPath)) {
+  const scheduler = readJson(schedulerPath);
+  check(scheduler.name === 'Sprint Monitor Scheduler', 'scheduler workflow name is Sprint Monitor Scheduler');
+
   for (const nodeName of [
     'Manual Trigger',
     'Build Manual Request',
@@ -311,234 +148,135 @@ for (const item of topLevelExpectations) {
     'Run Sprint Monitor Engine (Scheduled)',
     'Build Workflow Summary',
   ]) {
-    check(Boolean(nodeByName(workflow, nodeName)), `${item.name} includes node: ${nodeName}`);
+    check(Boolean(nodeByName(scheduler, nodeName)), `scheduler includes node: ${nodeName}`);
   }
 
-  check(hasMainConnection(workflow, 'Manual Trigger', 'Build Manual Request'), `${item.name} manual trigger connects to request builder`);
-  check(hasMainConnection(workflow, 'Schedule Trigger', 'Build Scheduled Request'), `${item.name} schedule trigger connects to request builder`);
-  check(hasMainConnection(workflow, 'Build Manual Request', 'Load Monitor Configs (Manual)'), `${item.name} manual request loads configs`);
-  check(hasMainConnection(workflow, 'Build Scheduled Request', 'Load Monitor Configs (Scheduled)'), `${item.name} scheduled request loads configs`);
-  check(hasMainConnection(workflow, 'Load Monitor Configs (Manual)', 'Run Sprint Monitor Engine (Manual)'), `${item.name} manual configs connect to engine call`);
-  check(hasMainConnection(workflow, 'Load Monitor Configs (Scheduled)', 'Run Sprint Monitor Engine (Scheduled)'), `${item.name} scheduled configs connect to engine call`);
-  check(hasMainConnection(workflow, 'Run Sprint Monitor Engine (Manual)', 'Build Workflow Summary'), `${item.name} manual engine call connects to summary`);
-  check(hasMainConnection(workflow, 'Run Sprint Monitor Engine (Scheduled)', 'Build Workflow Summary'), `${item.name} scheduled engine call connects to summary`);
+  check(hasMainConnection(scheduler, 'Manual Trigger', 'Build Manual Request'), 'scheduler manual path wired');
+  check(hasMainConnection(scheduler, 'Schedule Trigger', 'Build Scheduled Request'), 'scheduler schedule path wired');
+  check(hasMainConnection(scheduler, 'Build Manual Request', 'Load Monitor Configs (Manual)'), 'scheduler manual config load wired');
+  check(hasMainConnection(scheduler, 'Build Scheduled Request', 'Load Monitor Configs (Scheduled)'), 'scheduler scheduled config load wired');
 
-  const manualRunner = nodeByName(workflow, 'Run Sprint Monitor Engine (Manual)');
-  const scheduledRunner = nodeByName(workflow, 'Run Sprint Monitor Engine (Scheduled)');
-  const manualWorkflowIdValue = String(manualRunner?.parameters?.workflowId?.value || '');
-  const scheduledWorkflowIdValue = String(scheduledRunner?.parameters?.workflowId?.value || '');
-  const manualWorkflowCachedName = String(manualRunner?.parameters?.workflowId?.cachedResultName || '');
-  const scheduledWorkflowCachedName = String(scheduledRunner?.parameters?.workflowId?.cachedResultName || '');
-  check(manualRunner?.type === 'n8n-nodes-base.executeWorkflow', `${item.name} manual engine runner uses executeWorkflow`);
-  check(scheduledRunner?.type === 'n8n-nodes-base.executeWorkflow', `${item.name} scheduled engine runner uses executeWorkflow`);
+  const manualRunner = nodeByName(scheduler, 'Run Sprint Monitor Engine (Manual)');
+  const scheduledRunner = nodeByName(scheduler, 'Run Sprint Monitor Engine (Scheduled)');
   check(
-    (
-      manualWorkflowIdValue.includes('__REGISTRY__:Sprint Monitor Engine') ||
-      manualWorkflowIdValue.includes('Sprint Monitor Engine') ||
-      (sprintMonitorEngineRegistryId && manualWorkflowIdValue === sprintMonitorEngineRegistryId) ||
-      manualWorkflowCachedName.includes('Sprint Monitor Engine')
-    ),
-    `${item.name} manual engine runner references Sprint Monitor Engine`,
+    String(manualRunner?.parameters?.workflowInputs?.value?.runType || '').includes('scan'),
+    'scheduler manual runner seeds runType=scan',
   );
   check(
-    (
-      scheduledWorkflowIdValue.includes('__REGISTRY__:Sprint Monitor Engine') ||
-      scheduledWorkflowIdValue.includes('Sprint Monitor Engine') ||
-      (sprintMonitorEngineRegistryId && scheduledWorkflowIdValue === sprintMonitorEngineRegistryId) ||
-      scheduledWorkflowCachedName.includes('Sprint Monitor Engine')
-    ),
-    `${item.name} scheduled engine runner references Sprint Monitor Engine`,
+    String(manualRunner?.parameters?.workflowInputs?.value?.forceMode || '').includes('Build Manual Request'),
+    'scheduler manual runner forwards forceMode override',
   );
   check(
-    String(manualRunner?.parameters?.workflowInputs?.value?.runType || '').includes(item.runType),
-    `${item.name} manual engine runner passes ${item.runType}`,
+    String(scheduledRunner?.parameters?.workflowInputs?.value?.runType || '').includes('scan'),
+    'scheduler scheduled runner seeds runType=scan',
   );
   check(
-    String(scheduledRunner?.parameters?.workflowInputs?.value?.runType || '').includes(item.runType),
-    `${item.name} scheduled engine runner passes ${item.runType}`,
+    String(scheduledRunner?.parameters?.workflowInputs?.value?.forceMode || '').includes('auto'),
+    'scheduler scheduled runner locks forceMode=auto',
   );
 }
 
 const enginePath = 'workflows/sprint-monitor/sprint-monitor-engine.workflow.json';
 if (fileExists(enginePath)) {
   const engine = readJson(enginePath);
+
   for (const nodeName of [
-    'When Executed by Another Workflow',
     'Normalize Request',
-    'Get Active Sprint',
-    'Pick Active Sprint',
-    'If Active Sprint?',
-    'Build No Active Sprint Summary',
-    'Build No Active Sprint Persist Query',
-    'Persist No Active Sprint',
-    'Build No Active Sprint Result',
-    'Get Sprint Issues',
-    'Build GitLab Project Items',
-    'If Should Fetch GitLab?',
-    'Get GitLab Merge Requests',
-    'Build Empty GitLab Signals',
-    'Aggregate GitLab Signals',
-    'Normalize Sprint Context',
-    'Build Comment Classifier Inputs',
-    'Comment Classifier AI Agent',
-    'Structured Comment Classifier Output Parser',
-    'Comment Classifier Model',
     'Compute Signals',
     'Build Prior State Query',
     'Load Prior State',
+    'Select Run Mode',
     'Build Judge Inputs',
-    'Sprint Judge AI Agent',
-    'Structured Sprint Judgment Output Parser',
-    'Sprint Judge Model',
     'Delivery Gate',
-    'If Need Draft?',
-    'Build Draft Inputs',
-    'Message Drafter AI Agent',
-    'Structured Message Draft Output Parser',
-    'Message Drafter Model',
-    'Get Members',
     'Build Render Model',
     'Build Delivery Messages',
-    'If Has Deliveries?',
-    'Expand Delivery Items',
-    'Send Google Chat Message',
-    'Aggregate Deliveries',
     'Build Persist Query',
-    'Persist Run State',
     'Build Engine Result',
   ]) {
-    check(Boolean(nodeByName(engine, nodeName)), `Sprint Monitor Engine includes node: ${nodeName}`);
+    check(Boolean(nodeByName(engine, nodeName)), `engine includes node: ${nodeName}`);
   }
 
-  check(hasMainConnection(engine, 'When Executed by Another Workflow', 'Normalize Request'), 'engine trigger connects to Normalize Request');
-  check(hasMainConnection(engine, 'Normalize Request', 'Get Active Sprint'), 'Normalize Request connects to Get Active Sprint');
-  check(hasMainConnection(engine, 'Get Active Sprint', 'Pick Active Sprint'), 'Get Active Sprint connects to Pick Active Sprint');
-  check(hasMainConnection(engine, 'Pick Active Sprint', 'If Active Sprint?'), 'Pick Active Sprint connects to If Active Sprint?');
-  check(hasMainConnectionFromOutput(engine, 'If Active Sprint?', 0, 'Get Sprint Issues'), 'active sprint true branch fetches sprint issues');
-  check(hasMainConnectionFromOutput(engine, 'If Active Sprint?', 1, 'Build No Active Sprint Summary'), 'active sprint false branch builds no-sprint summary');
-  check(hasMainConnection(engine, 'Get Sprint Issues', 'Build GitLab Project Items'), 'Get Sprint Issues connects to GitLab project builder');
-  check(hasMainConnection(engine, 'Build GitLab Project Items', 'If Should Fetch GitLab?'), 'GitLab project builder connects to fetch gate');
-  check(hasMainConnectionFromOutput(engine, 'If Should Fetch GitLab?', 0, 'Get GitLab Merge Requests'), 'GitLab fetch gate true branch fetches merge requests');
-  check(hasMainConnectionFromOutput(engine, 'If Should Fetch GitLab?', 1, 'Build Empty GitLab Signals'), 'GitLab fetch gate false branch builds empty signals');
-  check(hasMainConnection(engine, 'Aggregate GitLab Signals', 'Normalize Sprint Context'), 'GitLab aggregation connects to Normalize Sprint Context');
-  check(hasMainConnection(engine, 'Normalize Sprint Context', 'Build Comment Classifier Inputs'), 'Normalize Sprint Context connects to classifier inputs');
-  check(hasMainConnection(engine, 'Comment Classifier AI Agent', 'Compute Signals'), 'comment classifier connects to Compute Signals');
-  check(hasMainConnection(engine, 'Compute Signals', 'Build Prior State Query'), 'Compute Signals connects to prior-state query builder');
-  check(hasMainConnection(engine, 'Build Prior State Query', 'Load Prior State'), 'prior-state query builder connects to Postgres load');
-  check(hasMainConnection(engine, 'Load Prior State', 'Build Judge Inputs'), 'Load Prior State connects to judge inputs');
-  check(hasMainConnection(engine, 'Build Judge Inputs', 'Sprint Judge AI Agent'), 'judge inputs connect to sprint judge');
-  check(hasMainConnection(engine, 'Sprint Judge AI Agent', 'Delivery Gate'), 'sprint judge connects to delivery gate');
-  check(hasMainConnection(engine, 'Delivery Gate', 'If Need Draft?'), 'delivery gate connects to draft gate');
-  check(hasMainConnectionFromOutput(engine, 'If Need Draft?', 0, 'Build Draft Inputs'), 'draft gate true branch builds draft inputs');
-  check(hasMainConnection(engine, 'Build Draft Inputs', 'Message Drafter AI Agent'), 'draft inputs connect to drafter agent');
-  check(hasMainConnectionFromOutput(engine, 'If Need Draft?', 1, 'Get Members'), 'draft gate false branch still resolves members for deterministic render');
-  check(hasMainConnection(engine, 'Message Drafter AI Agent', 'Get Members'), 'drafter connects to member lookup');
-  check(hasMainConnection(engine, 'Get Members', 'Build Render Model'), 'member lookup connects to render model');
-  check(hasMainConnection(engine, 'Build Render Model', 'Build Delivery Messages'), 'render model connects to delivery builder');
-  check(hasMainConnection(engine, 'Build Delivery Messages', 'If Has Deliveries?'), 'delivery builder connects to delivery gate');
-  check(hasMainConnectionFromOutput(engine, 'If Has Deliveries?', 0, 'Expand Delivery Items'), 'delivery gate true branch expands items');
-  check(hasMainConnectionFromOutput(engine, 'If Has Deliveries?', 1, 'Build Persist Query'), 'delivery gate false branch persists directly');
-  check(hasMainConnection(engine, 'Expand Delivery Items', 'Send Google Chat Message'), 'expanded delivery items connect to Google Chat sender');
-  check(hasMainConnection(engine, 'Send Google Chat Message', 'Aggregate Deliveries'), 'Google Chat sender connects to delivery aggregation');
-  check(hasMainConnection(engine, 'Aggregate Deliveries', 'Build Persist Query'), 'delivery aggregation connects to persist query builder');
-  check(hasMainConnection(engine, 'Build Persist Query', 'Persist Run State'), 'persist query builder connects to Postgres persist node');
-  check(hasMainConnection(engine, 'Persist Run State', 'Build Engine Result'), 'persist node connects to engine result');
+  check(hasMainConnection(engine, 'Load Prior State', 'Select Run Mode'), 'engine routes prior state to Select Run Mode');
+  check(hasMainConnection(engine, 'Select Run Mode', 'Build Judge Inputs'), 'engine routes mode selection to judge inputs');
+  check(hasMainConnection(engine, 'Build Judge Inputs', 'Sprint Judge AI Agent'), 'engine routes judge inputs to judge AI');
+  check(hasMainConnection(engine, 'Sprint Judge AI Agent', 'Delivery Gate'), 'engine routes judge AI to delivery gate');
+  check(hasMainConnection(engine, 'Delivery Gate', 'If Need Draft?'), 'engine routes gate to draft IF node');
+  check(hasMainConnectionFromOutput(engine, 'If Need Draft?', 1, 'Get Members'), 'engine skip-draft branch still goes through member resolver');
 
-  check(hasAiConnection(engine, 'Structured Comment Classifier Output Parser', 'ai_outputParser', 'Comment Classifier AI Agent'), 'comment classifier output parser connects to AI agent');
-  check(hasAiConnection(engine, 'Comment Classifier Model', 'ai_languageModel', 'Comment Classifier AI Agent'), 'comment classifier model connects to AI agent');
-  check(hasAiConnection(engine, 'Structured Sprint Judgment Output Parser', 'ai_outputParser', 'Sprint Judge AI Agent'), 'sprint judgment output parser connects to AI agent');
-  check(hasAiConnection(engine, 'Sprint Judge Model', 'ai_languageModel', 'Sprint Judge AI Agent'), 'sprint judge model connects to AI agent');
-  check(hasAiConnection(engine, 'Structured Message Draft Output Parser', 'ai_outputParser', 'Message Drafter AI Agent'), 'message draft output parser connects to drafter agent');
-  check(hasAiConnection(engine, 'Message Drafter Model', 'ai_languageModel', 'Message Drafter AI Agent'), 'message drafter model connects to drafter agent');
+  check(hasAiConnection(engine, 'Structured Sprint Judgment Output Parser', 'ai_outputParser', 'Sprint Judge AI Agent'), 'judge parser wired to judge AI');
+  check(hasAiConnection(engine, 'Sprint Judge Model', 'ai_languageModel', 'Sprint Judge AI Agent'), 'judge model wired to judge AI');
 
-  const postgresNodes = (engine.nodes || []).filter((node) => node.type === 'n8n-nodes-base.postgres');
-  check(postgresNodes.length >= 3, 'Sprint Monitor Engine includes Postgres nodes for state IO');
-  const sheetsNodes = (engine.nodes || []).filter((node) => node.type === 'n8n-nodes-base.googleSheets');
-  check(sheetsNodes.length >= 1, 'Sprint Monitor Engine includes Google Sheets member lookup');
-  check(Boolean(nodeByName(engine, 'Load Prior State')), 'Sprint Monitor Engine includes Load Prior State Postgres node');
-  check(Boolean(nodeByName(engine, 'Persist Run State')), 'Sprint Monitor Engine includes Persist Run State Postgres node');
-  check(Boolean(nodeByName(engine, 'Persist No Active Sprint')), 'Sprint Monitor Engine includes Persist No Active Sprint Postgres node');
+  const normalizeCode = String(nodeByName(engine, 'Normalize Request')?.parameters?.jsCode || '');
+  const modeCode = String(nodeByName(engine, 'Select Run Mode')?.parameters?.jsCode || '');
+  const judgeInputCode = String(nodeByName(engine, 'Build Judge Inputs')?.parameters?.jsCode || '');
+  const gateCode = String(nodeByName(engine, 'Delivery Gate')?.parameters?.jsCode || '');
+  const renderCode = String(nodeByName(engine, 'Build Render Model')?.parameters?.jsCode || '');
+  const deliveryCode = String(nodeByName(engine, 'Build Delivery Messages')?.parameters?.jsCode || '');
+  const persistCode = String(nodeByName(engine, 'Build Persist Query')?.parameters?.jsCode || '');
+  const resultCode = String(nodeByName(engine, 'Build Engine Result')?.parameters?.jsCode || '');
 
-  const engineTrigger = nodeByName(engine, 'When Executed by Another Workflow');
-  const workflowInputs = engineTrigger?.parameters?.workflowInputs?.values || [];
   check(
-    workflowInputs.some((item) => item?.name === 'runType' && item?.type === 'string'),
-    'Sprint Monitor Engine input schema includes runType:string',
+    normalizeCode.includes("const runType = requestedRunType === 'review' ? 'review' : 'scan';"),
+    'Normalize Request normalizes runType to scan/review only',
   );
-  check(
-    workflowInputs.some((item) => item?.name === 'workflowName' && item?.type === 'string'),
-    'Sprint Monitor Engine input schema includes workflowName:string',
-  );
-  check(
-    workflowInputs.some((item) => item?.name === 'triggerSource' && item?.type === 'string'),
-    'Sprint Monitor Engine input schema includes triggerSource:string',
-  );
-  check(
-    workflowInputs.some((item) => item?.name === 'monitorConfig' && item?.type === 'object'),
-    'Sprint Monitor Engine input schema includes monitorConfig:object',
-  );
+  check(!normalizeCode.includes('light_scan'), 'Normalize Request no longer accepts legacy light_scan');
+  check(!normalizeCode.includes('deep_analysis'), 'Normalize Request no longer accepts legacy deep_analysis');
+  check(!normalizeCode.includes('endgame'), 'Normalize Request no longer accepts legacy endgame');
 
-  const engineContent = JSON.stringify(engine);
-  for (const stalePattern of ['pm_digest', 'lead_alert', 'owner_nudge', 'gchatPmWebhook', 'gchatLeadWebhook', '"audience"']) {
-    check(
-      !engineContent.includes(stalePattern),
-      `Sprint Monitor Engine omits stale runtime artifact: ${stalePattern}`,
-    );
-  }
+  check(modeCode.includes('weekday === 1 || weekday === 4'), 'Select Run Mode uses Monday/Thursday review checkpoints');
+  check(modeCode.includes('daysRemaining <= 1'), 'Select Run Mode enforces near-end threshold <= 1 day');
+  check(
+    modeCode.includes("selectedMode = hasManualOverride")
+      || modeCode.includes("selectedMode = (isNearEnd || isReviewCheckpoint) ? 'review' : 'scan'"),
+    'Select Run Mode computes scan/review mode',
+  );
+  check(modeCode.includes('triggerSource === \'manual\''), 'Select Run Mode gates override to manual trigger');
+  check(modeCode.includes("['scan', 'review'].includes(forceMode)"), 'Select Run Mode validates forceMode values');
+  check(modeCode.includes("modeSelectionSource = hasManualOverride ? 'manual_override' : 'auto'"), 'Select Run Mode emits modeSelectionSource');
 
-  const renderModelCode = String(nodeByName(engine, 'Build Render Model')?.parameters?.jsCode || '');
-  const normalizeContextCode = String(nodeByName(engine, 'Normalize Sprint Context')?.parameters?.jsCode || '');
-  check(
-    normalizeContextCode.includes('customfield_10201'),
-    'Normalize Sprint Context extracts QCs from customfield_10201',
-  );
-  check(
-    normalizeContextCode.includes('reviewer_ids: reporter.id ? [reporter.id] : []'),
-    'Normalize Sprint Context maps reviewer_ids from Jira reporter',
-  );
-  check(!renderModelCode.includes('buildJiraLink('), 'Build Render Model no longer expands Jira links directly');
-  check(!renderModelCode.includes('withLink('), 'Build Render Model no longer injects pre-rendered Jira links');
-  check(renderModelCode.includes('urgencyLine'), 'Build Render Model extracts/builds urgency line');
-  check(
-    renderModelCode.includes('lineMentions'),
-    'Build Render Model exposes per-line mention debug payload',
-  );
-  check(
-    !renderModelCode.includes('mentionTokens'),
-    'Build Render Model no longer uses global mentionTokens table',
-  );
-  check(
-    renderModelCode.includes("replace(/@PIC\\b/gi, '@ASSIGNEE')"),
-    'Build Render Model rewrites legacy @PIC placeholder',
-  );
-  check(
-    renderModelCode.includes("replace(/@REVIEWER\\b/gi, '@OWNER')"),
-    'Build Render Model rewrites legacy @Reviewer placeholder',
-  );
-  check(
-    renderModelCode.includes("replace(/@QC\\b/gi, '@QCS')"),
-    'Build Render Model rewrites legacy @QC placeholder',
-  );
+  check(judgeInputCode.includes('mode_policy'), 'Build Judge Inputs includes mode policy in packet');
+  check(judgeInputCode.includes('is_near_end'), 'Build Judge Inputs includes near-end flag in packet');
+  check(judgeInputCode.includes('Do not generate a full daily digest shape'), 'Build Judge Inputs adds strict scan prompt policy');
+  check(judgeInputCode.includes('salvage, de-scope, and carryover'), 'Build Judge Inputs adds near-end review framing');
 
-  const deliveryBuilderCode = String(nodeByName(engine, 'Build Delivery Messages')?.parameters?.jsCode || '');
-  check(deliveryBuilderCode.includes('[A-Z][A-Z0-9]+-\\d+'), 'Build Delivery Messages includes Jira issue key regex replacement');
-  check(deliveryBuilderCode.includes("request.monitorConfig?.jiraBaseUrl"), 'Build Delivery Messages uses jiraBaseUrl from monitor config');
-  check(deliveryBuilderCode.includes('• Urgency:'), 'Build Delivery Messages renders urgency line first');
-  check(deliveryBuilderCode.includes('render.mentionTail'), 'Build Delivery Messages appends deduped mention footer tail');
-  check(
-    !deliveryBuilderCode.includes('mentionTokens'),
-    'Build Delivery Messages no longer consumes global mentionTokens',
-  );
+  check(gateCode.includes('newIssue'), 'Delivery Gate computes newIssue flag');
+  check(gateCode.includes('severityIncrease'), 'Delivery Gate computes severityIncrease flag');
+  check(gateCode.includes('materialChange'), 'Delivery Gate computes materialChange flag');
+  check(gateCode.includes('newGoalBlocker'), 'Delivery Gate computes newGoalBlocker flag');
+  check(gateCode.includes("selectedMode === 'scan'"), 'Delivery Gate has explicit scan branch');
+  check(gateCode.includes('!hasDeterministicDelta'), 'Delivery Gate forces noMessage for scan without delta');
+  check(gateCode.includes('!hasActionableInsight'), 'Delivery Gate forces noMessage for review without actionable insight');
+
+  check(renderCode.includes('scanDeltaLines'), 'Build Render Model exposes scanDeltaLines');
+  check(renderCode.includes("selectedMode === 'review'"), 'Build Render Model has review-only full digest branch');
+  check(renderCode.includes("renderLineMentions('scanDelta'"), 'Build Render Model applies mention resolver to scan delta lines');
+
+  check(deliveryCode.includes("if (mode === 'scan')"), 'Build Delivery Messages has scan-only compact delivery branch');
+  check(deliveryCode.includes('scanDeltaLines'), 'Build Delivery Messages uses scan delta lines');
+  check(deliveryCode.includes('unified_digest_card'), 'Build Delivery Messages keeps card path for review mode');
+
+  check(persistCode.includes('const selectedMode'), 'Build Persist Query persists selected mode');
+  check(persistCode.includes('modeSelectionSource'), 'Build Persist Query persists modeSelectionSource');
+  check(persistCode.includes("selectedMode === 'review' && isNearEnd"), 'Build Persist Query near-end retro notes gated on review mode');
+
+  check(resultCode.includes('selectedMode'), 'Build Engine Result returns selectedMode');
+  check(resultCode.includes('modeSelectionSource'), 'Build Engine Result returns modeSelectionSource');
+  check(resultCode.includes('deterministicGate'), 'Build Engine Result returns deterministic gate summary');
 }
 
-if (missingTemplates.length > 0) {
-  const message =
-    `Sprint Monitor workflow templates are not present yet: ${missingTemplates.join(', ')}`;
-  if (strictMode) {
-    failures.push(message);
-  } else {
-    warn(message);
-  }
+const readmeContent = fileExists('README.md') ? readText('README.md') : '';
+const scriptsReadmeContent = fileExists('scripts/README.md') ? readText('scripts/README.md') : '';
+const changelogContent = fileExists('CHANGELOG.md') ? readText('CHANGELOG.md') : '';
+
+check(readmeContent.includes('Sprint Monitor Scheduler'), 'README documents Sprint Monitor Scheduler');
+check(readmeContent.includes('scan/review'), 'README documents scan/review mode model');
+check(scriptsReadmeContent.includes('import-sprint-monitor-scheduler-workflow.sh'), 'scripts/README documents scheduler import wrapper');
+check(!scriptsReadmeContent.includes('import-sprint-monitor-deep-analysis-workflow.sh'), 'scripts/README removes deep-analysis wrapper docs');
+check(!scriptsReadmeContent.includes('import-sprint-monitor-endgame-workflow.sh'), 'scripts/README removes endgame wrapper docs');
+check(changelogContent.includes('single scheduler') || changelogContent.includes('Sprint Monitor Scheduler'), 'CHANGELOG includes scheduler cutover note');
+
+if (warnings.length > 0 && strictMode) {
+  failures.push(...warnings.map((item) => '[WARN-as-error] ' + item));
 }
 
 if (failures.length > 0) {
@@ -555,8 +293,4 @@ for (const message of passes) {
 }
 for (const message of warnings) {
   console.log(`- [WARN] ${message}`);
-}
-
-if (!strictMode && missingTemplates.length > 0) {
-  console.log('- [INFO] Run with --strict after Sprint Monitor workflow JSON files are added.');
 }

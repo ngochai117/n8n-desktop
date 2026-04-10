@@ -108,29 +108,17 @@
       "lastSyncedAt": "2026-04-09T07:21:32Z",
       "templateImport": "scripts/workflows/import/import-momo-ai-assistant-tool-router-workflow.sh"
     },
-    "Sprint Monitor Light Scan": {
-      "id": "l4HFV7Mr0c5ZXi7j",
-      "template": "workflows/sprint-monitor/sprint-monitor-light-scan.workflow.json",
-      "lastSyncedAt": "2026-04-09T17:27:17Z",
-      "templateImport": "scripts/workflows/import/import-sprint-monitor-light-scan-workflow.sh"
-    },
-    "Sprint Monitor Deep Analysis": {
-      "id": "o9u06jNixOh0QnAT",
-      "template": "workflows/sprint-monitor/sprint-monitor-deep-analysis.workflow.json",
-      "lastSyncedAt": "2026-04-09T17:27:20Z",
-      "templateImport": "scripts/workflows/import/import-sprint-monitor-deep-analysis-workflow.sh"
-    },
-    "Sprint Monitor Endgame": {
-      "id": "mKJRp6UUBWXOTQDD",
-      "template": "workflows/sprint-monitor/sprint-monitor-endgame.workflow.json",
-      "lastSyncedAt": "2026-04-09T17:27:23Z",
-      "templateImport": "scripts/workflows/import/import-sprint-monitor-endgame-workflow.sh"
-    },
     "Sprint Monitor Engine": {
       "id": "UbFT1qz7YOaelW9W",
       "template": "workflows/sprint-monitor/sprint-monitor-engine.workflow.json",
-      "lastSyncedAt": "2026-04-09T17:32:12Z",
+      "lastSyncedAt": "2026-04-10T04:34:14Z",
       "templateImport": "scripts/workflows/import/import-sprint-monitor-engine-workflow.sh"
+    },
+    "Sprint Monitor Scheduler": {
+      "id": "l4HFV7Mr0c5ZXi7j",
+      "template": "workflows/sprint-monitor/sprint-monitor-scheduler.workflow.json",
+      "lastSyncedAt": "2026-04-10T04:34:16Z",
+      "templateImport": "scripts/workflows/import/import-sprint-monitor-scheduler-workflow.sh"
     }
   }
 }

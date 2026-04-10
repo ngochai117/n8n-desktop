@@ -22,6 +22,8 @@ Bộ tài liệu implementation handoff cho hệ thống monitor sprint dùng:
 - `monitor_configs.message_language` hỗ trợ `en` và `vi`
 - V1 chỉ localize outbound message layer; classifier/judge vẫn giữ logic hiện tại
 - Unified digest render theo 2 message cùng thread: card metrics + text action
+- Topology runtime hien tai: `Sprint Monitor Scheduler` (single cron entry) -> `Sprint Monitor Engine` (mode selector `scan/review`)
+- Mode rule mac dinh: `review` khi Monday/Thursday hoac near-end (`days_remaining <= 1`), con lai `scan`
 - Mention resolver dùng shared Google Sheet members source cố định với 3 cột `email`, `id`, `name`
 - V1 chưa có role mapping `PM/Lead`; nếu không resolve được email cụ thể thì fallback text
 

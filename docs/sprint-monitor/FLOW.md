@@ -1,216 +1,56 @@
 # Sprint Monitor Flow
 
-## Nhìn nhanh
-Sprint Monitor hiện có 4 workflow:
+## Nhin nhanh
 
-- `Sprint Monitor Light Scan`
-- `Sprint Monitor Deep Analysis`
-- `Sprint Monitor Endgame`
-- `Sprint Monitor Engine`
+Sprint Monitor hien tai co 2 workflow:
 
-Ba workflow đầu là lớp ngoài cùng. Chúng chỉ có nhiệm vụ:
+- `Sprint Monitor Scheduler` (top-level, 1 cron + manual)
+- `Sprint Monitor Engine` (logic chinh)
 
-1. chờ trigger manual hoặc cron
+`Sprint Monitor Scheduler` chi lam 4 viec:
+
+1. trigger manual hoac cron
 2. load `monitor_configs`
-3. gọi `Sprint Monitor Engine`
-4. gom kết quả thành summary
+3. goi `Sprint Monitor Engine`
+4. gom summary output
 
-Vì vậy khi nhìn trên UI n8n, 3 workflow này trông gần như giống nhau là đúng thiết kế.
+## Runtime mode model
 
-## Ba workflow ngoài khác nhau ở đâu?
+Engine chi dung 2 runType hien tai (`scan`, `review`) de dieu phoi.
 
-- `Light Scan`
-  - mục tiêu: phát hiện bất thường sớm
-  - kỳ vọng: đa số run không gửi message
-  - cron mặc định: `0 9 * * 1-5`
-  - `runType`: `light_scan`
+Moi run se tu chon `selectedMode`:
 
-- `Deep Analysis`
-  - mục tiêu: tạo unified digest và nhìn bottleneck rõ hơn
-  - kỳ vọng: có thể gửi 1 unified digest thread với card metrics + text action
-  - cron mặc định: `0 14 * * 2,4`
-  - `runType`: `deep_analysis`
+- `review` neu near-end (`days_remaining <= 1`) hoac dung checkpoint review (Monday/Thursday theo `monitorConfig.timezone`)
+- `scan` cho cac run con lai
 
-- `Endgame`
-  - mục tiêu: nhìn nguy cơ spillover, scope cut, carryover
-  - kỳ vọng: output thiên về quyết định cuối sprint và retro notes
-  - cron mặc định: `0 16 * * *`
-  - `runType`: `endgame`
+## Debug override (manual)
 
-Khác biệt lớn nhất hiện tại nằm ở `runType` truyền vào engine, không nằm ở graph ngoài cùng.
+Khi test/debug, co the ep mode bang input `forceMode`:
 
-## Flow của `Sprint Monitor Engine`
+- `scan` hoac `review`: override mode selector (chi khi `triggerSource=manual`)
+- `auto` (mac dinh): dung auto selector nhu production
 
-### 1. Nhận input
-Engine nhận 4 input:
+Cron/schedule run luon di theo auto selector, khong dung manual override.
 
-- `runType`
-- `workflowName`
-- `triggerSource`
-- `monitorConfig`
+## Engine pipeline
 
-### 2. Normalize request
-Engine chuẩn hóa config và tạo context chạy:
+`Trigger -> Load config -> Jira/GitLab fetch -> Normalize -> AI classify -> Compute signals -> Load DB state -> Select mode -> Build judge packet (mode-aware) -> AI judge -> Deterministic DB gate -> Render -> Deliver -> Persist`
 
-- timezone
-- Jira/GitLab base URL
-- project IDs
-- Google Chat unified webhook
-- thresholds
-- `runId`
-- thời điểm chạy
+## Deterministic gate bat buoc
 
-### 3. Tìm active sprint trong Jira
-Engine gọi Jira để lấy active sprint của board.
+Truoc khi gui message, engine ap gate deterministic (khong de AI bypass):
 
-Nếu không có active sprint:
+- tinh co `newIssue`, `severityIncrease`, `materialChange`, `newGoalBlocker`
+- `scan`: neu khong co delta hop le => force `noMessage`
+- `review`: chi gui khi co actionable insight va khong bi suppression DB
 
-- không chạy tiếp
-- ghi `runs` với trạng thái `skipped`
-- trả kết quả `noMessage = true`
+## Delivery behavior theo mode
 
-### 4. Lấy dữ liệu sprint từ Jira
-Nếu có active sprint, engine lấy:
+- `scan`: compact 2-3 dong delta, uu tien silence, khong dung full 4-block digest
+- `review`: full unified digest (`Urgency / Main blocker / Quick win / Decision today`)
+- `review` near-end: `Decision today` phai theo framing `salvage / de-scope / carryover`
 
-- sprint issues
-- status
-- assignee
-- story points
-- links/dependencies
-- comments
-- changelog
+## Persist behavior
 
-### 5. Lấy tín hiệu delivery từ GitLab
-Engine lấy merge requests từ các project GitLab đã cấu hình.
-
-Nó cố map MR về Jira issue key bằng cách đọc:
-
-- MR title
-- MR description
-- branch name
-- một số field commit/MR liên quan
-
-Nếu không map chắc chắn được thì giữ signal ở mức yếu, không gán bừa vào task.
-
-### 6. Normalize thành dữ liệu chuẩn
-Engine biến raw data thành 3 nhóm chính:
-
-- `sprint`
-- `tasks`
-- `activityExcerpts`
-
-Đây là lớp dữ liệu chuẩn để các bước sau dùng chung.
-
-### 7. AI classify comments
-Engine gửi `activityExcerpts` sang AI để phân loại nghĩa của activity, ví dụ:
-
-- progress thật
-- đang chờ review
-- chờ nội bộ
-- chờ external
-- QA pending
-- noise
-
-Mục tiêu là hiểu comment có ý nghĩa delivery hay không, thay vì chỉ đọc chữ.
-
-### 8. Compute signals bằng rule deterministic
-Sau bước classify, engine tính signal cho từng task:
-
-- task đang đứng yên bao lâu
-- review pending bao lâu
-- QA pending bao lâu
-- bị block hay không
-- có quá nhiều dependency không
-- assignee có overload không
-
-Từ đó nó tạo:
-
-- `topCandidateTasks`
-- `topClusters`
-- `sprintSignals`
-
-### 9. Load prior state từ PostgreSQL
-Engine đọc state cũ để biết lịch sử:
-
-- open issues
-- prior interventions
-- historical patterns
-
-Bước này giúp tránh spam và có suppression logic.
-
-### 10. AI judge sprint
-Engine gửi packet lớn hơn sang AI để judge:
-
-- sprint health
-- goal risk
-- delivery outlook
-- task risks
-- cluster risks
-- target cần được mention
-- có nên im lặng không
-- có cần unified digest không
-
-### 11. Delivery gate và suppression
-Trước khi gửi message, engine kiểm tra:
-
-- issue này đã alert gần đây chưa
-- severity có tăng không
-- có insight mới không
-- unified digest có đang bị suppress không
-
-Kết quả của bước này là:
-
-- issue nào còn đáng gửi
-- có gửi unified digest không
-- có thể `noMessage = true`
-
-### 12. Draft message
-Nếu cần gửi, engine gọi AI draft message.
-
-Nếu draft fail:
-
-- engine vẫn không drop run
-- nó dùng fallback text deterministic
-
-### 13. Gửi Google Chat
-Engine gửi:
-
-- unified digest card vào unified webhook
-- unified digest text vào cùng thread
-
-Hiện tại team digest chỉ là contract phụ, chưa phải default path.
-
-### 14. Persist toàn bộ state
-Cuối run, engine ghi vào PostgreSQL:
-
-- `runs`
-- `sprint_snapshots`
-- `task_snapshots`
-- `activity_excerpts`
-- `signal_snapshots`
-- `issues`
-- `interventions`
-- `message_deliveries`
-- `retro_notes` nếu là `endgame`
-
-### 15. Trả kết quả cho workflow ngoài
-Engine trả summary object:
-
-- `runId`
-- `status`
-- `noMessage`
-- `summaryJson`
-- `deliverySummary`
-- `persistSummary`
-
-## Nói ngắn gọn
-Nếu mô tả rất ngắn thì flow là:
-
-`Trigger -> Load config -> Engine -> Jira + GitLab -> Normalize -> AI classify -> Compute signals -> Load prior state -> AI judge -> Suppress -> Draft -> Send Chat -> Persist`
-
-## Khi nhìn UI n8n nên hiểu thế nào?
-
-- thấy 3 workflow ngoài giống nhau: đúng, vì đó là wrapper
-- thấy `Sprint Monitor Engine` dài: đúng, vì logic thật nằm ở đây
-- muốn hiểu behavior hệ thống: đọc engine trước
-- muốn hiểu lịch chạy và mode: đọc 3 wrapper ngoài
+- `runs.run_type` luu mode da chon (`scan` hoac `review`)
+- near-end `review` moi tao `retro_notes`

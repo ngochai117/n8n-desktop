@@ -108,10 +108,8 @@ Not responsible for:
 ## 4. Canonical processing pipeline
 
 ## Step 1 — Trigger
-A cron in n8n starts one of:
-- light scan
-- deep analysis
-- endgame
+A single cron in n8n starts `Sprint Monitor Scheduler`.
+Scheduler then calls `Sprint Monitor Engine`, where mode is selected at runtime (`scan`/`review`).
 
 ## Step 2 — Load config
 n8n loads runtime config from DB or environment:
@@ -200,46 +198,28 @@ n8n writes:
 
 ---
 
-## 5. Run types
+## 5. Run modes
 
-## 5.1 Light scan
+## 5.1 Scan
 Purpose:
-- detect new abnormality early
-- mostly produce no message
-
-Typical cadence:
-- daily or multiple times/week
+- radar mode with silence-by-default
+- only notify when deterministic delta exists (`newIssue` / `severityIncrease` / `materialChange` / `newGoalBlocker`)
 
 Expected output:
-- mostly internal issue updates
-- occasional unified digest thread
+- compact 2-3 delta lines
+- no full 4-block unified digest
 
-## 5.2 Deep analysis
+## 5.2 Review
 Purpose:
-- produce actionable unified digest
-- analyze cluster-level bottlenecks
-- compare current sprint posture vs likely delivery outlook
+- primary checkpoint digest with actionable decisions
 
-Typical cadence:
-- Tuesday/Thursday or custom
+Selection:
+- Monday/Thursday checkpoints
+- near-end (`days_remaining <= 1`)
 
 Expected output:
-- unified digest thread
-- selective mention targets inside the thread
-
-## 5.3 Endgame
-Purpose:
-- salvage / descoping / carryover recommendation
-- post-sprint root cause insight
-
-Typical cadence:
-- 1 day before sprint end
-- sprint end day
-- optional day after
-
-Expected output:
-- decision-oriented unified digest
-- retro notes candidates
+- full unified digest (`Urgency`, `Main blocker`, `Quick win`, `Decision today`)
+- near-end framing focuses on salvage/de-scope/carryover
 
 ---
 

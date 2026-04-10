@@ -12,9 +12,7 @@
 - `import-momo-ai-assistant-tool-router-workflow.sh`: import subworkflow router tool cho `MoMo AI Assistant`; wrapper nay tu scan token `__REGISTRY__:<workflow name>` trong router config de import dependency, patch workflow IDs, va auto-activate router luc import
 - `import-momo-ai-assistant-tool-sprint-healthcheck-workflow.sh`: import subworkflow read-only sprint healthcheck cho `MoMo AI Assistant`
 - `import-momo-ai-assistant-tool-demo-commands-workflow.sh`: import subworkflow demo command tool cho `MoMo AI Assistant`
-- `import-sprint-monitor-light-scan-workflow.sh`: import workflow `Sprint Monitor Light Scan`; wrapper nay import `Sprint Monitor Engine` truoc va patch registry token trong top-level template
-- `import-sprint-monitor-deep-analysis-workflow.sh`: import workflow `Sprint Monitor Deep Analysis`; wrapper nay import `Sprint Monitor Engine` truoc va patch registry token trong top-level template
-- `import-sprint-monitor-endgame-workflow.sh`: import workflow `Sprint Monitor Endgame`; wrapper nay import `Sprint Monitor Engine` truoc va patch registry token trong top-level template
+- `import-sprint-monitor-scheduler-workflow.sh`: import workflow `Sprint Monitor Scheduler`; wrapper nay import `Sprint Monitor Engine` truoc va patch registry token trong top-level template
 - `import-sprint-monitor-engine-workflow.sh`: import workflow `Sprint Monitor Engine`
 - `import-data-table-store-workflow.sh`: import subworkflow Data Table generic cho session state
 - `import-gg-drive-manager-workflow.sh`: import subworkflow Drive reusable
@@ -39,7 +37,7 @@
 - `test-momo-ai-assistant-checklist.sh`: wrapper chay checklist cho `MoMo AI Assistant`
 - `test-momo-ai-assistant-checklist.mjs`: static topology/contract checklist cho top-level + state store + state cleanup + router tool + healthcheck tool + demo command tool cua `MoMo AI Assistant`
 - `test-sprint-monitor-checklist.sh`: wrapper chay checklist cho `Sprint Monitor`
-- `test-sprint-monitor-checklist.mjs`: static topology/contract checklist cho 4 workflow `Sprint Monitor` + support files
+- `test-sprint-monitor-checklist.mjs`: static topology/contract checklist cho `Sprint Monitor Scheduler` + `Sprint Monitor Engine` + support files
 
 ## Sprint Monitor workflow source
 - Sprint Monitor duoc quan ly giong workflow khac: sua truc tiep cac template JSON trong `workflows/sprint-monitor/` va import lai bang `scripts/workflows/import/import-sprint-monitor-*.sh`

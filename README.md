@@ -75,21 +75,19 @@ bash scripts/workflows/tests/test-momo-ai-assistant-checklist.sh
 Checklist hien tai la static contract/topology checklist cho workflow canonical (`Book Review`) va shared workflows `TTS VieNeu` + `TTS VREX`. Repo hien khong advertise full E2E runner cho media/runtime cho den khi backlog E2E duoc rebuild day du.
 
 ## Sprint Monitor MVP
+- Top-level workflow: `Sprint Monitor Scheduler`
 - Workflow templates moi:
-  - `workflows/sprint-monitor/sprint-monitor-light-scan.workflow.json`
-  - `workflows/sprint-monitor/sprint-monitor-deep-analysis.workflow.json`
-  - `workflows/sprint-monitor/sprint-monitor-endgame.workflow.json`
+  - `workflows/sprint-monitor/sprint-monitor-scheduler.workflow.json`
   - `workflows/sprint-monitor/sprint-monitor-engine.workflow.json`
 - Workflow authoring:
   - Sprint Monitor duoc quan ly giong cac workflow khac: sua truc tiep JSON template da sync tai `workflows/sprint-monitor/`.
+  - Topology hien tai la `single scheduler + engine` va engine se chon `scan/review` mode o runtime.
   - Unified digest text se replace moi issue key match regex `[A-Z][A-Z0-9]+-\\d+` thanh format Google Chat `<jiraBaseUrl/browse/<ISSUE_KEY>|<ISSUE_KEY>>`, giu nguyen visible cardId ngay truoc khi gui Google Chat.
 - Import wrappers:
   - `bash scripts/workflows/import/import-sprint-monitor-engine-workflow.sh`
-  - `bash scripts/workflows/import/import-sprint-monitor-light-scan-workflow.sh`
-  - `bash scripts/workflows/import/import-sprint-monitor-deep-analysis-workflow.sh`
-  - `bash scripts/workflows/import/import-sprint-monitor-endgame-workflow.sh`
+  - `bash scripts/workflows/import/import-sprint-monitor-scheduler-workflow.sh`
 - Import behavior:
-  - 3 wrapper top-level se import `Sprint Monitor Engine` truoc, sau do patch token `__REGISTRY__:Sprint Monitor Engine` thanh workflow ID that trong template top-level.
+  - Wrapper scheduler se import `Sprint Monitor Engine` truoc, sau do patch token `__REGISTRY__:Sprint Monitor Engine` thanh workflow ID that trong template top-level.
   - Credential binding van la buoc manual sau import.
 - Required credentials:
   - `Sprint Monitor Jira`
@@ -206,7 +204,8 @@ bash scripts/workflows/import/import-momo-ai-assistant-workflow.sh
 - `docs/book-review-workflow.md`: mo ta hien trang workflow canonical
 - `docs/book-review-todo.md`: backlog tiep tuc
 - `scripts/workflows/import/import-book-review-workflow.sh`: wrapper import canonical
-- `scripts/workflows/import/import-sprint-monitor-*.sh`: wrapper import `Sprint Monitor`
+- `scripts/workflows/import/import-sprint-monitor-scheduler-workflow.sh`: wrapper import top-level scheduler `Sprint Monitor`
+- `scripts/workflows/import/import-sprint-monitor-engine-workflow.sh`: wrapper import subworkflow `Sprint Monitor Engine`
 - `scripts/bootstrap/apply-sprint-monitor-schema.sh`: apply `docs/sprint-monitor/schema.sql`
 - `scripts/workflows/tests/test-book-review-checklist.mjs`: checklist runner
 - `scripts/workflows/tests/test-tts-checklist.mjs`: checklist runner cho `TTS VieNeu`
