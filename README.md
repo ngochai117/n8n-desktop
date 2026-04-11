@@ -166,6 +166,36 @@ bash scripts/workflows/import/import-momo-ai-assistant-tool-sprint-release-workf
 bash scripts/workflows/import/import-momo-ai-assistant-workflow.sh
 ```
 
+## Jira AI Agent (Standalone, Phase 1)
+- Workflow moi, doc lap hoan toan voi `MoMo AI Assistant` va `MoMo Assistant`.
+- Topology giu rat mong:
+  - `Trigger -> Build Event -> Config Main -> Build Agent Context -> AI Agent -> Normalize Agent Result -> deliveryPlan -> delivery`
+- Tool phase 1:
+  - `Jira Tool` (inline safe writes, `GET/POST/PUT`)
+  - `HTTP Generic` (fallback Jira read/write, `GET/POST/PUT`)
+  - `Get Members`
+- Mention rendering:
+  - prompt uu tien dung `@handle` theo local-part cua email (`@hai.nguyen8`, ...) va chu dong mention dung nguoi tu `assignee/reporter/owner/...` neu du lieu Jira du chac
+  - render layer doc shared sheet `MoMoer`, bold handle trong body (`*@hai.nguyen8*`)
+  - neu resolve duoc user that thi append footer mentions list dang `<users/...>` giong pattern `Sprint Monitor`
+  - footer mention duoc sort theo thu tu xuat hien dau tien trong message de nhin gon va on dinh hon khi co nhieu nguoi
+- AI output contract:
+  - `AI Agent` bat `Require Specific Output Format` qua structured output parser
+  - downstream doc truc tiep object output, khong con parse JSON string bang code node
+- Phase 1 hien chot `inline-safe-writes`:
+  - duoc tra cuu / phan tich / de xuat / thuc thi Jira write trong cung luot chat khi target ro rang
+  - uu tien fetch facts truoc khi write, chi mutation dung muc user yeu cau
+  - khong mo `DELETE`, khong bulk write neu user khong yeu cau rat ro
+  - Jira write endpoint tra `204 No Content` van duoc xem la thanh cong; tool doc `statusCode` thay vi ep parse JSON
+- Import:
+```bash
+bash scripts/workflows/import/import-jira-ai-agent-workflow.sh
+```
+- Checklist:
+```bash
+bash scripts/workflows/tests/test-jira-ai-agent-checklist.sh
+```
+
 ## Troubleshooting (GG Drive recursive upsert)
 - `GG Drive Manager` giu nguyen binary khi recurse folder path (`Execute Recursive Workflow`) de nhanh `upsert` khong mat file binary va khong fail `missingFileBinary`.
 
@@ -204,14 +234,21 @@ bash scripts/workflows/import/import-momo-ai-assistant-workflow.sh
 - `workflows/media/tts-vrex.workflow.json`: shared workflow `TTS VREX`
 - `workflows/shared/data-table-store.workflow.json`: subworkflow generic cho Data Table get/upsert
 - `workflows/sprint-monitor/`: workflow templates `Sprint Monitor`
+- `workflows/ui-synced/Jira/jira-ai-agent.workflow.json`: workflow standalone `Jira AI Agent`
 - `workflows/book-review/prompts/`: prompt source files
 - `docs/book-review-workflow.md`: mo ta hien trang workflow canonical
 - `docs/book-review-todo.md`: backlog tiep tuc
 - `scripts/workflows/import/import-book-review-workflow.sh`: wrapper import canonical
+- `scripts/workflows/import/import-jira-ai-agent-workflow.sh`: wrapper import `Jira AI Agent`
 - `scripts/workflows/import/import-sprint-monitor-scheduler-workflow.sh`: wrapper import top-level scheduler `Sprint Monitor`
 - `scripts/workflows/import/import-sprint-monitor-engine-workflow.sh`: wrapper import subworkflow `Sprint Monitor Engine`
 - `scripts/bootstrap/apply-sprint-monitor-schema.sh`: apply `docs/sprint-monitor/schema.sql`
 - `scripts/workflows/tests/test-book-review-checklist.mjs`: checklist runner
+- `scripts/workflows/tests/test-jira-ai-agent-checklist.mjs`: checklist runner cho `Jira AI Agent`
 - `scripts/workflows/tests/test-tts-checklist.mjs`: checklist runner cho `TTS VieNeu`
 - `scripts/workflows/tests/test-tts-vrex-checklist.mjs`: checklist runner cho `TTS VREX`
 - `scripts/workflows/tests/test-sprint-monitor-checklist.mjs`: checklist runner cho `Sprint Monitor`
+
+## Update Log
+- 2026-04-11: nang `Jira AI Agent` len `inline-safe-writes`, bat structured output parser, tune mention theo assignee/reporter/owner, va sort footer mentions on dinh hon.
+- 2026-04-11: them workflow standalone `Jira AI Agent` theo huong prompt-heavy, read-only phase 1, kem wrapper import va checklist rieng.

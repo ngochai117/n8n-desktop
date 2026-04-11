@@ -1,0 +1,628 @@
+{
+  "name": "MoMo Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -336,
+        -16
+      ],
+      "id": "ec6bd506-ac06-4805-a872-d69e8125ae9f",
+      "name": "When chat message received",
+      "webhookId": "e9211a68-eb08-4683-897e-d8c44cecaa4a"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input =  $json || {};\n\nconst config = {\n  timeZone: 'Asia/Ho_Chi_Minh',\n  nowIso: $now.setZone('Asia/Ho_Chi_Minh').toISO(),\n};\n\nreturn {\n  ...input,\n  config,\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        -16
+      ],
+      "id": "f5d8935f-01dc-47a1-8e12-62a7ce951b11",
+      "name": "Config Main"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        112,
+        -16
+      ],
+      "id": "286ac724-de05-4d1e-b2e9-8770e79d0166",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "cx/gpt-5.4",
+          "mode": "list",
+          "cachedResultName": "cx/gpt-5.4"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        120,
+        208
+      ],
+      "id": "5cf9ae14-8081-489a-bc2f-218b82b0e7f1",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "nmpOof7gCtDCf1BD",
+          "name": "Local OpenAI Proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "cx/gpt-5.4",
+          "mode": "list",
+          "cachedResultName": "cx/gpt-5.4"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        264,
+        416
+      ],
+      "id": "add30ac4-4520-4123-8bb7-a18a1f83a437",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "nmpOof7gCtDCf1BD",
+          "name": "Local OpenAI Proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "JIRA tool",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('System_Message', ``, 'string') }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        376,
+        208
+      ],
+      "id": "ef6224a9-46fb-4217-b95d-77dc5fb2a0cc",
+      "name": "JIRA Tool"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Bắt buộc sử dụng HTTP này để thực thi Jira.\nBase URL: https://atlassiansuite.mservice.com.vn:8443\nYêu cầu: Sử dụng Jira REST API v2.\n",
+        "method": "={{ $fromAI('method', 'HTTP method to use (GET, POST, PUT, DELETE)', 'string') }}",
+        "url": "={{ $fromAI('url', 'The full Jira API URL', 'string') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "jiraSoftwareServerPatApi",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={{ JSON.stringify($fromAI('queryParams', 'JSON object for query strings', 'json') || {}) }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $fromAI('body', 'JSON object for the request body', 'json') || {} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        392,
+        416
+      ],
+      "id": "0e639783-5dbb-4acc-8d6a-599f40418732",
+      "name": "HTTP Generic",
+      "credentials": {
+        "jiraSoftwareServerPatApi": {
+          "id": "3TLwUpSgsJhbG45A",
+          "name": "Jira MoMo account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Đọc sheet này để mapping userId mục đích tag đúng user google chat",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1uLVZ2b6Ra-r2KCbLHcOL68V6smtxymfTCNNQnWPG8mI/edit?usp=drive_web&ouid=117576252668331810710",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "MoMoer",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_1_value', ``, 'string') }}"
+            },
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_2_value', ``, 'string') }}"
+            },
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_3_value', ``, 'string') }}"
+            },
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_4_value', ``, 'string') }}"
+            },
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_5_value', ``, 'string') }}"
+            }
+          ]
+        },
+        "combineFilters": "OR",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        520,
+        416
+      ],
+      "id": "3be73cf0-5698-4222-9beb-b782b73a2456",
+      "name": "Get Members",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3i6vDJxzaxXLHIWl",
+          "name": "Google account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $('Build Assistant Context').first().json || {};\nconst event = $('Config Main').first().json || {};\nconst config = event.config || {};\nconst agent = $input.first()?.json || {};\n\nconst memoryMaxTurns = Math.max(1, Number(config.memoryMaxTurns || 10));\nconst memoryUserChars = Math.max(40, Number(config.memoryUserChars || 180));\nconst memoryAssistantChars = Math.max(40, Number(config.memoryAssistantChars || 280));\nconst configuredGgChatWebhookUrl = toText(config.ggChatWebhookUrl || '');\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  if (typeof value === 'object') return JSON.stringify(value);\n  return String(value).trim();\n}\n\nfunction trimText(value, maxLen) {\n  const text = toText(value).replace(/\\s+/g, ' ');\n  if (!text) return '';\n  if (!maxLen || text.length <= maxLen) return text;\n  return `${text.slice(0, maxLen - 3).trimEnd()}...`;\n}\n\nfunction normalizeTurns(rawTurns) {\n  if (!Array.isArray(rawTurns)) return [];\n\n  return rawTurns\n    .map((turn) => ({\n      user: trimText(turn?.user || '', memoryUserChars),\n      assistant: trimText(turn?.assistant || '', memoryAssistantChars),\n      at: toText(turn?.at || ''),\n    }))\n    .filter((turn) => turn.user || turn.assistant)\n    .slice(-memoryMaxTurns);\n}\n\nfunction detectIntent(commandText) {\n  const normalized = String(commandText || '').trim().toLowerCase();\n\n  if (/release\\s+sprint|close\\s+sprint|release\\s+status/.test(normalized)) return 'releaseDemo';\n  if (/(^|\\b)(approve|ok|dong y|đồng ý|xac nhan|xác nhận)(\\b|$)/i.test(normalized)) return 'approveDemo';\n  if (/(^|\\b)(reject|tu choi|từ chối)(\\b|$)/i.test(normalized)) return 'rejectDemo';\n  if (/(^|\\b)(cancel|huy|hủy)(\\b|$)/i.test(normalized)) return 'cancelDemo';\n  if (/check\\s+sprint|status\\s+sprint|sprint\\s+status|healthcheck/.test(normalized)) return 'checkSprint';\n  if (/(^|\\b)(hello|hi|alo|chào|xin chào|cảm ơn|thanks|thank you)(\\b|$)/i.test(normalized)) return 'smallTalk';\n\n  return 'help';\n}\n\nfunction extractJsonText(value) {\n  const text = toText(value);\n  if (!text) return '';\n\n  const fencedMatch = text.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);\n  if (fencedMatch?.[1]) return fencedMatch[1].trim();\n\n  if (text.startsWith('{') || text.startsWith('[')) return text;\n\n  const firstBraceIndex = text.indexOf('{');\n  const lastBraceIndex = text.lastIndexOf('}');\n  if (firstBraceIndex >= 0 && lastBraceIndex > firstBraceIndex) {\n    return text.slice(firstBraceIndex, lastBraceIndex + 1).trim();\n  }\n\n  const firstBracketIndex = text.indexOf('[');\n  const lastBracketIndex = text.lastIndexOf(']');\n  if (firstBracketIndex >= 0 && lastBracketIndex > firstBracketIndex) {\n    return text.slice(firstBracketIndex, lastBracketIndex + 1).trim();\n  }\n\n  return '';\n}\n\nfunction tryParseJson(value) {\n  const text = extractJsonText(value);\n  if (!text || (!text.startsWith('{') && !text.startsWith('['))) return null;\n\n  try {\n    return JSON.parse(text);\n  } catch (error) {\n    return null;\n  }\n}\n\nfunction normalizeStructuredCandidate(candidate) {\n  if (!candidate) return null;\n  if (typeof candidate === 'string') return tryParseJson(candidate);\n  if (typeof candidate === 'object') return candidate;\n  return null;\n}\n\nfunction isStructuredToolResult(candidate) {\n  return Boolean(\n    candidate &&\n      typeof candidate === 'object' &&\n      (candidate.deliveryPlan || candidate.resultText || candidate.toolName)\n  );\n}\n\nfunction normalizeDestinationList(rawDestinations) {\n  if (!Array.isArray(rawDestinations)) return [];\n\n  const normalized = [];\n  const seen = new Set();\n  for (const rawDestination of rawDestinations) {\n    const type = toText(rawDestination?.type || rawDestination);\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    normalized.push({ type });\n  }\n\n  return normalized;\n}\n\nfunction defaultDestinationsForChannel(channel) {\n  if (toText(channel) === 'system') {\n    return [{ type: 'pushGoogleChat' }];\n  }\n\n  return [{ type: 'reply' }];\n}\n\nfunction filterAvailableDestinations(destinations) {\n  const filtered = destinations.filter((destination) => {\n    if (destination.type === 'pushGoogleChat' && !configuredGgChatWebhookUrl) return false;\n    return true;\n  });\n\n  if (filtered.length > 0) return filtered;\n  return [{ type: 'reply' }];\n}\n\nfunction normalizeMessageDestinations(rawDestinations, allowedTypes) {\n  if (!Array.isArray(rawDestinations)) return allowedTypes;\n\n  const requested = [];\n  const seen = new Set();\n  for (const rawDestination of rawDestinations) {\n    const type = toText(rawDestination);\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    requested.push(type);\n  }\n\n  if (requested.length === 0) return allowedTypes;\n  return requested.filter((type) => allowedTypes.includes(type));\n}\n\nfunction normalizeMessage(message, fallbackText, allowedTypes) {\n  if (!message || typeof message !== 'object') return null;\n\n  const payload = message.payload && typeof message.payload === 'object'\n    ? message.payload\n    : (toText(message.text || fallbackText) ? { text: toText(message.text || fallbackText) } : null);\n\n  if (!payload) return null;\n\n  const destinations = normalizeMessageDestinations(\n    Array.isArray(message.destinations) ? message.destinations : message.destinationTypes,\n    allowedTypes,\n  );\n\n  if (destinations.length === 0) return null;\n\n  return {\n    messageKey: toText(message.messageKey || message.key || 'reply') || 'reply',\n    type: toText(message.type || (payload.cardsV2 ? 'googleChatCardV2' : 'text')) || 'text',\n    destinations,\n    payload,\n  };\n}\n\nfunction normalizeDeliveryPlan(rawPlan, fallbackText) {\n  const requestedDestinations = normalizeDestinationList(rawPlan?.destinations);\n  const baseDestinations = requestedDestinations.length > 0\n    ? requestedDestinations\n    : defaultDestinationsForChannel(event.channel || 'googleChat');\n  const destinations = filterAvailableDestinations(baseDestinations);\n  const allowedTypes = destinations.map((destination) => destination.type);\n\n  const messages = Array.isArray(rawPlan?.messages)\n    ? rawPlan.messages\n        .map((message) => normalizeMessage(message, fallbackText, allowedTypes))\n        .filter(Boolean)\n    : [];\n\n  if (messages.length === 0 && allowedTypes.length > 0) {\n    messages.push({\n      messageKey: 'reply',\n      type: 'text',\n      destinations: allowedTypes,\n      payload: { text: fallbackText },\n    });\n  }\n\n  const thread = rawPlan?.thread && typeof rawPlan.thread === 'object'\n    ? rawPlan.thread\n    : {};\n\n  return {\n    thread,\n    destinations,\n    messages,\n  };\n}\n\nfunction getExecutedNodeJson(nodeName) {\n  try {\n    const nodeOutput = $(nodeName).first();\n    return nodeOutput?.json && typeof nodeOutput.json === 'object' ? nodeOutput.json : null;\n  } catch (error) {\n    return null;\n  }\n}\n\nconst rawOutput =\n  agent.output ??\n  agent.response ??\n  agent.result ??\n  agent.text ??\n  agent.message?.content ??\n  '';\nconst routerToolOutput = getExecutedNodeJson('Assistant Command Router Workflow Tool');\nconst structuredOutput = [\n  routerToolOutput,\n  agent.output,\n  agent.response,\n  agent.result,\n  agent.text,\n  agent.message?.content,\n]\n  .map((candidate) => normalizeStructuredCandidate(candidate))\n  .find((candidate) => isStructuredToolResult(candidate)) || null;\n\nconst detectedIntent = detectIntent(event.commandText || '');\nlet resultText = toText(structuredOutput?.resultText || rawOutput);\n\nif (!resultText) {\n  resultText = detectedIntent === 'smallTalk'\n    ? 'Mình đây nè. Cần mình check gì cho sprint thì cứ nói.'\n    : 'Mình đã nhận yêu cầu nhưng chưa lấy được kết quả từ tool, bạn thử lại giúp mình nhé.';\n}\n\nconst previousTurns = normalizeTurns(context.memory?.turns || []);\nconst nowIso = toText(config.nowIso || new Date().toISOString());\nconst newTurn = {\n  user: trimText(event.commandText || '', memoryUserChars),\n  assistant: trimText(resultText, memoryAssistantChars),\n  at: nowIso,\n};\nconst turns = [...previousTurns, newTurn]\n  .filter((turn) => turn.user || turn.assistant)\n  .slice(-memoryMaxTurns);\n\nconst currentIntent = JSON.stringify({\n  intent: detectedIntent,\n  previousIntent: toText(context.memory?.intent || ''),\n  turns,\n  memoryUpdatedAt: nowIso,\n});\n\nconst deliveryPlan = normalizeDeliveryPlan(structuredOutput?.deliveryPlan, resultText);\n\nreturn [\n  {\n    json: {\n      toolName: toText(structuredOutput?.toolName || ''),\n      resultText,\n      currentIntent,\n      deliveryPlan,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        608
+      ],
+      "id": "a4ca80e3-8242-4c37-b3e3-b2557c8d2beb",
+      "name": "Build Agent Delivery Envelope"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "buH9JMCFNDnD3ZWU",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/buH9JMCFNDnD3ZWU",
+          "cachedResultName": "MoMo AI Assistant State Store"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "operation": "upsertSession",
+            "session": "={{ ({ sessionId: $('Build Assistant Context').first().json.sessionId || $('Config Main').first().json.sessionId || '', channel: $('Config Main').first().json.channel || 'googleChat', spaceId: $('Config Main').first().json.spaceId || '', threadKey: $('Config Main').first().json.threadKey || '', lastActorId: $('Config Main').first().json.actorId || '', status: 'active', currentIntent: $('Build Agent Delivery Envelope').first().json.currentIntent || 'agent', activePendingActionId: $('Build Agent Delivery Envelope').first().json.activePendingActionId || $('Build Assistant Context').first().json.session?.activePendingActionId || '', createdAt: $('Build Assistant Context').first().json.session?.createdAt || $('Config Main').first().json.config.nowIso, updatedAt: $('Config Main').first().json.config.nowIso }) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "operation",
+              "displayName": "operation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "session",
+              "displayName": "session",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -112,
+        608
+      ],
+      "id": "ab79cf9e-93ff-4978-9d6d-423303b01a94",
+      "name": "Save Agent Session"
+    },
+    {
+      "parameters": {
+        "jsCode": "const envelope = $('Build Agent Delivery Envelope').first().json || {};\nconst deliveryPlan = envelope.deliveryPlan && typeof envelope.deliveryPlan === 'object'\n  ? envelope.deliveryPlan\n  : {};\nconst destinations = Array.isArray(deliveryPlan.destinations) ? deliveryPlan.destinations : [];\nconst messages = Array.isArray(deliveryPlan.messages) ? deliveryPlan.messages : [];\nconst resultText = String(envelope.resultText || '').trim() || 'Đã nhận lệnh.';\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction hasDestination(message, destinationType) {\n  const destinationTypes = Array.isArray(message?.destinations) ? message.destinations : [];\n  return destinationTypes.some((type) => toText(type) === destinationType);\n}\n\nconst hasReplyDestination = destinations.some((destination) => toText(destination?.type || '') === 'reply');\nconst replyMessages = messages.filter((message) => hasDestination(message, 'reply') && message?.payload && typeof message.payload === 'object');\nconst preferredPayload = replyMessages.find((message) => toText(message.type) === 'text')?.payload || replyMessages[0]?.payload || null;\n\nreturn [\n  {\n    json: {\n      hasReplyDestination,\n      responseBody: hasReplyDestination ? preferredPayload || { text: resultText } : {},\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        608
+      ],
+      "id": "4625fabd-4f16-4e8a-b8a4-d4da46501178",
+      "name": "Build Reply Response"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.requestUrl }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.requestBody }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1232,
+        416
+      ],
+      "id": "c3ee9a1f-46ee-4331-959c-5d69f84ee6ed",
+      "name": "Send GGChat Delivery Message"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prepare = $('Prepare GGChat Delivery Messages').first().json || {};\nconst requestCount = Number(prepare.ggChatRequestCount || 0);\n\nlet responseItems = [];\nif (requestCount > 0) {\n  try {\n    responseItems = $('Send GGChat Delivery Message').all();\n  } catch (error) {\n    responseItems = [];\n  }\n}\n\nconst statusCodes = responseItems\n  .map((item) => Number(item?.json?.statusCode || 0))\n  .filter((statusCode) => statusCode > 0);\n\nconst successCount = statusCodes.filter((statusCode) => statusCode < 400).length;\nconst failureCount = statusCodes.filter((statusCode) => statusCode >= 400).length;\nconst missingCount = Math.max(0, requestCount - statusCodes.length);\n\nlet ggChatDeliveryStatus = 'skipped';\nif (requestCount === 0) {\n  ggChatDeliveryStatus = 'skipped';\n} else if (successCount === requestCount) {\n  ggChatDeliveryStatus = 'delivered';\n} else if (successCount > 0) {\n  ggChatDeliveryStatus = 'partial';\n} else {\n  ggChatDeliveryStatus = 'failed';\n}\n\nreturn [\n  {\n    json: {\n      ggChatDeliveryStatus,\n      ggChatMessageCount: requestCount,\n      ggChatSuccessCount: successCount,\n      ggChatFailureCount: failureCount,\n      ggChatMissingCount: missingCount,\n      ggChatThreadKey: String(prepare.ggChatThreadKey || '').trim(),\n      ggChatDeliverySkipReason: String(prepare.ggChatDeliverySkipReason || '').trim(),\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        608
+      ],
+      "id": "239a30bb-a7eb-444a-868d-788c2ac14c07",
+      "name": "Build Delivery Ack"
+    },
+    {
+      "parameters": {
+        "jsCode": "const envelope = $('Build Agent Delivery Envelope').first().json || {};\nconst event = $('Config Main').first().json || {};\nconst config = event.config || {};\nconst deliveryPlan = envelope.deliveryPlan && typeof envelope.deliveryPlan === 'object'\n  ? envelope.deliveryPlan\n  : {};\nconst destinations = Array.isArray(deliveryPlan.destinations) ? deliveryPlan.destinations : [];\nconst rawMessages = Array.isArray(deliveryPlan.messages) ? deliveryPlan.messages : [];\nconst baseUrl = String(config.ggChatWebhookUrl || '').trim();\nconst replyOption = encodeURIComponent(\n  String(config.googleChatReplyOption || 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD').trim() || 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD',\n);\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction slugify(value) {\n  return toText(value)\n    .toLowerCase()\n    .replace(/[^a-z0-9_-]+/g, '-')\n    .replace(/^-+|-+$/g, '');\n}\n\nfunction hasDestination(message, destinationType) {\n  const destinationTypes = Array.isArray(message?.destinations) ? message.destinations : [];\n  return destinationTypes.some((type) => toText(type) === destinationType);\n}\n\nfunction normalizeMessage(message, fallbackText) {\n  if (!message || typeof message !== 'object') return null;\n\n  const payload = message.payload && typeof message.payload === 'object'\n    ? message.payload\n    : (toText(message.text || fallbackText) ? { text: toText(message.text || fallbackText) } : null);\n\n  if (!payload) return null;\n\n  return {\n    messageKey: toText(message.messageKey || message.key || 'message') || 'message',\n    type: toText(message.type || (payload.cardsV2 ? 'googleChatCardV2' : 'text')) || 'text',\n    destinations: Array.isArray(message.destinations) ? message.destinations : [],\n    payload,\n  };\n}\n\nconst fallbackText = toText(envelope.resultText || 'Đã có kết quả xử lý.');\nconst hasPushDestination = destinations.some((destination) => toText(destination?.type || '') === 'pushGoogleChat');\nconst messages = rawMessages\n  .map((message) => normalizeMessage(message, fallbackText))\n  .filter((message) => message && hasDestination(message, 'pushGoogleChat'));\n\nconst threadConfig = deliveryPlan.thread && typeof deliveryPlan.thread === 'object'\n  ? deliveryPlan.thread\n  : {};\nconst subworkflowThreadKey = toText(threadConfig.threadKey);\nconst configThreadKey = toText(event.threadKey || '');\nconst seed = slugify(envelope.toolName || 'momo-ai-assistant') || 'momo-ai-assistant';\nconst uniqueSuffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;\nconst fallbackThreadKey = `${seed}-${uniqueSuffix}`.slice(0, 120);\nconst finalThreadKey = subworkflowThreadKey || configThreadKey || fallbackThreadKey;\n\nlet ggChatRequests = [];\nlet ggChatDeliverySkipReason = '';\n\nif (!hasPushDestination) {\n  ggChatDeliverySkipReason = 'No pushGoogleChat destination requested.';\n} else if (!baseUrl) {\n  ggChatDeliverySkipReason = 'ggChatWebhookUrl is not configured.';\n} else if (messages.length === 0) {\n  ggChatDeliverySkipReason = 'No Google Chat messages matched the requested destinations.';\n} else {\n  const separator = baseUrl.includes('?') ? '&' : '?';\n  const requestUrl = `${baseUrl}${separator}threadKey=${encodeURIComponent(finalThreadKey)}&messageReplyOption=${replyOption}`;\n  ggChatRequests = messages.map((message, index) => ({\n    requestIndex: index,\n    messageKey: message.messageKey,\n    messageType: message.type,\n    requestBody: message.payload,\n    requestUrl,\n    finalThreadKey,\n  }));\n}\n\nreturn [\n  {\n    json: {\n      ggChatDeliveryEnabled: ggChatRequests.length > 0,\n      ggChatRequestCount: ggChatRequests.length,\n      ggChatRequests,\n      ggChatDeliverySkipReason,\n      ggChatThreadKey: finalThreadKey,\n    },\n  },\n];"
+      },
+      "id": "51f7a457-9b01-477b-ab56-5f99304c9798",
+      "name": "Prepare GGChat Delivery Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ Boolean($json.ggChatDeliveryEnabled) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        560,
+        608
+      ],
+      "id": "9c146fb3-adae-4a3d-b638-61d915ca685e",
+      "name": "If Has GGChat Delivery Messages?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const requests = $('Prepare GGChat Delivery Messages').first().json?.ggChatRequests;\nconst safeRequests = Array.isArray(requests) ? requests : [];\n\nreturn safeRequests.map((request, requestIndex) => ({\n  json: {\n    requestIndex,\n    ...request,\n  },\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        464
+      ],
+      "id": "65a8a3f0-51f9-48fa-93c4-95cf0dd173ba",
+      "name": "Split Out GGChat Delivery Messages"
+    },
+    {
+      "parameters": {
+        "jsCode": "const envelope = $('Build Agent Delivery Envelope').first().json || {};\nconst reply = $('Build Reply Response').first().json || {};\nconst delivery = $input.first()?.json || {};\nconst event = $('Config Main').first().json || {};\nconst responseBody = reply.responseBody && typeof reply.responseBody === 'object'\n  ? reply.responseBody\n  : {};\nconst hasReplyDestination = Boolean(reply.hasReplyDestination);\nconst channel = String(event.channel || '').trim();\n\nif (hasReplyDestination && Object.keys(responseBody).length > 0) {\n  return [{ json: responseBody }];\n}\n\nif (channel === 'googleChat' || channel === 'n8nChatTrigger') {\n  return [{ json: {} }];\n}\n\nreturn [\n  {\n    json: {\n      status: String(delivery.ggChatDeliveryStatus || 'skipped'),\n      channel,\n      resultText: String(envelope.resultText || '').trim(),\n      threadKey: String(delivery.ggChatThreadKey || event.threadKey || '').trim(),\n      messageCount: Number(delivery.ggChatMessageCount || 0),\n      successCount: Number(delivery.ggChatSuccessCount || 0),\n      failureCount: Number(delivery.ggChatFailureCount || 0),\n      skipReason: String(delivery.ggChatDeliverySkipReason || '').trim(),\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        608
+      ],
+      "id": "f3639661-969d-465b-90f1-b9ae3626fc74",
+      "name": "Build Final Response"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "6be39406-d591-4dcb-8b7f-273fdf067ec9",
+      "name": "Loop Over GGChat Delivery Messages",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1008,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        248,
+        208
+      ],
+      "id": "cddc4b4f-7623-4713-960e-764626347946",
+      "name": "Simple Memory"
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Config Main",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config Main": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "JIRA Tool",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JIRA Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Generic": {
+      "ai_tool": [
+        [
+          {
+            "node": "JIRA Tool",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Members": {
+      "ai_tool": [
+        [
+          {
+            "node": "JIRA Tool",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Agent Delivery Envelope": {
+      "main": [
+        [
+          {
+            "node": "Save Agent Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Agent Session": {
+      "main": [
+        [
+          {
+            "node": "Build Reply Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Reply Response": {
+      "main": [
+        [
+          {
+            "node": "Prepare GGChat Delivery Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send GGChat Delivery Message": {
+      "main": [
+        [
+          {
+            "node": "Loop Over GGChat Delivery Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Delivery Ack": {
+      "main": [
+        [
+          {
+            "node": "Build Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare GGChat Delivery Messages": {
+      "main": [
+        [
+          {
+            "node": "If Has GGChat Delivery Messages?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has GGChat Delivery Messages?": {
+      "main": [
+        [
+          {
+            "node": "Split Out GGChat Delivery Messages",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Delivery Ack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out GGChat Delivery Messages": {
+      "main": [
+        [
+          {
+            "node": "Loop Over GGChat Delivery Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over GGChat Delivery Messages": {
+      "main": [
+        [
+          {
+            "node": "Build Delivery Ack",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send GGChat Delivery Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}

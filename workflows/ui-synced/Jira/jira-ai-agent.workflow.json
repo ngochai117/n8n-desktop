@@ -1,0 +1,662 @@
+{
+  "name": "Jira AI Agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -960,
+        -240
+      ],
+      "id": "manual-trigger-1",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "jira-ai-agent",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -960,
+        -48
+      ],
+      "id": "webhook-1",
+      "name": "Google Chat Webhook",
+      "webhookId": "jira-ai-agent-chat-webhook"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -960,
+        144
+      ],
+      "id": "chat-trigger-1",
+      "name": "Local Chat Trigger",
+      "webhookId": "64b94d3a-18c3-46a5-8583-dd0b677ec0dc"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const payload = $json && typeof $json === 'object' ? $json : {};\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nconst body = payload.body && typeof payload.body === 'object' ? payload.body : null;\nif (body) {\n  const message = body.message && typeof body.message === 'object' ? body.message : {};\n  const space = body.space && typeof body.space === 'object' ? body.space : (message.space || {});\n  const thread = message.thread && typeof message.thread === 'object' ? message.thread : (body.thread || {});\n  const threadName = toText(thread.name || '');\n  const threadKey = threadName ? threadName.split('/').pop() : toText(message.name || body.messageId || body.eventTime || 'google-chat-thread');\n\n  let commandText = toText(message.argumentText || message.slashCommand?.commandName || message.text || '');\n  commandText = commandText.replace(/<users\\/[^>]+>/g, ' ').trim();\n\n  const spaceId = toText(space.name || '');\n  const sessionId = `${spaceId || 'google-chat'}:${threadKey || 'thread'}`;\n\n  return {\n    triggerSource: 'chat',\n    channel: 'googleChat',\n    commandText,\n    actorId: toText(body.user?.name || message.sender?.name || ''),\n    actorDisplayName: toText(body.user?.displayName || message.sender?.displayName || ''),\n    spaceId,\n    threadKey,\n    sessionId,\n  };\n}\n\nconst localCommandText = toText(payload.chatInput || payload.text || payload.message?.text || '');\nif (localCommandText || payload.userId || payload.sessionId || payload.threadKey || payload.thread) {\n  const actorId = toText(payload.actorId || payload.userId || payload.user?.id || 'n8n-chat-user');\n  const actorDisplayName = toText(payload.actorDisplayName || payload.userName || payload.user?.name || 'N8N Chat User');\n  const rawSpaceId = toText(payload.spaceId || '');\n  const rawThreadKey = toText(payload.threadKey || payload.thread || '');\n  const rawSessionId = toText(payload.sessionId || '');\n  const spaceId = rawSpaceId || 'n8n-chat';\n  const threadKey = rawThreadKey || rawSessionId || 'local-chat-thread';\n  const sessionId = rawSessionId || `${spaceId}:${threadKey}`;\n\n  return {\n    triggerSource: 'chat',\n    channel: 'n8nChatTrigger',\n    commandText: localCommandText || 'status sprint',\n    actorId,\n    actorDisplayName,\n    spaceId,\n    threadKey,\n    sessionId,\n  };\n}\n\nreturn {\n  triggerSource: 'manual',\n  channel: 'manualTrigger',\n  commandText: 'status sprint',\n  actorId: 'manual-trigger',\n  actorDisplayName: 'Manual Trigger',\n  spaceId: 'manual-trigger-space',\n  threadKey: 'manual-jira-ai-agent',\n  sessionId: 'manual-trigger-space:manual-jira-ai-agent',\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -736,
+        -48
+      ],
+      "id": "build-event-1",
+      "name": "Build Event"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const config = {\n  jiraBaseUrl: 'https://atlassiansuite.mservice.com.vn:8443',\n  jiraApiVersion: '2',\n  timeZone: 'Asia/Ho_Chi_Minh',\n  ggChatWebhookUrl: 'https://chat.googleapis.com/v1/spaces/AAQAcu_P8pI/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=hi3fzzGkR1ri4uotTO2hoa08WxQjdbJbNHPHSJ1S71o',\n  googleChatReplyOption: 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD',\n  spreadsheetId: '1uLVZ2b6Ra-r2KCbLHcOL68V6smtxymfTCNNQnWPG8mI',\n  spreadsheetSheetName: 'MoMoer',\n  memoryWindow: 10,\n  defaultLanguage: 'vi',\n  writeMode: 'inline-safe-writes',\n  nowIso: $now.setZone('Asia/Ho_Chi_Minh').toISO(),\n};\n\nreturn { ...($json || {}), config };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -512,
+        -48
+      ],
+      "id": "config-main-1",
+      "name": "Config Main"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const event = $('Config Main').first().json || {};\nconst config = event.config || {};\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  if (typeof value === 'object') return JSON.stringify(value);\n  return String(value).trim();\n}\n\nconst deliveryDefaults = event.channel === 'system' ? ['pushGoogleChat'] : ['reply'];\nconst context = {\n  actor: {\n    id: toText(event.actorId || ''),\n    displayName: toText(event.actorDisplayName || event.actorId || 'Unknown'),\n  },\n  channel: toText(event.channel || 'manualTrigger'),\n  threadKey: toText(event.threadKey || 'thread'),\n  sessionId: toText(event.sessionId || ''),\n  messageText: toText(event.commandText || ''),\n  toolPolicy: {\n    preferredTool: 'Jira Tool',\n    fallbackTool: 'HTTP Generic',\n    memberResolver: 'Get Members',\n    writeMode: toText(config.writeMode || 'read-only'),\n  },\n  deliveryDefaults,\n  safeConfig: {\n    jiraBaseUrl: toText(config.jiraBaseUrl || ''),\n    jiraApiVersion: toText(config.jiraApiVersion || '2'),\n    timeZone: toText(config.timeZone || 'Asia/Ho_Chi_Minh'),\n    defaultLanguage: toText(config.defaultLanguage || 'vi'),\n    nowIso: toText(config.nowIso || ''),\n  },\n};\n\nconst chatInput = [\n  'Standalone Jira AI Agent request',\n  'Return language: Vietnamese unless the user clearly asks otherwise.',\n  'No persistent state is available in this phase. Use only short memory window if present.',\n  'Context JSON:',\n  JSON.stringify(context, null, 2),\n].join('\\n');\n\nreturn { ...context, chatInput };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        -48
+      ],
+      "id": "build-agent-context-1",
+      "name": "Build Agent Context"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Bạn là Jira AI Agent chạy standalone trong n8n.\nMục tiêu: chat tự nhiên nhưng vận hành chặt chẽ, ngắn gọn, factual, bằng tiếng Việt mặc định.\nPhase hiện tại là INLINE_SAFE_WRITES.\n\nQuy tắc bắt buộc:\n- Phân loại yêu cầu thành 1 trong 4 intent: social, read, analyze, action.\n- Nếu chỉ là chào hỏi/cảm ơn/hỏi chuyện chung: trả lời tự nhiên, không cần gọi tool.\n- Nếu là Jira read/analyze: ưu tiên dùng `Jira Tool` trước.\n- Chỉ dùng `HTTP Generic` khi `Jira Tool` không diễn đạt được request Jira cần thiết một cách gọn và đúng.\n- Chỉ dùng `Get Members` khi cần resolve người cụ thể theo email, username, display name, hoặc cần chắc chắn handle mention.\n- Không bịa dữ liệu Jira. Nếu thiếu issue key, board, project, sprint, version, transition, hoặc API không trả dữ liệu thì nói rõ thiếu gì.\n- Với action/write: chỉ thực thi khi yêu cầu user là rõ ràng và target đủ cụ thể.\n- Trước khi write, phải lấy đủ facts cần thiết trong cùng lượt chat, trừ khi target đã hoàn toàn rõ ràng và request không mơ hồ.\n- Ưu tiên mutation nhỏ nhất, ít side-effect nhất, đúng đúng thứ user yêu cầu.\n- Được phép same-turn Jira writes như comment, transition, assign/reassign, edit field, create issue/sub-task, add worklog, start/complete sprint, release version khi target rõ ràng.\n- Không dùng DELETE trong workflow này. Không chạy bulk write trên nhiều issue/sprint/version nếu user không yêu cầu rất rõ.\n- Sau khi write, phải nói rõ đã làm gì, trên target nào, và phần nào chưa làm được nếu có.\n- Nếu tool trả HTTP 2xx nhưng body rỗng, đặc biệt `204 No Content`, coi đó là write thành công nếu `statusCode` xác nhận thành công.\n- Giữ nguyên xuống dòng hữu ích trong resultText, không ép mọi thứ thành 1 dòng.\n- Phản hồi cuối cùng PHẢI là đúng 1 JSON object hợp lệ, không markdown, không code block, không prose ngoài JSON.\n- `toolName` luôn là `jiraAgent`.\n- `meta.intent` chỉ được là: read, analyze, action, social.\n- `meta.confidence` chỉ được là: low, medium, high.\n- `meta.usedTools` là mảng tên tool thực sự đã dùng. Nếu không dùng tool thì trả `[]`.\n- `deliveryPlan` phải ổn định để node sau render được. Mặc định dùng reply nếu không có lý do khác.\n\nQuy tắc mention người:\n- Khi Jira data có assignee, reporter, creator, owner, reviewer, approver hoặc người chịu trách nhiệm tương đương, hãy chủ động quy về người cụ thể nếu đủ chắc chắn.\n- Khi nói về người cần action trực tiếp, ưu tiên assignee hiện tại.\n- Khi cần người xác nhận bối cảnh/yêu cầu, ưu tiên reporter hoặc requester nếu có.\n- Khi cần người ra quyết định, ưu tiên explicit owner/lead từ dữ liệu; nếu không chắc thì dùng token vai trò.\n- Khi có email hoặc username/display name nhưng chưa chắc handle exact, dùng `Get Members` để resolve.\n- Khi nhắc đúng một người cụ thể, dùng handle dạng @<local-part email>, ví dụ @hai.nguyen8.\n- Nếu chỉ biết vai trò mà không chắc người cụ thể, dùng token vai trò: @PM, @Lead, @ASSIGNEE, @OWNER, @QCS.\n- Không bịa handle. Chỉ dùng @handle khi có căn cứ từ dữ liệu Jira, Sheets hoặc ngữ cảnh rõ ràng.\n\nSchema bắt buộc:\n{\n  \"toolName\": \"jiraAgent\",\n  \"resultText\": \"...\",\n  \"deliveryPlan\": {\n    \"thread\": { \"threadKey\": \"...\" },\n    \"destinations\": [{ \"type\": \"reply\" }],\n    \"messages\": [\n      {\n        \"messageKey\": \"reply\",\n        \"type\": \"text\",\n        \"destinations\": [\"reply\"],\n        \"payload\": { \"text\": \"...\" }\n      }\n    ]\n  },\n  \"meta\": {\n    \"intent\": \"read|analyze|action|social\",\n    \"usedTools\": [],\n    \"confidence\": \"low|medium|high\"\n  }\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        128,
+        -48
+      ],
+      "id": "ai-agent-1",
+      "name": "AI Agent",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "cx/gpt-5.4",
+          "mode": "list",
+          "cachedResultName": "cx/gpt-5.4"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -64,
+        176
+      ],
+      "id": "agent-model-1",
+      "name": "Agent Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "nmpOof7gCtDCf1BD",
+          "name": "Local OpenAI Proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"toolName\": \"jiraAgent\",\n  \"resultText\": \"string\",\n  \"deliveryPlan\": {\n    \"thread\": {\n      \"threadKey\": \"string\"\n    },\n    \"destinations\": [\n      {\n        \"type\": \"reply|pushGoogleChat\"\n      }\n    ],\n    \"messages\": [\n      {\n        \"messageKey\": \"reply\",\n        \"type\": \"text\",\n        \"destinations\": [\"reply|pushGoogleChat\"],\n        \"payload\": {\n          \"text\": \"string\"\n        }\n      }\n    ]\n  },\n  \"meta\": {\n    \"intent\": \"read|analyze|action|social\",\n    \"usedTools\": [\"string\"],\n    \"confidence\": \"low|medium|high\"\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        176
+      ],
+      "id": "structured-jira-agent-output-parser-1",
+      "name": "Structured Jira Agent Output Parser"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Primary Jira read/write tool. Use this first for Jira issue, sprint, board, version, comment, transition, assign, edit, create, and search operations. Allowed methods: GET, POST, PUT. Before writes, fetch enough facts unless target is already unambiguous. Do not use DELETE. Important: some Jira write endpoints return 204 No Content; treat HTTP 2xx with empty body as success by checking statusCode.",
+        "method": "={{ $fromAI('method', 'HTTP method to use for the Jira REST API v2 request. Allowed: GET, POST, PUT', 'string') }}",
+        "url": "={{ $fromAI('url', 'Full Jira REST API URL under https://atlassiansuite.mservice.com.vn:8443 for a read-only GET request', 'string') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "jiraSoftwareServerPatApi",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={{ JSON.stringify($fromAI('queryParams', 'JSON object of query params for the Jira GET request', 'json') || {}) }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $fromAI('body', 'JSON object for the Jira REST API request body', 'json') || {} }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        192,
+        176
+      ],
+      "id": "jira-tool-1",
+      "name": "Jira Tool",
+      "credentials": {
+        "jiraSoftwareServerPatApi": {
+          "id": "3TLwUpSgsJhbG45A",
+          "name": "Jira MoMo account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Read this Google Sheet only when you need to map a member by email or resolve mention metadata.",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1uLVZ2b6Ra-r2KCbLHcOL68V6smtxymfTCNNQnWPG8mI/edit?usp=drive_web&ouid=117576252668331810710",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "MoMoer",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_1_value', ``, 'string') }}"
+            },
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_2_value', ``, 'string') }}"
+            },
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_3_value', ``, 'string') }}"
+            },
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_4_value', ``, 'string') }}"
+            },
+            {
+              "lookupColumn": "email",
+              "lookupValue": "={{ $fromAI('by_email_5_value', ``, 'string') }}"
+            }
+          ]
+        },
+        "combineFilters": "OR",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        320,
+        176
+      ],
+      "id": "get-members-1",
+      "name": "Get Members",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3i6vDJxzaxXLHIWl",
+          "name": "Google account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        64,
+        176
+      ],
+      "id": "simple-memory-1",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const event = $('Config Main').first().json || {};\nconst config = event.config || {};\nconst agent = $json && typeof $json === 'object' ? $json : {};\nconst parsed = agent.output && typeof agent.output === 'object'\n  ? agent.output\n  : (agent && typeof agent === 'object' ? agent : {});\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  if (typeof value === 'object') return JSON.stringify(value);\n  return String(value).trim();\n}\n\nfunction normalizeDestinationList(rawDestinations) {\n  if (!Array.isArray(rawDestinations)) return [];\n  const normalized = [];\n  const seen = new Set();\n\n  for (const rawDestination of rawDestinations) {\n    const type = toText(rawDestination?.type || rawDestination);\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    normalized.push({ type });\n  }\n\n  return normalized;\n}\n\nfunction defaultIntent(commandText) {\n  const normalized = toText(commandText).toLowerCase();\n  if (/(^|\\b)(hello|hi|alo|chào|xin chào|cảm ơn|thanks|thank you)(\\b|$)/i.test(normalized)) return 'social';\n  if (/(comment|transition|assign|update|edit|release|close|create|delete|approve|reject)/i.test(normalized)) return 'action';\n  if (/(analyze|đánh giá|phan tich|phân tích|recommend|de xuat|đề xuất|why|tại sao)/i.test(normalized)) return 'analyze';\n  return 'read';\n}\n\nfunction defaultDestinationsForChannel(channel) {\n  return toText(channel) === 'system' ? [{ type: 'pushGoogleChat' }] : [{ type: 'reply' }];\n}\n\nfunction normalizeMessageDestinations(rawDestinations, allowedTypes) {\n  if (!Array.isArray(rawDestinations)) return allowedTypes;\n  const requested = [];\n  const seen = new Set();\n\n  for (const rawDestination of rawDestinations) {\n    const type = toText(rawDestination);\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    requested.push(type);\n  }\n\n  if (requested.length === 0) return allowedTypes;\n  return requested.filter((type) => allowedTypes.includes(type));\n}\n\nfunction normalizeMessage(message, fallbackText, allowedTypes) {\n  if (!message || typeof message !== 'object') return null;\n\n  const payload = message.payload && typeof message.payload === 'object'\n    ? message.payload\n    : (toText(message.text || fallbackText) ? { text: toText(message.text || fallbackText) } : null);\n\n  if (!payload) return null;\n\n  const destinations = normalizeMessageDestinations(\n    Array.isArray(message.destinations) ? message.destinations : message.destinationTypes,\n    allowedTypes,\n  );\n\n  if (destinations.length === 0) return null;\n\n  return {\n    messageKey: toText(message.messageKey || message.key || 'reply') || 'reply',\n    type: toText(message.type || (payload.cardsV2 ? 'googleChatCardV2' : 'text')) || 'text',\n    destinations,\n    payload,\n  };\n}\n\nfunction normalizeDeliveryPlan(rawPlan, fallbackText) {\n  const requestedDestinations = normalizeDestinationList(rawPlan?.destinations);\n  const baseDestinations = requestedDestinations.length > 0 ? requestedDestinations : defaultDestinationsForChannel(event.channel || 'manualTrigger');\n  const destinations = baseDestinations.filter((destination) => destination.type !== 'pushGoogleChat' || toText(config.ggChatWebhookUrl || ''));\n  const safeDestinations = destinations.length > 0 ? destinations : [{ type: 'reply' }];\n  const allowedTypes = safeDestinations.map((destination) => destination.type);\n\n  const messages = Array.isArray(rawPlan?.messages)\n    ? rawPlan.messages.map((message) => normalizeMessage(message, fallbackText, allowedTypes)).filter(Boolean)\n    : [];\n\n  if (messages.length === 0) {\n    messages.push({\n      messageKey: 'reply',\n      type: 'text',\n      destinations: allowedTypes,\n      payload: { text: fallbackText },\n    });\n  }\n\n  const thread = rawPlan?.thread && typeof rawPlan.thread === 'object' ? rawPlan.thread : {};\n  if (!toText(thread.threadKey)) {\n    thread.threadKey = toText(event.threadKey || '');\n  }\n\n  return {\n    thread,\n    destinations: safeDestinations,\n    messages,\n  };\n}\n\nfunction normalizeMeta(rawMeta, fallbackIntent) {\n  const allowedIntents = new Set(['read', 'analyze', 'action', 'social']);\n  const allowedConfidence = new Set(['low', 'medium', 'high']);\n  const intent = allowedIntents.has(toText(rawMeta?.intent)) ? toText(rawMeta.intent) : fallbackIntent;\n  const confidence = allowedConfidence.has(toText(rawMeta?.confidence)) ? toText(rawMeta.confidence) : (intent === 'social' ? 'high' : 'medium');\n  const usedTools = Array.isArray(rawMeta?.usedTools)\n    ? rawMeta.usedTools.map((toolName) => toText(toolName)).filter(Boolean)\n    : [];\n\n  return { intent, usedTools, confidence };\n}\n\nconst fallbackIntent = defaultIntent(event.commandText || '');\nlet resultText = toText(parsed.resultText || '');\n\nif (!resultText) {\n  resultText = fallbackIntent === 'social'\n    ? 'Mình đây. Nếu cần tra cứu Jira hoặc phân tích sprint thì nói mình biết nhé.'\n    : 'AI Agent không trả đúng structured output như yêu cầu, nên mình chưa thể xác nhận thao tác Jira vừa rồi.';\n}\n\nif (fallbackIntent === 'action' && !toText(parsed.resultText || '')) {\n  resultText = 'Mình chưa thể xác nhận Jira write đã thực thi vì AI Agent không trả về kết quả chuẩn sau khi hành động.';\n}\n\nconst meta = normalizeMeta(parsed.meta || {}, fallbackIntent);\nconst deliveryPlan = normalizeDeliveryPlan(parsed.deliveryPlan || {}, resultText);\n\nreturn { toolName: 'jiraAgent', resultText, deliveryPlan, meta };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        -48
+      ],
+      "id": "normalize-agent-result-1",
+      "name": "Normalize Agent Result"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1uLVZ2b6Ra-r2KCbLHcOL68V6smtxymfTCNNQnWPG8mI",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "MoMoer",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        880,
+        -48
+      ],
+      "id": "get-members-directory-1",
+      "name": "Get Members Directory",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3i6vDJxzaxXLHIWl",
+          "name": "Google account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const envelope = $('Normalize Agent Result').first().json || {};\n\nfunction asText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nfunction normalizeEmail(value) {\n  const email = asText(value).toLowerCase();\n  return email.includes('@') ? email : '';\n}\n\nfunction extractHandleFromEmail(value) {\n  const email = normalizeEmail(value);\n  return email ? email.split('@')[0] : '';\n}\n\nfunction tokenDisplayText(token) {\n  const upper = asText(token).replace(/^@/, '').toUpperCase();\n  if (upper === 'LEAD') return '@Lead';\n  if (upper === 'PM') return '@PM';\n  if (upper === 'ASSIGNEE') return '@ASSIGNEE';\n  if (upper === 'OWNER') return '@OWNER';\n  if (upper === 'QCS') return '@QCS';\n  return '@' + asText(token).replace(/^@/, '');\n}\n\nconst memberRows = $input.all().map((item) => item?.json || {});\nconst directoryByKey = new Map();\n\nfunction registerDirectoryKey(rawKey, entry) {\n  const key = asText(rawKey).replace(/^@/, '').toLowerCase();\n  if (!key || directoryByKey.has(key)) return;\n  directoryByKey.set(key, entry);\n}\n\nfor (const row of memberRows) {\n  const normalized = {};\n  for (const [key, value] of Object.entries(row || {})) {\n    normalized[String(key || '').trim().toLowerCase()] = value;\n  }\n\n  const email = normalizeEmail(normalized.email);\n  const id = asText(normalized.id);\n  const name = asText(normalized.name || normalized.display_name || normalized.displayname);\n  const handle = asText(normalized.handle || normalized.username || normalized.user_name || normalized.jira_username) || extractHandleFromEmail(email);\n  if (!id || !email) continue;\n\n  const entry = {\n    id,\n    email,\n    name,\n    handle: asText(handle).replace(/^@/, '').toLowerCase(),\n    mentionText: '<users/' + id + '>',\n  };\n\n  registerDirectoryKey(email, entry);\n  registerDirectoryKey(entry.handle, entry);\n  registerDirectoryKey(name, entry);\n  registerDirectoryKey(normalized.username, entry);\n  registerDirectoryKey(normalized.user_name, entry);\n  registerDirectoryKey(normalized.jira_username, entry);\n  registerDirectoryKey(normalized.display_name, entry);\n  registerDirectoryKey(normalized.displayname, entry);\n}\n\nfunction resolveMemberFromToken(token) {\n  const key = asText(token).replace(/^@/, '').toLowerCase();\n  if (!key) return null;\n  return directoryByKey.get(key) || null;\n}\n\nfunction buildMentionFooter(occurrences) {\n  const uniqueByMention = new Map();\n  for (const occurrence of occurrences.sort((left, right) => left.offset - right.offset)) {\n    if (!occurrence?.mentionText || uniqueByMention.has(occurrence.mentionText)) continue;\n    uniqueByMention.set(occurrence.mentionText, occurrence);\n  }\n\n  const ordered = Array.from(uniqueByMention.values());\n  return {\n    mentionTail: ordered.map((item) => item.mentionText).join(' '),\n    resolvedPeople: ordered.map((item, index) => ({\n      token: item.token,\n      handle: item.handle,\n      mentionText: item.mentionText,\n      displayName: item.displayName,\n      firstOffset: item.offset,\n      order: index,\n    })),\n    appendedMentionIds: ordered.map((item) => item.mentionText),\n  };\n}\n\nfunction renderTextMentions(rawText) {\n  const mentionOccurrences = [];\n  const roleTokens = [];\n\n  const renderedText = asText(rawText).replace(/(^|[\\s(/])@([A-Za-z0-9._-]{2,64})\\b/g, (full, prefix, rawToken, offset) => {\n    const token = asText(rawToken);\n    const upper = token.toUpperCase();\n    if (!token) return full;\n\n    if (['PM', 'LEAD', 'ASSIGNEE', 'OWNER', 'QCS'].includes(upper)) {\n      roleTokens.push({ token: '@' + upper, offset });\n      return prefix + '*' + tokenDisplayText(token) + '*';\n    }\n\n    const member = resolveMemberFromToken(token);\n    if (member?.mentionText) {\n      const handle = asText(member.handle || token).replace(/^@/, '').toLowerCase();\n      mentionOccurrences.push({\n        token: '@' + token,\n        handle,\n        mentionText: member.mentionText,\n        displayName: asText(member.name || member.email || handle),\n        offset,\n      });\n      return prefix + '*@' + handle + '*';\n    }\n\n    return prefix + '*@' + token + '*';\n  });\n\n  const footer = buildMentionFooter(mentionOccurrences);\n  const finalText = footer.mentionTail ? renderedText + '\\n' + footer.mentionTail : renderedText;\n\n  return {\n    text: finalText,\n    mentionTail: footer.mentionTail,\n    resolvedPeople: footer.resolvedPeople,\n    roleTokens: roleTokens.sort((left, right) => left.offset - right.offset).map((item) => item.token),\n    appendedMentionIds: footer.appendedMentionIds,\n  };\n}\n\nconst deliveryPlan = envelope.deliveryPlan && typeof envelope.deliveryPlan === 'object' ? envelope.deliveryPlan : {};\nconst messages = asArray(deliveryPlan.messages).map((message, index) => {\n  const payload = message?.payload && typeof message.payload === 'object' ? { ...message.payload } : null;\n  const rendered = payload && typeof payload.text === 'string'\n    ? renderTextMentions(payload.text)\n    : null;\n\n  return {\n    ...message,\n    payload: rendered ? { ...payload, text: rendered.text } : payload,\n    mentionRender: rendered ? {\n      messageIndex: index,\n      messageKey: asText(message.messageKey || message.key || 'message'),\n      mentionTail: rendered.mentionTail,\n      resolvedPeople: rendered.resolvedPeople,\n      roleTokens: rendered.roleTokens,\n      appendedMentionIds: rendered.appendedMentionIds,\n    } : {\n      messageIndex: index,\n      messageKey: asText(message.messageKey || message.key || 'message'),\n      mentionTail: '',\n      resolvedPeople: [],\n      roleTokens: [],\n      appendedMentionIds: [],\n    },\n  };\n});\n\nconst renderedResult = renderTextMentions(envelope.resultText || '');\n\nreturn {\n  ...envelope,\n  resultText: renderedResult.text,\n  mentionTail: renderedResult.mentionTail,\n  lineMentions: messages.map((message) => message.mentionRender),\n  deliveryPlan: {\n    ...deliveryPlan,\n    messages: messages.map((message) => {\n      const clone = { ...message };\n      delete clone.mentionRender;\n      return clone;\n    }),\n  },\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        -48
+      ],
+      "id": "render-mentioned-messages-1",
+      "name": "Render Mentioned Messages"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const envelope = $('Render Mentioned Messages').first().json || {};\nconst event = $('Config Main').first().json || {};\nconst config = event.config || {};\nconst deliveryPlan = envelope.deliveryPlan && typeof envelope.deliveryPlan === 'object' ? envelope.deliveryPlan : {};\nconst destinations = Array.isArray(deliveryPlan.destinations) ? deliveryPlan.destinations : [];\nconst rawMessages = Array.isArray(deliveryPlan.messages) ? deliveryPlan.messages : [];\nconst baseUrl = String(config.ggChatWebhookUrl || '').trim();\nconst replyOption = encodeURIComponent(String(config.googleChatReplyOption || 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD').trim() || 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD');\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction slugify(value) {\n  return toText(value).toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');\n}\n\nfunction hasDestination(message, destinationType) {\n  const destinationTypes = Array.isArray(message?.destinations) ? message.destinations : [];\n  return destinationTypes.some((type) => toText(type) === destinationType);\n}\n\nfunction normalizeMessage(message, fallbackText) {\n  if (!message || typeof message !== 'object') return null;\n  const payload = message.payload && typeof message.payload === 'object' ? message.payload : (toText(message.text || fallbackText) ? { text: toText(message.text || fallbackText) } : null);\n  if (!payload) return null;\n\n  return {\n    messageKey: toText(message.messageKey || message.key || 'message') || 'message',\n    type: toText(message.type || (payload.cardsV2 ? 'googleChatCardV2' : 'text')) || 'text',\n    destinations: Array.isArray(message.destinations) ? message.destinations : [],\n    payload,\n  };\n}\n\nconst fallbackText = toText(envelope.resultText || 'Đã có kết quả xử lý.');\nconst hasPushDestination = destinations.some((destination) => toText(destination?.type || '') === 'pushGoogleChat');\nconst messages = rawMessages.map((message) => normalizeMessage(message, fallbackText)).filter((message) => message && hasDestination(message, 'pushGoogleChat'));\nconst threadConfig = deliveryPlan.thread && typeof deliveryPlan.thread === 'object' ? deliveryPlan.thread : {};\nconst subworkflowThreadKey = toText(threadConfig.threadKey);\nconst configThreadKey = toText(event.threadKey || '');\nconst seed = slugify(envelope.toolName || 'jira-ai-agent') || 'jira-ai-agent';\nconst uniqueSuffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;\nconst fallbackThreadKey = `${seed}-${uniqueSuffix}`.slice(0, 120);\nconst finalThreadKey = subworkflowThreadKey || configThreadKey || fallbackThreadKey;\n\nlet ggChatRequests = [];\nlet ggChatDeliverySkipReason = '';\n\nif (!hasPushDestination) {\n  ggChatDeliverySkipReason = 'No pushGoogleChat destination requested.';\n} else if (!baseUrl) {\n  ggChatDeliverySkipReason = 'ggChatWebhookUrl is not configured.';\n} else if (messages.length === 0) {\n  ggChatDeliverySkipReason = 'No Google Chat messages matched the requested destinations.';\n} else {\n  const separator = baseUrl.includes('?') ? '&' : '?';\n  const requestUrl = `${baseUrl}${separator}threadKey=${encodeURIComponent(finalThreadKey)}&messageReplyOption=${replyOption}`;\n  ggChatRequests = messages.map((message, index) => ({\n    requestIndex: index,\n    messageKey: message.messageKey,\n    messageType: message.type,\n    requestBody: message.payload,\n    requestUrl,\n    finalThreadKey,\n  }));\n}\n\nreturn {\n  ggChatDeliveryEnabled: ggChatRequests.length > 0,\n  ggChatRequestCount: ggChatRequests.length,\n  ggChatRequests,\n  ggChatDeliverySkipReason,\n  ggChatThreadKey: finalThreadKey,\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        -48
+      ],
+      "id": "prepare-delivery-1",
+      "name": "Prepare GGChat Delivery Messages"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ Boolean($json.ggChatDeliveryEnabled) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1552,
+        -48
+      ],
+      "id": "if-delivery-1",
+      "name": "If Has GGChat Delivery Messages?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const requests = $('Prepare GGChat Delivery Messages').first().json?.ggChatRequests;\nconst safeRequests = Array.isArray(requests) ? requests : [];\n\nreturn safeRequests.map((request, requestIndex) => ({\n  json: { requestIndex, ...request },\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1776,
+        -96
+      ],
+      "id": "split-out-1",
+      "name": "Split Out GGChat Delivery Messages"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2000,
+        -96
+      ],
+      "id": "loop-delivery-1",
+      "name": "Loop Over GGChat Delivery Messages"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.requestUrl }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.requestBody }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2224,
+        -144
+      ],
+      "id": "send-ggchat-1",
+      "name": "Send GGChat Delivery Message"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const envelope = $('Render Mentioned Messages').first().json || {};\nconst deliveryPrep = $('Prepare GGChat Delivery Messages').first().json || {};\nconst event = $('Config Main').first().json || {};\nconst deliveryPlan = envelope.deliveryPlan && typeof envelope.deliveryPlan === 'object' ? envelope.deliveryPlan : {};\nconst messages = Array.isArray(deliveryPlan.messages) ? deliveryPlan.messages : [];\nconst destinations = Array.isArray(deliveryPlan.destinations) ? deliveryPlan.destinations : [];\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction hasDestination(message, destinationType) {\n  const destinationTypes = Array.isArray(message?.destinations) ? message.destinations : [];\n  return destinationTypes.some((type) => toText(type) === destinationType);\n}\n\nconst hasReplyDestination = destinations.some((destination) => toText(destination?.type || '') === 'reply');\nconst replyMessages = messages.filter((message) => hasDestination(message, 'reply') && message?.payload && typeof message.payload === 'object');\nconst preferredPayload = replyMessages.find((message) => toText(message.type) === 'text')?.payload || replyMessages[0]?.payload || null;\nconst responseBody = hasReplyDestination ? preferredPayload || { text: toText(envelope.resultText || 'Đã nhận yêu cầu.') } : {};\n\nlet deliveryResponses = [];\ntry {\n  deliveryResponses = $('Send GGChat Delivery Message').all().map((item) => item?.json || item || {});\n} catch (error) {\n  deliveryResponses = [];\n}\n\nconst successCount = deliveryResponses.filter((item) => Number(item.statusCode || 0) >= 200 && Number(item.statusCode || 0) < 300).length;\nconst failureCount = deliveryResponses.filter((item) => Number(item.statusCode || 0) > 0 && (Number(item.statusCode || 0) < 200 || Number(item.statusCode || 0) >= 300)).length;\nconst channel = toText(event.channel || '');\n\nif (hasReplyDestination && Object.keys(responseBody).length > 0) {\n  return responseBody;\n}\n\nif (channel === 'googleChat' || channel === 'n8nChatTrigger') {\n  return {};\n}\n\nreturn {\n  status: deliveryPrep.ggChatDeliveryEnabled ? (failureCount > 0 ? 'partial' : 'sent') : 'skipped',\n  channel,\n  resultText: toText(envelope.resultText || ''),\n  threadKey: toText(deliveryPrep.ggChatThreadKey || deliveryPlan.thread?.threadKey || event.threadKey || ''),\n  messageCount: Number(deliveryPrep.ggChatRequestCount || deliveryResponses.length || 0),\n  successCount,\n  failureCount,\n  skipReason: toText(deliveryPrep.ggChatDeliverySkipReason || ''),\n  intent: toText(envelope.meta?.intent || ''),\n  confidence: toText(envelope.meta?.confidence || ''),\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        48
+      ],
+      "id": "build-final-response-1",
+      "name": "Build Final Response"
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Build Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Chat Webhook": {
+      "main": [
+        [
+          {
+            "node": "Build Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Local Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "Build Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Event": {
+      "main": [
+        [
+          {
+            "node": "Config Main",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config Main": {
+      "main": [
+        [
+          {
+            "node": "Build Agent Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Agent Context": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Jira Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Members": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Normalize Agent Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Agent Result": {
+      "main": [
+        [
+          {
+            "node": "Get Members Directory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare GGChat Delivery Messages": {
+      "main": [
+        [
+          {
+            "node": "If Has GGChat Delivery Messages?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has GGChat Delivery Messages?": {
+      "main": [
+        [
+          {
+            "node": "Split Out GGChat Delivery Messages",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out GGChat Delivery Messages": {
+      "main": [
+        [
+          {
+            "node": "Loop Over GGChat Delivery Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over GGChat Delivery Messages": {
+      "main": [
+        [
+          {
+            "node": "Build Final Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send GGChat Delivery Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send GGChat Delivery Message": {
+      "main": [
+        [
+          {
+            "node": "Loop Over GGChat Delivery Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Members Directory": {
+      "main": [
+        [
+          {
+            "node": "Render Mentioned Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Mentioned Messages": {
+      "main": [
+        [
+          {
+            "node": "Prepare GGChat Delivery Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Jira Agent Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "availableInMCP": false,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}

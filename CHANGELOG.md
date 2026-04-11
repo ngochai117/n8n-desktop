@@ -488,3 +488,11 @@
 ## 2026-04-09T17:45:07Z
 - Workflow sync (UI -> JSON) processed 22 workflow(s): changed=3, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=22, changed=3, unchanged=19, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Sprint Monitor Light Scan, Sprint Monitor Endgame, Sprint Monitor Deep Analysis.
+
+## 2026-04-11T02:59:01Z
+- Workflow sync (UI -> JSON) processed 22 workflow(s): changed=5, missing_ui_folder=0, registry_new=1, registry_updated=0, conflicts=0, wrapper_new=1, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=22, changed=5, unchanged=17, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=1, wrapper_updated=0, wrapper_pruned=0. Changed workflows: MoMo AI Assistant, MoMo AI Assistant Tool Sprint Healthcheck, MoMo Assistant, MoMo AI Assistant Tool Router, MoMo AI Assistant Tool Sprint Release.
+
+## 2026-04-11T11:05:30Z
+- Workflow sync (UI -> JSON) processed 23 workflow(s): changed=5, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=23, changed=5, unchanged=18, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: MoMo AI Assistant Tool Sprint Healthcheck, MoMo Assistant, Jira AI Agent, MoMo AI Assistant Tool Router, MoMo AI Assistant Tool Sprint Release.
