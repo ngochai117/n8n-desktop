@@ -109,7 +109,7 @@ Checklist hien tai la static contract/topology checklist cho workflow canonical 
   - subworkflow `MoMo AI Assistant State Store`: explicit tables `assistantSessions`, `assistantPendingActions`, `assistantToolRuns`
   - subworkflow `MoMo AI Assistant Tool Router`: router tool dung giua AI Agent va business subworkflows
   - subworkflow `MoMo AI Assistant Tool Sprint Healthcheck`: read-only tool giu logic sprint healthcheck hien tai
-  - subworkflow `MoMo AI Assistant Tool Demo Commands`: demo tool cho `release sprint` / `approve` / `reject` / `cancel`
+  - subworkflow `MoMo AI Assistant Tool Sprint Release`: deterministic tool cho `release sprint` / `approve` / `reject` / `cancel` (co approve gate)
   - subworkflow `MoMo AI Assistant State Cleanup`: cron cleanup state (`purgeAllState`) theo lich
 - Router config V1:
   - single source of truth nam trong node `Config Main` cua `MoMo AI Assistant Tool Router`
@@ -144,12 +144,16 @@ Checklist hien tai la static contract/topology checklist cho workflow canonical 
   - `check sprint`
   - `status sprint`
   - matcher `status sprint` hien dang inject them `additionalDestinations: pushGoogleChat` o router, de vua reply cho luong chat hien tai vua ban card + warning detail sang Google Chat webhook test
-- Lenh chat demo placeholder:
+- Lenh chat release deterministic:
   - `release sprint`
   - `approve`
   - `reject`
   - `cancel`
-- Nhom lenh demo hien chi de kiem tra router/session skeleton, chua bat action that de tranh side-effect trong luc uu tien giu flow healthcheck chay on dinh.
+- Flow release sprint:
+  - gate pass review theo status (`Ready For Release`, `Close`, `Closed`) + warning issue app thieu fixVersion
+  - neu chua dat dieu kien: tao pending action va cho `approve/reject/cancel` cung thread
+  - `approve`: bypass gate va chay strict execution (`close cards -> release versions -> complete sprint -> start next sprint`)
+  - sau khi release thanh cong se gui 2 message cung thread: (1) release notes, (2) checklist cac cong viec da thuc thi + story point check next sprint
 - Guide ngan de them/chinh subworkflow:
   - `docs/momo-ai-assistant-subworkflow-guide.md`
 - Import thu tu:
@@ -158,7 +162,7 @@ bash scripts/workflows/import/import-momo-ai-assistant-state-store-workflow.sh
 bash scripts/workflows/import/import-momo-ai-assistant-state-cleanup-workflow.sh
 bash scripts/workflows/import/import-momo-ai-assistant-tool-router-workflow.sh
 bash scripts/workflows/import/import-momo-ai-assistant-tool-sprint-healthcheck-workflow.sh
-bash scripts/workflows/import/import-momo-ai-assistant-tool-demo-commands-workflow.sh
+bash scripts/workflows/import/import-momo-ai-assistant-tool-sprint-release-workflow.sh
 bash scripts/workflows/import/import-momo-ai-assistant-workflow.sh
 ```
 

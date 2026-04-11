@@ -1,0 +1,2020 @@
+{
+  "name": "MoMo AI Assistant Tool Sprint Release",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "triggerSource"
+            },
+            {
+              "name": "commandText"
+            },
+            {
+              "name": "channel"
+            },
+            {
+              "name": "sessionId"
+            },
+            {
+              "name": "spaceId"
+            },
+            {
+              "name": "threadKey"
+            },
+            {
+              "name": "actorId"
+            },
+            {
+              "name": "actorDisplayName"
+            },
+            {
+              "name": "args",
+              "type": "object"
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1800,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $('When Executed by Another Workflow').first().json || {};\n\nconst config = {\n  boardId: 1041,\n  jiraBaseUrl: 'https://atlassiansuite.mservice.com.vn:8443',\n  timeZone: 'Asia/Ho_Chi_Minh',\n  storyPointFieldKey: 'customfield_10107',\n  qcsFieldKey: 'customfield_10201',\n  spreadsheetId: '1uLVZ2b6Ra-r2KCbLHcOL68V6smtxymfTCNNQnWPG8mI',\n  spreadsheetSheetName: 'MoMoer',\n  boardOwnerEmails: [],\n  passedStatusesForReleaseGate: ['Ready For Release', 'Close', 'Closed'],\n  pendingActionTtlHours: 24,\n  nowIso: $now.setZone('Asia/Ho_Chi_Minh').toISO(),\n  todayDate: $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-MM-dd'),\n};\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction parseArgs(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction detectCommandType(commandText, rawType) {\n  const fromArgs = toText(rawType).toLowerCase();\n  if (fromArgs) return fromArgs;\n\n  const normalized = toText(commandText).toLowerCase();\n  if (/release\\s+sprint|close\\s+sprint|release\\s+status/i.test(normalized)) return 'release_sprint';\n  if (/(^|\\b)(approve|ok|dong y|đồng ý|xac nhan|xác nhận)(\\b|$)/i.test(normalized)) return 'approve';\n  if (/(^|\\b)(reject|tu choi|từ chối)(\\b|$)/i.test(normalized)) return 'reject';\n  if (/(^|\\b)(cancel|huy|hủy)(\\b|$)/i.test(normalized)) return 'cancel';\n  return 'help';\n}\n\nconst args = parseArgs(input.args);\n\nreturn {\n  ...input,\n  args,\n  config,\n  commandType: detectCommandType(input.commandText, args.commandType),\n};"
+      },
+      "id": "2",
+      "name": "Config Main",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1570,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "__REGISTRY__:MoMo AI Assistant State Store",
+          "mode": "id",
+          "cachedResultUrl": "",
+          "cachedResultName": ""
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "operation": "getSession",
+            "sessionId": "={{ $('Config Main').first().json.sessionId || '' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "operation",
+              "displayName": "operation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "sessionId",
+              "displayName": "sessionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "3",
+      "name": "Load Session",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -1340,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "__REGISTRY__:MoMo AI Assistant State Store",
+          "mode": "id",
+          "cachedResultUrl": "",
+          "cachedResultName": ""
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "operation": "getPendingAction",
+            "pendingActionId": "={{ $('Load Session').first().json?.row?.activePendingActionId || '__NO_PENDING_ACTION__' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "operation",
+              "displayName": "operation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "pendingActionId",
+              "displayName": "pendingActionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "4",
+      "name": "Get Pending Action",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -1110,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Config Main').first().json.config.jiraBaseUrl + '/rest/agile/1.0/board/' + String($('Config Main').first().json.config.boardId || 1041) + '/sprint' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "jiraSoftwareServerPatApi",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={{ JSON.stringify({ state: 'active', maxResults: 50 }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "5",
+      "name": "Get Active Sprint",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -880,
+        280
+      ],
+      "credentials": {
+        "jiraSoftwareServerPatApi": {
+          "id": "3TLwUpSgsJhbG45A",
+          "name": "Jira MoMo account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $('Get Active Sprint').first().json || {};\nconst root = $('Config Main').first().json || {};\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nconst statusCode = Number(input.statusCode || 200);\nconst transportError = toText(input.error?.message || input.error?.description || input.message || '');\n\nif (transportError && !input.body) {\n  return {\n    ...root,\n    hasActiveSprint: false,\n    sprint: null,\n    failureReason: 'Không kết nối được Jira host: ' + transportError,\n  };\n}\n\nif (statusCode >= 400) {\n  return {\n    ...root,\n    hasActiveSprint: false,\n    sprint: null,\n    failureReason: 'Không lấy được active sprint từ Jira (HTTP ' + statusCode + ')',\n  };\n}\n\nconst body = input.body && typeof input.body === 'object' ? input.body : input;\nconst values = Array.isArray(body.values) ? body.values : [];\nconst active = values\n  .filter((item) => String(item?.state || '').toLowerCase() === 'active')\n  .sort((a, b) => new Date(b?.startDate || 0).getTime() - new Date(a?.startDate || 0).getTime())[0] || null;\n\nif (!active) {\n  return {\n    ...root,\n    hasActiveSprint: false,\n    sprint: null,\n    failureReason: 'Không tìm thấy active sprint cho board ' + String(root.config?.boardId || 1041),\n  };\n}\n\nreturn {\n  ...root,\n  hasActiveSprint: true,\n  sprint: {\n    id: active.id,\n    name: active.name || '',\n    startDate: active.startDate || '',\n    endDate: active.endDate || '',\n  },\n};"
+      },
+      "id": "6",
+      "name": "Pick Active Sprint",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -650,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.hasActiveSprint }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7",
+      "name": "If Active Sprint?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -420,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Pick Active Sprint').first().json.config.jiraBaseUrl + '/rest/agile/1.0/sprint/' + String($('Pick Active Sprint').first().json.sprint?.id || '') + '/issue' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "jiraSoftwareServerPatApi",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={{ JSON.stringify({ startAt: 0, maxResults: 500, fields: '*all', expand: 'changelog' }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "8",
+      "name": "Get Sprint Issues",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -190,
+        180
+      ],
+      "credentials": {
+        "jiraSoftwareServerPatApi": {
+          "id": "3TLwUpSgsJhbG45A",
+          "name": "Jira MoMo account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ 'https://docs.google.com/spreadsheets/d/' + String($('Pick Active Sprint').first().json.config.spreadsheetId || '') }}",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ String($('Pick Active Sprint').first().json.config.spreadsheetSheetName || 'MoMoer') }}",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "options": {}
+      },
+      "id": "9",
+      "name": "Get user",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        40,
+        180
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3i6vDJxzaxXLHIWl",
+          "name": "Google account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('Pick Active Sprint').first().json || {};\nconst sessionResult = $('Load Session').first().json || {};\nconst pendingResult = $('Get Pending Action').first().json || {};\nconst issueResponse = $('Get Sprint Issues').first().json || {};\nconst users = $input.all().map((item) => (item?.json && typeof item.json === 'object' ? item.json : {}));\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction asObject(value) {\n  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};\n}\n\nfunction normalizeEmail(value) {\n  const email = toText(value).toLowerCase();\n  return email.includes('@') ? email : '';\n}\n\nfunction normalizeStatus(raw) {\n  const status = toText(raw).toLowerCase();\n  const map = {\n    open: 'Open',\n    'in progress': 'In Progress',\n    'ready for test': 'Ready For Test',\n    'in test': 'In Test',\n    'ready for review': 'Ready For Review',\n    'in review': 'In Review',\n    'ready for release': 'Ready For Release',\n    close: 'Close',\n    closed: 'Close',\n    done: 'Close',\n  };\n  return map[status] || toText(raw);\n}\n\nfunction mentionFromDirectory(name, email, mentionMap) {\n  const normalizedEmail = normalizeEmail(email);\n  if (normalizedEmail && mentionMap[normalizedEmail]) return '<users/' + mentionMap[normalizedEmail] + '>';\n  if (name) return '@' + name;\n  if (normalizedEmail) return '@' + normalizedEmail;\n  return '@Unknown';\n}\n\nconst mentionMap = {};\nfor (const row of users) {\n  const normalized = {};\n  for (const [key, value] of Object.entries(row || {})) {\n    normalized[toText(key).toLowerCase()] = value;\n  }\n  const email = normalizeEmail(normalized.email);\n  const id = toText(normalized.id);\n  if (!email || !id || mentionMap[email]) continue;\n  mentionMap[email] = id;\n}\n\nconst session = sessionResult?.found ? sessionResult.row : null;\nconst pendingAction = pendingResult?.found ? pendingResult.row : null;\nconst activePendingActionId = toText(session?.activePendingActionId || '');\nconst commandType = toText(ctx.commandType || '').toLowerCase();\n\nconst issueBody = issueResponse.body && typeof issueResponse.body === 'object' ? issueResponse.body : issueResponse;\nconst rawIssues = Array.isArray(issueBody.issues) ? issueBody.issues : [];\n\nconst passedStatuses = new Set((Array.isArray(ctx.config?.passedStatusesForReleaseGate) ? ctx.config.passedStatusesForReleaseGate : ['Ready For Release', 'Close', 'Closed']).map((status) => normalizeStatus(status)));\nconst finalStatuses = new Set(['Close']);\nconst blockers = [];\nconst missingFixVersion = [];\nconst versionsById = new Map();\nconst transitionCandidates = [];\n\nconst jiraBaseUrl = toText(ctx.config?.jiraBaseUrl).replace(/\\/+$/, '');\nconst qcsField = toText(ctx.config?.qcsFieldKey || 'customfield_10201');\n\nfor (const issue of rawIssues) {\n  const fields = asObject(issue?.fields);\n  const issueType = toText(fields.issuetype?.name);\n  if (!['Task', 'Bug'].includes(issueType)) continue;\n\n  const key = toText(issue.key);\n  const summary = toText(fields.summary || key || 'No summary');\n  const status = normalizeStatus(fields.status?.name || '');\n  const issueUrl = key && jiraBaseUrl ? jiraBaseUrl + '/browse/' + key : toText(issue.self || '');\n\n  const assigneeName = toText(fields.assignee?.displayName || fields.assignee?.name || '');\n  const assigneeEmail = normalizeEmail(fields.assignee?.emailAddress || fields.assignee?.email || '');\n  const reporterName = toText(fields.reporter?.displayName || fields.creator?.displayName || '');\n  const reporterEmail = normalizeEmail(fields.reporter?.emailAddress || fields.creator?.emailAddress || '');\n\n  const qcsRaw = fields[qcsField];\n  const qcs = Array.isArray(qcsRaw) ? qcsRaw : qcsRaw ? [qcsRaw] : [];\n  const qcName = toText(qcs[0]?.displayName || qcs[0]?.name || '');\n  const qcEmail = normalizeEmail(qcs[0]?.emailAddress || qcs[0]?.email || '');\n\n  if (!passedStatuses.has(status)) {\n    let ownerRole = 'REPORTER';\n    let ownerName = reporterName;\n    let ownerEmail = reporterEmail;\n\n    if (status === 'Open' || status === 'In Progress') {\n      ownerRole = 'DEV';\n      ownerName = assigneeName || reporterName;\n      ownerEmail = assigneeEmail || reporterEmail;\n    } else if (status === 'Ready For Test' || status === 'In Test') {\n      ownerRole = 'QC';\n      ownerName = qcName || reporterName;\n      ownerEmail = qcEmail || reporterEmail;\n    }\n\n    blockers.push({\n      key,\n      summary,\n      status,\n      role: ownerRole,\n      mention: mentionFromDirectory(ownerName, ownerEmail, mentionMap),\n      issueUrl,\n    });\n  }\n\n  const isFinal = finalStatuses.has(status);\n  if (!isFinal) {\n    transitionCandidates.push({ key, summary, status, issueUrl });\n  }\n\n  const isAppIssue = /\\[(APP|FE)\\]/i.test(summary) || /app/i.test(assigneeName);\n  const fixVersions = Array.isArray(fields.fixVersions) ? fields.fixVersions : [];\n  if (isAppIssue && fixVersions.length === 0) {\n    missingFixVersion.push({ key, summary, issueUrl });\n  }\n\n  for (const fixVersion of fixVersions) {\n    const versionId = toText(fixVersion.id);\n    if (!versionId || Boolean(fixVersion.released)) continue;\n\n    if (!versionsById.has(versionId)) {\n      versionsById.set(versionId, {\n        id: versionId,\n        name: toText(fixVersion.name || versionId),\n        description: toText(fixVersion.description || ''),\n        issueNotes: [],\n      });\n    }\n    versionsById.get(versionId).issueNotes.push(key + ': ' + summary);\n  }\n}\n\nconst blockerJql = 'sprint = ' + String(ctx.sprint?.id || '') + ' AND issuetype in (Task,Bug) AND status NOT IN (\"Ready For Release\",\"Close\",\"Closed\")';\nconst blockerFilterUrl = jiraBaseUrl ? jiraBaseUrl + '/issues/?jql=' + encodeURIComponent(blockerJql) : '';\n\nconst missingFixKeys = missingFixVersion.map((item) => item.key).filter(Boolean);\nconst missingFixJql = missingFixKeys.length > 0\n  ? 'key in (' + missingFixKeys.join(',') + ')'\n  : 'sprint = ' + String(ctx.sprint?.id || '') + ' AND issuetype in (Task,Bug) AND fixVersion is EMPTY';\nconst missingFixFilterUrl = jiraBaseUrl ? jiraBaseUrl + '/issues/?jql=' + encodeURIComponent(missingFixJql) : '';\n\nconst boardOwners = (Array.isArray(ctx.config?.boardOwnerEmails) ? ctx.config.boardOwnerEmails : [])\n  .map((email) => {\n    const normalizedEmail = normalizeEmail(email);\n    if (!normalizedEmail) return '';\n    if (mentionMap[normalizedEmail]) return '<users/' + mentionMap[normalizedEmail] + '>';\n    return '@' + normalizedEmail;\n  })\n  .filter(Boolean);\n\nconst now = new Date(toText(ctx.config?.nowIso) || new Date().toISOString());\nconst pendingExpiryHours = Math.max(1, Number(ctx.config?.pendingActionTtlHours || 24));\nconst expiresAt = new Date(now.getTime() + pendingExpiryHours * 3600 * 1000).toISOString();\n\nconst hasPending = Boolean(pendingAction && pendingAction.pendingActionId && String(pendingAction.approvalStatus || '').toLowerCase() === 'pending');\nconst pendingExpired = hasPending\n  ? (pendingAction.expiresAt ? new Date(pendingAction.expiresAt).getTime() < now.getTime() : false)\n  : false;\n\nlet action = 'noop';\nlet reason = '';\nlet bypassGate = false;\n\nif (commandType === 'release_sprint') {\n  action = blockers.length > 0 || missingFixVersion.length > 0 ? 'blocked' : 'execute';\n} else if (commandType === 'approve') {\n  if (hasPending && !pendingExpired) {\n    action = 'execute';\n    bypassGate = true;\n  } else {\n    action = 'noop';\n    reason = 'Không có pending action hợp lệ để approve trong thread này.';\n  }\n} else if (commandType === 'reject' || commandType === 'cancel') {\n  if (hasPending && !pendingExpired) {\n    action = 'close_pending';\n  } else {\n    action = 'noop';\n    reason = 'Không có pending action để reject/cancel trong thread này.';\n  }\n} else {\n  action = 'help';\n  reason = 'Lệnh chưa hỗ trợ. Dùng: release sprint | approve | reject | cancel';\n}\n\nconst pendingActionId = hasPending && !pendingExpired\n  ? toText(pendingAction.pendingActionId)\n  : 'pending-release-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);\n\nconst pendingActionPayload = action === 'blocked'\n  ? {\n      pendingActionId,\n      sessionId: toText(ctx.sessionId || ''),\n      toolName: 'sprintRelease',\n      approvalStatus: 'pending',\n      requestedBy: toText(ctx.actorId || ctx.actorDisplayName || ''),\n      requestSummary: 'Release sprint ' + toText(ctx.sprint?.name || ctx.sprint?.id || ''),\n      targetType: 'sprint',\n      targetId: toText(ctx.sprint?.id || ''),\n      executePayload: {\n        triggerCommand: 'release_sprint',\n        bypassGateOnApprove: true,\n        sprintId: toText(ctx.sprint?.id || ''),\n      },\n      expiresAt,\n      approvedBy: '',\n      approvedAt: '',\n      executedAt: '',\n      executionStatus: '',\n      idempotencyKey: 'release-' + toText(ctx.sessionId || '') + '-' + toText(ctx.sprint?.id || ''),\n      approvalPrompt: 'Reply approve để tiếp tục release, reject/cancel để huỷ.',\n    }\n  : null;\n\nconst closePendingPayload = action === 'close_pending'\n  ? {\n      pendingActionId: toText(pendingAction?.pendingActionId || ''),\n      sessionId: toText(pendingAction?.sessionId || ctx.sessionId || ''),\n      toolName: toText(pendingAction?.toolName || 'sprintRelease'),\n      approvalStatus: commandType === 'reject' ? 'rejected' : 'cancelled',\n      requestedBy: toText(pendingAction?.requestedBy || ''),\n      requestSummary: toText(pendingAction?.requestSummary || ''),\n      targetType: toText(pendingAction?.targetType || 'sprint'),\n      targetId: toText(pendingAction?.targetId || ''),\n      executePayload: asObject(pendingAction?.executePayload || {}),\n      expiresAt: toText(pendingAction?.expiresAt || ''),\n      approvedBy: toText(ctx.actorId || ctx.actorDisplayName || ''),\n      approvedAt: toText(ctx.config?.nowIso || ''),\n      executedAt: '',\n      executionStatus: commandType === 'reject' ? 'rejected' : 'cancelled',\n      idempotencyKey: toText(pendingAction?.idempotencyKey || ''),\n      approvalPrompt: toText(pendingAction?.approvalPrompt || ''),\n    }\n  : null;\n\nconst approvePendingPayload = action === 'execute' && bypassGate && hasPending\n  ? {\n      pendingActionId: toText(pendingAction.pendingActionId),\n      sessionId: toText(pendingAction.sessionId || ctx.sessionId || ''),\n      toolName: toText(pendingAction.toolName || 'sprintRelease'),\n      approvalStatus: 'approved',\n      requestedBy: toText(pendingAction.requestedBy || ''),\n      requestSummary: toText(pendingAction.requestSummary || ''),\n      targetType: toText(pendingAction.targetType || 'sprint'),\n      targetId: toText(pendingAction.targetId || ''),\n      executePayload: asObject(pendingAction.executePayload || {}),\n      expiresAt: toText(pendingAction.expiresAt || ''),\n      approvedBy: toText(ctx.actorId || ctx.actorDisplayName || ''),\n      approvedAt: toText(ctx.config?.nowIso || ''),\n      executedAt: '',\n      executionStatus: 'approved',\n      idempotencyKey: toText(pendingAction.idempotencyKey || ''),\n      approvalPrompt: toText(pendingAction.approvalPrompt || ''),\n    }\n  : null;\n\nreturn [{\n  json: {\n    ...ctx,\n    session,\n    pendingAction,\n    activePendingActionId,\n    mentionMap,\n    blockers,\n    blockerFilterUrl,\n    missingFixVersion,\n    missingFixFilterUrl,\n    boardOwners,\n    transitionCandidates,\n    versionsToRelease: Array.from(versionsById.values()),\n    action,\n    reason,\n    bypassGate,\n    pendingActionPayload,\n    closePendingPayload,\n    approvePendingPayload,\n  },\n}];"
+      },
+      "id": "10",
+      "name": "Build Release Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        270,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "blocked",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "blocked"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "close_pending",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "close_pending"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "execute",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "execute"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "noop",
+          "allMatchingOutputs": false
+        }
+      },
+      "id": "11",
+      "name": "Switch Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        500,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "__REGISTRY__:MoMo AI Assistant State Store",
+          "mode": "id",
+          "cachedResultUrl": "",
+          "cachedResultName": ""
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "operation": "upsertPendingAction",
+            "pendingAction": "={{ $('Build Release Context').first().json.pendingActionPayload || {} }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "operation",
+              "displayName": "operation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "pendingAction",
+              "displayName": "pendingAction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "12",
+      "name": "Upsert Pending Action",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        730,
+        40
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $('Build Release Context').first().json || {};\n\nfunction normalizeDestinations(raw, triggerSource) {\n  const defaults = triggerSource === 'schedule' ? [{ type: 'pushGoogleChat' }] : [{ type: 'reply' }];\n  const source = [...defaults, ...(Array.isArray(raw) ? raw : [])];\n  const seen = new Set();\n  const normalized = [];\n  for (const entry of source) {\n    const type = typeof entry === 'string' ? entry.trim() : String(entry?.type || '').trim();\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    normalized.push({ type });\n  }\n  return normalized.length > 0 ? normalized : [{ type: 'reply' }];\n}\n\nconst sprintLabel = String(context.sprint?.name || context.sprint?.id || 'Sprint chưa xác định');\nconst blockers = Array.isArray(context.blockers) ? context.blockers : [];\nconst missingFix = Array.isArray(context.missingFixVersion) ? context.missingFixVersion : [];\nconst boardOwners = Array.isArray(context.boardOwners) ? context.boardOwners : [];\n\nconst lines = [\n  '⛔ Release sprint bị chặn: ' + sprintLabel,\n  '',\n  '- Blocker review: ' + blockers.length,\n  ...(blockers.length > 0 ? blockers.map((item) => '- [' + item.role + '] ' + item.mention + ' <' + item.issueUrl + '|' + item.key + '> ' + item.summary + ' (' + item.status + ')') : ['- Không có blocker review']),\n  '',\n  '- App issue thiếu fixVersion: ' + missingFix.length,\n  ...(missingFix.length > 0 ? missingFix.map((item) => '- <' + item.issueUrl + '|' + item.key + '> ' + item.summary) : ['- Không có issue app thiếu fixVersion']),\n];\n\nif (context.blockerFilterUrl) lines.push('', 'Link filter blocker: ' + context.blockerFilterUrl);\nif (context.missingFixFilterUrl) lines.push('Link filter thiếu fixVersion: ' + context.missingFixFilterUrl);\nif (boardOwners.length > 0) lines.push('', 'Board owners: ' + boardOwners.join(' '));\nlines.push('', 'Reply approve để bypass gate và tiếp tục release, hoặc reject/cancel để huỷ.');\n\nconst text = lines.join('\\n');\nconst destinations = normalizeDestinations(context.args?.additionalDestinations, context.triggerSource);\nconst destinationTypes = destinations.map((item) => item.type);\n\nreturn [{\n  json: {\n    toolName: 'sprintRelease',\n    resultText: text,\n    activePendingActionId: String(context.pendingActionPayload?.pendingActionId || '').trim(),\n    deliveryPlan: {\n      thread: { threadKey: context.threadKey || 'sprint-release-' + Date.now().toString(36) },\n      destinations,\n      messages: [\n        {\n          messageKey: 'releaseBlocked',\n          type: 'text',\n          destinations: destinationTypes,\n          payload: { text },\n        },\n      ],\n    },\n  },\n}];"
+      },
+      "id": "13",
+      "name": "Build Blocked Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "__REGISTRY__:MoMo AI Assistant State Store",
+          "mode": "id",
+          "cachedResultUrl": "",
+          "cachedResultName": ""
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "operation": "upsertPendingAction",
+            "pendingAction": "={{ $('Build Release Context').first().json.closePendingPayload || {} }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "operation",
+              "displayName": "operation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "pendingAction",
+              "displayName": "pendingAction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "14",
+      "name": "Close Pending Action",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        730,
+        180
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $('Build Release Context').first().json || {};\n\nfunction normalizeDestinations(raw, triggerSource) {\n  const defaults = triggerSource === 'schedule' ? [{ type: 'pushGoogleChat' }] : [{ type: 'reply' }];\n  const source = [...defaults, ...(Array.isArray(raw) ? raw : [])];\n  const seen = new Set();\n  const normalized = [];\n  for (const entry of source) {\n    const type = typeof entry === 'string' ? entry.trim() : String(entry?.type || '').trim();\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    normalized.push({ type });\n  }\n  return normalized.length > 0 ? normalized : [{ type: 'reply' }];\n}\n\nconst text = context.commandType === 'reject'\n  ? 'Đã reject pending action release sprint trong thread này.'\n  : 'Đã cancel pending action release sprint trong thread này.';\n\nconst destinations = normalizeDestinations(context.args?.additionalDestinations, context.triggerSource);\nconst destinationTypes = destinations.map((item) => item.type);\n\nreturn [{\n  json: {\n    toolName: 'sprintRelease',\n    resultText: text,\n    activePendingActionId: '',\n    deliveryPlan: {\n      thread: { threadKey: context.threadKey || 'sprint-release-' + Date.now().toString(36) },\n      destinations,\n      messages: [\n        {\n          messageKey: 'releasePendingClosed',\n          type: 'text',\n          destinations: destinationTypes,\n          payload: { text },\n        },\n      ],\n    },\n  },\n}];"
+      },
+      "id": "15",
+      "name": "Build Close Pending Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $('Build Release Context').first().json || {};\n\nfunction normalizeDestinations(raw, triggerSource) {\n  const defaults = triggerSource === 'schedule' ? [{ type: 'pushGoogleChat' }] : [{ type: 'reply' }];\n  const source = [...defaults, ...(Array.isArray(raw) ? raw : [])];\n  const seen = new Set();\n  const normalized = [];\n  for (const entry of source) {\n    const type = typeof entry === 'string' ? entry.trim() : String(entry?.type || '').trim();\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    normalized.push({ type });\n  }\n  return normalized.length > 0 ? normalized : [{ type: 'reply' }];\n}\n\nconst text = String(context.reason || 'Không có hành động cần xử lý.').trim();\nconst destinations = normalizeDestinations(context.args?.additionalDestinations, context.triggerSource);\nconst destinationTypes = destinations.map((item) => item.type);\n\nreturn [{\n  json: {\n    toolName: 'sprintRelease',\n    resultText: text,\n    activePendingActionId: String(context.activePendingActionId || '').trim(),\n    deliveryPlan: {\n      thread: { threadKey: context.threadKey || 'sprint-release-' + Date.now().toString(36) },\n      destinations,\n      messages: [\n        {\n          messageKey: 'releaseNoop',\n          type: 'text',\n          destinations: destinationTypes,\n          payload: { text },\n        },\n      ],\n    },\n  },\n}];"
+      },
+      "id": "16",
+      "name": "Build Noop Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        730,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $('Pick Active Sprint').first().json || {};\n\nfunction normalizeDestinations(raw, triggerSource) {\n  const defaults = triggerSource === 'schedule' ? [{ type: 'pushGoogleChat' }] : [{ type: 'reply' }];\n  const source = [...defaults, ...(Array.isArray(raw) ? raw : [])];\n  const seen = new Set();\n  const normalized = [];\n  for (const entry of source) {\n    const type = typeof entry === 'string' ? entry.trim() : String(entry?.type || '').trim();\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    normalized.push({ type });\n  }\n  return normalized.length > 0 ? normalized : [{ type: 'reply' }];\n}\n\nconst text = String(context.failureReason || 'Không tìm thấy active sprint.').trim();\nconst destinations = normalizeDestinations(context.args?.additionalDestinations, context.triggerSource);\nconst destinationTypes = destinations.map((item) => item.type);\n\nreturn [{\n  json: {\n    toolName: 'sprintRelease',\n    resultText: text,\n    activePendingActionId: String(context.activePendingActionId || '').trim(),\n    deliveryPlan: {\n      thread: { threadKey: context.threadKey || 'sprint-release-' + Date.now().toString(36) },\n      destinations,\n      messages: [\n        {\n          messageKey: 'releaseNoActiveSprint',\n          type: 'text',\n          destinations: destinationTypes,\n          payload: { text },\n        },\n      ],\n    },\n  },\n}];"
+      },
+      "id": "17",
+      "name": "Build No Active Sprint Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -190,
+        380
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ !!$json.approvePendingPayload }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "18",
+      "name": "If Need Pending Approve Update?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        730,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "__REGISTRY__:MoMo AI Assistant State Store",
+          "mode": "id",
+          "cachedResultUrl": "",
+          "cachedResultName": ""
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "operation": "upsertPendingAction",
+            "pendingAction": "={{ $('Build Release Context').first().json.approvePendingPayload || {} }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "operation",
+              "displayName": "operation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "pendingAction",
+              "displayName": "pendingAction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "19",
+      "name": "Upsert Approved Pending Action",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        960,
+        460
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $('Build Release Context').first().json || {};\n\nreturn [{\n  json: {\n    ...context,\n    transitionSummary: null,\n    versionSummary: null,\n    completeSprintResult: null,\n    nextSprintResult: null,\n  },\n}];"
+      },
+      "id": "20",
+      "name": "Build Execute Seed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1190,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ Array.isArray($json.transitionCandidates) && $json.transitionCandidates.length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "21",
+      "name": "If Has Transition Candidates?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1420,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $('Build Execute Seed').first().json || {};\nconst candidates = Array.isArray(payload.transitionCandidates) ? payload.transitionCandidates : [];\n\nreturn candidates.map((candidate, index) => ({\n  json: {\n    ...payload,\n    transitionItem: {\n      index,\n      key: String(candidate.key || '').trim(),\n      status: String(candidate.status || '').trim(),\n      summary: String(candidate.summary || '').trim(),\n      issueUrl: String(candidate.issueUrl || '').trim(),\n    },\n  },\n}));"
+      },
+      "id": "22",
+      "name": "Split Out Transition Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1650,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "23",
+      "name": "Loop Transition Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1880,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Build Execute Seed').first().json.config.jiraBaseUrl + '/rest/api/2/issue/' + encodeURIComponent(String($json.transitionItem?.key || '')) + '/transitions' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "jiraSoftwareServerPatApi",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={{ JSON.stringify({ expand: 'transitions.fields' }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "24",
+      "name": "Get Issue Transitions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2110,
+        440
+      ],
+      "credentials": {
+        "jiraSoftwareServerPatApi": {
+          "id": "3TLwUpSgsJhbG45A",
+          "name": "Jira MoMo account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $('Get Issue Transitions').first().json || {};\nconst item = $input.first().json || {};\nconst transitionItem = item.transitionItem || {};\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction scoreTransition(name) {\n  const normalized = toText(name).toLowerCase();\n  if (normalized === 'close') return 100;\n  if (normalized === 'closed') return 90;\n  if (normalized === 'done') return 80;\n  if (normalized === 'resolve issue') return 70;\n  if (normalized.includes('close')) return 60;\n  if (normalized.includes('done')) return 50;\n  return 0;\n}\n\nconst statusCode = Number(response.statusCode || 200);\nconst body = response.body && typeof response.body === 'object' ? response.body : response;\nconst transitions = Array.isArray(body.transitions) ? body.transitions : [];\n\nif (statusCode >= 400) {\n  return [{\n    json: {\n      ...item,\n      transitionDecision: {\n        canRun: false,\n        issueKey: toText(transitionItem.key),\n        issueUrl: toText(transitionItem.issueUrl),\n        issueSummary: toText(transitionItem.summary),\n        reason: 'Lỗi lấy transitions (HTTP ' + statusCode + ')',\n      },\n    },\n  }];\n}\n\nconst picked = transitions\n  .map((transition) => ({ transition, score: scoreTransition(transition?.name) }))\n  .sort((a, b) => b.score - a.score)[0];\n\nif (!picked || picked.score <= 0 || !picked.transition?.id) {\n  return [{\n    json: {\n      ...item,\n      transitionDecision: {\n        canRun: false,\n        issueKey: toText(transitionItem.key),\n        issueUrl: toText(transitionItem.issueUrl),\n        issueSummary: toText(transitionItem.summary),\n        reason: 'Không tìm thấy transition phù hợp (Close/Closed/Done)',\n      },\n    },\n  }];\n}\n\nconst transition = picked.transition;\nconst payload = {\n  transition: {\n    id: toText(transition.id),\n  },\n};\n\nconst resolutionField = transition.fields && transition.fields.resolution ? transition.fields.resolution : null;\nif (resolutionField && resolutionField.required) {\n  const allowedValues = Array.isArray(resolutionField.allowedValues) ? resolutionField.allowedValues : [];\n  const first = allowedValues[0] || null;\n  if (!first) {\n    return [{\n      json: {\n        ...item,\n        transitionDecision: {\n          canRun: false,\n          issueKey: toText(transitionItem.key),\n          issueUrl: toText(transitionItem.issueUrl),\n          issueSummary: toText(transitionItem.summary),\n          reason: 'Transition yêu cầu resolution nhưng không có allowedValues',\n        },\n      },\n    }];\n  }\n\n  payload.fields = {\n    resolution: first.id ? { id: toText(first.id) } : { name: toText(first.name || '') },\n  };\n}\n\nreturn [{\n  json: {\n    ...item,\n    transitionDecision: {\n      canRun: true,\n      issueKey: toText(transitionItem.key),\n      issueUrl: toText(transitionItem.issueUrl),\n      issueSummary: toText(transitionItem.summary),\n      transitionId: toText(transition.id),\n      transitionName: toText(transition.name),\n      payload,\n      reason: '',\n    },\n  },\n}];"
+      },
+      "id": "25",
+      "name": "Build Transition Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2340,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ Boolean($json.transitionDecision?.canRun) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "26",
+      "name": "If Transition Request Ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2570,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Build Execute Seed').first().json.config.jiraBaseUrl + '/rest/api/2/issue/' + encodeURIComponent(String($json.transitionDecision?.issueKey || '')) + '/transitions' }}",
+        "method": "POST",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "jiraSoftwareServerPatApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.transitionDecision.payload || {} }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "27",
+      "name": "Run Issue Transition",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2800,
+        360
+      ],
+      "credentials": {
+        "jiraSoftwareServerPatApi": {
+          "id": "3TLwUpSgsJhbG45A",
+          "name": "Jira MoMo account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const runResponse = $('Run Issue Transition').first().json || {};\nconst input = $input.first().json || {};\nconst decision = input.transitionDecision || {};\n\nconst statusCode = Number(runResponse.statusCode || 200);\nconst success = statusCode < 400;\nconst responseBody = runResponse.body && typeof runResponse.body === 'object' ? runResponse.body : {};\nconst firstError = Array.isArray(responseBody.errorMessages) ? String(responseBody.errorMessages[0] || '').trim() : '';\n\nreturn [{\n  json: {\n    ...input,\n    transitionResult: {\n      issueKey: String(decision.issueKey || '').trim(),\n      issueUrl: String(decision.issueUrl || '').trim(),\n      issueSummary: String(decision.issueSummary || '').trim(),\n      transitionName: String(decision.transitionName || '').trim(),\n      statusCode,\n      success,\n      reason: success ? '' : (firstError || ('Transition thất bại HTTP ' + statusCode)),\n    },\n  },\n}];"
+      },
+      "id": "28",
+      "name": "Build Transition Run Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3030,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json || {};\nconst decision = input.transitionDecision || {};\n\nreturn [{\n  json: {\n    ...input,\n    transitionResult: {\n      issueKey: String(decision.issueKey || '').trim(),\n      issueUrl: String(decision.issueUrl || '').trim(),\n      issueSummary: String(decision.issueSummary || '').trim(),\n      transitionName: '',\n      statusCode: 0,\n      success: false,\n      reason: String(decision.reason || 'Không thể transition issue').trim(),\n    },\n  },\n}];"
+      },
+      "id": "29",
+      "name": "Build Transition Missing Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2800,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const seed = $('Build Execute Seed').first().json || {};\nconst successItems = (() => {\n  try { return $('Build Transition Run Result').all(); } catch (error) { return []; }\n})();\nconst missingItems = (() => {\n  try { return $('Build Transition Missing Result').all(); } catch (error) { return []; }\n})();\n\nconst combined = [...successItems, ...missingItems]\n  .map((item) => item?.json?.transitionResult)\n  .filter(Boolean);\n\nconst uniqueByIssue = [];\nconst seen = new Set();\nfor (const row of combined) {\n  const key = String(row.issueKey || '').trim();\n  if (!key || seen.has(key)) continue;\n  seen.add(key);\n  uniqueByIssue.push(row);\n}\n\nconst failures = uniqueByIssue.filter((row) => !row.success);\n\nreturn [{\n  json: {\n    ...seed,\n    transitionSummary: {\n      total: uniqueByIssue.length,\n      successCount: uniqueByIssue.length - failures.length,\n      failures,\n      results: uniqueByIssue,\n    },\n  },\n}];"
+      },
+      "id": "30",
+      "name": "Summarize Transition Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2110,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const seed = $('Build Execute Seed').first().json || {};\n\nreturn [{\n  json: {\n    ...seed,\n    transitionSummary: {\n      total: 0,\n      successCount: 0,\n      failures: [],\n      results: [],\n    },\n  },\n}];"
+      },
+      "id": "31",
+      "name": "Build Empty Transition Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1650,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ Array.isArray($json.transitionSummary?.failures) && $json.transitionSummary.failures.length === 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "32",
+      "name": "If Transition Strict Pass?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1880,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ Array.isArray($json.versionsToRelease) && $json.versionsToRelease.length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "33",
+      "name": "If Has Versions To Release?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2110,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $input.first().json || {};\nconst versions = Array.isArray(payload.versionsToRelease) ? payload.versionsToRelease : [];\n\nreturn versions.map((version, index) => ({\n  json: {\n    ...payload,\n    versionItem: {\n      index,\n      id: String(version.id || '').trim(),\n      name: String(version.name || '').trim(),\n      description: String(version.description || '').trim(),\n      issueNotes: Array.isArray(version.issueNotes) ? version.issueNotes : [],\n    },\n  },\n}));"
+      },
+      "id": "34",
+      "name": "Split Out Version Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2340,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "35",
+      "name": "Loop Version Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2570,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Build Execute Seed').first().json.config.jiraBaseUrl + '/rest/api/2/version/' + encodeURIComponent(String($json.versionItem?.id || '')) }}",
+        "method": "PUT",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "jiraSoftwareServerPatApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ ({ released: true, releaseDate: $('Build Execute Seed').first().json.config.todayDate }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "36",
+      "name": "Run Release Version",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2800,
+        700
+      ],
+      "credentials": {
+        "jiraSoftwareServerPatApi": {
+          "id": "3TLwUpSgsJhbG45A",
+          "name": "Jira MoMo account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const runResponse = $('Run Release Version').first().json || {};\nconst input = $input.first().json || {};\nconst version = input.versionItem || {};\n\nconst statusCode = Number(runResponse.statusCode || 200);\nconst success = statusCode < 400;\nconst body = runResponse.body && typeof runResponse.body === 'object' ? runResponse.body : {};\nconst firstError = Array.isArray(body.errorMessages) ? String(body.errorMessages[0] || '').trim() : '';\n\nreturn [{\n  json: {\n    ...input,\n    versionResult: {\n      id: String(version.id || '').trim(),\n      name: String(version.name || '').trim(),\n      success,\n      statusCode,\n      reason: success ? '' : (firstError || ('Release version thất bại HTTP ' + statusCode)),\n    },\n  },\n}];"
+      },
+      "id": "37",
+      "name": "Build Version Result Item",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3030,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $input.first().json || {};\nconst rows = (() => {\n  try { return $('Build Version Result Item').all(); } catch (error) { return []; }\n})();\n\nconst results = rows\n  .map((item) => item?.json?.versionResult)\n  .filter(Boolean);\n\nconst failures = results.filter((item) => !item.success);\n\nreturn [{\n  json: {\n    ...payload,\n    versionSummary: {\n      total: results.length,\n      successCount: results.length - failures.length,\n      failures,\n      results,\n    },\n  },\n}];"
+      },
+      "id": "38",
+      "name": "Summarize Version Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2800,
+        860
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $input.first().json || {};\n\nreturn [{\n  json: {\n    ...payload,\n    versionSummary: {\n      total: 0,\n      successCount: 0,\n      failures: [],\n      results: [],\n    },\n  },\n}];"
+      },
+      "id": "39",
+      "name": "Build Empty Version Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2340,
+        860
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ Array.isArray($json.versionSummary?.failures) && $json.versionSummary.failures.length === 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "40",
+      "name": "If Version Strict Pass?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2570,
+        980
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Build Execute Seed').first().json.config.jiraBaseUrl + '/rest/agile/1.0/sprint/' + encodeURIComponent(String($json.sprint?.id || '')) }}",
+        "method": "PUT",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "jiraSoftwareServerPatApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ ({ state: 'closed' }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "41",
+      "name": "Complete Active Sprint",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2800,
+        980
+      ],
+      "credentials": {
+        "jiraSoftwareServerPatApi": {
+          "id": "3TLwUpSgsJhbG45A",
+          "name": "Jira MoMo account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json || {};\nconst response = $('Complete Active Sprint').first().json || {};\n\nconst statusCode = Number(response.statusCode || 200);\nconst success = statusCode < 400;\nconst body = response.body && typeof response.body === 'object' ? response.body : {};\nconst firstError = Array.isArray(body.errorMessages) ? String(body.errorMessages[0] || '').trim() : '';\n\nreturn [{\n  json: {\n    ...input,\n    completeSprintResult: {\n      success,\n      statusCode,\n      reason: success ? '' : (firstError || ('Complete sprint thất bại HTTP ' + statusCode)),\n    },\n  },\n}];"
+      },
+      "id": "42",
+      "name": "Build Complete Sprint Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3030,
+        980
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ Boolean($json.completeSprintResult?.success) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "43",
+      "name": "If Complete Sprint Pass?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3260,
+        980
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Build Execute Seed').first().json.config.jiraBaseUrl + '/rest/agile/1.0/board/' + String($('Build Execute Seed').first().json.config.boardId || 1041) + '/sprint' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "jiraSoftwareServerPatApi",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={{ JSON.stringify({ state: 'future', maxResults: 50 }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "44",
+      "name": "Get Next Sprint",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        3490,
+        900
+      ],
+      "credentials": {
+        "jiraSoftwareServerPatApi": {
+          "id": "3TLwUpSgsJhbG45A",
+          "name": "Jira MoMo account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json || {};\nconst response = $('Get Next Sprint').first().json || {};\n\nconst statusCode = Number(response.statusCode || 200);\nif (statusCode >= 400) {\n  return [{\n    json: {\n      ...input,\n      nextSprintResult: {\n        hasNextSprint: false,\n        started: false,\n        reason: 'Không lấy được next sprint (HTTP ' + statusCode + ')',\n      },\n    },\n  }];\n}\n\nconst body = response.body && typeof response.body === 'object' ? response.body : response;\nconst values = Array.isArray(body.values) ? body.values : [];\nconst next = values\n  .filter((item) => String(item?.state || '').toLowerCase() === 'future')\n  .sort((a, b) => new Date(a?.startDate || '2999-12-31').getTime() - new Date(b?.startDate || '2999-12-31').getTime())[0] || null;\n\nif (!next) {\n  return [{\n    json: {\n      ...input,\n      nextSprintResult: {\n        hasNextSprint: false,\n        started: false,\n        reason: 'Không có future sprint để start.',\n      },\n    },\n  }];\n}\n\nreturn [{\n  json: {\n    ...input,\n    nextSprintResult: {\n      hasNextSprint: true,\n      started: false,\n      sprint: {\n        id: next.id,\n        name: next.name || '',\n      },\n      reason: '',\n    },\n  },\n}];"
+      },
+      "id": "45",
+      "name": "Pick Next Sprint",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3720,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ Boolean($json.nextSprintResult?.hasNextSprint) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "46",
+      "name": "If Has Next Sprint?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3950,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Build Execute Seed').first().json.config.jiraBaseUrl + '/rest/agile/1.0/sprint/' + encodeURIComponent(String($json.nextSprintResult?.sprint?.id || '')) }}",
+        "method": "POST",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "jiraSoftwareServerPatApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ ({ state: 'active' }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "47",
+      "name": "Start Next Sprint",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        4180,
+        820
+      ],
+      "credentials": {
+        "jiraSoftwareServerPatApi": {
+          "id": "3TLwUpSgsJhbG45A",
+          "name": "Jira MoMo account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json || {};\nconst response = $('Start Next Sprint').first().json || {};\n\nconst statusCode = Number(response.statusCode || 200);\nconst success = statusCode < 400;\nconst body = response.body && typeof response.body === 'object' ? response.body : {};\nconst firstError = Array.isArray(body.errorMessages) ? String(body.errorMessages[0] || '').trim() : '';\n\nreturn [{\n  json: {\n    ...input,\n    nextSprintResult: {\n      ...(input.nextSprintResult || {}),\n      started: success,\n      startStatusCode: statusCode,\n      reason: success ? '' : (firstError || ('Start next sprint thất bại HTTP ' + statusCode)),\n    },\n  },\n}];"
+      },
+      "id": "48",
+      "name": "Build Start Next Sprint Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4410,
+        820
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ Boolean($json.nextSprintResult?.started) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "49",
+      "name": "If Start Next Sprint Pass?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4640,
+        820
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Build Execute Seed').first().json.config.jiraBaseUrl + '/rest/agile/1.0/sprint/' + encodeURIComponent(String($json.nextSprintResult?.sprint?.id || '')) + '/issue' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "jiraSoftwareServerPatApi",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={{ JSON.stringify({ startAt: 0, maxResults: 500, fields: '*all' }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "50",
+      "name": "Get Next Sprint Issues",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        4870,
+        740
+      ],
+      "credentials": {
+        "jiraSoftwareServerPatApi": {
+          "id": "3TLwUpSgsJhbG45A",
+          "name": "Jira MoMo account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $('Build Execute Seed').first().json || {};\nconst transitionPayload = (() => {\n  try {\n    if ($json.transitionSummary) return $json.transitionSummary;\n    return $('Build Execute Seed').first().json.transitionSummary || { total: 0, successCount: 0, failures: [], results: [] };\n  } catch (error) {\n    return { total: 0, successCount: 0, failures: [], results: [] };\n  }\n})();\n\nconst versionPayload = (() => {\n  const direct = $json.versionSummary;\n  if (direct) return direct;\n  try { return $('Summarize Version Results').first().json.versionSummary; } catch (error) {}\n  try { return $('Build Empty Version Summary').first().json.versionSummary; } catch (error) {}\n  return { total: 0, successCount: 0, failures: [], results: [] };\n})();\n\nconst completePayload = (() => {\n  if ($json.completeSprintResult) return $json.completeSprintResult;\n  try { return $('Build Complete Sprint Result').first().json.completeSprintResult; } catch (error) {}\n  return { success: false, reason: 'Không có dữ liệu complete sprint.' };\n})();\n\nconst nextSprint = (() => {\n  if ($json.nextSprintResult) return $json.nextSprintResult;\n  try { return $('Pick Next Sprint').first().json.nextSprintResult; } catch (error) {}\n  return { hasNextSprint: false, started: false, reason: 'Không có next sprint' };\n})();\n\nconst nextSprintIssuesResponse = (() => {\n  try { return $('Get Next Sprint Issues').first().json || {}; } catch (error) { return {}; }\n})();\n\nconst storyPointField = String(context.config?.storyPointFieldKey || 'customfield_10107').trim() || 'customfield_10107';\nconst nextIssuesBody = nextSprintIssuesResponse.body && typeof nextSprintIssuesResponse.body === 'object' ? nextSprintIssuesResponse.body : {};\nconst nextIssues = Array.isArray(nextIssuesBody.issues) ? nextIssuesBody.issues : [];\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction normalizeDestinations(raw, triggerSource) {\n  const defaults = triggerSource === 'schedule' ? [{ type: 'pushGoogleChat' }] : [{ type: 'reply' }];\n  const source = [...defaults, ...(Array.isArray(raw) ? raw : [])];\n  const seen = new Set();\n  const normalized = [];\n  for (const entry of source) {\n    const type = typeof entry === 'string' ? entry.trim() : String(entry?.type || '').trim();\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    normalized.push({ type });\n  }\n  return normalized.length > 0 ? normalized : [{ type: 'reply' }];\n}\n\nfunction hasStoryPoint(fields) {\n  const value = fields[storyPointField];\n  if (typeof value === 'number') return value > 0;\n  if (typeof value === 'string') {\n    const n = Number(value.trim());\n    return Number.isFinite(n) && n > 0;\n  }\n  if (value && typeof value === 'object' && typeof value.value === 'number') return value.value > 0;\n  return false;\n}\n\nconst missingStoryPoints = nextIssues\n  .map((issue) => ({\n    key: toText(issue.key),\n    summary: toText(issue.fields?.summary || ''),\n    fields: issue.fields || {},\n  }))\n  .filter((issue) => {\n    const issueType = toText(issue.fields?.issuetype?.name || '');\n    if (!['Story', 'Task', 'Bug'].includes(issueType)) return false;\n    return !hasStoryPoint(issue.fields);\n  });\n\nconst versions = Array.isArray(context.versionsToRelease) ? context.versionsToRelease : [];\nconst sprintLabel = toText(context.sprint?.name || context.sprint?.id || 'Sprint');\n\nconst releaseNotesLines = ['📦 Release note - ' + sprintLabel, ''];\nif (versions.length === 0) {\n  releaseNotesLines.push('- Không có version mới cần release trong sprint này.');\n} else {\n  for (const version of versions) {\n    releaseNotesLines.push('- ' + toText(version.name || version.id || 'Version'));\n    const description = toText(version.description || '');\n    if (description) {\n      releaseNotesLines.push('  ' + description);\n    } else {\n      const notes = Array.isArray(version.issueNotes) ? version.issueNotes : [];\n      releaseNotesLines.push('  ' + (notes.length > 0 ? notes.slice(0, 8).join(' | ') : '(Không có release note mô tả)'));\n    }\n  }\n}\nconst messageReleaseNotes = releaseNotesLines.join('\\n');\n\nconst checklistLines = [\n  '✅ Sprint release execution checklist',\n  '',\n  '1. close cards: ' + transitionPayload.successCount + '/' + transitionPayload.total + ' issue',\n  '2. release versions: ' + versionPayload.successCount + '/' + versionPayload.total + ' version',\n  '3. complete sprint: ' + (completePayload.success ? 'done' : 'failed'),\n  '4. start next sprint: ' + (nextSprint.hasNextSprint ? (nextSprint.started ? 'done' : ('failed - ' + toText(nextSprint.reason || 'unknown'))) : 'skip - không có future sprint'),\n  '5. story point check next sprint: thiếu ' + missingStoryPoints.length + ' issue',\n  '',\n  'Gate snapshot trước khi release:',\n  '- blocker review: ' + (Array.isArray(context.blockers) ? context.blockers.length : 0),\n  '- app issue thiếu fixVersion: ' + (Array.isArray(context.missingFixVersion) ? context.missingFixVersion.length : 0),\n];\n\nif (nextSprint.hasNextSprint) {\n  checklistLines.push('', 'Next sprint: ' + toText(nextSprint.sprint?.name || nextSprint.sprint?.id || 'N/A'));\n}\n\nif (missingStoryPoints.length > 0) {\n  checklistLines.push('', '⚠️ Issue thiếu story point:');\n  for (const item of missingStoryPoints.slice(0, 30)) {\n    checklistLines.push('- ' + item.key + ' ' + item.summary);\n  }\n}\n\nconst messageActions = checklistLines.join('\\n');\nconst destinations = normalizeDestinations(context.args?.additionalDestinations, context.triggerSource);\nconst destinationTypes = destinations.map((item) => item.type);\n\nconst messages = [];\nif (destinationTypes.includes('reply')) {\n  messages.push({\n    messageKey: 'releaseSummary',\n    type: 'text',\n    destinations: ['reply'],\n    payload: { text: messageReleaseNotes + '\\n\\n' + messageActions },\n  });\n}\nif (destinationTypes.includes('pushGoogleChat')) {\n  messages.push({\n    messageKey: 'releaseNotes',\n    type: 'text',\n    destinations: ['pushGoogleChat'],\n    payload: { text: messageReleaseNotes },\n  });\n  messages.push({\n    messageKey: 'releaseActions',\n    type: 'text',\n    destinations: ['pushGoogleChat'],\n    payload: { text: messageActions },\n  });\n}\n\nreturn [{\n  json: {\n    toolName: 'sprintRelease',\n    resultText: 'Release sprint hoàn tất. Đã gửi release note và checklist hành động.',\n    activePendingActionId: '',\n    deliveryPlan: {\n      thread: { threadKey: context.threadKey || 'sprint-release-' + Date.now().toString(36) },\n      destinations,\n      messages,\n    },\n  },\n}];"
+      },
+      "id": "51",
+      "name": "Build Execute Success Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5100,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const context = $('Build Execute Seed').first().json || {};\nconst current = $input.first().json || {};\n\nfunction normalizeDestinations(raw, triggerSource) {\n  const defaults = triggerSource === 'schedule' ? [{ type: 'pushGoogleChat' }] : [{ type: 'reply' }];\n  const source = [...defaults, ...(Array.isArray(raw) ? raw : [])];\n  const seen = new Set();\n  const normalized = [];\n  for (const entry of source) {\n    const type = typeof entry === 'string' ? entry.trim() : String(entry?.type || '').trim();\n    if (!type || seen.has(type)) continue;\n    seen.add(type);\n    normalized.push({ type });\n  }\n  return normalized.length > 0 ? normalized : [{ type: 'reply' }];\n}\n\nconst transitionFailures = Array.isArray(current.transitionSummary?.failures) ? current.transitionSummary.failures : [];\nconst versionFailures = Array.isArray(current.versionSummary?.failures) ? current.versionSummary.failures : [];\nconst completeFailed = current.completeSprintResult && !current.completeSprintResult.success;\n\nconst lines = ['❌ Release sprint thất bại (strict mode).', ''];\n\nif (transitionFailures.length > 0) {\n  lines.push('- Lỗi transition issue: ' + transitionFailures.length);\n  for (const fail of transitionFailures.slice(0, 20)) {\n    lines.push('  - ' + fail.issueKey + ': ' + fail.reason);\n  }\n}\n\nif (versionFailures.length > 0) {\n  lines.push('- Lỗi release version: ' + versionFailures.length);\n  for (const fail of versionFailures.slice(0, 20)) {\n    lines.push('  - ' + fail.name + ': ' + fail.reason);\n  }\n}\n\nif (completeFailed) {\n  lines.push('- Lỗi complete sprint: ' + String(current.completeSprintResult.reason || 'unknown'));\n}\n\nif (lines.length <= 2) {\n  lines.push('- Không xác định được lý do chi tiết, vui lòng kiểm tra execution log.');\n}\n\nconst text = lines.join('\\n');\nconst destinations = normalizeDestinations(context.args?.additionalDestinations, context.triggerSource);\nconst destinationTypes = destinations.map((item) => item.type);\n\nreturn [{\n  json: {\n    toolName: 'sprintRelease',\n    resultText: text,\n    activePendingActionId: '',\n    deliveryPlan: {\n      thread: { threadKey: context.threadKey || 'sprint-release-' + Date.now().toString(36) },\n      destinations,\n      messages: [\n        {\n          messageKey: 'releaseFailed',\n          type: 'text',\n          destinations: destinationTypes,\n          payload: { text },\n        },\n      ],\n    },\n  },\n}];"
+      },
+      "id": "52",
+      "name": "Build Execute Failed Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3490,
+        1140
+      ]
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Config Main",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config Main": {
+      "main": [
+        [
+          {
+            "node": "Load Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Session": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Action": {
+      "main": [
+        [
+          {
+            "node": "Get Active Sprint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Sprint": {
+      "main": [
+        [
+          {
+            "node": "Pick Active Sprint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Active Sprint": {
+      "main": [
+        [
+          {
+            "node": "If Active Sprint?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Active Sprint?": {
+      "main": [
+        [
+          {
+            "node": "Get Sprint Issues",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build No Active Sprint Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Sprint Issues": {
+      "main": [
+        [
+          {
+            "node": "Get user",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get user": {
+      "main": [
+        [
+          {
+            "node": "Build Release Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Release Context": {
+      "main": [
+        [
+          {
+            "node": "Switch Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Action": {
+      "main": [
+        [
+          {
+            "node": "Upsert Pending Action",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Close Pending Action",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Need Pending Approve Update?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Noop Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Pending Action": {
+      "main": [
+        [
+          {
+            "node": "Build Blocked Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Close Pending Action": {
+      "main": [
+        [
+          {
+            "node": "Build Close Pending Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Need Pending Approve Update?": {
+      "main": [
+        [
+          {
+            "node": "Upsert Approved Pending Action",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Execute Seed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Approved Pending Action": {
+      "main": [
+        [
+          {
+            "node": "Build Execute Seed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Execute Seed": {
+      "main": [
+        [
+          {
+            "node": "If Has Transition Candidates?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has Transition Candidates?": {
+      "main": [
+        [
+          {
+            "node": "Split Out Transition Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Empty Transition Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Transition Items": {
+      "main": [
+        [
+          {
+            "node": "Loop Transition Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Transition Items": {
+      "main": [
+        [
+          {
+            "node": "Summarize Transition Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Issue Transitions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Issue Transitions": {
+      "main": [
+        [
+          {
+            "node": "Build Transition Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Transition Request": {
+      "main": [
+        [
+          {
+            "node": "If Transition Request Ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Transition Request Ready?": {
+      "main": [
+        [
+          {
+            "node": "Run Issue Transition",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Transition Missing Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Issue Transition": {
+      "main": [
+        [
+          {
+            "node": "Build Transition Run Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Transition Run Result": {
+      "main": [
+        [
+          {
+            "node": "Loop Transition Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Transition Missing Result": {
+      "main": [
+        [
+          {
+            "node": "Loop Transition Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize Transition Results": {
+      "main": [
+        [
+          {
+            "node": "If Transition Strict Pass?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Empty Transition Summary": {
+      "main": [
+        [
+          {
+            "node": "If Transition Strict Pass?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Transition Strict Pass?": {
+      "main": [
+        [
+          {
+            "node": "If Has Versions To Release?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Execute Failed Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has Versions To Release?": {
+      "main": [
+        [
+          {
+            "node": "Split Out Version Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Empty Version Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Version Items": {
+      "main": [
+        [
+          {
+            "node": "Loop Version Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Version Items": {
+      "main": [
+        [
+          {
+            "node": "Summarize Version Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Run Release Version",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Release Version": {
+      "main": [
+        [
+          {
+            "node": "Build Version Result Item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Version Result Item": {
+      "main": [
+        [
+          {
+            "node": "Loop Version Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize Version Results": {
+      "main": [
+        [
+          {
+            "node": "If Version Strict Pass?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Empty Version Summary": {
+      "main": [
+        [
+          {
+            "node": "If Version Strict Pass?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Version Strict Pass?": {
+      "main": [
+        [
+          {
+            "node": "Complete Active Sprint",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Execute Failed Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Complete Active Sprint": {
+      "main": [
+        [
+          {
+            "node": "Build Complete Sprint Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Complete Sprint Result": {
+      "main": [
+        [
+          {
+            "node": "If Complete Sprint Pass?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Complete Sprint Pass?": {
+      "main": [
+        [
+          {
+            "node": "Get Next Sprint",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Execute Failed Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Next Sprint": {
+      "main": [
+        [
+          {
+            "node": "Pick Next Sprint",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Next Sprint": {
+      "main": [
+        [
+          {
+            "node": "If Has Next Sprint?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has Next Sprint?": {
+      "main": [
+        [
+          {
+            "node": "Start Next Sprint",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Execute Success Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Next Sprint": {
+      "main": [
+        [
+          {
+            "node": "Build Start Next Sprint Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Start Next Sprint Result": {
+      "main": [
+        [
+          {
+            "node": "If Start Next Sprint Pass?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Start Next Sprint Pass?": {
+      "main": [
+        [
+          {
+            "node": "Get Next Sprint Issues",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Execute Success Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Next Sprint Issues": {
+      "main": [
+        [
+          {
+            "node": "Build Execute Success Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}

@@ -2,6 +2,13 @@
 
 ## 2026-04-10
 
+- Add business subworkflow moi `MoMo AI Assistant Tool Sprint Release` theo flow deterministic + approve gate (khong dung AI review), giu input contract toi gian (`triggerSource`, `commandText`, `channel`, `sessionId`, `spaceId`, `threadKey`, `actorId`, `actorDisplayName`, `args`).
+- Router `MoMo AI Assistant Tool Router` cap nhat route command `release sprint|close sprint|release status` va `approve|reject|cancel` sang `sprintRelease`; `sprintHealthcheck` giu nguyen.
+- Sprint release tool bo sung pre-check gate: fetch active sprint/issues/member sheet, detect blocker theo role (DEV/QC/REPORTER) + mention nguoi dang giu viec, warning issue app thieu fixVersion + tag board owners, va tra filter links Jira san.
+- Bypass flow qua pending action state store: `release_sprint` bi block se upsert pending action; `approve` cung session/thread cho phep execute; `reject/cancel` dong pending action va clear `activePendingActionId`.
+- Execute flow strict mode: transition issue ve `Close/Closed/Done` (auto-detect transition), release unreleased fixVersions (set `released=true`, `releaseDate=today`), complete active sprint, start next sprint, va check issue thieu story point o next sprint.
+- Delivery release cap nhat theo yeu cau: sau release thanh cong gui 2 message cung thread theo thu tu `releaseNotes` -> `releaseActions` (message 2 liet ke danh sach cong viec da lam + ket qua tung buoc).
+- Cap nhat wiring/ops: them registry entry + wrapper import `import-momo-ai-assistant-tool-sprint-release-workflow.sh`, cap nhat checklist `test-momo-ai-assistant-checklist.mjs`, va top-level `Save Agent Session` de luu `activePendingActionId` tu tool output.
 - Sprint Monitor cutover to **single scheduler topology**: replace 3 top-level wrappers (`Light Scan`, `Deep Analysis`, `Endgame`) with one top-level workflow `Sprint Monitor Scheduler`, while keeping `Sprint Monitor Engine` as the only execution engine.
 - Repurpose existing workflow ID `l4HFV7Mr0c5ZXi7j` for `Sprint Monitor Scheduler`; registry/import wrappers updated accordingly, legacy deep/endgame templates and wrappers removed.
 - Engine now selects runtime mode deterministically (`scan` vs `review`) with hardcoded rules: review on Monday/Thursday checkpoints or near-end (`days_remaining <= 1`), otherwise scan.
