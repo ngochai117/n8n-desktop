@@ -75,19 +75,19 @@
     "MoMo AI Assistant State Store": {
       "id": "buH9JMCFNDnD3ZWU",
       "template": "workflows/ui-synced/MoMo/momo-ai-assistant-state-store.workflow.json",
-      "lastSyncedAt": "2026-04-11T04:37:00Z",
+      "lastSyncedAt": "2026-04-11T13:21:02Z",
       "templateImport": "scripts/workflows/import/import-momo-ai-assistant-state-store-workflow.sh"
     },
     "MoMo AI Assistant Tool Sprint Healthcheck": {
       "id": "KMrBMKLm9ZNezxwx",
       "template": "workflows/ui-synced/MoMo/momo-ai-assistant-tool-sprint-healthcheck.workflow.json",
-      "lastSyncedAt": "2026-04-11T11:05:30Z",
+      "lastSyncedAt": "2026-04-11T13:21:51Z",
       "templateImport": "scripts/workflows/import/import-momo-ai-assistant-tool-sprint-healthcheck-workflow.sh"
     },
     "MoMo AI Assistant": {
       "id": "JffudBpBO0QYjP8K",
       "template": "workflows/ui-synced/MoMo/momo-ai-assistant.workflow.json",
-      "lastSyncedAt": "2026-04-11T04:37:02Z",
+      "lastSyncedAt": "2026-04-11T13:21:06Z",
       "templateImport": "scripts/workflows/import/import-momo-ai-assistant-workflow.sh"
     },
     "MoMo AI Assistant Tool Demo Commands": {
@@ -99,13 +99,13 @@
     "MoMo AI Assistant State Cleanup": {
       "id": "t5WpwGyUw5qprVgS",
       "template": "workflows/ui-synced/MoMo/momo-ai-assistant-state-cleanup.workflow.json",
-      "lastSyncedAt": "2026-04-11T04:36:59Z",
+      "lastSyncedAt": "2026-04-11T13:21:03Z",
       "templateImport": "scripts/workflows/import/import-momo-ai-assistant-state-cleanup-workflow.sh"
     },
     "MoMo AI Assistant Tool Router": {
       "id": "kY5dXvHgZDS3m92L",
       "template": "workflows/ui-synced/MoMo/momo-ai-assistant-tool-router.workflow.json",
-      "lastSyncedAt": "2026-04-11T11:05:30Z",
+      "lastSyncedAt": "2026-04-12T11:00:37Z",
       "templateImport": "scripts/workflows/import/import-momo-ai-assistant-tool-router-workflow.sh"
     },
     "Sprint Monitor Engine": {
@@ -123,20 +123,38 @@
     "MoMo AI Assistant Tool Sprint Release": {
       "id": "uQ4zP7foDoysSCFn",
       "template": "workflows/ui-synced/MoMo/momo-ai-assistant-tool-sprint-release.workflow.json",
-      "lastSyncedAt": "2026-04-11T11:05:30Z",
+      "lastSyncedAt": "2026-04-11T13:22:12Z",
       "templateImport": "scripts/workflows/import/import-momo-ai-assistant-tool-sprint-release-workflow.sh"
     },
     "MoMo Assistant": {
       "id": "NU6DFeJgSUnn3eeE",
       "template": "workflows/ui-synced/MoMo/momo-assistant.workflow.json",
-      "lastSyncedAt": "2026-04-11T11:05:30Z",
+      "lastSyncedAt": "2026-04-11T12:24:30Z",
       "templateImport": "scripts/workflows/import/import-momo-assistant-workflow.sh"
     },
     "Jira AI Agent": {
       "id": "WyRyvP5YzHjjMafz",
       "template": "workflows/ui-synced/Jira/jira-ai-agent.workflow.json",
-      "lastSyncedAt": "2026-04-11T11:05:30Z",
+      "lastSyncedAt": "2026-04-12T17:08:26Z",
       "templateImport": "scripts/workflows/import/import-jira-ai-agent-workflow.sh"
+    },
+    "Jira Project Versions Query": {
+      "id": "BVogR8A0tsBMc9a0",
+      "template": "workflows/ui-synced/Jira/jira-project-versions-query.workflow.json",
+      "lastSyncedAt": "2026-04-12T11:00:37Z",
+      "templateImport": "scripts/workflows/import/import-jira-project-versions-query-workflow.sh"
+    },
+    "Nano Banana + Veo 3 Full": {
+      "id": "04lgFBILObgg3aga",
+      "template": "workflows/ui-synced/media/nano-banana-veo-3-full.workflow.json",
+      "lastSyncedAt": "2026-04-11T12:22:57Z",
+      "templateImport": "scripts/workflows/import/import-nano-banana-veo-3-full-workflow.sh"
+    },
+    "Jira AI Agent Google Chat Delivery": {
+      "id": "LciaUt9wVh9Zm4ZK",
+      "template": "workflows/ui-synced/Jira/jira-ai-agent-google-chat-delivery.workflow.json",
+      "lastSyncedAt": "2026-04-12T11:00:37Z",
+      "templateImport": "scripts/workflows/import/import-jira-ai-agent-google-chat-delivery-workflow.sh"
     }
   }
 }

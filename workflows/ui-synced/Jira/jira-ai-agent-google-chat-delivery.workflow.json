@@ -1,0 +1,309 @@
+{
+  "name": "Jira AI Agent Google Chat Delivery",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "threadKey",
+              "type": "string"
+            },
+            {
+              "name": "threadSeed",
+              "type": "string"
+            },
+            {
+              "name": "webhookUrl",
+              "type": "string"
+            },
+            {
+              "name": "messageReplyOption",
+              "type": "string"
+            },
+            {
+              "name": "messages",
+              "type": "array"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -944,
+        0
+      ],
+      "id": "1",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $('When Executed by Another Workflow').first().json || {};\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction slugify(value) {\n  return toText(value).toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');\n}\n\nfunction hasNonEmptyValue(value) {\n  if (Array.isArray(value)) return value.some((item) => hasNonEmptyValue(item));\n  if (value && typeof value === 'object') return Object.values(value).some((item) => hasNonEmptyValue(item));\n  return toText(value) !== '';\n}\n\nfunction hasNonEmptyPayload(payload) {\n  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return false;\n  const keys = Object.keys(payload);\n  if (keys.length === 0) return false;\n  return keys.some((key) => hasNonEmptyValue(payload[key]));\n}\n\nfunction inferMessageType(payload) {\n  if (payload && Array.isArray(payload.cardsV2) && payload.cardsV2.length > 0) return 'cardsV2';\n  if (payload && typeof payload.text === 'string' && payload.text.trim()) return 'text';\n  return 'custom';\n}\n\nconst rawMessages = Array.isArray(input.messages) ? input.messages : [];\nconst messages = rawMessages\n  .filter((payload) => payload && typeof payload === 'object' && !Array.isArray(payload) && hasNonEmptyPayload(payload))\n  .map((payload, requestIndex) => ({\n    requestIndex,\n    requestBody: payload,\n    messageType: inferMessageType(payload),\n  }));\n\nconst baseUrl = toText(input.webhookUrl || '');\nconst replyOption = encodeURIComponent(toText(input.messageReplyOption || 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD') || 'REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD');\nconst seed = slugify(input.threadSeed || 'jira-ai-agent-google-chat-delivery') || 'jira-ai-agent-google-chat-delivery';\nconst uniqueSuffix = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);\nconst finalThreadKey = toText(input.threadKey || '') || (seed + '-' + uniqueSuffix).slice(0, 120);\n\nlet requestUrl = '';\nlet skipReason = '';\nif (!baseUrl) {\n  skipReason = 'ggChatWebhookUrl is not configured.';\n} else if (messages.length === 0) {\n  skipReason = 'No valid Google Chat message payloads were provided.';\n} else {\n  const separator = baseUrl.includes('?') ? '&' : '?';\n  requestUrl = baseUrl + separator + 'threadKey=' + encodeURIComponent(finalThreadKey) + '&messageReplyOption=' + replyOption;\n}\n\nreturn {\n  threadKey: finalThreadKey,\n  requestUrl,\n  messages,\n  sendEnabled: Boolean(baseUrl) && messages.length > 0,\n  skipReason,\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -704,
+        0
+      ],
+      "id": "2",
+      "name": "Normalize Delivery Request"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1uLVZ2b6Ra-r2KCbLHcOL68V6smtxymfTCNNQnWPG8mI",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "MoMoer",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -464,
+        -160
+      ],
+      "id": "8",
+      "name": "Get Members Directory",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "3i6vDJxzaxXLHIWl",
+          "name": "Google account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const normalized = $('Normalize Delivery Request').first().json || {};\n\nfunction asText(value, fallback = '') {\n  const text = String(value ?? '').trim();\n  return text || fallback;\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nfunction normalizeEmail(value) {\n  const email = asText(value).toLowerCase();\n  return email.includes('@') ? email : '';\n}\n\nfunction extractHandleFromEmail(value) {\n  const email = normalizeEmail(value);\n  return email ? email.split('@')[0] : '';\n}\n\nfunction tokenDisplayText(token) {\n  const upper = asText(token).replace(/^@/, '').toUpperCase();\n  if (upper === 'LEAD') return '@Lead';\n  if (upper === 'PM') return '@PM';\n  if (upper === 'ASSIGNEE') return '@ASSIGNEE';\n  if (upper === 'OWNER') return '@OWNER';\n  if (upper === 'QCS') return '@QCS';\n  return '@' + asText(token).replace(/^@/, '');\n}\n\nconst memberRows = $input.all().map((item) => item?.json || {});\nconst directoryByKey = new Map();\n\nfunction registerDirectoryKey(rawKey, entry) {\n  const key = asText(rawKey).replace(/^@/, '').toLowerCase();\n  if (!key || directoryByKey.has(key)) return;\n  directoryByKey.set(key, entry);\n}\n\nfor (const row of memberRows) {\n  const normalizedRow = {};\n  for (const [key, value] of Object.entries(row || {})) {\n    normalizedRow[String(key || '').trim().toLowerCase()] = value;\n  }\n\n  const email = normalizeEmail(normalizedRow.email);\n  const id = asText(normalizedRow.id);\n  const name = asText(normalizedRow.name || normalizedRow.display_name || normalizedRow.displayname);\n  const handle = asText(normalizedRow.handle || normalizedRow.username || normalizedRow.user_name || normalizedRow.jira_username) || extractHandleFromEmail(email);\n  if (!id || !email) continue;\n\n  const entry = {\n    id,\n    email,\n    name,\n    handle: asText(handle).replace(/^@/, '').toLowerCase(),\n    mentionText: '<users/' + id + '>',\n  };\n\n  registerDirectoryKey(email, entry);\n  registerDirectoryKey(entry.handle, entry);\n  registerDirectoryKey(name, entry);\n  registerDirectoryKey(normalizedRow.username, entry);\n  registerDirectoryKey(normalizedRow.user_name, entry);\n  registerDirectoryKey(normalizedRow.jira_username, entry);\n  registerDirectoryKey(normalizedRow.display_name, entry);\n  registerDirectoryKey(normalizedRow.displayname, entry);\n}\n\nfunction resolveMemberFromToken(token) {\n  const key = asText(token).replace(/^@/, '').toLowerCase();\n  if (!key) return null;\n  return directoryByKey.get(key) || null;\n}\n\nfunction buildMentionFooter(occurrences) {\n  const uniqueByMention = new Map();\n  for (const occurrence of occurrences.sort((left, right) => left.offset - right.offset)) {\n    if (!occurrence?.mentionText || uniqueByMention.has(occurrence.mentionText)) continue;\n    uniqueByMention.set(occurrence.mentionText, occurrence);\n  }\n\n  const ordered = Array.from(uniqueByMention.values());\n  return {\n    mentionTail: ordered.map((item) => item.mentionText).join(' '),\n    resolvedPeople: ordered.map((item, index) => ({\n      token: item.token,\n      handle: item.handle,\n      mentionText: item.mentionText,\n      displayName: item.displayName,\n      firstOffset: item.offset,\n      order: index,\n    })),\n    appendedMentionIds: ordered.map((item) => item.mentionText),\n  };\n}\n\nfunction renderTextMentions(rawText) {\n  const mentionOccurrences = [];\n  const roleTokens = [];\n\n  const renderedText = asText(rawText).replace(/(^|[\\s(/])\\*?@([A-Za-z0-9._-]{2,64})\\*?\\b/g, (full, prefix, rawToken, offset) => {\n    const token = asText(rawToken);\n    const upper = token.toUpperCase();\n    if (!token) return full;\n\n    if (['PM', 'LEAD', 'ASSIGNEE', 'OWNER', 'QCS'].includes(upper)) {\n      roleTokens.push({ token: '@' + upper, offset });\n      return full;\n    }\n\n    const member = resolveMemberFromToken(token);\n    if (member?.mentionText) {\n      const handle = asText(member.handle || token).replace(/^@/, '').toLowerCase();\n      mentionOccurrences.push({\n        token: '@' + token,\n        handle,\n        mentionText: member.mentionText,\n        displayName: asText(member.name || member.email || handle),\n        offset,\n      });\n      return full;\n    }\n\n    return full;\n  });\n\n  const footer = buildMentionFooter(mentionOccurrences);\n  const finalText = footer.mentionTail ? renderedText + '\\n' + footer.mentionTail : renderedText;\n\n  return {\n    text: finalText,\n    mentionTail: footer.mentionTail,\n    resolvedPeople: footer.resolvedPeople,\n    roleTokens: roleTokens.sort((left, right) => left.offset - right.offset).map((item) => item.token),\n    appendedMentionIds: footer.appendedMentionIds,\n  };\n}\n\nconst messages = asArray(normalized.messages).map((message, index) => {\n  const requestBody = message?.requestBody && typeof message.requestBody === 'object' ? { ...message.requestBody } : null;\n  const rendered = requestBody && typeof requestBody.text === 'string'\n    ? renderTextMentions(requestBody.text)\n    : null;\n\n  return {\n    ...message,\n    requestBody: rendered ? { ...requestBody, text: rendered.text } : requestBody,\n    mentionRender: rendered ? {\n      messageIndex: index,\n      mentionTail: rendered.mentionTail,\n      resolvedPeople: rendered.resolvedPeople,\n      roleTokens: rendered.roleTokens,\n      appendedMentionIds: rendered.appendedMentionIds,\n    } : {\n      messageIndex: index,\n      mentionTail: '',\n      resolvedPeople: [],\n      roleTokens: [],\n      appendedMentionIds: [],\n    },\n  };\n});\n\nreturn {\n  ...normalized,\n  lineMentions: messages.map((message) => message.mentionRender),\n  messages: messages.map((message) => {\n    const clone = { ...message };\n    delete clone.mentionRender;\n    return clone;\n  }),\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        0
+      ],
+      "id": "9",
+      "name": "Render Mentioned Messages"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ Boolean($json.sendEnabled) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -464,
+        0
+      ],
+      "id": "3",
+      "name": "If Has Google Chat Messages?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rendered = $('Render Mentioned Messages').first().json || {};\nconst messages = Array.isArray(rendered.messages) ? rendered.messages : [];\nconst requestUrl = String(rendered.requestUrl || '').trim();\nconst threadKey = String(rendered.threadKey || '').trim();\n\nreturn messages.map((message, requestIndex) => ({\n  json: {\n    requestIndex,\n    requestUrl,\n    threadKey,\n    ...message,\n  },\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        -112
+      ],
+      "id": "4",
+      "name": "Split Out Messages"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        0,
+        -112
+      ],
+      "id": "5",
+      "name": "Loop Over Messages"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.requestUrl }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.requestBody }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        -160
+      ],
+      "id": "6",
+      "name": "Send Google Chat Message"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const normalized = $('Render Mentioned Messages').first().json || $('Normalize Delivery Request').first().json || {};\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nlet deliveryResponses = [];\ntry {\n  deliveryResponses = $('Send Google Chat Message').all().map((item) => item?.json || item || {});\n} catch (error) {\n  deliveryResponses = [];\n}\n\nconst successCount = deliveryResponses.filter((item) => Number(item.statusCode || 0) >= 200 && Number(item.statusCode || 0) < 300).length;\nconst failureCount = deliveryResponses.filter((item) => Number(item.statusCode || 0) > 0 && (Number(item.statusCode || 0) < 200 || Number(item.statusCode || 0) >= 300)).length;\nconst sentCount = deliveryResponses.length;\nconst skipped = !Boolean(normalized.sendEnabled);\nconst status = skipped ? 'skipped' : (failureCount > 0 ? (successCount > 0 ? 'partial' : 'error') : 'sent');\nconst resultText = skipped\n  ? (toText(normalized.skipReason) || 'Google Chat delivery skipped.')\n  : 'Sent ' + sentCount + ' Google Chat message(s) to thread ' + toText(normalized.threadKey || '') + '.';\n\nreturn {\n  toolName: 'googleChatBatchDelivery',\n  status,\n  success: status === 'sent' || status === 'partial',\n  threadKey: toText(normalized.threadKey || ''),\n  sentCount,\n  successCount,\n  failureCount,\n  skipReason: toText(normalized.skipReason || ''),\n  resultText,\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        48
+      ],
+      "id": "7",
+      "name": "Build Tool Result"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Normalize Delivery Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Delivery Request": {
+      "main": [
+        [
+          {
+            "node": "Get Members Directory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Has Google Chat Messages?": {
+      "main": [
+        [
+          {
+            "node": "Split Out Messages",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Tool Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Messages": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Messages": {
+      "main": [
+        [
+          {
+            "node": "Build Tool Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Google Chat Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Google Chat Message": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Members Directory": {
+      "main": [
+        [
+          {
+            "node": "Render Mentioned Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Render Mentioned Messages": {
+      "main": [
+        [
+          {
+            "node": "If Has Google Chat Messages?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}

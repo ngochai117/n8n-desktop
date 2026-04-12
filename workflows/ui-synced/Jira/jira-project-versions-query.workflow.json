@@ -1,0 +1,157 @@
+{
+  "name": "Jira Project Versions Query",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "jiraBaseUrl",
+              "type": "string"
+            },
+            {
+              "name": "projectKey",
+              "type": "string"
+            },
+            {
+              "name": "projectId",
+              "type": "string"
+            },
+            {
+              "name": "query",
+              "type": "string"
+            },
+            {
+              "name": "filters",
+              "type": "string"
+            },
+            {
+              "name": "fields",
+              "type": "string"
+            },
+            {
+              "name": "limit",
+              "type": "string"
+            },
+            {
+              "name": "sortBy",
+              "type": "string"
+            },
+            {
+              "name": "sortDirection",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -700,
+        0
+      ],
+      "id": "versions-trigger-1",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $('When Executed by Another Workflow').first().json || {};\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction toArray(value) {\n  if (Array.isArray(value)) return value;\n  const text = toText(value);\n  if (!text) return [];\n  try {\n    const parsed = JSON.parse(text);\n    return Array.isArray(parsed) ? parsed : [];\n  } catch (error) {\n    return text.split(',').map((item) => item.trim()).filter(Boolean);\n  }\n}\n\nfunction normalizeFields(rawFields) {\n  const fallback = ['id', 'name', 'released', 'archived', 'releaseDate', 'startDate', 'description', 'overdue'];\n  const values = toArray(rawFields)\n    .map((value) => toText(value))\n    .filter(Boolean);\n  return values.length > 0 ? [...new Set(values)] : fallback;\n}\n\nfunction normalizeFilters(rawFilters) {\n  return toArray(rawFilters)\n    .map((item) => {\n      if (!item || typeof item !== 'object' || Array.isArray(item)) return null;\n      const field = toText(item.field || item.path || '');\n      const operator = toText(item.operator || item.op || 'eq').toLowerCase();\n      const value = Object.prototype.hasOwnProperty.call(item, 'value') ? item.value : '';\n      if (!field) return null;\n      return { field, operator, value };\n    })\n    .filter(Boolean);\n}\n\nfunction normalizeLimit(rawLimit) {\n  const value = Number.parseInt(toText(rawLimit || ''), 10);\n  if (!Number.isFinite(value)) return 50;\n  if (value <= 0) return 0;\n  return Math.min(value, 200);\n}\n\nconst jiraBaseUrl = toText(input.jiraBaseUrl || 'https://atlassiansuite.mservice.com.vn:8443').replace(/\\/+$/, '');\nconst projectKey = toText(input.projectKey || '');\nconst projectId = toText(input.projectId || '');\nconst projectRef = projectKey || projectId;\nconst query = toText(input.query || '');\nconst filters = normalizeFilters(input.filters);\nconst fields = normalizeFields(input.fields);\nconst limit = normalizeLimit(input.limit);\nconst sortBy = toText(input.sortBy || 'releaseDate');\nconst sortDirection = toText(input.sortDirection || 'desc').toLowerCase() === 'asc' ? 'asc' : 'desc';\nconst requestUrl = projectRef ? jiraBaseUrl + '/rest/api/2/project/' + encodeURIComponent(projectRef) + '/versions' : '';\nconst errorMessage = projectRef ? '' : 'projectKey hoặc projectId là bắt buộc.';\n\nreturn {\n  jiraBaseUrl,\n  projectKey,\n  projectId,\n  projectRef,\n  query,\n  filters,\n  fields,\n  limit,\n  sortBy,\n  sortDirection,\n  requestUrl,\n  valid: Boolean(projectRef),\n  errorMessage,\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -460,
+        0
+      ],
+      "id": "versions-normalize-1",
+      "name": "Normalize Version Query Request"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.requestUrl }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "jiraSoftwareServerPatApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -220,
+        0
+      ],
+      "id": "versions-fetch-1",
+      "name": "Fetch Project Versions",
+      "credentials": {
+        "jiraSoftwareServerPatApi": {
+          "id": "3TLwUpSgsJhbG45A",
+          "name": "Jira MoMo account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const request = $('Normalize Version Query Request').first().json || {};\nconst response = $('Fetch Project Versions').first().json || {};\n\nfunction toText(value) {\n  if (typeof value === 'string') return value.trim();\n  if (value == null) return '';\n  return String(value).trim();\n}\n\nfunction asArray(value) {\n  return Array.isArray(value) ? value : [];\n}\n\nfunction getByPath(source, path) {\n  const parts = toText(path).split('.').filter(Boolean);\n  let current = source;\n  for (const part of parts) {\n    if (!current || typeof current !== 'object' || !(part in current)) return undefined;\n    current = current[part];\n  }\n  return current;\n}\n\nfunction toComparable(value) {\n  if (typeof value === 'number') return value;\n  if (typeof value === 'boolean') return value;\n  const text = toText(value);\n  if (!text) return '';\n  const numeric = Number(text);\n  if (Number.isFinite(numeric) && text === String(numeric)) return numeric;\n  const millis = Date.parse(text);\n  if (!Number.isNaN(millis)) return millis;\n  return text.toLowerCase();\n}\n\nfunction matchFilter(version, filter) {\n  const actual = getByPath(version, filter.field);\n  const operator = toText(filter.operator || 'eq').toLowerCase();\n  const expected = filter.value;\n\n  if (operator === 'exists') {\n    return actual !== undefined && actual !== null && toText(actual) !== '';\n  }\n\n  if (operator === 'contains') {\n    return toText(actual).toLowerCase().includes(toText(expected).toLowerCase());\n  }\n\n  if (operator === 'in') {\n    const values = Array.isArray(expected) ? expected : String(expected ?? '').split(',').map((item) => item.trim()).filter(Boolean);\n    return values.map((item) => toText(item).toLowerCase()).includes(toText(actual).toLowerCase());\n  }\n\n  const left = toComparable(actual);\n  const right = toComparable(expected);\n\n  if (operator === 'neq') return left !== right;\n  if (operator === 'gt') return left > right;\n  if (operator === 'gte') return left >= right;\n  if (operator === 'lt') return left < right;\n  if (operator === 'lte') return left <= right;\n  return left === right;\n}\n\nfunction pickFields(source, fields) {\n  const output = {};\n  for (const field of fields) {\n    const value = getByPath(source, field);\n    if (value === undefined) continue;\n\n    const parts = field.split('.').filter(Boolean);\n    let cursor = output;\n    for (let i = 0; i < parts.length; i += 1) {\n      const part = parts[i];\n      if (i === parts.length - 1) {\n        cursor[part] = value;\n      } else {\n        cursor[part] = cursor[part] && typeof cursor[part] === 'object' && !Array.isArray(cursor[part]) ? cursor[part] : {};\n        cursor = cursor[part];\n      }\n    }\n  }\n  return output;\n}\n\nif (!request.valid) {\n  return {\n    toolName: 'jiraProjectVersionsQuery',\n    success: false,\n    projectRef: toText(request.projectRef || ''),\n    totalFetched: 0,\n    totalMatched: 0,\n    returnedCount: 0,\n    query: toText(request.query || ''),\n    filters: asArray(request.filters),\n    selectedFields: asArray(request.fields),\n    versions: [],\n    errorMessage: toText(request.errorMessage || 'Invalid request.'),\n  };\n}\n\nconst statusCode = Number(response.statusCode || 200);\nconst body = Array.isArray(response.body) ? response.body : (Array.isArray(response) ? response : []);\nconst transportError = toText(response.error?.message || response.error?.description || response.message || '');\n\nif (statusCode >= 400 || !Array.isArray(body)) {\n  return {\n    toolName: 'jiraProjectVersionsQuery',\n    success: false,\n    projectRef: toText(request.projectRef || ''),\n    totalFetched: 0,\n    totalMatched: 0,\n    returnedCount: 0,\n    query: toText(request.query || ''),\n    filters: asArray(request.filters),\n    selectedFields: asArray(request.fields),\n    versions: [],\n    errorMessage: transportError || ('Không lấy được versions từ Jira (HTTP ' + statusCode + ').'),\n  };\n}\n\nconst queryText = toText(request.query || '').toLowerCase();\nconst filters = asArray(request.filters);\nconst selectedFields = asArray(request.fields);\nconst totalFetched = body.length;\n\nlet matched = body.filter((version) => {\n  if (!version || typeof version !== 'object') return false;\n\n  const queryOk = !queryText || [version.name, version.description, version.id, version.releaseDate, version.startDate]\n    .map((value) => toText(value).toLowerCase())\n    .some((value) => value.includes(queryText));\n  if (!queryOk) return false;\n\n  return filters.every((filter) => matchFilter(version, filter));\n});\n\nconst totalMatched = matched.length;\nconst sortBy = toText(request.sortBy || '');\nconst sortDirection = toText(request.sortDirection || 'desc') === 'asc' ? 1 : -1;\nif (sortBy) {\n  matched = matched.slice().sort((left, right) => {\n    const leftValue = toComparable(getByPath(left, sortBy));\n    const rightValue = toComparable(getByPath(right, sortBy));\n    if (leftValue === rightValue) return 0;\n    return leftValue > rightValue ? sortDirection : -sortDirection;\n  });\n}\n\nconst limit = Number(request.limit || 0);\nif (limit > 0) {\n  matched = matched.slice(0, limit);\n}\n\nconst versions = matched.map((version) => pickFields(version, selectedFields));\n\nreturn {\n  toolName: 'jiraProjectVersionsQuery',\n  success: true,\n  projectRef: toText(request.projectRef || ''),\n  totalFetched,\n  totalMatched,\n  returnedCount: versions.length,\n  query: toText(request.query || ''),\n  filters,\n  selectedFields,\n  versions,\n  versionIds: versions.map((version) => toText(version.id || '')).filter(Boolean),\n  versionNames: versions.map((version) => toText(version.name || '')).filter(Boolean),\n  errorMessage: '',\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        20,
+        0
+      ],
+      "id": "versions-build-result-1",
+      "name": "Build Tool Result"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Normalize Version Query Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Version Query Request": {
+      "main": [
+        [
+          {
+            "node": "Fetch Project Versions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Project Versions": {
+      "main": [
+        [
+          {
+            "node": "Build Tool Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  }
+}

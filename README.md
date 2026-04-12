@@ -169,28 +169,40 @@ bash scripts/workflows/import/import-momo-ai-assistant-workflow.sh
 ## Jira AI Agent (Standalone, Phase 1)
 - Workflow moi, doc lap hoan toan voi `MoMo AI Assistant` va `MoMo Assistant`.
 - Topology giu rat mong:
-  - `Trigger -> Build Event -> Config Main -> Build Agent Context -> AI Agent -> Normalize Agent Result -> deliveryPlan -> delivery`
+  - `Trigger -> Build Event -> Config Main -> Build Agent Context -> AI Agent -> Normalize Agent Result -> messages -> delivery`
 - Tool phase 1:
   - `Jira Tool` (inline safe writes, `GET/POST/PUT`)
-  - `HTTP Generic` (fallback Jira read/write, `GET/POST/PUT`)
-  - `Get Members`
+  - `Google Chat Batch Delivery Tool` la wrapper toolWorkflow de agent co the goi 1 lan voi `threadKey + messages[]`, roi subworkflow tu gui nhieu Google Chat message theo thu tu trong cung thread
+  - `Get Members` duoc giu lai tren canvas nhung hien khong noi truc tiep vao `AI Agent`
+  - `HTTP Request` duoc giu lai lam transport node cho delivery branch, nhung khong noi truc tiep vao `AI Agent`
 - Mention rendering:
-  - prompt uu tien dung `@handle` theo local-part cua email (`@hai.nguyen8`, ...) va chu dong mention dung nguoi tu `assignee/reporter/owner/...` neu du lieu Jira du chac
+  - prompt uu tien dung `*@handle*` theo local-part cua email (`*@hai.nguyen8*`, ...) theo format bold cua Google Chat, va chu dong mention dung nguoi tu `assignee/reporter/owner/...` neu du lieu Jira du chac
   - render layer doc shared sheet `MoMoer`, bold handle trong body (`*@hai.nguyen8*`)
   - neu resolve duoc user that thi append footer mentions list dang `<users/...>` giong pattern `Sprint Monitor`
   - footer mention duoc sort theo thu tu xuat hien dau tien trong message de nhin gon va on dinh hon khi co nhieu nguoi
 - AI output contract:
   - `AI Agent` bat `Require Specific Output Format` qua structured output parser
   - downstream doc truc tiep object output, khong con parse JSON string bang code node
+  - contract delivery duoc lam phang: top-level `thread` + top-level `messages[]`; bo `deliveryPlan`
+  - moi message chi con `destination` + `payload`; bo `destinations[]`, bo `type`, bo `messageKey` de tranh overlap contract
+  - `messages[].payload` la raw Google Chat webhook message body downstream se POST nguyen object; khong boc them wrapper trung gian
+  - `payload` khong duoc rong; neu agent khong dung duoc card/custom payload thi phai ha xuong `{"text":"..."}` thay vi day `{}` sang delivery branch
+  - neu can gui nhieu Google Chat message cung thread, agent goi `google_chat_batch_delivery` dung 1 lan voi mang `messages` theo thu tu gui; uu tien reuse `thread.threadKey`, chi sinh thread moi khi context khong co
+  - subworkflow `google_chat_batch_delivery` tu append footer mention `<users/...>` cho cac `@handle`/`*@handle*` da resolve, nhung khong tu sua format body; body text nen duoc agent viet san dung format Google Chat
+  - sau khi wrapper da gui `pushGoogleChat`, output cuoi khong duoc tra lai nhung message do de delivery branch top-level khong gui lap
 - Phase 1 hien chot `inline-safe-writes`:
   - duoc tra cuu / phan tich / de xuat / thuc thi Jira write trong cung luot chat khi target ro rang
   - uu tien fetch facts truoc khi write, chi mutation dung muc user yeu cau
+  - voi status-based review/release checks, agent khong duoc hard-code status name vao JQL neu chua verify exact status tu Jira trong cung luot; uu tien fetch issue list roi tu danh gia theo status thuc te
+  - agent phai chon dung Jira API family: issue/project/version/search/user -> `/rest/api/2/...`; board/sprint/backlog/configuration -> `/rest/agile/1.0/...`; khong goi board/sprint duoi `/rest/api/2/...`
+  - khi complete sprint, khong duoc goi `/rest/agile/1.0/sprint/{id}/complete`; phai update sprint tai `/rest/agile/1.0/sprint/{id}` voi body `{"state":"closed"}`
   - khong mo `DELETE`, khong bulk write neu user khong yeu cau rat ro
-  - Jira write endpoint tra `204 No Content` van duoc xem la thanh cong; tool doc `statusCode` thay vi ep parse JSON
+  - `Jira Tool` da bat `fullResponse + neverError + responseFormat=autodetect` de write endpoint tra `204 No Content` hoac non-JSON body van khong lam node fail; AI co the dua vao `statusCode` de ket luan thanh cong
 - Import:
 ```bash
 bash scripts/workflows/import/import-jira-ai-agent-workflow.sh
 ```
+- Wrapper import chinh se tu import dependency `Jira AI Agent Google Chat Delivery` va resolve `__REGISTRY__` truoc khi import workflow chinh.
 - Checklist:
 ```bash
 bash scripts/workflows/tests/test-jira-ai-agent-checklist.sh
@@ -250,5 +262,20 @@ bash scripts/workflows/tests/test-jira-ai-agent-checklist.sh
 - `scripts/workflows/tests/test-sprint-monitor-checklist.mjs`: checklist runner cho `Sprint Monitor`
 
 ## Update Log
+- 2026-04-12: `Jira Tool` bat lai `Include Response Headers and Status` (`fullResponse=true`) de agent doc duoc `statusCode` khi can ket luan write success/failure.
+- 2026-04-12: `Jira AI Agent` them tool subworkflow `jira_project_versions_query` de tach rieng luong fetch/filter project versions, cho phep query/filter/projection/limit truoc khi dua data vao agent thay vi keo nguyen `/project/{key}/versions`.
+- 2026-04-12: `Jira AI Agent` tang `maxIterations` len `25`, dong `Include Response Headers and Status`, va tat `optimizeResponse` cho `Jira Tool` de giam envelope va cho agent them du luot tool call.
+- 2026-04-12: `Jira AI Agent` rut bot rule tool-specific khoi system prompt; guidance endpoint/JQL/204 cua Jira gio nam chu yeu trong `Jira Tool`, con guidance payload/thread/fallback cua Google Chat nam chu yeu trong `google_chat_batch_delivery` de prompt gon hon.
+- 2026-04-11: `Jira AI Agent` them guard cho JQL status: khong dung status name do user go neu chua verify tu Jira, va voi release/review check thi uu tien fetch issue list roi tu danh gia theo status thuc te de tranh 400 `status does not exist`.
+- 2026-04-11: `Jira AI Agent` tiep tuc giam tool surface cua agent: `Get Members` va `HTTP Request` deu duoc ngat khoi `AI Agent`, trong khi delivery branch va render layer van giu generic payload path.
+- 2026-04-11: `Jira AI Agent` chot huong delivery generic: agent tra raw `deliveryPlan.messages[].payload` (ho tro `text` + `cardsV2`), delivery branch giu quyen gui webhook, va `HTTP Request` duoc ngat khoi `AI Agent` thay vi xoa node.
+- 2026-04-11: `Jira AI Agent` them guard `payload` khong duoc rong; normalize/delivery branch tu dong ha message ve text fallback neu agent tra `{}` de tranh Google Chat POST body rong.
+- 2026-04-11: `Jira AI Agent` doi wording contract de agent hieu ro moi `payload` phai la Google Chat webhook body hop le (`text`, `cardsV2`, hoac object Chat hop le), tranh tra wrapper tu che roi delivery branch khong gui duoc.
+- 2026-04-11: `Jira AI Agent` rut contract delivery ve 1 lop phang `thread + messages[]`; moi message chi con `destination` va `payload`, bo `deliveryPlan/destinations[]/type/messageKey`, va `Build Final Response` doi sang `runOnceForAllItems` de tranh duplicate output sau loop.
+- 2026-04-11: `Jira AI Agent` them guidance tach ro Jira core API va agile API trong prompt/tool hint sau khi run `5515` goi sai `/rest/api/2/board/1922/configuration`; board/sprint nay buoc di qua `/rest/agile/1.0/...`.
+- 2026-04-11: `Jira AI Agent` chan luon pattern sai `/rest/agile/1.0/sprint/{id}/complete`; complete sprint gio phai di qua `PUT /rest/agile/1.0/sprint/{id}` voi `{"state":"closed"}` de tranh loi `null for uri`.
+- 2026-04-11: `Jira AI Agent` them wrapper tool `google_chat_batch_delivery`: agent co the goi dung 1 lenh voi `threadKey + messages[]` de gui nhieu raw Google Chat payload theo thu tu trong cung thread, trong khi output cuoi van giu contract phang `thread + messages[]`.
+- 2026-04-11: `Jira Tool` bat `fullResponse + neverError + autodetect` de khong vo node khi Jira write endpoint tra `204 No Content` hoac body khong phai JSON; day la fix truc tiep cho run `5525` fail o `POST /issue/.../transitions`.
+- 2026-04-11: `Jira AI Agent` doi prompt mention de agent tu viet `*@handle*` theo format bold cua Google Chat; subworkflow delivery chi con lo resolve mention footer `<users/...>` cho payload da render.
 - 2026-04-11: nang `Jira AI Agent` len `inline-safe-writes`, bat structured output parser, tune mention theo assignee/reporter/owner, va sort footer mentions on dinh hon.
 - 2026-04-11: them workflow standalone `Jira AI Agent` theo huong prompt-heavy, read-only phase 1, kem wrapper import va checklist rieng.

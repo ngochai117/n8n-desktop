@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-04-12
+
+- Jira Tool bat lai `Include Response Headers and Status` (`fullResponse=true`) de agent doc duoc `statusCode` cho cac Jira write/read can phan biet ket qua qua transport metadata.
+- Jira AI Agent them tool subworkflow `jira_project_versions_query` de tach rieng luong fetch/filter project versions; tool moi ho tro `query`, `filters[]`, `fields[]`, sort, va limit de agent khong can keo nguyen `/project/{key}/versions`.
+- Jira AI Agent tang `maxIterations` len `25`, dong `Include Response Headers and Status`, va tat `optimizeResponse` cho `Jira Tool` de giam response envelope va cho agent them vong tool use.
+- Jira AI Agent rut bot rule tool-specific khoi system prompt; guidance endpoint/JQL/204 cua Jira duoc day xuong `Jira Tool`, con guidance payload/thread/fallback cua Google Chat duoc day xuong `google_chat_batch_delivery` de prompt gon hon va de maintain hon.
+
+## 2026-04-11
+
+- Jira AI Agent them guidance tach ro Jira core API (`/rest/api/2/...`) va agile API (`/rest/agile/1.0/...`) trong prompt, tool description, va URL hint; chan luon pattern sai nhu `/rest/api/2/board/...` sau run 5515.
+- Jira AI Agent chan them endpoint sprint sai `/rest/agile/1.0/sprint/{id}/complete`; guidance moi bat complete sprint bang cach update `/rest/agile/1.0/sprint/{id}` voi `state=closed` sau loi `null for uri`.
+- Jira AI Agent them subworkflow `Jira AI Agent Google Chat Delivery` va wrapper tool `google_chat_batch_delivery` de agent co the goi 1 lan voi `threadKey + messages[]`, gui nhieu raw Google Chat webhook payload theo thu tu trong cung thread.
+- Jira Tool bat `fullResponse + neverError + responseFormat=autodetect` de khong fail khi Jira write endpoint tra `204 No Content` hoac non-JSON body; fix truc tiep cho run 5525 vo o `POST /issue/.../transitions`.
+- Jira AI Agent doi prompt mention de agent tu viet `*@handle*` theo format bold cua Google Chat; subworkflow wrapper chi resolve footer mention `<users/...>` va khong con tu bold lai body text.
+- Jira AI Agent cap nhat prompt va delivery prep de khi wrapper da gui `pushGoogleChat` thi output cuoi khong ban lap qua delivery branch top-level.
+- Jira AI Agent rut contract delivery ve 1 lop phang `thread + messages[]`; moi message chi con `destination` va `payload`, bo `deliveryPlan`, bo `destinations[]`, bo `type`, bo `messageKey`, va dong bo lai prompt/parser/normalize/delivery theo contract moi.
+- Jira AI Agent doi `Build Final Response` sang `runOnceForAllItems` de khong nhan ban response item khi loop gui nhieu Google Chat message.
+- Jira AI Agent doi wording output contract de agent hieu moi `messages[].payload` la Google Chat webhook body hop le, khong phai wrapper tu che; giu schema generic nhung mo ta ro hon cho `text/cardsV2`.
+- Jira AI Agent them guard `payload` khong duoc rong: prompt buoc message phai co `text` hoac `cardsV2` hop le; normalize + delivery prep tu dong ha xuong text fallback neu agent van tra `{}`.
+- Jira AI Agent them guard moi cho JQL status: khong hard-code status name theo user input neu chua verify exact value tu Jira trong cung luot; voi release/review checks thi uu tien fetch issue list roi tu danh gia theo status thuc te.
+- Jira AI Agent ngat them node `Get Members` khoi `AI Agent`; mention resolution luc runtime tiep tuc di qua render layer/directory thay vi AI tool call.
+- Jira AI Agent chot contract delivery generic hon: `messages[].payload` nay la raw JSON body downstream se POST nguyen object, agent duoc tra ca `text` va `cardsV2` ma khong can tu goi webhook.
+- Ngat node `HTTP Request` khoi `AI Agent` nhung giu lai node tren canvas de delivery branch van la noi duy nhat thuc hien Google Chat transport.
+- Cap nhat checklist/doc `Jira AI Agent` theo wiring moi: `Get Members` va `HTTP Request` deu duoc tach khoi `AI Agent`, normalize/delivery ghi nhan `cardsV2`, va checklist bo gia dinh cu `HTTP Generic`/full response.
+
 ## 2026-04-10
 
 - Add business subworkflow moi `MoMo AI Assistant Tool Sprint Release` theo flow deterministic + approve gate (khong dung AI review), giu input contract toi gian (`triggerSource`, `commandText`, `channel`, `sessionId`, `spaceId`, `threadKey`, `actorId`, `actorDisplayName`, `args`).
@@ -496,3 +521,19 @@
 ## 2026-04-11T11:05:30Z
 - Workflow sync (UI -> JSON) processed 23 workflow(s): changed=5, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
 - Run mode=apply, total=23, changed=5, unchanged=18, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: MoMo AI Assistant Tool Sprint Healthcheck, MoMo Assistant, Jira AI Agent, MoMo AI Assistant Tool Router, MoMo AI Assistant Tool Sprint Release.
+
+## 2026-04-11T12:22:57Z
+- Workflow sync (UI -> JSON) processed 24 workflow(s): changed=5, missing_ui_folder=0, registry_new=1, registry_updated=0, conflicts=0, wrapper_new=1, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=24, changed=5, unchanged=19, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=1, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Nano Banana + Veo 3 Full, MoMo AI Assistant Tool Sprint Healthcheck, MoMo Assistant, Jira AI Agent, MoMo AI Assistant Tool Router.
+
+## 2026-04-11T13:19:43Z
+- Workflow sync (UI -> JSON) processed 24 workflow(s): changed=3, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=24, changed=3, unchanged=21, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: MoMo AI Assistant Tool Sprint Healthcheck, Jira AI Agent, MoMo AI Assistant Tool Router.
+
+## 2026-04-12T11:00:37Z
+- Workflow sync (UI -> JSON) processed 26 workflow(s): changed=4, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=26, changed=4, unchanged=22, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Jira Project Versions Query, Jira AI Agent Google Chat Delivery, Jira AI Agent, MoMo AI Assistant Tool Router.
+
+## 2026-04-12T17:08:26Z
+- Workflow sync (UI -> JSON) processed 26 workflow(s): changed=1, missing_ui_folder=0, registry_new=0, registry_updated=0, conflicts=0, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0.
+- Run mode=apply, total=26, changed=1, unchanged=25, failed=0, missing_ui_folder=0, registry_changed=true, wrapper_new=0, wrapper_updated=0, wrapper_pruned=0. Changed workflows: Jira AI Agent.

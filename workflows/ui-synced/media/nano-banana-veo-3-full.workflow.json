@@ -1,0 +1,891 @@
+{
+  "name": "Nano Banana + Veo 3 Full",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        640
+      ],
+      "id": "c90d9c19-ac5f-4756-8a85-40443d9e69c5",
+      "name": "Execute workflow",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "url": "http://192.168.1.102:3456/captcha?action=IMAGE_GENERATION",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        368,
+        160
+      ],
+      "id": "35069c46-a874-496b-be0f-a93dafb5c39c",
+      "name": "Get Captcha IMG",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://aisandbox-pa.googleapis.com/v1/projects/{{ $json.ProjectID }}/flowMedia:batchGenerateImages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.accessToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"clientContext\": {\n        \"recaptchaContext\": {\n            \"token\": \"{{ $json.captcha }}\",\n            \"applicationType\": \"RECAPTCHA_APPLICATION_TYPE_WEB\"\n        },\n        \"projectId\": \"{{ $json.ProjectID }}\",\n        \"tool\": \"PINHOLE\",\n        \"sessionId\": \";{{ $json.sessionId }}\"\n    },\n    \"mediaGenerationContext\": {\n        \"batchId\": \"572d71f9-33bf-415b-8628-8124677da8bd\"\n    },\n    \"useNewMedia\": true,\n    \"requests\": [\n        {\n            \"clientContext\": {\n                \"recaptchaContext\": {\n                    \"token\": \"{{ $json.captcha }}\",\n                    \"applicationType\": \"RECAPTCHA_APPLICATION_TYPE_WEB\"\n                },\n                \"projectId\": \"{{ $json.ProjectID }}\",\n                \"tool\": \"PINHOLE\",\n                \"sessionId\": \";{{ $json.sessionId }}\"\n            },\n            \"imageModelName\": \"GEM_PIX_2\",\n            \"imageAspectRatio\": \"IMAGE_ASPECT_RATIO_PORTRAIT_THREE_FOUR\",\n            \"structuredPrompt\": {\n                \"parts\": [\n                    {\n                        \"text\": \"{{ $('Clean_Prompt').item.json.cleanedPrompt }}\"\n                    }\n                ]\n            },\n            \"seed\": {{ Math.floor(Math.random() * 1000000 ) }},\n            \"imageInputs\": []\n        }\n    ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        592,
+        160
+      ],
+      "id": "c5a69769-e0cd-44e8-8a06-6d8168de35d1",
+      "name": "Text To IMG"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.media[0].image.generatedImage.fifeUrl }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        816,
+        160
+      ],
+      "id": "7e6c4e25-a0e7-4a40-b5d5-76702f3fe19f",
+      "name": "Get IMG",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "184768bb-00f8-4caa-b851-aeb570867807",
+              "name": "Prompt",
+              "value": "=Create a realistic portrait of a young woman (face 100% identical to the original attached photo, no editing required). Keep my original face Create an image using the face from the attached file exactly 100% without any changes. Body Slim figure, fair pinkish skin, 8K resolution. Nails: Medium-length almond-shaped nails, glossy pastel pink with subtle glitter accents. Clothing The girl is wearing a soft pastel blue fitted crop camisole with thin straps, made of smooth stretchy fabric. There is a small white ribbon bow detail attached to the center chest area. The top is short, revealing the waist and midriff. For the lower part, she wears high-waisted light gray cotton shorts with an elastic waistband, styled like cozy loungewear. She also wears a small, delicate silver belly button piercing. Pose She is kneeling on the floor, posing for a mirror selfie. Left hand: Holding a white smartphone (design similar to a triple-camera iPhone), covering her face. Image Tone The image has a warm, soft pastel tone, gentle and slightly dreamy. Main colors include pastel blue, light gray, soft skin tones, and warm highlights. Location The setting is indoors, likely a cozy bedroom or personal living space. Background The background features a soft aesthetic bedroom setup: A light beige wall with subtle texture A low bed with white bedding and a fluffy blanket A small bedside table with a warm lamp A round mirror placed against the wall A small decorative plant or candle for a cozy vibe Minimal clutter, clean and visually pleasing. Lighting & Shadows Soft natural daylight coming from a nearby window, combined with warm ambient indoor light. The light spreads evenly across the skin and clothing, avoiding harsh shadows and creating a soft, smooth depth. Camera Angle The photo is taken as a mirror selfie at eye level. Since the subject is kneeling, the angle slightly tilts downward, emphasizing body proportions and outfit details. Hair Style Hair: Short dark brown hair in a cute bob style, slightly wavy with soft volume. Light bangs across the forehead, creating a youthful and adorable look. Some strands gently frame the face. Makeup Facial features: Dark brown eyes with naturally long eyelashes. Makeup style: A dewy makeup look with soft pink blush on the cheeks and nose tip. Full lips with pink gradient gloss, shiny and hydrated. Skin appears glowing with soft light reflection. Aspect Ratio: 9:16 Negative Prompt (to prevent image distortion): blur, blurry, low quality, pixelated, noise, grain, jpeg artifacts, plastic skin, cartoon, illustration, deformed, bad anatomy, extra fingers, distorted body, low quality",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -80,
+        160
+      ],
+      "id": "116bcb27-9d67-4265-9a26-cdf93ad3cc00",
+      "name": "Prompt",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "function cleanJsonString(str) {\n  if (!str) return \"\";\n\n  return str\n    // Smart quotes → ASCII quotes\n    .replace(/[“”]/g, '\"')\n    .replace(/[‘’]/g, \"'\")\n\n    // Escape dấu ngoặc kép\n    .replace(/\"/g, '\\\\\"')\n\n    // En-dash / Em-dash → ASCII hyphen\n    .replace(/–|—/g, \"-\")\n\n    // Xuống dòng → \\n\n    .replace(/\\r?\\n|\\r/g, \"\\\\n\")\n\n    // Loại ký tự unicode ẩn\n    .replace(/[^\\x00-\\x7F]+/g, \" \");\n}\n\nfor (let i = 0; i < items.length; i++) {\n\n  // Lấy đúng trường Prompt Video\n  const prompt = $input.first().json.Prompt || \"\";\n\n  const cleaned = cleanJsonString(prompt);\n\n  // Output lại thành cleanedPrompt\n  items[i].json.cleanedPrompt = cleaned;\n}\n\nreturn items;\n$input.first().json.Prompt\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        144,
+        160
+      ],
+      "id": "f0cbe715-52e3-48f2-b535-37050d65b8de",
+      "name": "Clean_Prompt"
+    },
+    {
+      "parameters": {
+        "content": "## Text To Image",
+        "height": 304,
+        "width": 1216
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        48
+      ],
+      "id": "8910c39c-e7c6-46f5-9907-c9c1d4f87327",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://aisandbox-pa.googleapis.com/v1/flow/uploadImage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.accessToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"clientContext\": {\n        \"projectId\": \"{{ $json.ProjectID }}\",\n        \"tool\": \"PINHOLE\"\n    },\n    \"imageBytes\": \"{{ $('Extract from File').item.json.data }}\",\n    \"isUserUploaded\": true,\n    \"isHidden\": false,\n    \"mimeType\": \"image/jpeg\",\n    \"fileName\": \"photo_{{ new Date().getTime() }}.jpg\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        704,
+        480
+      ],
+      "id": "2c970ac1-8211-4435-b993-14f777be0cee",
+      "name": "Upload Ảnh",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "url": "https://storage.googleapis.com/ai-sandbox-videofx/image/850c2f44-7d9d-41c4-83f7-08d66c0dfef0?GoogleAccessId=labs-ai-sandbox-videoserver-prod@system.gserviceaccount.com&Expires=1775896771&Signature=P0vLcHOyCfpSeKk9Hmros%2B8MQN7BDhiH1hmuGQhPGCTKS7d%2BnExY6%2BlADc7cC7JU%2B%2BeWW8Lk5L6OUUs6iZL5Tvcspiy2ONnrRG%2BPr70LQhIKalbQLOgpz%2BA4MKnJM1KEGF6dc1vpxLdXT8z8BwJ6h3FG7S95Pwx1fn%2Fmvdr378i3yxsIwWuI6zfpGURyjB4L6AUC5M55ylCZZhKerr9eNnGW%2FhYJPGefi0xR54S2ClluiqH9NdwZvHx8xo0DwNJYf1VoxYcB81sfTMLPQKh82%2BGY14kybnaSw%2Bwfrx9O6qY0qvWE6RM9C5M6BQ%2BmtIXxJPX2FgSyAcPHge3NKdpqpg%3D%3D",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        32,
+        480
+      ],
+      "id": "ee1ce730-bd7e-42df-a769-50be779b708b",
+      "name": "HTTP Request",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        256,
+        480
+      ],
+      "id": "5dd5f593-a028-4539-b13f-22add559ab5d",
+      "name": "Extract from File",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://aisandbox-pa.googleapis.com/v1/projects/{{ $('Get Captcha IMG1').item.json.ProjectID }}/flowMedia:batchGenerateImages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Get Captcha IMG1').item.json.accessToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"clientContext\": {\n        \"recaptchaContext\": {\n            \"token\": \"{{ $('Get Captcha IMG1').item.json.captcha }}\",\n            \"applicationType\": \"RECAPTCHA_APPLICATION_TYPE_WEB\"\n        },\n        \"projectId\": \"{{ $('Get Captcha IMG1').item.json.ProjectID }}\",\n        \"tool\": \"PINHOLE\",\n        \"sessionId\": \";{{ $('Get Captcha IMG1').item.json.sessionId }}\"\n    },\n    \"mediaGenerationContext\": {\n        \"batchId\": \"e3d6e00e-8993-462a-8b56-9973e3f2fab1\"\n    },\n    \"useNewMedia\": true,\n    \"requests\": [\n        {\n            \"clientContext\": {\n                \"recaptchaContext\": {\n                    \"token\": \"{{ $('Get Captcha IMG1').item.json.captcha }}\",\n                    \"applicationType\": \"RECAPTCHA_APPLICATION_TYPE_WEB\"\n                },\n                \"projectId\": \"{{ $('Get Captcha IMG1').item.json.ProjectID }}\",\n                \"tool\": \"PINHOLE\",\n                \"sessionId\": \";{{ $('Get Captcha IMG1').item.json.sessionId }}\"\n            },\n            \"imageModelName\": \"GEM_PIX_2\",\n            \"imageAspectRatio\": \"IMAGE_ASPECT_RATIO_PORTRAIT_THREE_FOUR\",\n            \"structuredPrompt\": {\n                \"parts\": [\n                    {\n                        \"text\": \"thêm con mèo nằm cạnh\"\n                    }\n                ]\n            },\n            \"seed\": {{ Math.floor(Math.random() * 1000000 ) }},\n            \"imageInputs\": [\n                {\n                    \"imageInputType\": \"IMAGE_INPUT_TYPE_REFERENCE\",\n                    \"name\": \"{{ $json.media.name }}\"\n                }\n            ]\n        }\n    ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        928,
+        480
+      ],
+      "id": "28eec4b0-1a6b-480d-bf3d-2d298b8d80d7",
+      "name": "IMG To IMG"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.media[0].image.generatedImage.fifeUrl }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1136,
+        480
+      ],
+      "id": "b8272de7-a101-41cb-a866-1235986da152",
+      "name": "Download IMG"
+    },
+    {
+      "parameters": {
+        "url": "http://192.168.1.102:3456/captcha?action=IMAGE_GENERATION",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        480,
+        480
+      ],
+      "id": "8924072a-012f-46eb-b118-5d19ef96bcb9",
+      "name": "Get Captcha IMG1",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "content": "## Image To Image",
+        "height": 304,
+        "width": 1376
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        384
+      ],
+      "id": "480e1df3-35ad-480f-9359-c100e9673884",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://aisandbox-pa.googleapis.com/v1/video:batchAsyncGenerateVideoText",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Get Captcha Video1').item.json.accessToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"mediaGenerationContext\": {\n        \"batchId\": \"c3b9fe40-4428-41b6-96a9-adbcdccdba92\"\n    },\n    \"clientContext\": {\n        \"projectId\": \"{{ $json.ProjectID }}\",\n        \"tool\": \"PINHOLE\",\n        \"userPaygateTier\": \"PAYGATE_TIER_TWO\",\n        \"sessionId\": \";{{ $json.sessionId }}\",\n        \"recaptchaContext\": {\n            \"token\": \"{{ $json.captcha }}\",\n            \"applicationType\": \"RECAPTCHA_APPLICATION_TYPE_WEB\"\n        }\n    },\n    \"requests\": [\n        {\n            \"aspectRatio\": \"VIDEO_ASPECT_RATIO_PORTRAIT\",\n            \"seed\": {{ Math.floor(Math.random() * 1000000 ) }},\n            \"textInput\": {\n                \"structuredPrompt\": {\n                    \"parts\": [\n                        {\n                            \"text\": \"tạo 1 video con mèo\"\n                        }\n                    ]\n                }\n            },\n            \"videoModelKey\": \"veo_3_1_t2v_fast_portrait_ultra\",\n            \"metadata\": {}\n        }\n    ],\n    \"useV2ModelConfig\": true\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        192,
+        800
+      ],
+      "id": "f759b335-5a35-40f6-a99c-666c199a306e",
+      "name": "Text To Video",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "content": "## Text To Video",
+        "height": 304,
+        "width": 1520
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        704
+      ],
+      "id": "c1f08089-b68a-449f-8294-e10538d8d2bf",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "url": "https://storage.googleapis.com/ai-sandbox-videofx/image/850c2f44-7d9d-41c4-83f7-08d66c0dfef0?GoogleAccessId=labs-ai-sandbox-videoserver-prod@system.gserviceaccount.com&Expires=1775896771&Signature=P0vLcHOyCfpSeKk9Hmros%2B8MQN7BDhiH1hmuGQhPGCTKS7d%2BnExY6%2BlADc7cC7JU%2B%2BeWW8Lk5L6OUUs6iZL5Tvcspiy2ONnrRG%2BPr70LQhIKalbQLOgpz%2BA4MKnJM1KEGF6dc1vpxLdXT8z8BwJ6h3FG7S95Pwx1fn%2Fmvdr378i3yxsIwWuI6zfpGURyjB4L6AUC5M55ylCZZhKerr9eNnGW%2FhYJPGefi0xR54S2ClluiqH9NdwZvHx8xo0DwNJYf1VoxYcB81sfTMLPQKh82%2BGY14kybnaSw%2Bwfrx9O6qY0qvWE6RM9C5M6BQ%2BmtIXxJPX2FgSyAcPHge3NKdpqpg%3D%3D",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -80,
+        1136
+      ],
+      "id": "0cb4ae38-59a9-468a-a291-24ef26a00587",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "url": "http://192.168.1.102:3456/captcha",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        368,
+        1136
+      ],
+      "id": "9f740a87-77fd-41a5-a7f1-3440a5c3d3c6",
+      "name": "Get Captcha Video",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://aisandbox-pa.googleapis.com/v1/video:batchAsyncGenerateVideoReferenceImages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Get Captcha Video').item.json.accessToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"mediaGenerationContext\": {\n        \"batchId\": \"134d8c76-c1a4-4f9e-af71-87ddf830ba1e\"\n    },\n    \"clientContext\": {\n        \"projectId\": \"{{ $('Get Captcha Video').item.json.ProjectID }}\",\n        \"tool\": \"PINHOLE\",\n        \"userPaygateTier\": \"PAYGATE_TIER_TWO\",\n        \"sessionId\": \";{{ $('Get Captcha Video').item.json.sessionId }}\",\n        \"recaptchaContext\": {\n            \"token\": \"{{ $('Get Captcha Video').item.json.captcha }}\",\n            \"applicationType\": \"RECAPTCHA_APPLICATION_TYPE_WEB\"\n        }\n    },\n    \"requests\": [\n        {\n            \"aspectRatio\": \"VIDEO_ASPECT_RATIO_PORTRAIT\",\n            \"seed\": {{ Math.floor(Math.random() * 1000000 ) }},\n            \"textInput\": {\n                \"structuredPrompt\": {\n                    \"parts\": [\n                        {\n                            \"text\": \"cô gái vẫy tay\"\n                        }\n                    ]\n                }\n            },\n            \"videoModelKey\": \"veo_3_1_r2v_fast_portrait_ultra\",\n            \"metadata\": {},\n            \"referenceImages\": [\n                {\n                    \"mediaId\": \"{{ $json.media.name }}\",\n                    \"imageUsageType\": \"IMAGE_USAGE_TYPE_ASSET\"\n                }\n            ]\n        }\n    ],\n    \"useV2ModelConfig\": true\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        816,
+        1136
+      ],
+      "id": "58f42982-52ea-451d-bd39-2cca1edbbeae",
+      "name": "IMG To Video",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "426b33e1-4bb5-49ef-a481-43d6660815b9",
+              "leftValue": "={{ $json.operations[0].status }}",
+              "rightValue": "MEDIA_GENERATION_STATUS_SUCCESSFUL",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1488,
+        1136
+      ],
+      "id": "e58b584b-3848-4ca0-a919-3df2b35a66fc",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "amount": 8
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1040,
+        1136
+      ],
+      "id": "fad0af56-9576-4fb6-b280-5f28a35c9738",
+      "name": "Wait",
+      "webhookId": "2adbe11d-0872-4706-9821-9e30d780458e"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://aisandbox-pa.googleapis.com/v1/flow/uploadImage",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.accessToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"clientContext\": {\n        \"projectId\": \"{{ $json.ProjectID }}\",\n        \"tool\": \"PINHOLE\"\n    },\n    \"imageBytes\": \"{{ $('Extract from File1').item.json.data }}\",\n    \"isUserUploaded\": true,\n    \"isHidden\": false,\n    \"mimeType\": \"image/jpeg\",\n    \"fileName\": \"photo_{{ new Date().getTime() }}.jpg\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        592,
+        1136
+      ],
+      "id": "33f81bfc-6090-4829-9a84-efaded9d39f8",
+      "name": "Upload Ảnh1",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        144,
+        1136
+      ],
+      "id": "a6bcb14b-8ded-4dc2-ab0f-e5ca1bc28c87",
+      "name": "Extract from File1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://aisandbox-pa.googleapis.com/v1/video:batchCheckAsyncVideoGenerationStatus",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Get Captcha Video').item.json.accessToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"operations\": [\n    {\n      \"operation\": {\n        \"name\": \"{{ $json.operations[0].operation.name }}\"\n      }\n    }\n  ]\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1264,
+        1136
+      ],
+      "id": "0b30d1c6-931a-4147-8c32-2826550d64dc",
+      "name": "Check Status1"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.operations[0].operation.metadata.video.fifeUrl }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1712,
+        1120
+      ],
+      "id": "fbc280ee-b2ae-4459-b19d-652d7fe2b08f",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "content": "## Image To Video",
+        "height": 304,
+        "width": 2128
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        1040
+      ],
+      "id": "60c6750b-9895-4dba-a0d6-6448ab19a701",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "426b33e1-4bb5-49ef-a481-43d6660815b9",
+              "leftValue": "={{ $json.operations[0].status }}",
+              "rightValue": "MEDIA_GENERATION_STATUS_SUCCESSFUL",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        880,
+        800
+      ],
+      "id": "7522a455-cd42-4905-83b0-e22f32f98012",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "amount": 8
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        432,
+        800
+      ],
+      "id": "e77662e4-6686-485b-ac9e-4efcbb559938",
+      "name": "Wait1",
+      "webhookId": "2adbe11d-0872-4706-9821-9e30d780458e"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://aisandbox-pa.googleapis.com/v1/video:batchCheckAsyncVideoGenerationStatus",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Get Captcha Video1').item.json.accessToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"operations\": [\n    {\n      \"operation\": {\n        \"name\": \"{{ $json.operations[0].operation.name }}\"\n      }\n    }\n  ]\n} ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        656,
+        800
+      ],
+      "id": "b032b669-1e95-4d60-b3cc-6ee00e7292b9",
+      "name": "Check Status2"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.operations[0].operation.metadata.video.fifeUrl }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1104,
+        784
+      ],
+      "id": "ca486e72-a176-4890-82fc-e51e411c0888",
+      "name": "HTTP Request3"
+    },
+    {
+      "parameters": {
+        "url": "http://192.168.1.102:3456/captcha",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -32,
+        800
+      ],
+      "id": "d54c925d-f1e5-4349-8c78-a357bc377734",
+      "name": "Get Captcha Video1",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Execute workflow": {
+      "main": [
+        [
+          {
+            "node": "Prompt",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Captcha Video1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Captcha IMG": {
+      "main": [
+        [
+          {
+            "node": "Text To IMG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text To IMG": {
+      "main": [
+        [
+          {
+            "node": "Get IMG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prompt": {
+      "main": [
+        [
+          {
+            "node": "Clean_Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean_Prompt": {
+      "main": [
+        [
+          {
+            "node": "Get Captcha IMG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Ảnh": {
+      "main": [
+        [
+          {
+            "node": "IMG To IMG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Get Captcha IMG1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IMG To IMG": {
+      "main": [
+        [
+          {
+            "node": "Download IMG",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Captcha IMG1": {
+      "main": [
+        [
+          {
+            "node": "Upload Ảnh",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text To Video": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Extract from File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Captcha Video": {
+      "main": [
+        [
+          {
+            "node": "Upload Ảnh1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IMG To Video": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Check Status1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Ảnh1": {
+      "main": [
+        [
+          {
+            "node": "IMG To Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File1": {
+      "main": [
+        [
+          {
+            "node": "Get Captcha Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Status1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Check Status2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Status2": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Captcha Video1": {
+      "main": [
+        [
+          {
+            "node": "Text To Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}
